@@ -7,9 +7,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
-    symptommanager,
+    symptommanager, simplified_births,
 )
 from tlo.scenario import BaseScenario
 
@@ -40,9 +38,7 @@ class Playing22(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            contraception.Contraception(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):
@@ -50,10 +46,6 @@ class Playing22(BaseScenario):
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
                 'init_p_high_sugar': 0.52,
-            },
-            'Labour': {
-                'intercept_parity_lr2010': -10 * rng.exponential(0.1),
-                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=self.number_of_draws)[draw_number]
             },
         }
 
