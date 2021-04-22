@@ -17,7 +17,7 @@ from tlo.scenario import BaseScenario
 class Playing22(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 12
+        self.seed = 15
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 200
