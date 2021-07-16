@@ -119,6 +119,13 @@ class BaseScenario:
         """
         raise NotImplementedError
 
+    def intervene_in_initial_population(self, population):
+        """Hook to allow altering initial population before running simulation.
+
+        Defaults to no-op leaving population unaltered.
+        """
+        pass
+
     def draw_parameters(self, draw_number, rng):
         """Implementation must return a dictionary of parameters to override for each draw.
 
@@ -319,6 +326,7 @@ class SampleRunner:
             self.override_parameters(sim, sample["parameters"])
 
         sim.make_initial_population(n=self.scenario.pop_size)
+        self.scenario.intervene_in_initial_population(sim.population)
         sim.simulate(end_date=self.scenario.end_date)
         outputs = parse_log_file(sim.log_filepath)
         for key, output in outputs.items():
