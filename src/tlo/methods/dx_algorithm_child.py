@@ -142,8 +142,8 @@ class DxAlgorithmChild(Module):
             if uncomplicated_diarrhoea:
                 ors_given = p['prob_at_least_ors_given_by_hw'] > self.rng.rand()
                 recommended_treatment_given = (
-                                                  p['prob_recommended_treatment_given_by_hw'] /
-                                                  p['prob_at_least_ors_given_by_hw']
+                                                  p['prob_recommended_treatment_given_by_hw'] / p[
+                                                    'prob_at_least_ors_given_by_hw']
                                               ) > self.rng.rand()
                 intervention_given = str()
                 if ors_given and not recommended_treatment_given:
