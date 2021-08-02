@@ -10,7 +10,7 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'long_run_all_modules.py'  # <-- update this to look at other results
+scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
