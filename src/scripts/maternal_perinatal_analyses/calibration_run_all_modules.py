@@ -29,13 +29,13 @@ class MyTestScenario(BaseScenario):
         self.seed = 228
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 50000
-        self.number_of_draws = 10
+        self.pop_size = 100000
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'anc_pnc_run', 'directory': './outputs',
+            'filename': '100k_5runs_10yrs', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
