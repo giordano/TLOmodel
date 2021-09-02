@@ -54,7 +54,7 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 100000
+        self.pop_size = 250000
         self.number_of_draws = 12
         self.runs_per_draw = 5
 
@@ -65,7 +65,6 @@ class TestScenario(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.hiv': logging.INFO,
-                # 'tlo.scr.scripts.hiv.PrEP_analyses.default_run_with_plots': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.scenario': logging.INFO
             }
