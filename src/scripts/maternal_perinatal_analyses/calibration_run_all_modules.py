@@ -26,7 +26,7 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2489
+        self.seed = 984
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
         self.pop_size = 50000
@@ -35,7 +35,7 @@ class MyTestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': '50k_10yr_10d_sept', 'directory': './outputs',
+            'filename': '50k_10yr_10d_sept02', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
