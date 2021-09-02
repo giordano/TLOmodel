@@ -6,9 +6,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, Date
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, labour
 from tlo.methods.causes import Cause
-from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -42,6 +41,11 @@ class PregnancySupervisor(Module):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy', 'Contraception', 'HealthSystem', 'Lifestyle'
+    }
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
@@ -576,13 +580,14 @@ class PregnancySupervisor(Module):
                     Predictor('ac_receiving_iron_folic_acid').when(True, params['treatment_effect_iron_folic_acid_'
                                                                                 'anaemia'])),
 
-                # This equation calculates a womans monthly risk of developing gestational diabetes
-                # during her pregnancy.This is currently influenced by obesity
-                'gest_diab': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['gest_diab'],
-                    Predictor('li_bmi').when('4', params['rr_gest_diab_obesity'])
-                                       .when('5', params['rr_gest_diab_obesity'])),
+            # This equation calculates a womans monthly risk of developing gestational diabetes
+            # during her pregnancy.This is currently influenced by obesity
+            'gest_diab': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                intercept_dict['gest_diab'],
+                Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                .when('4', params['rr_gest_diab_obesity'])
+                .when('5', params['rr_gest_diab_obesity'])),
 
                 # This equation calculates a womans monthly risk of developing gestational hypertension
                 # during her pregnancy. This is currently influenced receipt of calcium supplementation
@@ -628,11 +633,11 @@ class PregnancySupervisor(Module):
                     Predictor('ps_gestational_age_in_weeks').when('41', params['rr_still_birth_ga_41']),
                     Predictor('ps_gestational_age_in_weeks').when('42', params['rr_still_birth_ga_42']),
                     Predictor('ps_gestational_age_in_weeks').when('>42', params['rr_still_birth_ga_>42']),
-                    Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
-                                                 .when('severe_pre_eclamp', params['rr_still_birth_eclampsia'])
-                                                 .when('eclampsia', params['rr_still_birth_pre_eclampsia'])
-                                                 .when('gest_htn', params['rr_still_birth_gest_htn'])
-                                                 .when('severe_gest_htn', params['rr_still_birth_gest_htn']),
+                    Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
+                        .when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
+                        .when('gest_htn', params['rr_still_birth_gest_htn'])
+                        .when('severe_gest_htn', params['rr_still_birth_gest_htn'])
+                        .when('severe_pre_eclamp', params['rr_still_birth_pre_eclampsia']),
                     Predictor('ps_antepartum_haemorrhage').when('!= "none"', params['rr_still_birth_aph']),
                     Predictor('ps_chorioamnionitis').when(True, params['rr_still_birth_chorio']),
                     Predictor('nc_hypertension').when(True, params['rr_still_birth_chronic_htn']),
@@ -1663,7 +1668,7 @@ class PregnancySupervisor(Module):
                                              f'{new_due_date}')
 
             # And the labour onset event is scheduled for the new due date
-            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person),
+            self.sim.schedule_event(labour.LabourOnsetEvent(self.sim.modules['Labour'], person),
                                     new_due_date)
 
     def update_variables_post_still_birth_for_data_frame(self, women):
