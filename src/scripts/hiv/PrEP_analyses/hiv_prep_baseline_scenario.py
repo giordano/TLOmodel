@@ -2,7 +2,7 @@
 This file defines a batch run through which the hiv modules are run across a grid of parameter values
 
 Check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+tlo scenario-run --draw-only src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
 
 Test the scenario starts running without problems:
 tlo scenario-run src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
@@ -87,14 +87,7 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        #
-        # grid = self.make_grid(
-        #     {
-        #         'prob_for_prep_selection': np.linspace(start=0, stop=0.6, num=4),
-        #         'prob_prep_high_adherence': np.linspace(start=0.3, stop=0.5, num=3),
-        #         'prob_prep_mid_adherence': np.linspace(start=0.1, stop=0.3, num=3),
-        #     }
-        # )
+
         tmp = [0, 0.2, 0.4, 0.6]
         prob_for_prep_selection_list = np.repeat(tmp, 3)
         prob_prep_high_adherence_list = [0.3, 0.4, 0.5] * 4
