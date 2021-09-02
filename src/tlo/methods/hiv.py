@@ -2174,6 +2174,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "art_coverage_child_VL_suppression": art_cov_vs_children,
                         "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                         "prop_preg_and_bf_on_prep": prop_preg_and_bf_on_prep,
+                        "number_preg_breastfeeding": n_preg_and_bf,
                         "prop_men_circ": prop_men_circ
                     }
                     )
