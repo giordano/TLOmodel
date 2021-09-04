@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py",
-  "scenario_seed": 12,
+  "scenario_seed": 24,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 662124363,
+      "draw_seed": 1975759266,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.0,
@@ -16,7 +16,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 1916507803,
+      "draw_seed": 1264583555,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.0,
@@ -27,7 +27,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 1031005574,
+      "draw_seed": 856897728,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.0,
@@ -38,7 +38,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 1603685629,
+      "draw_seed": 227008855,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.2,
@@ -49,7 +49,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 1130929393,
+      "draw_seed": 2146913681,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.2,
@@ -60,7 +60,7 @@
     },
     {
       "draw_number": 5,
-      "draw_seed": 371232386,
+      "draw_seed": 1363601553,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.2,
@@ -71,7 +71,7 @@
     },
     {
       "draw_number": 6,
-      "draw_seed": 144909571,
+      "draw_seed": 945181825,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.4,
@@ -82,7 +82,7 @@
     },
     {
       "draw_number": 7,
-      "draw_seed": 960362435,
+      "draw_seed": 2078546276,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.4,
@@ -93,7 +93,7 @@
     },
     {
       "draw_number": 8,
-      "draw_seed": 62598988,
+      "draw_seed": 1550725243,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.4,
@@ -104,7 +104,7 @@
     },
     {
       "draw_number": 9,
-      "draw_seed": 1505292720,
+      "draw_seed": 38739151,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.6,
@@ -115,7 +115,7 @@
     },
     {
       "draw_number": 10,
-      "draw_seed": 1798504726,
+      "draw_seed": 1030109188,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.6,
@@ -126,7 +126,7 @@
     },
     {
       "draw_number": 11,
-      "draw_seed": 145874993,
+      "draw_seed": 1233432559,
       "parameters": {
         "Hiv": {
           "prob_for_prep_selection": 0.6,
@@ -135,5 +135,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "4a07ec2644ac8bebf775ac3350487d7264cc38fb",
+  "github": "https://github.com/UCL/TLOmodel/blob/4a07ec2644ac8bebf775ac3350487d7264cc38fb/src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py"
 }

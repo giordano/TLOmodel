@@ -90,7 +90,7 @@ class TestScenario(BaseScenario):
             'Hiv': {
                 'prob_prep_for_preg_after_hiv_test': 1.0,
                 'prob_prep_high_adherence': 1.0,
-                'prob_prep_mid_adherence': 0,
+                'prob_prep_mid_adherence': 0.0,
                 "prob_for_prep_selection": 1.0,
                 "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": 1.0,
                 "rr_prep_high_adherence": 0.0,
