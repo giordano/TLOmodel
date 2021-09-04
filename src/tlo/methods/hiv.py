@@ -846,38 +846,41 @@ class Hiv(Module):
         df.at[child_id, "hv_last_test_date"] = pd.NaT
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
-        #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        mother = df.loc[mother_id]
+        # only run this if mother is non currently on PrEP
+        if not df.at[mother_id, 'hv_is_on_prep_preg']:
 
-        mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf <= mother.date_of_last_pregnancy)
-        mother_infected_during_pregnancy = mother.hv_inf & (mother.hv_date_inf > mother.date_of_last_pregnancy)
+            #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
+            mother = df.loc[mother_id]
 
-        if mother_infected_prior_to_pregnancy:
-            if mother.hv_art == "on_VL_suppressed":
-                #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
-                child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
+            mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf <= mother.date_of_last_pregnancy)
+            mother_infected_during_pregnancy = mother.hv_inf & (mother.hv_date_inf > mother.date_of_last_pregnancy)
+
+            if mother_infected_prior_to_pregnancy:
+                if mother.hv_art == "on_VL_suppressed":
+                    #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
+                    child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
+                else:
+                    # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
+                    child_infected = self.rng.random_sample() < params["prob_mtct_untreated"]
+
+            elif mother_infected_during_pregnancy:
+                #  mother has incident infection during pregnancy, NO ART
+                child_infected = self.rng.random_sample() < params["prob_mtct_incident_preg"]
+
             else:
-                # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
-                child_infected = self.rng.random_sample() < params["prob_mtct_untreated"]
+                # mother is not infected
+                child_infected = False
 
-        elif mother_infected_during_pregnancy:
-            #  mother has incident infection during pregnancy, NO ART
-            child_infected = self.rng.random_sample() < params["prob_mtct_incident_preg"]
+            if child_infected:
+                self.do_new_infection(child_id)
 
-        else:
-            # mother is not infected
-            child_infected = False
-
-        if child_infected:
-            self.do_new_infection(child_id)
-
-        # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
-        # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
-        #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
-        #  prior to this function being called
-        if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
-            self.mtct_during_breastfeeding(mother_id, child_id)
+            # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
+            # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
+            # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
+            #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
+            #  prior to this function being called
+            if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
+                self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         raise NotImplementedError
@@ -2086,9 +2089,18 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # MTCT Rate
         infected_mother = df.mother_id & df.hv_inf
-        n_children_born_to_infected_mothers = len(df[(df.age_years <15) & df.hv_inf & infected_mother])
-        mtct = n_new_infections_children / n_children_born_to_infected_mothers
-
+        # limit to children born in the last 18 months - duration of risk through BF
+        n_children_born_to_infected_mothers = len(df[(df.date_of_birth > (now - DateOffset(months=18))) &
+                                                     df.hv_inf & infected_mother])
+        n_children_newly_infected = len(
+            df.loc[
+                (df.age_years < 1.5)
+                & df.is_alive
+                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        # n_children_born_to_infected_mothers = len(df[(df.age_years <15) & df.hv_inf & infected_mother])
+        mtct = 0 if n_children_born_to_infected_mothers == 0 else (n_children_newly_infected / n_children_born_to_infected_mothers)
 
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
                     description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers'

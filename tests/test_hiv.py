@@ -1274,3 +1274,4 @@ def test_zero_incidence_to_women_when_pregnant_using_perfect_prep(tmpdir):
     log_new_infections = parse_log_file(sim.log_filepath)['tlo.methods.hiv']['new_infection']
     assert 0 < len(log_new_infections)
     assert 0 == log_new_infections['is_pregnant'].sum()
+
