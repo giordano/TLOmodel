@@ -22,7 +22,7 @@ tlo batch-download tlo_q1_demo-123
 test run, pop 5000
 Job ID: hiv_prep_baseline_scenario-2021-08-27T095045Z
 
-full run
+full run pop 250k
 hiv_prep_baseline_scenario-2021-08-27T173028Z
 
 
@@ -51,7 +51,7 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 12
+        self.seed = 24
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
         self.pop_size = 250000

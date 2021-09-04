@@ -20,5 +20,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "9a43475867c7f5b102127b50bd8970f62e88c912",
+  "github": "https://github.com/UCL/TLOmodel/blob/9a43475867c7f5b102127b50bd8970f62e88c912/src/scripts/hiv/PrEP_analyses/hiv_perfect_prep.py"
 }
