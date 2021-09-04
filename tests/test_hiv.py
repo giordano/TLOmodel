@@ -6,7 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -1191,3 +1192,85 @@ def test_use_dummy_version():
     df = sim.population.props
     assert df.dtypes['hv_inf'].name == 'bool'
     assert df.loc[df.is_alive, 'hv_inf'].all()
+
+
+def test_incidence_to_women_when_pregnant(tmpdir):
+    """Check that that there are some infections to women who are pregnant"""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 10000
+    sim = Simulation(start_date=start_date, show_progress_bar=True, seed=0, log_config={
+        'filename': 'bed_days',
+        'directory': tmpdir,
+        'custom_levels': {}
+    })
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           ignore_cons_constraints=True,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 12, 31))
+
+    # Check that there are some to those pregnant
+    log_new_infections = parse_log_file(sim.log_filepath)['tlo.methods.hiv']['new_infection']
+    assert 0 < len(log_new_infections)
+    assert 0 < log_new_infections['is_pregnant'].sum()
+
+    print(f"Number of new infections among pregnant women: {log_new_infections['is_pregnant'].sum()}")  # <-- 3
+    print(f"Fraction of new infections among pregnant women: {log_new_infections['is_pregnant'].mean()}")  # <-- 0.0184
+
+
+def test_zero_incidence_to_women_when_pregnant_using_perfect_prep(tmpdir):
+    """Check that that there are no infections to women who are pregnant if all are on perfect PrEP"""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 10000
+    sim = Simulation(start_date=start_date, show_progress_bar=True, seed=0, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {}
+    })
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           ignore_cons_constraints=True,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath)
+                 )
+
+    # Edit parameters to make a PrEP intervention that has 100% coverage, 100% adherence and 100% efficacy
+    sim.modules['Hiv'].parameters["prob_prep_for_preg_after_hiv_test"] = 1.0
+    sim.modules['Hiv'].parameters["prep_start_year"] = 2000
+    sim.modules['Hiv'].parameters["prep_start_year_preg"] = 2000
+    sim.modules['Hiv'].parameters["prob_prep_high_adherence"] = 1.0
+    sim.modules['Hiv'].parameters["prob_prep_mid_adherence"] = 0.0
+    sim.modules['Hiv'].parameters["prob_for_prep_selection"] = 1.0
+    sim.modules['Hiv'].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
+    sim.modules['Hiv'].parameters["rr_prep_high_adherence"] = 0.0
+    sim.modules['Hiv'].parameters["rr_prep_mid_adherence"] = 0.0
+    sim.modules['Hiv'].parameters["rr_prep_low_adherence"] = 0.0
+    sim.modules['Hiv'].parameters["probability_of_pregnant_woman_being_retained_on_prep_every_3_months"] = 1.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 12, 31))
+
+    # Check that there are zero new infections among those pregnant/breastfed
+    log_new_infections = parse_log_file(sim.log_filepath)['tlo.methods.hiv']['new_infection']
+    assert 0 < len(log_new_infections)
+    assert 0 == log_new_infections['is_pregnant'].sum()

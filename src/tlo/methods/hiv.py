@@ -340,9 +340,9 @@ class Hiv(Module):
             Predictor('li_is_circ').when(True, p["rr_circumcision"]),
             Predictor('is_pregnant').when(True, p["rr_preg"]),
             Predictor('hv_is_on_prep').when(True, 1.0 - p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
-            Predictor('hv_prep_adherence').when('High', p["rr_prep_high_adherence"]),
-            Predictor('hv_prep_adherence').when('Mid', p["rr_prep_mid_adherence"]),
-            Predictor('hv_prep_adherence').when('Low', p["rr_prep_low_adherence"]),
+            # Predictor('hv_prep_adherence').when('High', p["rr_prep_high_adherence"]),
+            # Predictor('hv_prep_adherence').when('Mid', p["rr_prep_mid_adherence"]),
+            # Predictor('hv_prep_adherence').when('Low', p["rr_prep_low_adherence"]),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
                                     .when(3, p["rr_windex_middle"])
@@ -926,8 +926,26 @@ class Hiv(Module):
         Enact that this person is infected with HIV
         * Update their hv_inf status and hv_date_inf
         * Schedule the AIDS onset event for this person
+        * This event has no effect if the person is currrently taking PrEP and receives protection from it
         """
+
         df = self.sim.population.props
+        person = df.loc[person_id]
+        p = self.parameters
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Do nothing if the person is taking PrEP currently and receives protection from it
+        if person.hv_is_on_prep_preg:
+            if person.hv_prep_adherence == 'High':
+                protection = (1 - p["rr_prep_high_adherence"])
+            elif person.hv_prep_adherence == 'Mid':
+                protection = (1 - p["rr_prep_mid_adherence"])
+            else:
+                protection = (1 - p["rr_prep_low_adherence"])
+
+            if protection > self.rng.rand():
+                return
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # Update HIV infection status for this person
         df.at[person_id, "hv_inf"] = True
@@ -936,6 +954,9 @@ class Hiv(Module):
         # Schedule AIDS onset events for this person
         date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(person_id=person_id)
         self.sim.schedule_event(event=HivAidsOnsetEvent(self, person_id), date=date_onset_aids)
+
+        # Log the new infection occuring, with a flag for whether the person is pregnant currently.
+        logger.info(key="new_infection", data={'is_pregnant': df.at[person_id, 'is_pregnant']})
 
     def get_time_from_infection_to_aids(self, person_id):
         """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
