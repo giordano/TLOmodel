@@ -46,7 +46,7 @@ class NewbornOutcomes(Module):
         # the main data frame
         self.newborn_care_info = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', }
 
     ADDITIONAL_DEPENDENCIES = {
         'CareOfWomenDuringPregnancy',
@@ -74,7 +74,6 @@ class NewbornOutcomes(Module):
         'urogenital_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'digestive_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'other_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
 
     }
 
@@ -497,7 +496,6 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
         person = df.loc[[person_id]]
-        mother = df.at[person_id, 'mother_id']
 
         # Here we define all the possible external variables used in the linear model
         steroid_status = nci[person_id]['corticosteroids_given']
@@ -1141,10 +1139,10 @@ class NewbornOutcomes(Module):
         logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
 
         # Finally we log the second live birth and add another to the womans parity
-        if not self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['single_twin_still_birth']:
-            df.at[mother_id, 'la_parity'] += 1
-            logger.info(key='live_birth', data={'mother': mother_id, 'child': child_two})
+        df.at[mother_id, 'la_parity'] += 1
 
+        #todo: remove?
+        logger.info(key='live_birth', data={'mother': mother_id, 'child': child_two})
 
     def schedule_pnc(self, child_id):
         params = self.current_parameters
@@ -1171,7 +1169,6 @@ class NewbornOutcomes(Module):
 
         else:
             nci[child_id]['will_receive_pnc'] = 'late'
-
 
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets key properties of all newborns, including prematurity
@@ -1202,16 +1199,6 @@ class NewbornOutcomes(Module):
         elif df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
             df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 2
-
-            # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (
-            # to monitor stillbirths)
-            if m['single_twin_still_birth']:
-                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
-                                                        originating_module=self.sim.modules['NewbornOutcomes'])
-                self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
-                self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
-                self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
-                return
 
         elif ~df.at[mother_id, 'ps_multiple_pregnancy']:
             df.at[child_id, 'nb_is_twin'] = False
@@ -1366,43 +1353,10 @@ class NewbornOutcomes(Module):
                 if nci[child_id]['delivery_setting'] == 'home_birth' and nci[child_id]['will_receive_pnc'] != 'early':
                     self.scheduled_week_one_postnatal_event(child_id)
 
+        if ~df.at[mother_id, 'ps_multiple_pregnancy'] or\
+            (df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2)) or \
+           (df.at[mother_id, 'ps_multiple_pregnancy'] and m['single_twin_still_birth']):
 
-            """
-            if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
-
-                timing = self.rng.choice(['<48', '>48'], p=params['prob_timings_pnc_newborns'])
-
-                if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
-                    nci[child_id]['will_receive_pnc'] = 'early'
-
-                    if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
-                        m['pnc_twin_one'] = 'early'
-
-                    early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
-                        module=self, person_id=child_id, facility_level_of_this_hsi=1)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        early_event, priority=0,
-                        topen=self.sim.date,
-                        tclose=None)
-
-                else:
-                    nci[child_id]['will_receive_pnc'] = 'late'
-                    if nci[child_id]['delivery_setting'] == 'home_birth':
-                        self.scheduled_week_one_postnatal_event(child_id)
-
-                    if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
-                        m['pnc_twin_one'] = 'late'
-
-                assert nci[child_id]['will_receive_pnc'] != 'none'
-
-            else:
-                if nci[child_id]['delivery_setting'] == 'home_birth':
-                    self.set_death_status(child_id)
-                    """
-
-        if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                          (m['twin_count'] == 2)):
             self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
             self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
