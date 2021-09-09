@@ -3,7 +3,7 @@ from tlo import logging
 from tlo.scenario import BaseScenario
 from tlo.methods import (
     care_of_women_during_pregnancy,
-    contraception,
+    contraception, dummy_contraception,
     demography,
     depression,
     dx_algorithm_adult,
@@ -26,23 +26,24 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 984
+        self.seed = 644
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 50000
+        self.pop_size = 20000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': '50k_10yr_10d_sept02', 'directory': './outputs',
+            'filename': 'trial_with_dummy_contraception', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            contraception.Contraception(resourcefilepath=self.resources),
+            #contraception.Contraception(resourcefilepath=self.resources),
+            dummy_contraception.DummyContraceptionModule(),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
