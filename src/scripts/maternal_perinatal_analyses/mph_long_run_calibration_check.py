@@ -26,23 +26,24 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 62
+        self.seed = 2254
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 2)
-        self.pop_size = 2500
+        self.end_date = Date(2041, 1, 2)
+        self.pop_size = 30000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': '5k_pop_dummy_contraception', 'directory': './outputs',
+            'filename': '30k_long_run', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            dummy_contraception.DummyContraceptionModule(),
+            contraception.Contraception(resourcefilepath=self.resources),
+            #dummy_contraception.DummyContraceptionModule(),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
