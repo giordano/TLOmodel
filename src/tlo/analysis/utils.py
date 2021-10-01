@@ -250,11 +250,12 @@ def get_failed_batch_run_information(results_folder: Path, file_name: str, draw_
     """
     # get the location of the failed batch run
     file_location = str(results_folder) + '\\' + str(draw_number) + '\\' + str(run_number)
-    # get the outputted log of the failed run, note that this file will need to be manually extracted prior to this
+    # get the outputted log of the failed run, note that currently this file will need to be manually extracted prior to
+    # this
     std_out = file_location + '\\' + 'stdout.txt'
     # create default value of seed incase actual seed not found
     seed = - 1
-    # extract demographic information from simulations
+    # extract demographic information from simulations using extract results function
     extracted_pop_size = extract_results(results_folder,
                                          module="tlo.methods.demography",
                                          key="population",
@@ -275,6 +276,45 @@ def get_failed_batch_run_information(results_folder: Path, file_name: str, draw_
             seed_end_index = text.find('"', seed_start_index)
             # from this get the seed number
             seed = int(text[seed_start_index: seed_end_index])
+        # search for modules registered
+        if 'RNG auto' in text:
+            # find last registered module
+            last_occurence_index = text.rfind(" RNG auto")
+            # the text to search for registered modules is between the initial assignment of the seed and the last
+            # registered module, filter text to search through by these bounds
+            text_filtered = text[seed_end_index: last_occurence_index]
+            # create a list to store the name and order of the registered modules
+            module_names = []
+            # create an index point to start the search at, which is updated in the while loop below
+            index_searched_through = 0
+            # loop over the filtered text while the index searched through is less than the length of the text
+            while index_searched_through < len(text_filtered) - 1:
+                # find the index of the character after the module name is registered starting from the value of the
+                # last index searched from
+                character_index_after_module_name = text_filtered.find(" RNG auto", index_searched_through + 1)
+                # find the index of the character before the name is registered starting from the value of the
+                # last index searched from
+                character_index_before_module_name = text_filtered.find(': ["', index_searched_through)
+                # append the module name to the list of module names
+                module_names.append(text_filtered[character_index_before_module_name + len(': ["'):
+                                                  character_index_after_module_name])
+                # update the index searched through parameter so in the next loop, the search will begin from the
+                # character after the last module
+                index_searched_through = character_index_after_module_name
+                # Use a property of the str.find function to break the loop (str.find returns -1 if the substring you
+                # are searching for isn't found, in this context it means that all module names have been found)
+                if character_index_before_module_name == -1:
+                    break
+        # search for the last date logged in text file
+        if '"date": "' in text:
+            # Find the index of the last logged "date": " in the txt file and then get the index after
+            last_recorded_date_index = text.rfind('"date": "') + len('"date": "')
+            last_recorded_values_index = text.rfind('", "values"')
+            last_recorded_date = text[last_recorded_date_index: last_recorded_values_index]
+            end_date = pd.to_datetime(last_recorded_date, format = '%Y-%m-%d %H:%M:%S', errors='coerce')
+
+
+
     # get the parameter value(s) used in this particular run
     # open json file as dictionary
     with open(str(results_folder) + '/' + file_name[:-3] + '_draws.json', 'r') as myfile:
