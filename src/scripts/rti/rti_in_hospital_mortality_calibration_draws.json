@@ -8,11 +8,11 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.0116059486974748,
-          "prob_death_iss_10_15": 0.01757399577167019,
-          "prob_death_iss_16_24": 0.049642218246869416,
-          "prob_death_iss_25_35": 0.21209302325581397,
-          "prob_death_iss_35_plus": 0.3606361149110807
+          "prob_death_iss_less_than_9": 0.0028505838875536476,
+          "prob_death_iss_10_15": 0.004316420009469696,
+          "prob_death_iss_16_24": 0.012192825521255059,
+          "prob_death_iss_25_35": 0.05209302319999999,
+          "prob_death_iss_35_plus": 0.08857729128676468
         }
       }
     },
@@ -21,11 +21,11 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.015983631100908276,
-          "prob_death_iss_10_15": 0.02420278365045807,
-          "prob_death_iss_16_24": 0.06836691460314472,
-          "prob_death_iss_25_35": 0.292093023255814,
-          "prob_death_iss_35_plus": 0.49666552667578656
+          "prob_death_iss_less_than_9": 0.007228266290987125,
+          "prob_death_iss_10_15": 0.010945207888257575,
+          "prob_death_iss_16_24": 0.03091752187753036,
+          "prob_death_iss_25_35": 0.1320930232,
+          "prob_death_iss_35_plus": 0.22460670305147054
         }
       }
     },
@@ -34,11 +34,11 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.020361313504341755,
-          "prob_death_iss_10_15": 0.03083157152924595,
-          "prob_death_iss_16_24": 0.08709161095942002,
-          "prob_death_iss_25_35": 0.372093023255814,
-          "prob_death_iss_35_plus": 0.6326949384404924
+          "prob_death_iss_less_than_9": 0.0116059486944206,
+          "prob_death_iss_10_15": 0.017573995767045453,
+          "prob_death_iss_16_24": 0.049642218233805664,
+          "prob_death_iss_25_35": 0.2120930232,
+          "prob_death_iss_35_plus": 0.3606361148161764
         }
       }
     },
@@ -47,11 +47,11 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.02473899590777523,
-          "prob_death_iss_10_15": 0.03746035940803383,
-          "prob_death_iss_16_24": 0.10581630731569533,
-          "prob_death_iss_25_35": 0.45209302325581396,
-          "prob_death_iss_35_plus": 0.7687243502051984
+          "prob_death_iss_less_than_9": 0.015983631097854077,
+          "prob_death_iss_10_15": 0.024202783645833333,
+          "prob_death_iss_16_24": 0.06836691459008097,
+          "prob_death_iss_25_35": 0.2920930232,
+          "prob_death_iss_35_plus": 0.4966655265808823
         }
       }
     },
@@ -60,15 +60,15 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.029116678311208708,
-          "prob_death_iss_10_15": 0.04408914728682171,
-          "prob_death_iss_16_24": 0.12454100367197063,
-          "prob_death_iss_25_35": 0.532093023255814,
-          "prob_death_iss_35_plus": 0.9047537619699042
+          "prob_death_iss_less_than_9": 0.020361313501287556,
+          "prob_death_iss_10_15": 0.030831571524621213,
+          "prob_death_iss_16_24": 0.08709161094635627,
+          "prob_death_iss_25_35": 0.3720930232,
+          "prob_death_iss_35_plus": 0.6326949383455882
         }
       }
     }
   ],
-  "commit": "68b63cf6e17d4efb56e451e1c271a8e462e8c869",
-  "github": "https://github.com/UCL/TLOmodel/blob/68b63cf6e17d4efb56e451e1c271a8e462e8c869/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
+  "commit": "602f471b47b28ae7068ecda6ad0ad6c057e922e8",
+  "github": "https://github.com/UCL/TLOmodel/blob/602f471b47b28ae7068ecda6ad0ad6c057e922e8/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
 }
