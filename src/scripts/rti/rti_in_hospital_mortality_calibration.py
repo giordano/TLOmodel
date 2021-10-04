@@ -24,7 +24,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 20000
-        self.number_of_samples_in_parameter_range = 5
+        self.number_of_samples_in_parameter_range = 10
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
 
