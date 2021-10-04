@@ -4978,7 +4978,7 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         # self.prob_death_iss_16_24 = 0.0870573 * 0.571
         self.prob_death_iss_25_35 = p['prob_death_iss_25_35']
         # self.prob_death_iss_25_35 = 0.376464 * 0.571
-        self.prob_death_iss_35_plus = p['prob_death_iss_25_35']
+        self.prob_death_iss_35_plus = p['prob_death_iss_35_plus']
         # self.prob_death_iss_35_plus = 0.6399888 * 0.571
 
     def apply(self, person_id):

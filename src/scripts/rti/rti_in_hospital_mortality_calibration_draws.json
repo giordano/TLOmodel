@@ -1,0 +1,46 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_in_hospital_mortality_calibration.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.015983631100908276,
+          "prob_death_iss_10_15": 0.02420278365045807,
+          "prob_death_iss_16_24": 0.06836691460314472,
+          "prob_death_iss_25_35": 0.292093023255814,
+          "prob_death_iss_35_plus": 0.49666552667578656
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.020361313504341755,
+          "prob_death_iss_10_15": 0.03083157152924595,
+          "prob_death_iss_16_24": 0.08709161095942002,
+          "prob_death_iss_25_35": 0.372093023255814,
+          "prob_death_iss_35_plus": 0.6326949384404924
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.02473899590777523,
+          "prob_death_iss_10_15": 0.03746035940803383,
+          "prob_death_iss_16_24": 0.10581630731569533,
+          "prob_death_iss_25_35": 0.45209302325581396,
+          "prob_death_iss_35_plus": 0.7687243502051984
+        }
+      }
+    }
+  ]
+}
