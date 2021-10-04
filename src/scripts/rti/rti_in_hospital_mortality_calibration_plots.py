@@ -19,12 +19,12 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs')
+outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('rti_in_hospital_mortality_parameterisation.py', outputspath)[-1]
+results_folder = get_scenario_outputs('rti_in_hospital_mortality_calibration.py', outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
