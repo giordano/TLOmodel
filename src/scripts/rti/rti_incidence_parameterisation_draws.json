@@ -93,5 +93,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "c3931b060a913a3f79568824285c5b69f820045c",
+  "github": "https://github.com/UCL/TLOmodel/blob/c3931b060a913a3f79568824285c5b69f820045c/src/scripts/rti/rti_incidence_parameterisation.py"
 }

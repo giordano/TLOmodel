@@ -33,7 +33,8 @@ log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
-params = extract_params_from_json(results_folder, 'rti_incidence_parameterisation.py', 'RTI', 'base_rate_injrti')
+params = extract_params(results_folder)
+# params = extract_params_from_json(results_folder, 'rti_incidence_parameterisation.py', 'RTI', 'base_rate_injrti')
 # 2) Extract a specific log series for all runs:
 extracted = extract_results(results_folder,
                             module="tlo.methods.rti",
@@ -73,8 +74,8 @@ colors = ['lightsteelblue' if i not in in_accepted_range[0] else 'lightsalmon' f
 best_fit_found = min(per_param_average_incidence, key = lambda x: abs(x - expected_incidence))
 best_fit_index = np.where(per_param_average_incidence == best_fit_found)
 colors[best_fit_index[0][0]] = 'gold'
-print(f"best fitting parameter value = {params[best_fit_index[0][0]]}")
-xlabels = [np.round(value, 5) for value in params]
+print(f"best fitting parameter value = {params['value'][best_fit_index[0][0]]}")
+xlabels = [np.round(value, 5) for value in params['value']]
 fig, ax = plt.subplots()
 ax.bar(
     x=xvals,
