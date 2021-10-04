@@ -54,8 +54,8 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        multiplication_factor_max = 4 / 1.72 + 1
-        multiplication_factor_min = 4 / 1.72 - 1
+        multiplication_factor_max = 1.325581395 + 1
+        multiplication_factor_min = 1.325581395 - 1
         scale_factor = np.linspace(multiplication_factor_min, multiplication_factor_max,
                                    num=self.number_of_samples_in_parameter_range)
         return {

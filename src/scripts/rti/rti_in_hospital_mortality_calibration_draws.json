@@ -69,6 +69,6 @@
       }
     }
   ],
-  "commit": "519e4c8c18f1324a7f1d1dedc9b4f813f8e5a7a8",
-  "github": "https://github.com/UCL/TLOmodel/blob/519e4c8c18f1324a7f1d1dedc9b4f813f8e5a7a8/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
+  "commit": "68b63cf6e17d4efb56e451e1c271a8e462e8c869",
+  "github": "https://github.com/UCL/TLOmodel/blob/68b63cf6e17d4efb56e451e1c271a8e462e8c869/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
 }
