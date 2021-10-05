@@ -24,7 +24,7 @@ outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('rti_in_hospital_mortality_calibration.py', outputspath)[-1]
+results_folder = get_scenario_outputs('rti_in_hospital_mortality_calibration.py', outputspath)[- 1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -41,13 +41,29 @@ extracted = extract_results(results_folder,
                             key="summary_1m",
                             column="percentage died after med",
                             index="date")
-
+extracted_incidence_of_death = extract_results(results_folder,
+                                               module="tlo.methods.rti",
+                                               key="summary_1m",
+                                               column="incidence of rti death per 100,000",
+                                               index="date"
+                                               )
+extracted_incidence_of_RTI = extract_results(results_folder,
+                                             module="tlo.methods.rti",
+                                             key="summary_1m",
+                                             column="incidence of rti per 100,000",
+                                             index="date"
+                                             )
 # 3) Get summary of the results for that log-element
 in_hospital_mortality = summarize(extracted)
+incidence_of_death = summarize(extracted_incidence_of_death)
+incidence_of_RTI = summarize(extracted_incidence_of_RTI)
+
 # If only interested in the means
 in_hospital_mortality_onlymeans = summarize(extracted, only_mean=True)
 # get per parameter summaries
 mean_in_hospital_mortality_overall = in_hospital_mortality.mean()
+mean_incidence_of_death = incidence_of_death.mean()
+mean_incidence_of_rti = incidence_of_RTI.mean()
 # get upper and lower estimates
 mean_in_hospital_mortality_lower = mean_in_hospital_mortality_overall.loc[:, "lower"]
 mean_in_hospital_mortality_upper = mean_in_hospital_mortality_overall.loc[:, "upper"]
@@ -66,6 +82,9 @@ best_fit_found = min(per_param_average_in_hospital_mortality, key = lambda x: ab
 best_fit_index = np.where(per_param_average_in_hospital_mortality == best_fit_found)
 colors[best_fit_index[0][0]] = 'gold'
 print(f"best fitting parameter value = {params.loc[best_fit_index[0][0]]}")
+print(f"Resulting in-hospital mortality = {best_fit_found}")
+print(f"Resulting incidence of death = {mean_incidence_of_death[best_fit_index[0][0]]['mean']}")
+print(f"Resulting incidence of RTI = {mean_incidence_of_rti[best_fit_index[0][0]]['mean']}")
 xlabels = [f"Parameter set\n{val + 1}" for val in range(0, info['number_of_draws'])]
 fig, ax = plt.subplots()
 ax.bar(
