@@ -30,7 +30,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'rti_calibrate_incidence_and_in_hospital_mortality',
+            'filename': 'rti_calibrate_kch_death_and_inc',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
