@@ -12,6 +12,7 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -31,6 +32,7 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    measles,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
@@ -48,13 +50,13 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2029, 12, 31)
-        self.pop_size = 20_000  # <- recommened population size for the runs
+        self.pop_size = 50_000  # <- recommend population size for the runs
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 10  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
+            'filename': 'long_run_all_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.INFO,
@@ -85,11 +87,13 @@ class LongRun(BaseScenario):
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
 
             # - Conditions of Early Childhood
+            alri.Alri(resourcefilepath=self.resources),
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
 
             # - Communicable Diseases
             hiv.Hiv(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
+            measles.Measles(resourcefilepath=self.resources),
 
             # - Non-Communicable Conditions
             # -- Cancers
@@ -99,7 +103,7 @@ class LongRun(BaseScenario):
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
             prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
 
-            # -- Caridometabolic Diorders
+            # -- Cardio-metabolic Disorders
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
 
             # -- Injuries (Forthcoming)
@@ -107,6 +111,7 @@ class LongRun(BaseScenario):
             # -- Other Non-Communicable Conditions
             depression.Depression(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
+
         ]
 
     def draw_parameters(self, draw_number, rng):
