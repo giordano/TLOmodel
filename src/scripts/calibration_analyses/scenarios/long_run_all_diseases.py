@@ -32,6 +32,7 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    malnutrition,
     measles,
     newborn_outcomes,
     oesophagealcancer,
@@ -39,7 +40,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
-    symptommanager, malnutrition,
+    symptommanager,
 )
 from tlo.scenario import BaseScenario
 

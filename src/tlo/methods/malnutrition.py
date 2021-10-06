@@ -10,6 +10,8 @@ logger.setLevel(logging.INFO)
 
 class Malnutrition(Module):
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     PROPERTIES = {
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
