@@ -26,17 +26,27 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2254
+        self.seed = 9978
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 2)
-        self.pop_size = 10000
+        self.end_date = Date(2041, 1, 2)
+        self.pop_size = 30000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': '10k_test', 'directory': './outputs',
-            'custom_levels': {'*': logging.INFO}
+            'filename': '30k_pop_long_run', 'directory': './outputs',
+            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.labour": logging.INFO,
+                "tlo.methods.newborn_outcomes": logging.INFO,
+                "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
+                "tlo.methods.pregnancy_supervisor": logging.INFO,
+                "tlo.methods.postnatal_supervisor": logging.INFO,
+            }
+
         }
 
     def modules(self):
