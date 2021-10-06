@@ -1,0 +1,513 @@
+{
+  "scenario_script_path": "src/scripts/rti/rti_calibrate_kch_death_and_inc.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.009417107492703863,
+          "prob_death_iss_10_15": 0.014259601827651515,
+          "prob_death_iss_16_24": 0.040279870055668014,
+          "prob_death_iss_25_35": 0.1720930232,
+          "prob_death_iss_35_plus": 0.2926214089338235,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 145874993,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.010292643973390558,
+          "prob_death_iss_10_15": 0.015585359403409091,
+          "prob_death_iss_16_24": 0.04402480932692308,
+          "prob_death_iss_25_35": 0.18809302320000001,
+          "prob_death_iss_35_plus": 0.3198272912867647,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1721057204,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 1268891525,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 143543949,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 354439641,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 1962582434,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 970465739,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.011168180454077253,
+          "prob_death_iss_10_15": 0.016911116979166665,
+          "prob_death_iss_16_24": 0.04776974859817813,
+          "prob_death_iss_25_35": 0.2040930232,
+          "prob_death_iss_35_plus": 0.3470331736397058,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 589309558,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 1601311818,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 1219033472,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 755903861,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 455623784,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 2077248716,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 1907932429,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 2068156498,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 26,
+      "draw_seed": 1514987609,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 27,
+      "draw_seed": 1771840803,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 28,
+      "draw_seed": 9703358,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 29,
+      "draw_seed": 815512676,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.012919253415450643,
+          "prob_death_iss_10_15": 0.019562632130681816,
+          "prob_death_iss_16_24": 0.05525962714068825,
+          "prob_death_iss_25_35": 0.23609302319999997,
+          "prob_death_iss_35_plus": 0.40144493834558814,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 30,
+      "draw_seed": 91165091,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.010262023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 31,
+      "draw_seed": 635542945,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.009062023536982301
+        }
+      }
+    },
+    {
+      "draw_number": 32,
+      "draw_seed": 223499934,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.007862023536982302
+        }
+      }
+    },
+    {
+      "draw_number": 33,
+      "draw_seed": 1749199991,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.0066620235369823
+        }
+      }
+    },
+    {
+      "draw_number": 34,
+      "draw_seed": 2084680127,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.0054620235369823005
+        }
+      }
+    },
+    {
+      "draw_number": 35,
+      "draw_seed": 791670112,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
+          "base_rate_injrti": 0.0042620235369823
+        }
+      }
+    }
+  ],
+  "commit": "316d336e1c7577048ed4e583062f470996eb7186",
+  "github": "https://github.com/UCL/TLOmodel/blob/316d336e1c7577048ed4e583062f470996eb7186/src/scripts/rti/rti_calibrate_kch_death_and_inc.py"
+}
