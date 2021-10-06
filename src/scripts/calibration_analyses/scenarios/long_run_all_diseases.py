@@ -39,7 +39,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
-    symptommanager,
+    symptommanager, malnutrition,
 )
 from tlo.scenario import BaseScenario
 
@@ -89,6 +89,7 @@ class LongRun(BaseScenario):
             # - Conditions of Early Childhood
             alri.Alri(resourcefilepath=self.resources),
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+            malnutrition.Malnutrition(),
 
             # - Communicable Diseases
             hiv.Hiv(resourcefilepath=self.resources),
