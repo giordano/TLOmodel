@@ -28,7 +28,7 @@ from tlo.methods import (
 # ============================================== Model run ============================================================
 log_config = {
     "filename": "rti_health_system_comparison",  # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "directory": "./outputs/general",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
@@ -39,11 +39,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 20000
+pop_size = 10000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -178,19 +178,9 @@ for i in range(0, nsim):
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
         )
     # Get the log file
-    logfile = sim.configure_logging(filename="LogFile")
+    logfile = sim.configure_logging(filename="LogFile", directory='./outputs/general')
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-    # make parameter adjustments
-    number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
-    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-        [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
-    ]
-    # sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-    #     [1, 2, 3, 4, 5, 6, 7, 8], [1, 0, 0, 0, 0, 0, 0, 0]
-    # ]
-
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = 0.018
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -362,7 +352,7 @@ for i in range(0, nsim):
     incidences_of_rti_in_children.append(
         log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000 in children'].tolist())
     # Store the incidence of injuries per 100,000 in this sim
-    incidences_of_injuries.append(log_df['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist())
+    incidences_of_injuries.append(log_df['tlo.methods.rti']['Inj_category_incidence']['tot_inc_injuries'].to_list())
     # Get information on the deaths that occurred in the sim
     deaths_df = log_df['tlo.methods.demography']['death']
     # Create list of RTI specific deaths

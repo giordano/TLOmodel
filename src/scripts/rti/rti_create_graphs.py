@@ -243,7 +243,7 @@ def create_rti_data(logfile):
     # Store the incidence of rtis in children per year in this sim
     incidences_of_rti_in_children = rti_log['summary_1m']['incidence of rti per 100,000 in children'].tolist()
     # Store the incidence of injuries per 100,000 in this sim
-    incidences_of_injuries = rti_log['summary_1m']['injury incidence per 100,000'].tolist()
+    incidences_of_injuries = rti_log['Inj_category_incidence']['tot_inc_injuries'].to_list()
     # Get information on the deaths that occurred in the sim
     deaths_df = parsed_log['tlo.methods.demography']['death']
     # Create list of RTI specific deaths
@@ -410,10 +410,37 @@ def create_rti_data(logfile):
             num_surg += 1
         if 'MinorSurg' in dictionary.keys():
             num_surg += 1
-    dalys_df = parsed_log['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    model_pop_size = parsed_log['tlo.methods.demography']['population']['total'].tolist()
+    scaling_df = pd.DataFrame({'total': model_pop_size})
+    data = pd.read_csv("resources/demography/ResourceFile_Pop_Annual_WPP.csv")
+    sim_start_year = parsed_log['tlo.simulation']['info']['date'].iloc[0].year
+    sim_end_year = parsed_log['tlo.simulation']['info']['date'].iloc[- 1].year
+    sim_year_range = pd.Index(np.arange(sim_start_year, sim_end_year))
+    Data_Pop = data.groupby(by="Year")["Count"].sum()
+    Data_Pop = Data_Pop.loc[sim_year_range]
+    scaling_df['pred_pop_size'] = Data_Pop.to_list()
+    scaling_df['scale_for_each_year'] = scaling_df['pred_pop_size'] / scaling_df['total']
+    scaling_df.index = sim_year_range
+    rti_deaths = parsed_log['tlo.methods.demography']['death']
+    # calculate the total number of rti related deaths
+    # find deaths caused by RTI
+    rti_deaths = rti_deaths.loc[rti_deaths['label'] == 'Transport Injuries']
+    # create a column to show the year deaths occurred in
+    rti_deaths['year'] = rti_deaths['date'].dt.year.to_list()
+    # group by the year and count how many deaths ocurred
+    rti_deaths = rti_deaths.groupby('year').count()
+    # calculate extrapolated number of deaths
+    rti_deaths['estimated_n_deaths'] = rti_deaths['cause'] * scaling_df.loc[rti_deaths.index, 'scale_for_each_year']
+    # store the extrapolated number of deaths over the course of the sim
+    dalys_df = parsed_log['tlo.methods.healthburden']['dalys']
+    dalys_df = dalys_df.groupby('year').sum()
+    dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
+    dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
+    extrapolated_dalys = dalys_df['extrapolated_dalys'].sum()
     deceased_persons = parsed_log['tlo.methods.demography']['properties_of_deceased_persons']
     deceased_persons_in_rti = deceased_persons.loc[deceased_persons['rt_ISS_score'] > 0]
     decesed_persons_ISS_scores = deceased_persons_in_rti['rt_ISS_score'].tolist()
+    dalys_df = parsed_log['tlo.methods.healthburden']['dalys']['Transport Injuries']
     DALYs = dalys_df.sum()
     # Get simulaion data
     pop_size = parsed_log['tlo.methods.demography']['population']['total'].iloc[0]
@@ -501,6 +528,8 @@ def create_rti_data(logfile):
                     'per_sim_average_percentage_lx_open': per_sim_average_percentage_lx_open,
                     'diceased_iss_scores': decesed_persons_ISS_scores,
                     'percent_non_emergency_died_without_med': percent_non_emergency_died_without_med,
+                    'scaled_number_of_deaths': rti_deaths['estimated_n_deaths'].sum(),
+                    'extrapolated_dalys': extrapolated_dalys,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
                     'years_run': years_run,
@@ -518,8 +547,9 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
             nsim = len(os.listdir(logfile_directory))
             r = pd.DataFrame()
             for log in os.listdir(logfile_directory):
-                data = create_rti_data(logfile_directory + "/" + log)
-                r = r.append(data, ignore_index=True)
+                if log.title().startswith('Log'):
+                    data = create_rti_data(logfile_directory + "/" + log)
+                    r = r.append(data, ignore_index=True)
 
         else:
             nsim = 1
@@ -554,6 +584,22 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
 
     # ======================== Plot average age of those in RTI compared to other sources =================
     # Calculate the mean age and standard deviation in age of those involved in RTIs
+    mean_extrapolated_dalys = np.mean(r['extrapolated_dalys'])
+    plt.bar(np.arange(1), mean_extrapolated_dalys)
+    plt.title(f"number of dalys is {mean_extrapolated_dalys}")
+    plt.savefig(
+        save_directory + "/" + filename_description + "_" +
+        f"predicted_n_dalys_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+        bbox_inches='tight')
+    plt.clf()
+    mean_extrapolated_deaths = np.mean(r['scaled_number_of_deaths'])
+    plt.bar(np.arange(1), mean_extrapolated_deaths)
+    plt.title(f"number of deaths is {mean_extrapolated_deaths}")
+    plt.savefig(
+        save_directory + "/" + filename_description + "_" +
+        f"predicted_n_deats_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+        bbox_inches='tight')
+    plt.clf()
     mean_age_per_run = [np.mean(age_list) for age_list in r['age_range'].tolist()]
     std_age_per_run = [np.std(age_list) for age_list in r['age_range'].tolist()]
     r['mean_age'] = mean_age_per_run
@@ -794,7 +840,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
 
     # =============== Plot the per injury fatality produced by the model and compare to the gbd data ===============
     # Get GBD data
-    data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+    data = pd.read_csv('resources/gbd/ResourceFile_RTI_Deaths_and_Incidence.csv')
     # Isolate death date
     gbd_death_data = data.loc[data['measure'] == 'Deaths']
     # Isolate incidence data
@@ -942,7 +988,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     # Get incidence of RTI death from hospital registry data (stated in samuel et al.)
     hospital_registry_inc = 5.1
     # Get the incidence of RTI death from the GBD data
-    data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+    data = pd.read_csv('resources/gbd/ResourceFile_RTI_Deaths_and_Incidence.csv')
     data = data.loc[data['measure'] == 'Deaths']
     data = data.loc[data['metric'] == 'Rate']
     data = data.loc[data['year'] > 2009]
@@ -1124,9 +1170,42 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
                 f"Incidence_and_deaths_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
                 bbox_inches='tight')
     plt.clf()
-
     # ================== Plot the incidence predicted by the model compared to the GBD data =======================
-    data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+    data = pd.read_csv('resources/gbd/ResourceFile_RTI_Deaths_and_Incidence.csv')
+    data = data.loc[data['metric'] == 'Rate']
+    data = data.loc[data['measure'] == 'Incidence']
+    data = data.loc[data['year'] > 2009]
+    gbd_time = ['2010-01-01', '2011-01-01', '2012-01-01', '2013-01-01',
+                '2014-01-01', '2015-01-01', '2016-01-01', '2017-01-01',
+                '2018-01-01', '2019-01-01']
+    yearly_average_inc=  \
+        [float(sum(col)) / len(col) for col in zip(*r['incidences_of_rti_yearly_average'])]
+    std_yearly_incidence = [np.std(i) for i in zip(*r['incidences_of_rti_yearly_average'])]
+    yearly_inc_upper = [inc + (1.96 * std) / nsim for inc, std in zip(yearly_average_inc,
+                                                                            std_yearly_incidence)]
+    yearly_inc_lower = [inc - (1.96 * std) / nsim for inc, std in zip(yearly_average_inc,
+                                                                            std_yearly_incidence)]
+
+    time = pd.to_datetime(gbd_time[:yearsrun])
+    plt.plot(time, yearly_average_inc, color='lightsalmon', label='Model', zorder=2)
+    plt.fill_between(time.tolist(), yearly_inc_upper, yearly_inc_lower, alpha=0.5, color='lightsalmon',
+                     label='95% C.I. model', zorder=1)
+    plt.plot(pd.to_datetime(gbd_time), data.val, color='mediumaquamarine', label='GBD', zorder=2)
+    plt.fill_between(pd.to_datetime(gbd_time), data.upper, data.lower, alpha=0.5, color='mediumaquamarine',
+                     label='95% C.I. GBD', zorder=1)
+    plt.xlabel('Year')
+    plt.ylabel('Incidence of RTI')
+    plt.legend()
+    plt.title(f"Incidence of RTI over time, model compared to GBD estimate"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"Incidence_rti_model_over_time_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                bbox_inches='tight')
+    plt.clf()
+
+    # ================== Plot the incidence death predicted by the model compared to the GBD data ======================
+    data = pd.read_csv('resources/gbd/ResourceFile_RTI_Deaths_and_Incidence.csv')
     data = data.loc[data['metric'] == 'Rate']
     data = data.loc[data['measure'] == 'Deaths']
     data = data.loc[data['year'] > 2009]
@@ -1193,34 +1272,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
         f"Number_of_deaths_comp_to_GBD_2010_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
         bbox_inches='tight')
     plt.clf()
-    # ========== plot the model number of deaths and number of injuries compared to GBD estimates ===============
-    # Get GBD data of the number of injuries
-    injury_number_data = pd.read_csv('resources/ResourceFile_RTI_GBD_Injury_Categories.csv')
-    # Isolate information on the number of injuries
-    injury_number_data = injury_number_data.loc[injury_number_data['metric'] == 'Number']
-    # Isolate number of injuries in 2010
-    injury_number_in_2010 = injury_number_data.loc[injury_number_data['year'] == 2010]
-    # Calculate number of injuries in 2010
-    gbd_number_of_injuries_2010 = injury_number_in_2010['val'].sum()
-    # Get the model's predicted number of injuries in 2010
-    model_injury_number_in_2010 = r['injuries_in_2010'].mean()
-    # Scale this up to with respect to population size
-    scaled_model_injury_number_in_2010 = model_injury_number_in_2010 * scaler_to_pop_size
 
-    injury_output = [scaled_model_injury_number_in_2010, gbd_number_of_injuries_2010]
-    # plot data in bar chart
-    plt.bar(np.arange(2), injury_output, color='lightsalmon', label='number of injuries')
-    plt.xticks(np.arange(2), ['Model output', 'GBD estimate'])
-    plt.ylabel('Number')
-    plt.title(f"The model's predicted number of road traffic injuries"
-              f"\n"
-              f"compared to the GBD 2010 estimates"
-              f"\n"
-              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-    plt.savefig(save_directory + "/" + filename_description + "_" +
-                f"Number_of_RTI_comp_to_GBD_2010_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
-                bbox_inches='tight')
-    plt.clf()
     # =================== Compare model deaths over popsize for model and Malawi GBD data ====================
     # Calculate deaths divided by populaton size for the model and the GBD data
     deaths_over_pop_size = [r['deaths_2010'].mean() / pop_size,
@@ -1250,7 +1302,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
                 f"_{nsim}.png", bbox_inches='tight')
     plt.clf()
     # ============ compare incidence of death in the model and the GBD 2010 estimate ===========================
-    data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+    data = pd.read_csv('resources/gbd/ResourceFile_RTI_Deaths_and_Incidence.csv')
     data = data.loc[data['metric'] == 'Rate']
     data = data.loc[data['year'] > 2009]
     death_data = data.loc[data['measure'] == 'Deaths']
