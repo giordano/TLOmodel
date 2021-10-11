@@ -3,7 +3,7 @@ from tlo import logging
 from tlo.scenario import BaseScenario
 from tlo.methods import (
     care_of_women_during_pregnancy,
-    contraception,
+    contraception, dummy_contraception,
     demography,
     depression,
     dx_algorithm_adult,
@@ -26,28 +26,38 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 666
+        self.seed = 9978
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 2)
-        self.pop_size = 37500
-        self.number_of_draws = 10
+        self.end_date = Date(2021, 1, 2)
+        self.pop_size = 30000
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'dummy_modules_run', 'directory': './outputs',
-            'custom_levels': {'*': logging.INFO}
+            'filename': '30k_pop_long_run', 'directory': './outputs',
+            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.labour": logging.INFO,
+                "tlo.methods.newborn_outcomes": logging.INFO,
+                "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
+                "tlo.methods.pregnancy_supervisor": logging.INFO,
+                "tlo.methods.postnatal_supervisor": logging.INFO,
+            }
+
         }
 
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
             contraception.Contraception(resourcefilepath=self.resources),
+            #dummy_contraception.DummyContraceptionModule(),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      service_availability=['*'],
-                                      ignore_cons_constraints=True),
+                                      disable_and_reject_all=True),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
