@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
+scenario_filename = 'mph_long_run_calibration_check.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-29T162954Z'
+graph_location = 'output_graphs_30k_long_run_mph_long_run_calibration_check-2021-10-06T102122Z/2010-2020'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -23,7 +23,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 
 # Enter the years the simulation has ran for here?
-sim_years = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020] #2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028,
+             #2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -140,38 +141,54 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
 
 
 def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_name):
-    plt.plot(sim_years, model_rate, 'o-g', label="Model rate", color='steelblue')
-    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
+    plt.plot(sim_years, target_rate,  'o-g', label="Target rate", color='darkseagreen')
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     bars = sim_years
     x_pos = np.arange(len(bars))
-    plt.bar(x_pos, model_rates)
-    plt.xticks(x_pos, bars)
+    plt.bar(x_pos, model_rates, label="Model", color='thistle')
+    plt.xticks(x_pos, bars, rotation=90)
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
-def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
+def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_data_dict, x_label, y_label, title,
+                                       file_name):
     fig, ax = plt.subplots()
-    ax.plot(sim_years, mean_list)
-    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1)
-    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
+    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1, label="UI (2.5-92.5)")
+
+    if target_data_dict['double']:
+        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
+                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
+                     fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
+        plt.errorbar(target_data_dict['second']['year'], target_data_dict['second']['value'],
+                     label=target_data_dict['second']['label'], yerr=target_data_dict['second']['ci'],
+                     fmt='o', color='red', ecolor='mistyrose', elinewidth=3, capsize=0)
+
+    elif not target_data_dict['double']:
+        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
+                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
+                     fmt='o', color='red', ecolor='pink', elinewidth=3, capsize=0)
+
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 # ============================================  DENOMINATORS... ======================================================
@@ -195,7 +212,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
 #plt.ylabel('Pregnancies (mean)')
 #plt.title('Mean number of pregnancies')
 ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
-##plt.show()
+#plt.show()
 
 
 pregnancy_poll_results = extract_results(
@@ -227,13 +244,14 @@ total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
 
 
 fig, ax = plt.subplots()
-ax.plot(sim_years, total_pregnancies_per_year)
-ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1)
+ax.plot(sim_years, total_pregnancies_per_year, label='Model')
+ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1, label="UI (2.5-92.5)")
 plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
-#plt.show()
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
 births_results = extract_results(
@@ -251,12 +269,13 @@ uq_bi = get_mean_and_quants(births_results)[2]
 
 fig, ax = plt.subplots()
 ax.plot(sim_years, total_births_per_year)
-ax.fill_between(sim_years, lq_bi, uq_bi, color='b', alpha=.1)
+ax.fill_between(sim_years, lq_bi, uq_bi, color='b', alpha=.1, label="UI (2.5-92.5)")
 plt.xlabel('Year')
 plt.ylabel('Births (mean)')
 plt.title('Mean number of Births per Year')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
-#plt.show()
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
+plt.show()
 
 # todo: some testing looking at live births vs total births...
 
@@ -346,36 +365,34 @@ for year in sim_years:
 
     yearly_anc8_rates.append((eight_or_more_visits / anc_total) * 100)
 
-target_rate_an = list()
-for year in sim_years:
-    target_rate_an.append(95)
+target_anc1_dict = {'double': True,
+                    'first': {'year': 2010, 'value': 94, 'label': 'DHS 2010', 'ci':0},
+                    'second': {'year': 2015, 'value': 95, 'label': 'DHS 2015', 'ci':0}}
+target_anc4_dict = {'double': True,
+                    'first': {'year': 2010, 'value': 45.5, 'label': 'DHS 2010', 'ci': 0},
+                    'second': {'year': 2015, 'value': 51, 'label': 'DHS 2015', 'ci': 0}}
 
-target_rate_anc4 = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_anc4.append(46)
-    else:
-        target_rate_anc4.append(51)
-
-line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_rate_an,'Year', '% of total births',
-                                   'Proportion of women attending >= 1 ANC contact per year', 'anc_prop_anc1')
-line_graph_with_ci_and_target_rate(yearly_anc4_rates, anc4_lqs, anc4_uqs, target_rate_anc4, 'Year', '% total births',
-                                   'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
+line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_anc1_dict,'Year',
+                                   '% of total births',  'Proportion of women attending >= 1 ANC contact per year',
+                                   'anc_prop_anc1')
+line_graph_with_ci_and_target_rate(yearly_anc4_rates, anc4_lqs, anc4_uqs, target_anc4_dict,
+                                   'Year', '% total births', 'Proportion of women attending >= 4 ANC contact per year',
+                                   'anc_prop_anc4')
 
 #simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
 #                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
 #simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
 #                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
-plt.plot(sim_years, yearly_anc1_rates, 'o-g', label="anc1", color='palevioletred')
-plt.plot(sim_years, yearly_anc4_rates, 'o-g',  label="anc4+", color='crimson')
-plt.plot(sim_years, yearly_anc8_rates, 'o-g', label="anc8+", color='pink')
+plt.plot(sim_years, yearly_anc1_rates,  label="anc1", color='palevioletred')
+plt.plot(sim_years, yearly_anc4_rates,   label="anc4+", color='crimson')
+plt.plot(sim_years, yearly_anc8_rates,  label="anc8+", color='pink')
 plt.xlabel('Year')
 plt.ylabel('% total births')
 plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
+plt.show()
 
 anc_count_df = anc_count_df.drop([0])
 for year in sim_years:
@@ -411,8 +428,8 @@ ax.bar(labels, anc_count_df.loc[1], width, label=1,)
 ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
+plt.show()
 
 
 # Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
@@ -486,8 +503,8 @@ ax.bar(labels, anc_before_four_months, width, label='<4m')
 ax.set_ylabel('% of ANC1 visits by gestational age')
 ax.set_title('Gestational age at first ANC visit by Year')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
+plt.show()
 
 target_rate_eanc4 = list()
 for year in sim_years:
@@ -512,12 +529,8 @@ ax.bar(labels, prop_late, width, label='Late ANC4+')
 ax.set_ylabel('% of women attending ANC4+')
 ax.set_title('Early vs Late initation of ANC4+')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
-#plt.show()
-
-
-
-
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
+plt.show()
 
 # TODO: quartiles, median month ANC1
 # todo: target rates
@@ -550,14 +563,11 @@ total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
 fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
 fd_uqs = [x + y for x, y in zip(health_centre_uq, hospital_uq)]
 
-target_rate_fd = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_fd.append(73)
-    else:
-        target_rate_fd.append(91)
+target_fd_dict = {'double': True,
+                'first':{'year': 2010, 'value': 73, 'label': 'DHS 2010', 'ci':0},
+                    'second':{'year': 2015, 'value': 91, 'label': 'DHS 2015', 'ci':0}}
 
-line_graph_with_ci_and_target_rate(total_fd_rate, fd_lqs, fd_uqs, target_rate_fd, 'Year', '% of total births',
+line_graph_with_ci_and_target_rate(total_fd_rate, fd_lqs, fd_uqs, target_fd_dict, 'Year', '% of total births',
                                    'Proportion of Women Delivering in a Health Facility per Year',
                                    'sba_prop_facility_deliv')
 
@@ -573,8 +583,8 @@ ax.bar(labels, home_birth_rate, width, label='Home Birth')
 ax.set_ylabel('% of Births by Location')
 ax.set_title('Proportion of Total Births by Location of Delivery')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
+plt.show()
 
 
 # 3.) Postnatal Care
@@ -621,33 +631,21 @@ pnc1_plus_rate_neo = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means_neo, tot
 pnc_neo_lqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_lqs_neo, total_births_per_year)]
 pnc_neo_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs_neo, total_births_per_year)]
 
-maternal_target = list()
-newborn_target = list()
-for year in sim_years:
-    newborn_target.append(60)
-    if year < 2015:
-        maternal_target.append(50)
-    else:
-        maternal_target.append(48)
 
-line_graph_with_ci_and_target_rate(pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs, maternal_target, 'Year',
-                                   '% of total births',
-                                   'Proportion of Women post-delivery attending PNC per year',
-                                   'pnc_mat')
-line_graph_with_ci_and_target_rate(pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs, newborn_target, 'Year',
+target_mpnc_dict = {'double': True,
+                    'first':{'year': 2010, 'value': 50, 'label': 'DHS 2010', 'ci':0},
+                    'second':{'year': 2015, 'value': 48, 'label': 'DHS 2015', 'ci':0}}
+
+target_npnc_dict = {'double': False,
+                    'first':{'year': 2015, 'value': 60, 'label': 'DHS 2015', 'ci':0}}
+
+line_graph_with_ci_and_target_rate(pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs, target_mpnc_dict,
+                                   'Year', '% of total births','Proportion of Women post-delivery attending PNC per '
+                                                               'year', 'pnc_mat')
+
+line_graph_with_ci_and_target_rate(pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs, target_npnc_dict, 'Year',
                                    '% of total births', 'Proportion of Neonates per year attending PNC',
                                    'pnc_neo')
-
-plt.plot(sim_years, pnc_1_plus_rate_mat, 'o-g', label="Maternal Model", color='darkturquoise')
-plt.plot(sim_years, pnc1_plus_rate_neo, 'o-g', label="Neonatal Model", color='olivedrab')
-plt.plot(sim_years, maternal_target, 'o-g', label="Maternal Target", color='powderblue')
-plt.plot(sim_years, newborn_target, 'o-g', label="Neonatal Target", color='palegreen')
-plt.xlabel('Year')
-plt.ylabel('Proportion of total births')
-plt.title('Yearly trends for PNC1 attendance')
-plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
-#plt.show()
 
 
 def get_early_late_pnc_split(module, target, file_name):
@@ -678,8 +676,8 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.set_ylabel('% of PNC 1 visits')
     ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
     ax.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 get_early_late_pnc_split('labour', 'Maternal', 'pnc_maternal_early')
@@ -703,11 +701,12 @@ final_twining_rate = [(x / y) * 100 for x, y in zip(mean_twin_births, total_deli
 lq_rate = [(x / y) * 100 for x, y in zip( get_mean_and_quants(twins_results)[1], total_deliveries)]
 uq_rate = [(x / y) * 100 for x, y in zip( get_mean_and_quants(twins_results)[2], total_deliveries)]
 
-target_rate_twins = list()
-for year in sim_years:
-    target_rate_twins.append(4)
 
-line_graph_with_ci_and_target_rate(final_twining_rate, lq_rate, uq_rate, target_rate_twins, 'Year',
+target_twin_dict = {'double': False,
+                    'first': {'year': 2010, 'value': 3.9, 'label': 'DHS 2010', 'ci':0}}
+
+# todo: ADD additional HIV report data?
+line_graph_with_ci_and_target_rate(final_twining_rate, lq_rate, uq_rate, target_twin_dict, 'Year',
                                    'Rate per 100 pregnancies', 'Yearly trends for Twin Births', 'twin_rate')
 
 
@@ -715,14 +714,13 @@ line_graph_with_ci_and_target_rate(final_twining_rate, lq_rate, uq_rate, target_
 # Ectopic pregnancies/Total pregnancies
 ectopic_data = get_comp_mean_and_rate('ectopic_unruptured', total_pregnancies_per_year, an_comps, 1000)
 
-target_rate = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate.append(4.9)
-    else:
-        target_rate.append(3.6)
+target_ect_dict = {'double': True,
+                    'first': {'year': 2010, 'value': 4.9, 'label': 'GBD 2010', 'ci': 0},
+                    'second': {'year': 2015, 'value': 3.6, 'label': 'GBD 2015', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(ectopic_data[0], ectopic_data[1], ectopic_data[2], target_rate, 'Year',
+# todo: if were using GBD data why cant we have this rate yearly?
+
+line_graph_with_ci_and_target_rate(ectopic_data[0], ectopic_data[1], ectopic_data[2], target_ect_dict, 'Year',
                                    'Rate per 100 pregnancies', 'Yearly trends for Ectopic Pregnancy', 'ectopic_rate')
 
 # Ruptured ectopic pregnancies / Total Pregnancies
@@ -743,13 +741,11 @@ simple_line_chart(proportion_of_ectopics_that_rupture_per_year, target_rate_rup,
 # Spontaneous Abortions....
 spotaneous_abortion_data = get_comp_mean_and_rate('spontaneous_abortion',
                                                   total_completed_pregnancies_per_year, an_comps, 1000)
-
-target_rate_sa = list()
-for year in sim_years:
-    target_rate_sa.append(189)
+target_sa_dict = {'double': False,
+                   'first': {'year': 2016, 'value': 189, 'label': 'Dellicour et al.', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(spotaneous_abortion_data[0], spotaneous_abortion_data[1],
-                                   spotaneous_abortion_data[2], target_rate_sa, 'Year',
+                                   spotaneous_abortion_data[2], target_sa_dict, 'Year',
                                    'Rate per 1000 completed pregnancies', 'Yearly rate of Miscarriage',
                                    'miscarriage_rate')
 
@@ -764,15 +760,13 @@ simple_bar_chart(proportion_of_complicated_sa_per_year, 'Year', '% of Total Misc
 # Induced Abortions...
 id_data = get_comp_mean_and_rate('induced_abortion', total_completed_pregnancies_per_year, an_comps, 1000)
 
-target_rate_ia = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_ia.append(86)
-    else:
-        target_rate_ia.append(159)
+target_ia_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 86, 'label': 'Levandowski et al.', 'ci': 0},
+                  'second': {'year': 2015, 'value': 159, 'label': 'Polis et al.', 'ci': 0},
+                  }
 
 line_graph_with_ci_and_target_rate(id_data[0], id_data[1],
-                                   id_data[2], target_rate_ia, 'Year',
+                                   id_data[2], target_ia_dict, 'Year',
                                    'Rate per 1000 completed pregnancies', 'Yearly rate of Induced Abortion',
                                    'abortion_rate')
 
@@ -784,38 +778,37 @@ simple_bar_chart(proportion_of_complicated_ia_per_year, 'Year', '% of Total Abor
                  'Proportion of Abortions leading to complications', 'abortion_prop_complicated')
 
 # --------------------------------------------------- Syphilis Rate... ------------------------------------------------
-syphilis_data = get_comp_mean_and_rate('syphilis', total_completed_pregnancies_per_year, an_comps,
-                                                   1000)
-target_rate_syph = list()
-for year in sim_years:
-    target_rate_syph.append(20)
+syphilis_data = get_comp_mean_and_rate('syphilis', total_completed_pregnancies_per_year, an_comps, 1000)
+
+target_syph_dict = {'double': False,
+                    'first': {'year': 2018, 'value': 20, 'label': 'HIV rpt data', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(syphilis_data[0], syphilis_data[1],
-                                   syphilis_data[2], target_rate_syph, 'Year',
+                                   syphilis_data[2], target_syph_dict, 'Year',
                                    'Rate per 1000 completed pregnancies', 'Yearly rate of Syphilis',
                                    'syphilis_rate')
 
 # ------------------------------------------------ Gestational Diabetes... -------------------------------------------
 gdm_data = get_comp_mean_and_rate('gest_diab', total_completed_pregnancies_per_year, an_comps,
-                                              1000)
-target_rate_gdm = list()
-for year in sim_years:
-    target_rate_gdm.append(16)
+                                            1000)
+
+target_gdm_dict = {'double': False,
+                   'first': {'year': 2019, 'value': 16, 'label': 'Phiri et al.', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(gdm_data[0], gdm_data[1],
-                                   gdm_data[2], target_rate_gdm, 'Year',
+                                   gdm_data[2], target_gdm_dict, 'Year',
                                    'Rate per 1000 completed pregnancies', 'Yearly rate of Gestational Diabetes',
                                    'gest_diab_rate')
 
 
 # ------------------------------------------------ PROM... -----------------------------------------------------------
 prom_data = get_comp_mean_and_rate('PROM', total_births_per_year, an_comps, 1000)
-target_rate_prom = list()
-for year in sim_years:
-    target_rate_prom.append(27)
+
+target_prm_dict = {'double': False,
+                   'first': {'year': 2020, 'value': 27, 'label': 'Onwughara et al.', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(prom_data[0], prom_data[1],
-                                   prom_data[2], target_rate_prom, 'Year',
+                                   prom_data[2], target_prm_dict, 'Year',
                                    'Rate per 1000 births', 'Yearly rate of PROM',
                                    'prom_rate')
 
@@ -845,16 +838,15 @@ def get_anaemia_graphs(df, timing):
     no_anaemia_lqs = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[1], total_births_per_year)]
     no_anaemia_uqs = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[2], total_births_per_year)]
 
-    target_rate_an = list()
-    for year in sim_years:
-        if year < 2015:
-            target_rate_an.append(37.5)
-        else:
-            target_rate_an.append(45.1)
+    target_an_dict = {'double': True,
+                      'first': {'year': 2010, 'value': 37.5, 'label': 'DHS 2010', 'ci': 0},
+                      'second': {'year': 2015, 'value': 45.1, 'label': 'DHS 2015', 'ci': 0},
+                      }
 
     line_graph_with_ci_and_target_rate(prevalence_of_anaemia_per_year, no_anaemia_lqs,
-                                       no_anaemia_uqs, target_rate_an, 'Year', 'Prevalence at birth',
-                      f'Yearly prevalence of Anaemia (all severity) at {timing}', f'anaemia_prev_{timing}')
+                                       no_anaemia_uqs, target_an_dict, 'Year', 'Prevalence at birth',
+                                       f'Yearly prevalence of Anaemia (all severity) at {timing}',
+                                       f'anaemia_prev_{timing}')
 
 
     # todo: should maybe be total postnatal women still alive as opposed to births as will inflate
@@ -874,8 +866,8 @@ def get_anaemia_graphs(df, timing):
     plt.ylabel(f'Prevalence at {timing}')
     plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
+    plt.show()
 
 
 get_anaemia_graphs(anaemia_results, 'delivery')
@@ -893,56 +885,57 @@ spe_data = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp'
                                                                          1000, [an_comps, la_comps, pn_comps])
 ec_data = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', total_births_per_year, 1000,
                                                                         [an_comps, la_comps, pn_comps])
-target_rate_gh = list()
-target_rate_sgh = list()
-target_rate_mpe = list()
-target_rate_spe = list()
-target_rate_ec = list()
 
-for year in sim_years:
-    target_rate_gh.append(36.8)
-    target_rate_sgh.append(8.1)
-    target_rate_mpe.append(44)
-    target_rate_spe.append(22)
-    target_rate_ec.append(10)
+target_gh_dict = {'double': False,
+                  'first': {'year': 2019, 'value': 36.8, 'label': 'Noubiap et al.', 'ci': 0},
+                  }
 
-line_graph_with_ci_and_target_rate(gh_data[0], gh_data[1], gh_data[2], target_rate_gh, 'Year', 'Rate per 1000 births',
+line_graph_with_ci_and_target_rate(gh_data[0], gh_data[1], gh_data[2], target_gh_dict, 'Year', 'Rate per 1000 births',
                                    'Rate of Gestational Hypertension per Year', 'gest_htn_rate')
 
-line_graph_with_ci_and_target_rate(sgh_data[0], sgh_data[1], sgh_data[2], target_rate_sgh, 'Year',
+target_sgh_dict = {'double': False,
+                  'first': {'year': 2019, 'value': 8.1, 'label': 'Noubiap et al.', 'ci': 0},
+                  }
+line_graph_with_ci_and_target_rate(sgh_data[0], sgh_data[1], sgh_data[2], target_sgh_dict, 'Year',
                                    'Rate per 1000 births','Rate of Severe Gestational Hypertension per Year',
                                    'severe_gest_htn_rate')
-
-line_graph_with_ci_and_target_rate(mpe_data[0], mpe_data[1], mpe_data[2], target_rate_mpe, 'Year',
+target_mpe_dict = {'double': False,
+                  'first': {'year': 2019, 'value': 44, 'label': 'Noubiap et al', 'ci': 0},
+                  }
+line_graph_with_ci_and_target_rate(mpe_data[0], mpe_data[1], mpe_data[2], target_mpe_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Mild pre-eclampsia per Year',
                                    'mild_pre_eclampsia_rate')
-
-line_graph_with_ci_and_target_rate(spe_data[0], spe_data[1], spe_data[2], target_rate_spe, 'Year',
+target_spe_dict = {'double': False,
+                  'first': {'year': 2019, 'value': 22, 'label': 'Noubiap et al', 'ci': 0},
+                  }
+line_graph_with_ci_and_target_rate(spe_data[0], spe_data[1], spe_data[2], target_spe_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Severe pre-eclampsia per Year',
                                    'severe_pre_eclampsia_rate')
-
-line_graph_with_ci_and_target_rate(ec_data[0], ec_data[1], ec_data[2], target_rate_ec, 'Year',
+target_ec_dict = {'double': False,
+                  'first': {'year': 2019, 'value': 10, 'label': 'Vousden et al.', 'ci': 0},
+                  }
+line_graph_with_ci_and_target_rate(ec_data[0], ec_data[1], ec_data[2], target_ec_dict, 'Year',
                                    'Rate per 1000 births',
                                    'Rate of Eclampsia per Year', 'eclampsia_rate')
 
 #  ---------------------------------------------Placenta praevia... -------------------------------------------------
 pp_data = get_comp_mean_and_rate('placenta_praevia', total_pregnancies_per_year, an_comps, 1000)
-target_rate_pp = list()
-for year in sim_years:
-    target_rate_pp.append(5.67)
 
-line_graph_with_ci_and_target_rate(pp_data[0], pp_data[1], pp_data[2], target_rate_pp, 'Year',
+target_pp_dict = {'double': False,
+                  'first': {'year': 2017, 'value': 5.67, 'label': 'Senkoro et al.', 'ci': 0},
+                  }
+line_graph_with_ci_and_target_rate(pp_data[0], pp_data[1], pp_data[2], target_pp_dict, 'Year',
                                    'Rate per 1000 pregnancies', 'Rate of Placenta Praevia per Year', 'praevia_rate')
 
 #  ---------------------------------------------Placental abruption... -------------------------------------------------
 pa_data = get_comp_mean_and_rate_across_multiple_dataframes('placental_abruption', total_births_per_year, 1000,
-                                                                               [an_comps, la_comps])
-target_rate_pa = list()
-for year in sim_years:
-    target_rate_pa.append(3)
+                                                            [an_comps, la_comps])
 
+target_pa_dict = {'double': False,
+                  'first': {'year': 2015, 'value': 3, 'label': 'Macheku et al.', 'ci': 0},
+                  }
 
-line_graph_with_ci_and_target_rate(pa_data[0], pa_data[1], pa_data[2], target_rate_pa, 'Year', 'Rate per 1000 births',
+line_graph_with_ci_and_target_rate(pa_data[0], pa_data[1], pa_data[2], target_pa_dict, 'Year', 'Rate per 1000 births',
                   'Rate of Placental Abruption per Year', 'abruption_rate')
 
 # --------------------------------------------- Antepartum Haemorrhage... ---------------------------------------------
@@ -959,25 +952,26 @@ total_aph_rates = [x + y for x, y in zip(mm_aph_data[0], s_aph_data[0])]
 aph_lqs = [x + y for x, y in zip(mm_aph_data[1], s_aph_data[1])]
 aph_uqs = [x + y for x, y in zip(mm_aph_data[2], s_aph_data[2])]
 
-target_rate_aph = list()
-for year in sim_years:
-    target_rate_aph.append(6.4)
-line_graph_with_ci_and_target_rate(total_aph_rates, aph_lqs, aph_uqs, target_rate_aph, 'Year', 'Rate per 1000 births',
-                  'Rate of Antepartum Haemorrhage per Year', 'aph_rate')
+target_aph_dict = {'double': False,
+                  'first': {'year': 2015, 'value': 6.4, 'label': 'BEmONC.', 'ci': 0},
+                  }
+
+line_graph_with_ci_and_target_rate(total_aph_rates, aph_lqs, aph_uqs, target_aph_dict, 'Year', 'Rate per 1000 births',
+                                   'Rate of Antepartum Haemorrhage per Year', 'aph_rate')
 
 # --------------------------------------------- Preterm birth ... ------------------------------------------------
 early_ptl_data = get_comp_mean_and_rate('early_preterm_labour', total_births_per_year, la_comps, 100)
 late_ptl_data = get_comp_mean_and_rate('late_preterm_labour', total_births_per_year, la_comps, 100)
 
-target_rate_ptl = list()
-for year in sim_years:
-    target_rate_ptl.append(20)
+target_ptl_dict = {'double': False,
+                   'first': {'year': 2020, 'value': 6.4, 'label': 'Antony et al.', 'ci': 0},
+                   }
 
 total_ptl_rates = [x + y for x, y in zip(early_ptl_data[0], late_ptl_data[0])]
 ptl_lqs = [x + y for x, y in zip(early_ptl_data[1], late_ptl_data[1])]
 ltl_uqs = [x + y for x, y in zip(early_ptl_data[2], late_ptl_data[2])]
 
-line_graph_with_ci_and_target_rate(total_ptl_rates, ptl_lqs, ltl_uqs, target_rate_ptl, 'Year',
+line_graph_with_ci_and_target_rate(total_ptl_rates, ptl_lqs, ltl_uqs, target_ptl_dict, 'Year',
                                    'Proportion of total births', 'Preterm birth rate', 'ptb_rate')
 
 prop_early = [(x / y) * 100 for x, y in zip(early_ptl_data[0], total_ptl_rates)]
@@ -993,18 +987,19 @@ ax.bar(labels, prop_late, width, label='Late Preterm')
 ax.set_ylabel('% of total Preterm Births')
 ax.set_title('Early vs Late Preterm Births')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_preterm.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_preterm.png')
+plt.show()
 
 # todo plot early and late seperated
 
 # --------------------------------------------- Post term birth ... -----------------------------------------------
 potl_data = get_comp_mean_and_rate('post_term_labour', total_births_per_year, la_comps, 100)
-target_rate_potl = list()
-for year in sim_years:
-    target_rate_potl.append(3.2)
 
-line_graph_with_ci_and_target_rate(potl_data[0], potl_data[1], potl_data[2], target_rate_potl, 'Year',
+target_potl_dict = {'double': False,
+                    'first': {'year': 2014, 'value': 3.2, 'label': 'van den Broek et al.', 'ci': 0},
+                    }
+
+line_graph_with_ci_and_target_rate(potl_data[0], potl_data[1], potl_data[2], target_potl_dict, 'Year',
                                    'Proportion of total births', 'Post term birth rate', 'potl_rate')
 
 # ------------------------------------------- Antenatal Stillbirth ... -----------------------------------------------
@@ -1012,13 +1007,13 @@ an_sbr_per_year = [(x/y) * 1000 for x, y in zip(an_still_birth_data[0], total_bi
 an_sbr_lqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[1], total_births_per_year)]
 an_sbr_uqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[2], total_births_per_year)]
 
-target_rate_an_sb = list()
-for year in sim_years:
-    target_rate_an_sb.append(10)
+target_ansbr_dict = {'double': True,
+                     'first': {'year': 2010, 'value': 10, 'label': 'UN est.', 'ci': 0},
+                     'second': {'year': 2015, 'value': 8.15, 'label': 'UN est.', 'ci': 0},
+                     }
 
-line_graph_with_ci_and_target_rate(an_sbr_per_year, an_sbr_lqs, an_sbr_uqs, target_rate_an_sb, 'Year',
-                                   'Rate per 1000 births',
-                  'Antenatal Stillbirth Rate per Year', 'sbr_an')
+line_graph_with_ci_and_target_rate(an_sbr_per_year, an_sbr_lqs, an_sbr_uqs, target_ansbr_dict, 'Year',
+                                   'Rate per 1000 births',  'Antenatal Stillbirth Rate per Year', 'sbr_an')
 
 # ------------------------------------------------- Birth weight... --------------------------------------------------
 nb_outcomes_df = extract_results(
@@ -1043,22 +1038,25 @@ lbw_data = get_comp_mean_and_rate('low_birth_weight', total_births_per_year, nb_
 macro_data = get_comp_mean_and_rate('macrosomia', total_births_per_year, nb_outcomes_df, 100)
 sga_data = get_comp_mean_and_rate('small_for_gestational_age', total_births_per_year, nb_outcomes_df, 100)
 
-lbw_tr=list()
-macro_tr = list()
-dummy_tr = list()
-for year in sim_years:
-    dummy_tr.append(0)
-    macro_tr.append(5.13)
-    lbw_tr.append(12)
 
-line_graph_with_ci_and_target_rate(lbw_data[0], lbw_data[1], lbw_data[2], lbw_tr, 'Year',
+target_lbw_dict = {'double': True,
+                     'first': {'year': 2010, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
+                     'second': {'year': 2015, 'value': 12, 'label': 'DHS 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(lbw_data[0], lbw_data[1], lbw_data[2], target_lbw_dict, 'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Low Birth Weight',
                                    'neo_lbw_prev')
-line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], macro_tr,'Year',
+
+target_mac_dict = {'double': False,
+                    'first': {'year': 2019, 'value': 5.13, 'label': 'Ngwira et al.', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], target_mac_dict,'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Macrosomia',
                                    'neo_macrosomia_prev')
+dummy_dict = {'double': False,
+              'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(sga_data[0], sga_data[1], sga_data[2], dummy_tr, 'Year',
+line_graph_with_ci_and_target_rate(sga_data[0], sga_data[1], sga_data[2], dummy_dict, 'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Small for Gestational Age',
                                    'neo_sga_prev')
 
@@ -1074,16 +1072,21 @@ for year in sim_years:
     else:
         target_rate_ol.append(31)
 
-line_graph_with_ci_and_target_rate(ol_data[0], ol_data[1], ol_data[2], target_rate_ol, 'Year', 'Rate per 1000 births',
+target_ol_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 17, 'label': 'BEmONC 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 31, 'label': 'BEmONC 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(ol_data[0], ol_data[1], ol_data[2], target_ol_dict, 'Year', 'Rate per 1000 births',
                                    'Obstructed Labour Rate per Year', 'ol_rate')
 
 # --------------------------------------------- Uterine rupture... ---------------------------------------------------
 ur_data = get_comp_mean_and_rate('uterine_rupture', total_births_per_year, la_comps, 1000)
-target_rate_ur = list()
-for year in sim_years:
-    target_rate_ur.append(1.15)
 
-line_graph_with_ci_and_target_rate(ur_data[0], ur_data[1], ur_data[2], target_rate_ur, 'Year', 'Rate per 1000 births',
+target_ur_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 1.2, 'label': 'BEmONC 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 0.8, 'label': 'BEmONC 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(ur_data[0], ur_data[1], ur_data[2], target_ur_dict, 'Year', 'Rate per 1000 births',
                                    'Rate of Uterine Rupture per Year', 'ur_rate')
 
 # ---------------------------Caesarean Section Rate & Assisted Vaginal Delivery Rate... ------------------------------
@@ -1108,15 +1111,19 @@ cs_results = extract_results(
 cs_data = get_comp_mean_and_rate('caesarean_section', total_births_per_year, delivery_mode, 100)
 avd_data = get_comp_mean_and_rate('instrumental', total_births_per_year, delivery_mode, 100)
 
-target_rate_cs = list()
-target_rate_avd = list()
-for year in sim_years:
-    target_rate_cs.append(6.2)
-    target_rate_avd.append(1)
+target_cs_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 4.6, 'label': 'DHS 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 6, 'label': 'DHS 2015', 'ci': 0}}
+# todo: add bemonc estimates as well?
 
-line_graph_with_ci_and_target_rate(cs_data[0], cs_data[1], cs_data[2], target_rate_cs, 'Year',
+line_graph_with_ci_and_target_rate(cs_data[0], cs_data[1], cs_data[2], target_cs_dict, 'Year',
                                    'Proportion of total births', 'Caesarean Section Rate per Year',
                                    'caesarean_section_rate')
+target_avd_dict = {'double': False,
+                   'first': {'year': 2017, 'value': 1, 'label': 'HIV reports.', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(avd_data[0], avd_data[1], avd_data[2], target_avd_dict, 'Year',
+                                   'Proportion of total births', 'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
 
 proportions_dict_cs = dict()
 total_cs_per_year = list()
@@ -1148,22 +1155,22 @@ for year in sim_years:
 props_df = pd.DataFrame(data=proportions_dict_cs)
 props_df = props_df.fillna(0)
 
-labels = list(props_df.index)
+labels = list()
 values = list()
 for index in props_df.index:
-    values.append(props_df.loc[index].mean())
-
+    value = round(props_df.loc[index].mean(), 2)
+    values.append(value)
+    labels.append(f'{index} ({value}%)')
 sizes = values
+
 fig1, ax1 = plt.subplots()
-ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
-                shadow=True, startangle=90)
+ax1.pie(sizes, shadow=True, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.legend(labels, loc="best")
 plt.title(f'Proportion of total CS deliveries by indication')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
 plt.show()
 
-line_graph_with_ci_and_target_rate(avd_data[0], avd_data[1], avd_data[2], target_rate_avd, 'Year',
-                                   'Proportion of total births', 'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
 
 # ------------------------------------------ Maternal Sepsis Rate... --------------------------------------------------
 an_sep_data = get_comp_mean_and_rate('clinical_chorioamnionitis', total_births_per_year, an_comps, 1000)
@@ -1180,14 +1187,13 @@ total_sep_rates = [x + y + z for x, y, z in zip(an_sep_data[0], la_sep_data[0], 
 sep_lq = [x + y + z for x, y, z in zip(an_sep_data[1], la_sep_data[1], complete_pn_sep_lq)]
 sep_uq = [x + y + z for x, y, z in zip(an_sep_data[2], la_sep_data[2], complete_pn_sep_up)]
 
-target_rate_sep = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_sep.append(4.7)
-    else:
-        target_rate_sep.append(1.89)
 
-line_graph_with_ci_and_target_rate(total_sep_rates, sep_lq, sep_uq, target_rate_sep, 'Year',
+# todo: note, we would expect our rate to be higher than this
+target_sep_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 4.7, 'label': 'BEmONC 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 1.89, 'label': 'BEmONC 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(total_sep_rates, sep_lq, sep_uq, target_sep_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Maternal Sepsis per Year', 'sepsis_rate')
 
 # ----------------------------------------- Postpartum Haemorrhage... -------------------------------------------------
@@ -1198,14 +1204,11 @@ total_pph_rates = [x + y for x, y in zip(la_pph_data[0], pn_pph_data[0])]
 pph_lq = [x + y for x, y in zip(la_pph_data[1], pn_pph_data[1])]
 pph_uq = [x + y for x, y in zip(la_pph_data[2], pn_pph_data[2])]
 
-target_rate_pph = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_pph.append(16)
-    else:
-        target_rate_pph.append(14.6)
+target_pph_dict = {'double': True,
+                  'first': {'year': 2010, 'value': 16, 'label': 'BEmONC 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 14.6, 'label': 'BEmONC 2015', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(total_pph_rates, pph_lq, pph_uq, target_rate_pph, 'Year', 'Rate per 1000 births',
+line_graph_with_ci_and_target_rate(total_pph_rates, pph_lq, pph_uq, target_pph_dict, 'Year', 'Rate per 1000 births',
                   'Rate of Postpartum Haemorrhage per Year', 'pph_rate')
 
 # ------------------------------------------- Intrapartum Stillbirth ... -----------------------------------------------
@@ -1223,26 +1226,37 @@ ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[0], total_bi
 ip_sbr_lqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[1], total_births_per_year)]
 ip_sbr_uqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[2], total_births_per_year)]
 
-target_rate_ip_sb = list()
-for year in sim_years:
-    target_rate_ip_sb.append(10)
+target_ipsbr_dict = {'double': True,
+                     'first': {'year': 2010, 'value': 10, 'label': 'UN est.', 'ci': 0},
+                     'second': {'year': 2015, 'value': 8.15, 'label': 'UN est.', 'ci': 0},
+                     }
 
-line_graph_with_ci_and_target_rate(ip_sbr_per_year, ip_sbr_lqs, ip_sbr_uqs, target_rate_ip_sb, 'Year',
+line_graph_with_ci_and_target_rate(ip_sbr_per_year, ip_sbr_lqs, ip_sbr_uqs, target_ipsbr_dict, 'Year',
                                    'Rate per 1000 births', 'Intrapartum Stillbirth Rate per Year', 'sbr_ip')
 
 total_sbr = [x + y for x, y in zip(an_sbr_per_year, ip_sbr_per_year)]
 total_lqs = [x + y for x, y in zip(an_sbr_lqs, ip_sbr_lqs)]
 total_uqs = [x + y for x, y in zip(an_sbr_uqs, ip_sbr_uqs)]
 
-target_rate_sbr = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_sbr.append(20)
-    else:
-        target_rate_sbr.append(16.3)
+fig, ax = plt.subplots()
+ax.plot(sim_years, total_sbr, label="Model (mean)", color='deepskyblue')
+ax.fill_between(sim_years, total_lqs, total_uqs, color='b', alpha=.1)
+plt.errorbar(2010, 20, yerr=(23-17)/2, label='UN sb report', fmt='o', color='green', ecolor='mediumseagreen',
+             elinewidth=3, capsize=0)
+plt.errorbar(2015, 16.3, yerr=(18.1-14.7)/2, label='UN sb report', fmt='o', color='green', ecolor='mediumseagreen',
+             elinewidth=3, capsize=0)
+ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [20, 19, 19, 18, 18, 17, 17, 17, 17, 16],
+        label="UN IGCME", color='red')
+ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+                [17, 17, 17, 17, 17, 16, 16, 16, 15, 15],
+                [23, 22, 21, 20, 19, 18, 18, 18, 18, 18], color='pink', alpha=.1)
 
-line_graph_with_ci_and_target_rate(total_sbr, total_lqs, total_uqs, target_rate_sbr, 'Year', 'Rate per 1000 births',
-                  'Total Stillbirth Rate per Year', 'sbr_total')
+plt.xlabel('Year')
+plt.ylabel("Stillbirths per 1000 live births")
+plt.title('Stillbirth Rate per Year')
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr.png')
+plt.show()
 
 # ----------------------------------------- Fistula... -------------------------------------------------
 vv_fis_data = get_comp_mean_and_rate('vesicovaginal_fistula', total_births_per_year, pn_comps, 1000)
@@ -1252,13 +1266,12 @@ total_fistula_rates = [x + y for x, y in zip(vv_fis_data[0], rv_fis_data[0])]
 fis_lqs = [x + y for x, y in zip(vv_fis_data[1], rv_fis_data[1])]
 fis_uqs = [x + y for x, y in zip(vv_fis_data[2], rv_fis_data[2])]
 
-target_rate_fistula = list()
-for year in sim_years:
-    target_rate_fistula.append(6)
+target_fistula_dict = {'double': False,
+                       'first': {'year': 2015, 'value': 6, 'label': 'DHS 2015', 'ci': 0},
+                     }
 
-line_graph_with_ci_and_target_rate(total_fistula_rates, fis_lqs, fis_uqs, target_rate_fistula, 'Year',
-                                   'Rate per 1000 births',
-                  'Rate of Obstetric Fistula per Year', 'fistula_rate')
+line_graph_with_ci_and_target_rate(total_fistula_rates, fis_lqs, fis_uqs, target_fistula_dict, 'Year',
+                                   'Rate per 1000 births', 'Rate of Obstetric Fistula per Year', 'fistula_rate')
 
 # ==================================================== NEWBORN OUTCOMES ===============================================
 #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -----------------------------------
@@ -1266,15 +1279,15 @@ early_ns_data = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_ye
 early_ns_pn = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
 late_ns_data = get_comp_mean_and_rate('late_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
 
-target_rate_ns = list()
-for year in sim_years:
-    target_rate_ns.append(39.3)
+target_nsep_dict = {'double': False,
+                    'first': {'year': 2020, 'value': 39.3, 'label': 'Fleischmann et al.', 'ci': 0},
+                     }
 
 total_ns_rates = [x + y + z for x, y, z in zip(early_ns_data[0], early_ns_pn[0], late_ns_data[0])]
 ns_lqs = [x + y + z for x, y, z in zip(early_ns_data[1], early_ns_pn[1], late_ns_data[1])]
 ns_uqs = [x + y + z for x, y, z in zip(early_ns_data[2], early_ns_pn[2], late_ns_data[2])]
 
-line_graph_with_ci_and_target_rate(total_ns_rates, ns_lqs, ns_uqs, target_rate_ns,  'Year', 'Rate per 1000 births',
+line_graph_with_ci_and_target_rate(total_ns_rates, ns_lqs, ns_uqs, target_nsep_dict,  'Year', 'Rate per 1000 births',
                   'Rate of Neonatal Sepsis per year', 'neo_sepsis_rate')
 
 # TODO: more analysis on rate by timing?
@@ -1293,31 +1306,34 @@ target_rate_enceph = list() # todo: replace
 for year in sim_years:
     target_rate_enceph.append(19)
 
-line_graph_with_ci_and_target_rate(total_enceph_rates, enceph_lq, enceph_uq, target_rate_enceph,   'Year',
-                                   'Rate per 1000 births',
-                  'Rate of Neonatal Encephalopathy per year', 'neo_enceph_rate')
+target_enceph_dict = {'double': True,
+                     'first': {'year': 2010, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},
+                     'second': {'year': 2015, 'value': 18.59, 'label': 'GBD 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(total_enceph_rates, enceph_lq, enceph_uq, target_enceph_dict,   'Year',
+                                   'Rate per 1000 births', 'Rate of Neonatal Encephalopathy per year',
+                                   'neo_enceph_rate')
 
 # ----------------------------------------- Respiratory Depression ---------------------------------------------------
 rd_data = get_comp_mean_and_rate('not_breathing_at_birth', total_births_per_year, nb_outcomes_df, 1000)
 
-target_rate_rd = list() # todo: replace
-for year in sim_years:
-    target_rate_rd.append(0)
+dummy_dict = {'double': False,
+              'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(rd_data[0], rd_data[1], rd_data[2], target_rate_rd, 'Year', 'Rate per 1000 births',
-                  'Rate of Neonatal Respiratory Depression per year', 'neo_resp_depression_rate')
+line_graph_with_ci_and_target_rate(rd_data[0], rd_data[1], rd_data[2], dummy_dict, 'Year', 'Rate per 1000 births',
+                                   'Rate of Neonatal Respiratory Depression per year', 'neo_resp_depression_rate')
 
 # ----------------------------------------- Respiratory Distress Syndrome --------------------------------------------
-ept = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0] # todo: should be live births
+ept = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0]  # todo: should be live births
 lpt = get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour')[0]
 total_ptbs = [x + y for x, y in zip(ept, lpt)]
 
 rds_data = get_comp_mean_and_rate('respiratory_distress_syndrome', total_ptbs, nb_outcomes_df, 1000)
 
-target_rate_rds = list()  # todo: replace
-for year in sim_years:
-    target_rate_rds.append(350)
-line_graph_with_ci_and_target_rate(rds_data[0], rds_data[1], rds_data[2], target_rate_rds, 'Year',
+target_rds_dict = {'double': False,
+                   'first': {'year': 2019, 'value': 350, 'label': 'Muhe et al.', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(rds_data[0], rds_data[1], rds_data[2], target_rds_dict, 'Year',
                                    'Rate per 1000 preterm births',
                                    'Rate of Preterm Respiratory Distress Syndrome per year', 'neo_rds_rate')
 
@@ -1346,8 +1362,8 @@ plt.xlabel('Year')
 plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
-#plt.show()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
+plt.show()
 
 
 # Breastfeeding
