@@ -4851,9 +4851,71 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
+
+        # request a general anaesthetic
+        general_anaesthetic_item_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Halothane (fluothane)_250ml_CMST", 'Item_Code'])[0]
+        # clean the site of the surgery
+        sterilise_surgical_site_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
+        # tools to begin surgery
+        scalpel_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Scalpel blade size 22 (individually wrapped)_100_CMST",
+                            'Item_Code'])[0]
+        # administer an IV
+        cannula_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Cannula iv  (winged with injection pot) 20_each_CMST",
+                            'Item_Code'])[0]
+        iv_giving_set_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Giving set iv administration + needle 15 drops/ml_each_CMST",
+                            'Item_Code'])[0]
+        iv_fluid_code = pd.unique(
+            consumables.loc[consumables['Items'] == "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
+                            'Item_Code'])[0]
+        # repair incision made
+        suture_pack_code = pd.unique(consumables.loc[consumables['Items'] == "Suture pack", 'Item_Code'])[0]
+        gauze_code = pd.unique(consumables.loc[consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
+                                               'Item_Code'])[0]
+        # administer pain killer
+        painkiller_code = pd.unique(consumables.loc[consumables['Items'] == 'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                                    'Item_Code'])[0]
+        # administer antibiotic
+        antibiotic_code = \
+            pd.unique(consumables.loc[consumables['Items'] == "Ampicillin injection 500mg, PFR_each_CMST",
+                                      'Item_Code'])[0]
+        # equipment used by surgeon, gloves and facemask
+        gloves_code = pd.unique(
+            consumables.loc[consumables['Items'] == 'Disposables gloves, powder free, 100 pieces per box',
+                            'Item_Code'])[0]
+        facemask_code = pd.unique(
+            consumables.loc[consumables['Items'] == 'surgical face mask, disp., with metal nose piece_50_IDA',
+                            'Item_Code'])[0]
+        # request syringe
+        syringe_code = pd.unique(consumables.loc[consumables['Items'] == "Syringe, Autodisable SoloShot IX ",
+                                                 'Item_Code'])[0]
+        consumables_for_surgery = {
+            'Intervention_Package_Code': dict(),
+            'Item_Code': {general_anaesthetic_item_code: 1,
+                          sterilise_surgical_site_code: 1,
+                          scalpel_code: 1,
+                          cannula_code: 1,
+                          iv_giving_set_code: 1,
+                          iv_fluid_code: 1,
+                          suture_pack_code: 1,
+                          gauze_code: 1,
+                          painkiller_code: 1,
+                          antibiotic_code: 1,
+                          gloves_code: 1,
+                          facemask_code: 1,
+                          syringe_code: 1
+                          }
+        }
+
+
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
         surgically_treated_codes = ['322', '211', '212', '323', '722', '291', '241', '811', '812', '813a', '813b',
@@ -4876,76 +4938,68 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert len(relevant_codes) > 0
         # choose an injury to treat
         treated_code = rng.choice(relevant_codes)
-        injury_columns = persons_injuries.columns
-        # create a dictionary to store the recovery times for each injury in days
-        minor_surg_recov_time_days = {
-            '322': 180,
-            '323': 180,
-            '722': 49,
-            '211': 49,
-            '212': 49,
-            '291': 7,
-            '241': 7,
-            '811': 63,
-            '812': 63,
-            '813a': 63,
-            '813b': 63,
-            '813c': 63,
-        }
         # need to determine whether this person has an injury which will treated with external fixation
         external_fixation = False
         external_fixation_codes = ['811', '812', '813a', '813b', '813c']
         if treated_code in external_fixation_codes:
-            external_fixation = True
-        # assign a recovery time for the treated person from the dictionary, get the column which the injury is stored
-        # in
-        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
-        # assign a recovery date
-        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = \
-            self.sim.date + DateOffset(days=minor_surg_recov_time_days[treated_code])
-        # make sure the injury recovery date is in the future
-        assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        # If surgery requires external fixation, request the materials as part of the appointment footprint
-        if external_fixation:
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             item_code_external_fixator = pd.unique(
                 consumables.loc[consumables['Items'] == 'External fixator', 'Item_Code'])[0]
-            consumables_external_fixation = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_external_fixator: 1}
+            consumables_for_surgery['Item_Code'].update({item_code_external_fixator: 1})
+        request_outcome = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_for_surgery,
+            to_log=True)
+        if request_outcome:
+            injury_columns = persons_injuries.columns
+            # create a dictionary to store the recovery times for each injury in days
+            minor_surg_recov_time_days = {
+                '322': 180,
+                '323': 180,
+                '722': 49,
+                '211': 49,
+                '212': 49,
+                '291': 7,
+                '241': 7,
+                '811': 63,
+                '812': 63,
+                '813a': 63,
+                '813b': 63,
+                '813c': 63,
             }
-            is_external_fixator_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_external_fixation,
-                to_log=True)
-            if is_external_fixator_available:
-                logger.debug(key='rti_general_message',
-                             data=f"An external fixator is available for this minor surgery person {person_id}.")
 
-        # some injuries have a change in daly weight if they are treated, find all possible swappable codes
-        swapping_codes = RTI.SWAPPING_CODES[:]
-        # exclude any codes that could be swapped but are due to be treated elsewhere
-        treatment_plan = (
-            person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
-            person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
-        )
-        swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
-        if treated_code in swapping_codes:
-            road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [treated_code])
-        logger.debug(key='rti_general_message',
-                     data=f"This is RTI_Minor_Surgeries supplying minor surgeries for person {person_id} on date "
-                          f"{self.sim.date}!!!!!!")
-        # update the dataframe to reflect that this person is recieving medical care
-        df.at[person_id, 'rt_med_int'] = True
-        # Check if the injury has been given a recovery date
-        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
-        assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
-            'no recovery date given for this injury'
-        # remove code from minor surgeries list as it has now been treated
-        if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-            df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
-        assert treated_code not in df.loc[person_id, 'rt_injuries_for_minor_surgery'], \
-            ['Injury treated but code not removed', treated_code]
+            # assign a recovery time for the treated person from the dictionary, get the column which the injury is stored
+            # in
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
+            # assign a recovery date
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = \
+                self.sim.date + DateOffset(days=minor_surg_recov_time_days[treated_code])
+            # make sure the injury recovery date is in the future
+            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
+
+            # some injuries have a change in daly weight if they are treated, find all possible swappable codes
+            swapping_codes = RTI.SWAPPING_CODES[:]
+            # exclude any codes that could be swapped but are due to be treated elsewhere
+            treatment_plan = (
+                person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
+                person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
+            )
+            swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
+            if treated_code in swapping_codes:
+                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [treated_code])
+            logger.debug(key='rti_general_message',
+                         data=f"This is RTI_Minor_Surgeries supplying minor surgeries for person {person_id} on date "
+                              f"{self.sim.date}!!!!!!")
+            # update the dataframe to reflect that this person is recieving medical care
+            df.at[person_id, 'rt_med_int'] = True
+            # Check if the injury has been given a recovery date
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
+            assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
+                'no recovery date given for this injury'
+            # remove code from minor surgeries list as it has now been treated
+            if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
+            assert treated_code not in df.loc[person_id, 'rt_injuries_for_minor_surgery'], ['Injury treated not removed',
+                                                                                            treated_code]
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
