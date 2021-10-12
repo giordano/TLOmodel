@@ -129,8 +129,8 @@ def register_all_modules():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 #contraception.Contraception(resourcefilepath=resourcefilepath),
-                 dummy_contraception.DummyContraceptionModule(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 #dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
