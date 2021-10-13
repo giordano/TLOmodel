@@ -65,6 +65,7 @@ def create_rti_data(logfile):
     parsed_log = parse_log_file(logfile)
     rti_log = parsed_log['tlo.methods.rti']
     # get the demographic data of those in RTI
+
     demog = rti_log['rti_demography']
     # Get the total age demographics of those with RTI in the sim
     this_sim_ages = demog['age'].tolist()
