@@ -22,8 +22,8 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
-        self.pop_size = 20000
-        self.smaller_pop_size = 20000
+        self.pop_size = 10000
+        self.smaller_pop_size = 10000
         self.number_of_samples_in_parameter_range = 6
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
@@ -53,11 +53,15 @@ class TestScenario(BaseScenario):
 
 
     def draw_parameters(self, draw_number, rng):
-        percent_multiple = [34.4, 21.9, 24.85, 18.91, 20.8, 20.6]
-        percent_multiple_as_decimal = np.divide(percent_multiple, 100)
-        sources = ['Madubueze et al.', 'Sanyang et al.', 'Qi et al. 2006', 'Ganveer & Tiwani', 'Thani & Kehinde',
-                   'Akinpea et al.']
-
+        # use if fitting to data
+        # percent_multiple = [34.4, 21.9, 24.85, 18.91, 20.8, 20.6]
+        # percent_multiple_as_decimal = np.divide(percent_multiple, 100)
+        # sources = ['Madubueze et al.', 'Sanyang et al.', 'Qi et al. 2006', 'Ganveer & Tiwani', 'Thani & Kehinde',
+        #            'Akinpea et al.']
+        # use if creating own distrubtion
+        percent_multiple_max = 0.344
+        percent_multiple_min = 0.1891
+        percent_multiple_as_decimal = np.linspace(percent_multiple_min, percent_multiple_max, self.number_of_draws)
         def exponentialdecay(x, a, k):
             y = a * np.exp(k * x)
             return y
@@ -80,10 +84,7 @@ class TestScenario(BaseScenario):
             exponential_prediction = exponential_prediction[:-1]
             exponential_prediction = list(np.divide(exponential_prediction, sum(exponential_prediction)))
             probability_distributions.append(exponential_prediction)
-        multiplication_factor_max = 1.325581395 + 0.25
-        multiplication_factor_min = 1.325581395 - 0.25
-        scale_factor = np.linspace(multiplication_factor_min, multiplication_factor_max,
-                                   num=self.number_of_samples_in_parameter_range)
+
         return {
             'RTI': {'number_of_injured_body_regions_distribution': [[1, 2, 3, 4, 5, 6, 7, 8],
                                                                     probability_distributions[draw_number]]
