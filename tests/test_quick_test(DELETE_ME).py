@@ -25,7 +25,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 228
+seed = 7864
 
 # The resource files
 try:
@@ -161,7 +161,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=10000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
@@ -172,10 +172,10 @@ def test_run_all_labour():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=10000)
     set_all_women_to_go_into_labour(sim)
     #sim.modules['Labour'].current_parameters['prob_ip_still_birth'] = 1
-    sim.simulate(end_date=Date(2010, 2, 1))
+    sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
 def test_run_all_pregnant():
@@ -197,5 +197,5 @@ def test_run_all_pregnant():
 
 
 #test_run_all_pregnant()
-test_run_core_modules_normal_allocation_of_pregnancy()
-#test_run_all_labour()
+#test_run_core_modules_normal_allocation_of_pregnancy()
+test_run_all_labour()

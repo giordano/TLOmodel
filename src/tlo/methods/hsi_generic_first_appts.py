@@ -41,6 +41,7 @@ from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
 )
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -438,7 +439,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date,
+                                                     tclose=self.sim.date + pd.DateOffset(days=1))
 
             # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] and (mni[person_id]['sought_care_for_complication']) \
@@ -446,7 +448,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     event = HSI_Labour_ReceivesPostnatalCheck(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date,
+                                                     tclose=self.sim.date + pd.DateOffset(days=1))
 
         # -----  SUSPECTED DEPRESSION  -----
         if "Depression" in self.sim.modules:

@@ -1301,7 +1301,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                    (self.module.rng.random_sample() < params['prob_care_seeking_postnatal_emergency']):
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        pnc_one_maternal, priority=0, topen=self.sim.date, tclose=None)
+                        pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
 
                 # If she will not receive treatment for her complications we apply risk of death now
                 else:
@@ -1309,10 +1309,12 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                                    individual_id=individual_id)
             else:
                 # Women without complications in week one are scheduled to attend PNC in the future
+                appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41))
                 if mni[individual_id]['will_receive_pnc'] == 'late':
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         pnc_one_maternal, priority=0,
-                            topen=self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41)), tclose=None)
+                        topen=appt_date,
+                        tclose=appt_date + pd.DateOffset(days=1))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
