@@ -59,8 +59,8 @@ class TestScenario(BaseScenario):
         # sources = ['Madubueze et al.', 'Sanyang et al.', 'Qi et al. 2006', 'Ganveer & Tiwani', 'Thani & Kehinde',
         #            'Akinpea et al.']
         # use if creating own distrubtion
-        percent_multiple_max = 0.344
-        percent_multiple_min = 0.1891
+        percent_multiple_max = 0.31301999999999996 + 0.07
+        percent_multiple_min = 0.31301999999999996 - 0.07
         percent_multiple_as_decimal = np.linspace(percent_multiple_min, percent_multiple_max, self.number_of_draws)
         def exponentialdecay(x, a, k):
             y = a * np.exp(k * x)

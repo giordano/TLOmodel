@@ -113,7 +113,7 @@ def extract_results_for_irregular_logs(results_folder: Path,
 studies_tested = ['Madubueze et al.', 'Sanyang et al.', 'Qi et al. 2006', 'Ganveer & Tiwani', 'Thani & Kehinde',
                   'Akinpea et al.']
 
-outputspath = Path('./outputs/')
+outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
@@ -134,8 +134,8 @@ n_inj_per_person = extract_results_for_irregular_logs(results_folder, module="tl
                                                       column="number_of_injuries", index="date")
 deaths_from_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
                                             column="incidence of rti death per 100,000", index="date")
-percent_inhospital_mortality = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
-                                                   column="percentage died after med")
+# percent_inhospital_mortality = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
+#                                                    column="percentage died after med")
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
 average_ninj = summarize(n_inj_per_person, only_mean=True).mean(axis=0)
 average_ninj.name = 'z'
@@ -143,9 +143,9 @@ average_ninj.name = 'z'
 death_incidence = summarize(deaths_from_rti_incidence, only_mean=True).mean(axis=0)
 death_incidence.name = 'z'
 # death_incidence.index = studies_tested
-inhospital_mortality_results = pd.Series([percent_inhospital_mortality[0].mean().mean() for i in
-                                         range(0, info['number_of_draws'])])
-inhospital_mortality_results.name = 'z'
+# inhospital_mortality_results = pd.Series([percent_inhospital_mortality[0].mean().mean() for i in
+#                                          range(0, info['number_of_draws'])])
+# inhospital_mortality_results.name = 'z'
 # inhospital_mortality_results.index = studies_tested
 average_n_inj_in_kch = 7057 / 4776
 best_fit_found = min(average_ninj, key = lambda x: abs(x - average_n_inj_in_kch))
@@ -168,3 +168,8 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibratio
             "incidence_of_death_fit_by_hand.png", bbox_inches='tight')
 print('Best fitting distribution:')
 print(params.values[best_fit_index[0][0]])
+print('Average number of injuries')
+print(average_ninj.values[best_fit_index[0][0]])
+print('Incidence of death')
+print(death_incidence.values[best_fit_index[0][0]])
+
