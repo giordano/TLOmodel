@@ -569,10 +569,13 @@ class CareOfWomenDuringPregnancy(Module):
 
     def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
         individual_id = hsi_event.target
-        logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not run for '
-                                         f'person {individual_id}')
+        df = self.sim.population.props
 
-        self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
+        if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
+            logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not '
+                                             f'run for person {individual_id}')
+
+            self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
