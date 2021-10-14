@@ -128,6 +128,8 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
+search_range_lower = 1 - params['value'][0][1][0]#
+search_range_upper = 1 - params.iloc[-1]['value'][1][0]
 x_ticks = [f"Parameter \ndistribution {i + 1}" for i in range(0, len(params))]
 # 2) Extract a series for all runs:
 n_inj_per_person = extract_results_for_irregular_logs(results_folder, module="tlo.methods.rti", key="number_of_injuries_in_hospital",
@@ -157,15 +159,15 @@ plt.bar(np.arange(len(average_ninj)), average_ninj, color=colors)
 plt.xticks(np.arange(len(average_ninj)), x_ticks, rotation=90)
 plt.title('Average number of injuries of people in the health system, \nfor fitted negative exponential distribution')
 plt.ylabel('Average number of injuries')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
-            "ninj_fit_by_hand.png", bbox_inches='tight')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
+            f"ninj_fit_by_hand_{search_range_lower}_{search_range_upper}.png", bbox_inches='tight')
 # plot the incidence of death
 plt.bar(np.arange(len(death_incidence)), death_incidence, color=colors)
 plt.xticks(np.arange(len(death_incidence)), x_ticks, rotation=90)
 plt.title('Incidence of death, \nfor fitted negative exponential distribution')
 plt.ylabel('Incidence of death per 100,000')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
-            "incidence_of_death_fit_by_hand.png", bbox_inches='tight')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
+            f"incidence_of_death_fit_by_hand_{search_range_lower}_{search_range_upper}.png", bbox_inches='tight')
 print('Best fitting distribution:')
 print(params.values[best_fit_index[0][0]])
 print('Average number of injuries')
