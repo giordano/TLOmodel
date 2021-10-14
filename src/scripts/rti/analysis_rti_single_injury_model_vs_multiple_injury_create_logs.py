@@ -41,7 +41,7 @@ log_config = {
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/"
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 3
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
@@ -248,6 +248,10 @@ for i in range(0, nsim):
                                     directory=log_file_location + "multiple_injury")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
+        [[1, 2, 3, 4, 5, 6, 7, 8], [0.7362050184224718, 0.19421990546958515, 0.051237591074077896, 0.013517104401461814,
+                                    0.0035659777825202245, 0.0009407486372638106, 0.0002481810186400668,
+                                    6.547319397917849e-05]]
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 1
     # Run the simulation
     sim.simulate(end_date=end_date)
@@ -390,6 +394,11 @@ for i in range(0, nsim):
                                     directory=log_file_location + "multiple_injury_no_hs")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
+    sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
+        [[1, 2, 3, 4, 5, 6, 7, 8], [0.7362050184224718, 0.19421990546958515, 0.051237591074077896, 0.013517104401461814,
+                                    0.0035659777825202245, 0.0009407486372638106, 0.0002481810186400668,
+                                    6.547319397917849e-05]]
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 1
     # Run the simulation
     sim.simulate(end_date=end_date)
