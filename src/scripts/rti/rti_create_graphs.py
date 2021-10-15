@@ -214,8 +214,11 @@ def create_rti_data(logfile):
                      non_emergency_symptom_assigned.rt_post_med_death | non_emergency_symptom_assigned.rt_no_med_death |
                      non_emergency_symptom_assigned.rt_unavailable_med_death)
     non_emergency_symptom_assigned = non_emergency_symptom_assigned.loc[died_from_rti]
-    percent_non_emergency_died_without_med = \
-        sum(non_emergency_symptom_assigned.rt_no_med_death) / len(non_emergency_symptom_assigned)
+    if len(non_emergency_symptom_assigned) > 0:
+        percent_non_emergency_died_without_med = \
+            sum(non_emergency_symptom_assigned.rt_no_med_death) / len(non_emergency_symptom_assigned)
+    else:
+        percent_non_emergency_died_without_med = 0
     # Store the percentage of people who died after seeking healthcare in this sim
     percent_died_after_med = (rti_log['summary_1m']['number deaths post med'].sum() /
                               rti_log['model_progression']['total_sought_medical_care'].iloc[-1])
@@ -346,6 +349,9 @@ def create_rti_data(logfile):
     inc_minor = injury_category_incidence['inc_minor'].tolist()
     inc_other = injury_category_incidence['inc_other'].tolist()
     tot_inc_injuries = injury_category_incidence['tot_inc_injuries'].tolist()
+    # get the number of injuries per person in the health system
+    number_of_injuries_in_hospital = \
+        parsed_log['tlo.methods.rti']['number_of_injuries_in_hospital']['number_of_injuries'].mean()
     # Get the inpatient days usage. I take the overall inpatient day usage from all the simulations and the per-sim
     # inpatient day info
     # Create empty list to store inpatient day information in
@@ -531,6 +537,7 @@ def create_rti_data(logfile):
                     'percent_non_emergency_died_without_med': percent_non_emergency_died_without_med,
                     'scaled_number_of_deaths': rti_deaths['estimated_n_deaths'].sum(),
                     'extrapolated_dalys': extrapolated_dalys,
+                    'mean_ninj_in_hospital': number_of_injuries_in_hospital,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
                     'years_run': years_run,
@@ -1187,7 +1194,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     yearly_inc_lower = [inc - (1.96 * std) / nsim for inc, std in zip(yearly_average_inc,
                                                                             std_yearly_incidence)]
 
-    time = pd.to_datetime(gbd_time[:yearsrun])
+    time = pd.to_datetime(gbd_time[:len(yearly_average_inc)])
     plt.plot(time, yearly_average_inc, color='lightsalmon', label='Model', zorder=2)
     plt.fill_between(time.tolist(), yearly_inc_upper, yearly_inc_lower, alpha=0.5, color='lightsalmon',
                      label='95% C.I. model', zorder=1)
@@ -1221,7 +1228,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     yearly_death_inc_lower = [inc - (1.96 * std) / nsim for inc, std in zip(yearly_average_deaths,
                                                                             std_yearly_death_incidence)]
 
-    time = pd.to_datetime(gbd_time[:yearsrun])
+    time = pd.to_datetime(gbd_time[:len(yearly_death_inc_lower)])
     plt.plot(time, yearly_average_deaths, color='lightsalmon', label='Model', zorder=2)
     plt.fill_between(time.tolist(), yearly_death_inc_upper, yearly_death_inc_lower, alpha=0.5, color='lightsalmon',
                      label='95% C.I. model', zorder=1)
@@ -1413,11 +1420,13 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     injuries_per_sim = inj_loc_data.to_list()
     total_number_of_injuries = sum([float(sum(col)) / len(col) for col in zip(*injuries_per_sim)])
     total_n_crashes = r['total_in_rti'].mean()
-    # Calculate number of injuries per patient predicted in the model
-    Model_injuries_per_patient = total_number_of_injuries / total_n_crashes
+    # Calculate number of injuries per person predicted in the model
+    Model_injuries_per_person = total_number_of_injuries / total_n_crashes
+    # calculate the average number of injuries per person in hospital
+    mean_inj_per_patient = r['mean_ninj_in_hospital'].mean()
     # plot Sundets estimate compared to the model
-    plt.bar(np.arange(2), [Sundet_injuries_per_patient, Model_injuries_per_patient], color='lightsteelblue')
-    plt.xticks(np.arange(2), ['Injuries per person\nSundet et al. 2018', 'Injuries per person\n model'])
+    plt.bar(np.arange(3), [Sundet_injuries_per_patient, mean_inj_per_patient, Model_injuries_per_person], color='lightsteelblue')
+    plt.xticks(np.arange(3), ['Injuries per person\nSundet et al. 2018', 'Injuries per person\n in hospital', 'Injuries per person'])
     plt.title(f"Injuries per person, Model compared to Sundet et al. 2018"
               f"\n"
               f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")

@@ -110,6 +110,82 @@ def extract_results_for_irregular_logs(results_folder: Path,
 
         return results
 
+def extract_results_number_of_injuries(results_folder: Path,
+                                       module: str,
+                                       key: str,
+                                       column: str = None,
+                                       index: str = None,
+                                       custom_generate_series=None,
+                                       do_scaling: bool = False,
+                                      ) -> pd.DataFrame:
+    """Utility function to unpack results
+
+    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
+    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
+    index is the same in each run).
+    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
+    to the dataframe indicated, yields a new pd.Series.
+    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
+    (if available)
+    """
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    cols = pd.Index(range(info['number_of_draws']))
+
+
+    if custom_generate_series is None:
+
+        assert column is not None, "Must specify which column to extract"
+
+        results_index = None
+        if index is not None:
+            # extract the index from the first log, and use this ensure that all other are exactly the same.
+            filename = f"{module}.pickle"
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
+            results_index = df[index]
+
+        results = pd.DataFrame(columns=cols)
+        for draw in range(info['number_of_draws']):
+            ave_in_draw = []
+            for run in range(info['runs_per_draw']):
+                try:
+                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                    ave_in_draw.append(sum(df[column].sum()))
+
+                    # if index is not None:
+                    #     idx = df[index]
+                    #     assert idx.equals(results_index), "Indexes are not the same between runs
+                except KeyError:
+                    results[draw] = np.nan
+            results[draw] = ave_in_draw
+
+        # if 'index' is provided, set this to be the index of the results
+        if index is not None:
+            results.index = results_index
+
+        return results
+
+    else:
+        # A custom commaand to generate a series has been provided.
+        # No other arguements should be provided.
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+
+        # Collect results and then use pd.concat as indicies may be different betweeen runs
+        res = dict()
+        for draw in range(info['number_of_draws']):
+            for run in range(info['runs_per_draw']):
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                output_from_eval = custom_generate_series(df)
+                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
+        results = pd.concat(res.values(), axis=1).fillna(0)
+        results.columns = cols
+
+        return results
+
 studies_tested = ['Madubueze et al.', 'Sanyang et al.', 'Qi et al. 2006', 'Ganveer & Tiwani', 'Thani & Kehinde',
                   'Akinpea et al.']
 
@@ -132,15 +208,21 @@ search_range_lower = 1 - params['value'][0][1][0]#
 search_range_upper = 1 - params.iloc[-1]['value'][1][0]
 x_ticks = [f"Parameter \ndistribution {i + 1}" for i in range(0, len(params))]
 # 2) Extract a series for all runs:
-n_inj_per_person = extract_results_for_irregular_logs(results_folder, module="tlo.methods.rti", key="number_of_injuries_in_hospital",
-                                                      column="number_of_injuries", index="date")
+n_inj_overall = extract_results_number_of_injuries(results_folder, module="tlo.methods.rti", key='Injury_information',
+                                           column='Number_of_injuries')
+n_people_in_rti = extract_results(results_folder, module="tlo.methods.rti", key='summary_1m', column='number involved in a rti')
+average_n_inj_per_draw = n_inj_overall.mean()
+average_n_people_per_draw = summarize(n_people_in_rti, only_mean=True).sum()
+overall_average_n_inj_per_person = average_n_inj_per_draw / average_n_people_per_draw
+n_inj_per_person_in_hos = extract_results_for_irregular_logs(results_folder, module="tlo.methods.rti", key="number_of_injuries_in_hospital",
+                                                             column="number_of_injuries", index="date")
 deaths_from_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
                                             column="incidence of rti death per 100,000", index="date")
 # percent_inhospital_mortality = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
 #                                                    column="percentage died after med")
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
-average_ninj = summarize(n_inj_per_person, only_mean=True).mean(axis=0)
-average_ninj.name = 'z'
+average_ninj_in_hos = summarize(n_inj_per_person_in_hos, only_mean=True).mean(axis=0)
+average_ninj_in_hos.name = 'z'
 # average_ninj.index = studies_tested
 death_incidence = summarize(deaths_from_rti_incidence, only_mean=True).mean(axis=0)
 death_incidence.name = 'z'
@@ -150,13 +232,13 @@ death_incidence.name = 'z'
 # inhospital_mortality_results.name = 'z'
 # inhospital_mortality_results.index = studies_tested
 average_n_inj_in_kch = 7057 / 4776
-best_fit_found = min(average_ninj, key = lambda x: abs(x - average_n_inj_in_kch))
-best_fit_index = np.where(average_ninj == best_fit_found)
-colors = ['lightsalmon' for i in average_ninj]
+best_fit_found = min(average_ninj_in_hos, key = lambda x: abs(x - average_n_inj_in_kch))
+best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
+colors = ['lightsalmon' for i in average_ninj_in_hos]
 colors[best_fit_index[0][0]] = 'gold'
 # plot number of injuries
-plt.bar(np.arange(len(average_ninj)), average_ninj, color=colors)
-plt.xticks(np.arange(len(average_ninj)), x_ticks, rotation=90)
+plt.bar(np.arange(len(average_ninj_in_hos)), average_ninj_in_hos, color=colors)
+plt.xticks(np.arange(len(average_ninj_in_hos)), x_ticks, rotation=90)
 plt.title('Average number of injuries of people in the health system, \nfor fitted negative exponential distribution')
 plt.ylabel('Average number of injuries')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
@@ -171,7 +253,20 @@ plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibrati
 print('Best fitting distribution:')
 print(params.values[best_fit_index[0][0]])
 print('Average number of injuries')
-print(average_ninj.values[best_fit_index[0][0]])
+print(average_ninj_in_hos.values[best_fit_index[0][0]])
 print('Incidence of death')
 print(death_incidence.values[best_fit_index[0][0]])
+print('Overall n inj per person')
+print(overall_average_n_inj_per_person[best_fit_index[0][0]])
 
+plt.bar(np.arange(3),
+        [overall_average_n_inj_per_person[best_fit_index[0][0]],
+         average_ninj_in_hos.values[best_fit_index[0][0]],
+         average_n_inj_in_kch], color='lightsalmon')
+plt.xticks(np.arange(3), ['Mean number\n of injuries \nper person',
+                          'Mean number\n of injuries \nper person\n in hospital',
+                          'Mean number\n of injuries \nper person\n in KCH'])
+plt.ylabel('Average number of injuries per person')
+plt.title('Average number of injuries produced by best fitting distribution')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/number_of_injuries/"
+            f"Av_n_inj_fit_by_hand_{search_range_lower}_{search_range_upper}.png", bbox_inches='tight')
