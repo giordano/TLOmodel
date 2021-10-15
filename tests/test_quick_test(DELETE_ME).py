@@ -25,7 +25,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 7864
+seed = 228
 
 # The resource files
 try:
@@ -129,13 +129,12 @@ def register_all_modules():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 #dummy_contraception.DummyContraceptionModule(),
+                 #contraception.Contraception(resourcefilepath=resourcefilepath),
+                 dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           #service_availability=['*'],
-                                           disable_and_reject_all=True),
+                                           service_availability=['*']),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -172,10 +171,10 @@ def test_run_all_labour():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=10000)
+    sim.make_initial_population(n=2000)
     set_all_women_to_go_into_labour(sim)
     #sim.modules['Labour'].current_parameters['prob_ip_still_birth'] = 1
-    sim.simulate(end_date=Date(2010, 4, 1))
+    sim.simulate(end_date=Date(2010, 2, 1))
     check_dtypes(sim)
 
 def test_run_all_pregnant():
@@ -197,5 +196,5 @@ def test_run_all_pregnant():
 
 
 #test_run_all_pregnant()
-#test_run_core_modules_normal_allocation_of_pregnancy()
-test_run_all_labour()
+test_run_core_modules_normal_allocation_of_pregnancy()
+#test_run_all_labour()

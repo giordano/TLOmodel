@@ -1309,12 +1309,10 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                                    individual_id=individual_id)
             else:
                 # Women without complications in week one are scheduled to attend PNC in the future
-                appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41))
                 if mni[individual_id]['will_receive_pnc'] == 'late':
+                    appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41))
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        pnc_one_maternal, priority=0,
-                        topen=appt_date,
-                        tclose=appt_date + pd.DateOffset(days=1))
+                        pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
@@ -1362,7 +1360,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
                                                                     priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=None)
+                                                                    tclose=self.sim.date + pd.DateOffset(days=1))
             else:
                 self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
                                                                                individual_id=individual_id)

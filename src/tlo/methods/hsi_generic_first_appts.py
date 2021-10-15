@@ -4,6 +4,7 @@ the health system following the onset of acute generic symptoms.
 
 # Todo - the performance of algorthim here needs to be validated against real-world data
 """
+import pandas as pd
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.bladder_cancer import (
