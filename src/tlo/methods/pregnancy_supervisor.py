@@ -1151,7 +1151,6 @@ class PregnancySupervisor(Module):
                                                        'type': f'{type_abortion}',
                                                        'timing': 'antenatal'})
 
-
         # Women who have an abortion have key pregnancy variables reset
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
         self.mother_and_newborn_info[individual_id]['delete_mni'] = True
@@ -1177,7 +1176,7 @@ class PregnancySupervisor(Module):
                                                            'type': f'complicated_{type_abortion}',
                                                            'timing': 'antenatal'})
 
-        self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
+            self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
 
     def apply_risk_of_abortion_complications(self, individual_id, cause):
         """
