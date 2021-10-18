@@ -664,7 +664,7 @@ class PregnancySupervisor(Module):
                                           .when('.between(34,40)', params['aor_early_anc4_35_39'])
                                           .when('.between(39,45)', params['aor_early_anc4_40_44'])
                                           .when('.between(44,50)', params['aor_early_anc4_45_49']),
-                    Predictor('year', external=True).when('<2015', params['aor_early_anc4_2010'])
+                    Predictor('year', external=True).when('.between(2009,2015)', params['aor_early_anc4_2010'])
                                                     .when('>2014', params['aor_early_anc4_2015']),
                     Predictor('la_parity').when('.between(1,4)', params['aor_early_anc4_parity_2_3'])
                                           .when('.between(3,6)', params['aor_early_anc4_parity_4_5'])
@@ -1099,6 +1099,7 @@ class PregnancySupervisor(Module):
                                                             topen=first_anc_date,
                                                             tclose=first_anc_date + DateOffset(days=1))
 
+
     def apply_risk_of_spontaneous_abortion(self, gestation_of_interest):
         """
         This function applies risk of spontaneous abortion to a slice of data frame and is called by
@@ -1117,11 +1118,7 @@ class PregnancySupervisor(Module):
         # The apply_risk_of_abortion_complications function is called for women who lose their pregnancy. It resets
         # properties, set complications and care seeking
         for person in spont_abortion.loc[spont_abortion].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'spontaneous_abortion',
-                                                           'timing': 'antenatal'})
-
-            self.apply_risk_of_abortion_complications(person, 'spontaneous_abortion')
+            self.do_after_abortion(person, 'spontaneous_abortion')
 
     def apply_risk_of_induced_abortion(self, gestation_of_interest):
         """
@@ -1144,23 +1141,16 @@ class PregnancySupervisor(Module):
                              params['prob_induced_abortion_per_month'], index=at_risk.loc[at_risk].index)
 
         for person in abortion.loc[abortion].index:
-            # Similarly the abortion function is called for each of these women
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'induced_abortion',
-                                                           'timing': 'antenatal'})
+            self.do_after_abortion(person, 'induced_abortion')
 
-            self.apply_risk_of_abortion_complications(person, 'induced_abortion')
-
-    def apply_risk_of_abortion_complications(self, individual_id, cause):
-        """
-        This function makes changes to the data frame for women who have experienced induced or spontaneous abortion.
-        Additionally it determines if a woman will develop complications associated with pregnancy loss, manages care
-        seeking and schedules potential death
-        :param individual_id: individual_id
-        :param cause: 'type' of abortion (spontaneous abortion OR induced abortion) (str)
-        """
+    def do_after_abortion(self, individual_id, type_abortion):
         df = self.sim.population.props
         params = self.current_parameters
+
+        logger.info(key='maternal_complication', data={'person': individual_id,
+                                                       'type': f'{type_abortion}',
+                                                       'timing': 'antenatal'})
+
 
         # Women who have an abortion have key pregnancy variables reset
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
@@ -1175,61 +1165,68 @@ class PregnancySupervisor(Module):
         self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
             ind_or_df='individual', id_or_index=individual_id)
 
-        # Women who have spontaneous abortion are at higher risk of future spontaneous abortions, we store this
-        # accordingly
-        if cause == 'spontaneous_abortion':
+        if type_abortion == 'spontaneous_abortion':
             df.at[individual_id, 'ps_prev_spont_abortion'] = True
+            risk_of_complications = params['prob_complicated_sa']
 
-        random_draw = self.rng.random_sample()
+        else:
+            risk_of_complications = params['prob_complicated_ia']
 
-        complicated_sa = random_draw < params['prob_complicated_sa']
-        complicated_ia = random_draw < params['prob_complicated_ia']
+        if self.rng.random_sample() < risk_of_complications:
+            logger.info(key='maternal_complication', data={'person': individual_id,
+                                                           'type': f'complicated_{type_abortion}',
+                                                           'timing': 'antenatal'})
+
+        self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
+
+    def apply_risk_of_abortion_complications(self, individual_id, cause):
+        """
+        This function makes changes to the data frame for women who have experienced induced or spontaneous abortion.
+        Additionally it determines if a woman will develop complications associated with pregnancy loss, manages care
+        seeking and schedules potential death
+        :param individual_id: individual_id
+        :param cause: 'type' of abortion (spontaneous abortion OR induced abortion) (str)
+        """
+        df = self.sim.population.props
+        params = self.current_parameters
 
         # We apply a risk of developing specific complications associated with abortion type and store using a bitset
         # property
-        if (cause == 'induced_abortion') and complicated_ia:
+        if cause == 'induced_abortion':
             if self.rng.random_sample() < params['prob_injury_post_abortion']:
                 self.abortion_complications.set([individual_id], 'injury')
                 logger.info(key='maternal_complication', data={'person': individual_id,
                                                                'type': f'{cause}_injury',
                                                                'timing': 'antenatal'})
 
-        if ((cause == 'spontaneous_abortion') and complicated_sa) or ((cause == 'induced_abortion') and complicated_ia):
-            if self.rng.random_sample() < params['prob_haemorrhage_post_abortion']:
-                self.abortion_complications.set([individual_id], 'haemorrhage')
-                self.store_dalys_in_mni(individual_id, 'abortion_haem_onset')
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_haemorrhage',
-                                                               'timing': 'antenatal'})
-
-            if self.rng.random_sample() < params['prob_sepsis_post_abortion']:
-                self.abortion_complications.set([individual_id], 'sepsis')
-                self.store_dalys_in_mni(individual_id, 'abortion_sep_onset')
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_sepsis',
-                                                               'timing': 'antenatal'})
-
-            if not self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', first=True):
-                self.abortion_complications.set([individual_id], 'other')
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_other_comp',
-                                                               'timing': 'antenatal'})
-
-        # Then we determine if this woman will seek care, and schedule presentation to the health system
-        if self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', 'other', first=True):
-
+        if self.rng.random_sample() < params['prob_haemorrhage_post_abortion']:
+            self.abortion_complications.set([individual_id], 'haemorrhage')
+            self.store_dalys_in_mni(individual_id, 'abortion_haem_onset')
             logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': f'complicated_{cause}',
+                                                            'type': f'{cause}_haemorrhage',
+                                                            'timing': 'antenatal'})
+
+        if self.rng.random_sample() < params['prob_sepsis_post_abortion']:
+            self.abortion_complications.set([individual_id], 'sepsis')
+            self.store_dalys_in_mni(individual_id, 'abortion_sep_onset')
+            logger.info(key='maternal_complication', data={'person': individual_id,
+                                                           'type': f'{cause}_sepsis',
                                                            'timing': 'antenatal'})
 
-            # We assume only women with complicated abortions will experience disability
-            self.store_dalys_in_mni(individual_id, 'abortion_onset')
+        if not self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', first=True):
+            self.abortion_complications.set([individual_id], 'other')
+            logger.info(key='maternal_complication', data={'person': individual_id,
+                                                           'type': f'{cause}_other_comp',
+                                                           'timing': 'antenatal'})
 
-            # Determine if those women will seek care
-            self.care_seeking_pregnancy_loss_complications(individual_id, cause='abortion')
+        # We assume only women with complicated abortions will experience disability
+        self.store_dalys_in_mni(individual_id, 'abortion_onset')
 
-            # Schedule possible death
-            self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
+        # Determine if those women will seek care
+        self.care_seeking_pregnancy_loss_complications(individual_id, cause='abortion')
+
+        # Schedule possible death
+        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
                                     self.sim.date + DateOffset(days=7))
 
     def apply_risk_of_deficiencies_and_anaemia(self, gestation_of_interest):
