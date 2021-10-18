@@ -350,51 +350,71 @@ def create_rti_data(logfile):
     inc_other = injury_category_incidence['inc_other'].tolist()
     tot_inc_injuries = injury_category_incidence['tot_inc_injuries'].tolist()
     # get the number of injuries per person in the health system
-    number_of_injuries_in_hospital = \
+    try:
+        number_of_injuries_in_hospital = \
         parsed_log['tlo.methods.rti']['number_of_injuries_in_hospital']['number_of_injuries'].mean()
+    except KeyError:
+        number_of_injuries_in_hospital = 0
     # Get the inpatient days usage. I take the overall inpatient day usage from all the simulations and the per-sim
     # inpatient day info
     # Create empty list to store inpatient day information in
     this_sim_inpatient_days = []
     # Create a dataframe containing all instances of the RTI_MedicalIntervention event
-
-    inpatient_day_df = parsed_log['tlo.methods.healthsystem']['HSI_Event'].loc[
-        parsed_log['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
-    # iterate over the people in inpatient_day_df
-    for person in inpatient_day_df.index:
-        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
-        # means that this patient didn't require any so append (0)
-        try:
-            this_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
-        except KeyError:
-            this_sim_inpatient_days.append(0)
+    try:
+        inpatient_day_df = parsed_log['tlo.methods.healthsystem']['HSI_Event'].loc[
+            parsed_log['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+        # iterate over the people in inpatient_day_df
+        for person in inpatient_day_df.index:
+            # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+            # means that this patient didn't require any so append (0)
+            try:
+                this_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+            except KeyError:
+                this_sim_inpatient_days.append(0)
+    except KeyError:
+        this_sim_inpatient_days = [0]
 
     # get the consumables used in each simulation
-    consumables_list = parsed_log['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
-    # Create empty list to store the consumables used in the simulation
-    consumables_list_to_dict = []
-    for string in consumables_list:
-        consumables_list_to_dict.append(ast.literal_eval(string))
-    # Begin counting the number of consumables used in the simulation starting at 0
-    number_of_consumables_in_sim = 0
-    for dictionary in consumables_list_to_dict:
-        number_of_consumables_in_sim += sum(dictionary.values())
+    try:
+        consumables_list = parsed_log['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+        # Create empty list to store the consumables used in the simulation
+        consumables_list_to_dict = []
+        for string in consumables_list:
+            consumables_list_to_dict.append(ast.literal_eval(string))
+        # Begin counting the number of consumables used in the simulation starting at 0
+        number_of_consumables_in_sim = 0
+        for dictionary in consumables_list_to_dict:
+            number_of_consumables_in_sim += sum(dictionary.values())
+    except KeyError:
+        number_of_consumables_in_sim = 0
+
     health_system_time_usage = np.mean(parsed_log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'])
     # get the number of rti-hsi interaction events by type
     # get the dataframe of the health system events
-    appointments = parsed_log['tlo.methods.healthsystem']['HSI_Event']
-    # isolate appointments than ran
-    appointments = appointments.loc[appointments['did_run']]
-    # isolate appointments by type
-    per_sim_burn_treated = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Burn_Management'])
-    per_sim_frac_cast = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Fracture_Cast'])
-    per_sim_laceration = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Suture'])
-    per_sim_major_surg = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Major_Surgeries'])
-    per_sim_minor_surg = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries'])
-    per_sim_tetanus = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine'])
-    per_sim_pain_med = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management'])
-    per_sim_open_frac = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment'])
-    per_sim_shock = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Shock_Treatment'])
+    try:
+        appointments = parsed_log['tlo.methods.healthsystem']['HSI_Event']
+        # isolate appointments than ran
+        appointments = appointments.loc[appointments['did_run']]
+        # isolate appointments by type
+        per_sim_burn_treated = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Burn_Management'])
+        per_sim_frac_cast = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Fracture_Cast'])
+        per_sim_laceration = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Suture'])
+        per_sim_major_surg = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Major_Surgeries'])
+        per_sim_minor_surg = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries'])
+        per_sim_tetanus = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine'])
+        per_sim_pain_med = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management'])
+        per_sim_open_frac = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment'])
+        per_sim_shock = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Shock_Treatment'])
+    except KeyError:
+        per_sim_burn_treated = 0
+        per_sim_frac_cast = 0
+        per_sim_laceration = 0
+        per_sim_major_surg = 0
+        per_sim_minor_surg = 0
+        per_sim_tetanus = 0
+        per_sim_pain_med = 0
+        per_sim_open_frac = 0
+        per_sim_shock = 0
     # store the relating to the percentage of injury severity in both rural and urban settings
     per_sim_rural_severe = rti_log['injury_severity']['Percent_severe_rural'].tolist()
     per_sim_urban_severe = rti_log['injury_severity']['Percent_severe_urban'].tolist()
@@ -405,18 +425,21 @@ def create_rti_data(logfile):
     per_sim_average_percentage_lx_open = np.mean(proportions_of_open_lx_fractures_in_sim)
     # Get the number of surgeries
     # get rti appointments
-    health_system_events = parsed_log['tlo.methods.healthsystem']['HSI_Event']
-    rti_events = ['RTI_MedicalIntervention', 'RTI_Shock_Treatment', 'RTI_Fracture_Cast', 'RTI_Open_Fracture_Treatment',
-                  'RTI_Suture', 'RTI_Burn_Management', 'RTI_Tetanus_Vaccine', 'RTI_Acute_Pain_Management',
-                  'RTI_Major_Surgeries', 'RTI_Minor_Surgeries']
-    rti_treatments = health_system_events.loc[health_system_events['TREATMENT_ID'].isin(rti_events)]
-    list_of_appt_footprints = rti_treatments['Number_By_Appt_Type_Code'].to_list()
-    num_surg = 0
-    for dictionary in list_of_appt_footprints:
-        if 'MajorSurg' in dictionary.keys():
-            num_surg += 1
-        if 'MinorSurg' in dictionary.keys():
-            num_surg += 1
+    try:
+        health_system_events = parsed_log['tlo.methods.healthsystem']['HSI_Event']
+        rti_events = ['RTI_MedicalIntervention', 'RTI_Shock_Treatment', 'RTI_Fracture_Cast', 'RTI_Open_Fracture_Treatment',
+                      'RTI_Suture', 'RTI_Burn_Management', 'RTI_Tetanus_Vaccine', 'RTI_Acute_Pain_Management',
+                      'RTI_Major_Surgeries', 'RTI_Minor_Surgeries']
+        rti_treatments = health_system_events.loc[health_system_events['TREATMENT_ID'].isin(rti_events)]
+        list_of_appt_footprints = rti_treatments['Number_By_Appt_Type_Code'].to_list()
+        num_surg = 0
+        for dictionary in list_of_appt_footprints:
+            if 'MajorSurg' in dictionary.keys():
+                num_surg += 1
+            if 'MinorSurg' in dictionary.keys():
+                num_surg += 1
+    except KeyError:
+        num_surg = 0
     model_pop_size = parsed_log['tlo.methods.demography']['population']['total'].tolist()
     scaling_df = pd.DataFrame({'total': model_pop_size})
     data = pd.read_csv("resources/demography/ResourceFile_Pop_Annual_WPP.csv")
@@ -455,6 +478,11 @@ def create_rti_data(logfile):
     sim_end_date = parsed_log['tlo.methods.healthburden']['dalys']['date'].iloc[0]
     years_run = sim_end_date.year - sim_start_date.year
     time = rti_log['summary_1m']['date'].tolist()
+    deaths_in_sim = parsed_log['tlo.methods.demography']['death']
+    deaths_in_sim = deaths_in_sim.loc[deaths_in_sim['cause'] != 'Other']
+    deaths_in_sim['cause'].unique()
+    causes, counts = np.unique(deaths_in_sim['cause'], return_counts=True)
+    deaths_in_sim_dict = dict(dict(zip(list(causes), list(counts))))
     results_dict = {'age_range': sim_age_range,
                     'male_age_range': sim_male_age_range,
                     'female_age_range': sim_female_age_range,
@@ -537,6 +565,7 @@ def create_rti_data(logfile):
                     'percent_non_emergency_died_without_med': percent_non_emergency_died_without_med,
                     'scaled_number_of_deaths': rti_deaths['estimated_n_deaths'].sum(),
                     'extrapolated_dalys': extrapolated_dalys,
+                    'per_sim_deaths_dict': deaths_in_sim_dict,
                     'mean_ninj_in_hospital': number_of_injuries_in_hospital,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
@@ -948,16 +977,21 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     # Calculate the overall percentage of death post medical intervention for RTI
     overall_average_post_med_death = r['percent_died_after_med'].mean()
     # Plot this data in a pie chart
-    plt.pie([overall_average_post_med_death, 1 - overall_average_post_med_death],
-            explode=None, labels=['Fatal', "Non-fatal"], colors=['lightsteelblue', 'lightsalmon'],
-            autopct='%1.1f%%')
-    plt.title(f"Average percent survival outcome of those with road traffic injuries who sought health care"
-              f"\n"
-              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-    plt.savefig(save_directory + "/" + filename_description + "_" +
-                f"Percent_Survival_Healthcare_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
-                bbox_inches='tight')
-    plt.clf()
+    try:
+        plt.pie([overall_average_post_med_death, 1 - overall_average_post_med_death],
+                explode=None, labels=['Fatal', "Non-fatal"], colors=['lightsteelblue', 'lightsalmon'],
+                autopct='%1.1f%%')
+        plt.title(f"Average percent survival outcome of those with road traffic injuries who sought health care"
+                  f"\n"
+                  f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+        plt.savefig(save_directory + "/" + filename_description + "_" +
+                    f"Percent_Survival_Healthcare_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                    bbox_inches='tight')
+        plt.clf()
+    except ValueError:
+        print('no hs')
+        plt.clf()
+
     # plot percentage of death without med intervention
     overall_average_without_med_death = r['percent_died_without_med'].mean()
     # Plot this data in a pie chart
@@ -1614,7 +1648,17 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     plt.savefig(save_directory + "/" + filename_description + "_" + "DALYs.png",
                 bbox_inches='tight')
     plt.clf()
-
+    death_dicts = r['per_sim_deaths_dict'].values
+    master_dict = {}
+    for d in death_dicts:
+        for k in d.keys():
+            master_dict[k] = master_dict.get(k, 0) + d[k]
+    plt.pie(np.divide(list(master_dict.values()), sum(master_dict.values())), labels=master_dict.keys(),
+            autopct='%1.1f%%')
+    plt.title('The percentage of deaths in the simulation by cause')
+    plt.savefig(save_directory + "/" + filename_description + "_" + "Deaths_by_cause.png",
+                bbox_inches='tight')
+    plt.clf()
 
 def rti_format_data_from_azure_runs(stub, loc_in_outputs, results_folder):
     """A function that extracts the logging entries for all modules and returns a dataframe which

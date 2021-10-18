@@ -41,7 +41,8 @@ log_config = {
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/"
 # Establish the simulation object
-yearsrun = 6
+yearsrun = 10
+
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
