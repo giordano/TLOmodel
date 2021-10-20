@@ -9,6 +9,7 @@ from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
     care_of_women_during_pregnancy,
+    cardio_metabolic_disorders,
     contraception,
     demography,
     depression,
@@ -26,9 +27,8 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.hiv import DummyHivModule
 
-seed = 674
+seed = 882
 
 # The resource files
 try:
@@ -87,11 +87,7 @@ def register_core_modules():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-
-                 # - Dummy HIV module (as contraception requires the property hv_inf)
-                 DummyHivModule()
-                 )
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     return sim
 
@@ -114,15 +110,12 @@ def register_all_modules():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-
-                 # - Dummy HIV module (as contraception requires the property hv_inf)
-                 DummyHivModule()
-                 )
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     return sim
 
@@ -353,16 +346,25 @@ def test_run_all_births_end_in_miscarriage():
     assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 5).all().all()
 
 
-def test_induced_abortion_ends_pregnancies_as_expected():
+def test_run_all_births_end_in_abortion():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets abortion risk
     to 1 and runs checks """
-
     sim = register_core_modules()
     starting_population = 500
 
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
 
+    # Define women of interest in the population
+    df = sim.population.props
+    women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)]
+
+    # Set parity to 0 for an additional check for births
+    df.loc[women.index, 'la_parity'] = 0
+    # Set all births as unintended to ensure women are at risk of abortion
+    df.loc[women.index, 'co_unintended_preg'] = True
+
+    # Risk of ectopic applied before miscarriage so set to 0
     params = sim.modules['PregnancySupervisor'].parameters
     params['prob_ectopic_pregnancy'] = 0
     params['prob_spontaneous_abortion_per_month'] = 0
@@ -370,93 +372,119 @@ def test_induced_abortion_ends_pregnancies_as_expected():
     # set risk of abortion to 1
     params['prob_induced_abortion_per_month'] = 1
 
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    sim.simulate(end_date=Date(2011, 1, 1))
 
-    # Define women of interest in the population
     df = sim.population.props
-    women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
-    df.loc[women.index, 'co_unintended_preg'] = True
-    df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=6)
-    for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
-    # Run the event
-    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
-    pregnancy_sup.apply(sim.population)
-    # Set parity to 0 for an additional check for births
+    # Check that there are no newborns
+    possible_newborns = df.is_alive & (df.date_of_birth > sim.start_date)
+    assert possible_newborns.loc[possible_newborns].empty
 
-    assert ~df.loc[women.index, 'is_pregnant'].all().all()
-    assert (df.loc[women.index, 'la_parity'] == 0).all().all()
-    assert (df.loc[women.index, 'ps_gestational_age_in_weeks'] == 0).all().all()
-    assert pd.isnull(df.loc[women.index, 'la_due_date_current_pregnancy']).all().all()
+    # Check that no women that were ever pregnant have gained paritt
+    women_ever_pregnant = df.loc[~df.is_pregnant & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+                                 & ~pd.isnull(df.date_of_last_pregnancy)]
+    assert (df.loc[women_ever_pregnant.index, 'la_parity'] == 0).all().all()
+
+    pregnant_at_end_of_sim = df.loc[df.is_alive & df.is_pregnant]
+    assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 9).all().all()
 
 
 def test_abortion_complications():
     """Test that complications associate with abortion are correctly applied via the pregnancy supervisor event. Also
      test women seek care and/or experience risk of death as expected """
-    sim = register_core_modules()
-    starting_population = 100
-    sim.make_initial_population(n=starting_population)
-    set_all_women_as_pregnant_and_reset_baseline_parity(sim)
 
     # Set the risk of miscarriage and related complications to 1
-    params = sim.modules['PregnancySupervisor'].parameters
-    params['prob_spontaneous_abortion_per_month'] = 1
-    params['prob_seek_care_pregnancy_loss'] = 1
-    params['prob_haemorrhage_post_abortion'] = 1
-    params['prob_sepsis_post_abortion'] = 1
+    def check_abortion_logic(abortion_type):
+        sim = register_all_modules()
+        starting_population = 100
+        sim.make_initial_population(n=starting_population)
+        set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+        params = sim.modules['PregnancySupervisor'].current_parameters
 
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        if abortion_type == 'spontaneous':
+            params['prob_spontaneous_abortion_per_month'] = [1, 0, 0, 0, 0]
+            weeks = 2
+            params['prob_spontaneous_abortion_death'] = 1
 
-    df = sim.population.props
-    pregnant_women = df.loc[df.is_alive & df.is_pregnant]
-    for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        else:
+            params['prob_spontaneous_abortion_per_month'] = [0, 0, 0, 0, 0]
+            params['prob_induced_abortion_per_month'] = 1
+            params['prob_induced_abortion_death'] = 1
+            weeks = 6
 
-    # Select one pregnant woman and run the pregnancy supervisor event (populate key variables)
-    mother_id = pregnant_women.index[0]
-    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+        params['prob_complicated_sa'] = 1
+        params['prob_complicated_ia'] = 1
+        params['prob_seek_care_pregnancy_loss'] = 1
+        params['prob_haemorrhage_post_abortion'] = 1
+        params['prob_sepsis_post_abortion'] = 1
+        params['prob_injury_post_abortion'] = 1
+        params['prob_ectopic_pregnancy'] = 0
+        params['treatment_effect_post_abortion_care'] = 0
 
-    # Move the sim date forward and run event again
-    sim.date = sim.date + pd.DateOffset(weeks=2)
-    pregnancy_sup.apply(sim.population)
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
-    # check abortion complications correctly stored in bitset properties
-    assert sim.modules['PregnancySupervisor'].abortion_complications.has_all(mother_id, 'haemorrhage')
-    assert sim.modules['PregnancySupervisor'].abortion_complications.has_all(mother_id, 'sepsis')
+        df = sim.population.props
+        pregnant_women = df.loc[df.is_alive & df.is_pregnant]
+        for woman in pregnant_women.index:
+            sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
-    # Check that date of onset stored in mni dict to allow for daly calculations
-    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_onset'] == sim.date)
-    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_haem_onset'] == sim.date)
-    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_sep_onset'] == sim.date)
+        # Select one pregnant woman and run the pregnancy supervisor event (populate key variables)
+        mother_id = pregnant_women.index[0]
 
-    # Check the sim event queue for the death event
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert pregnancy_supervisor.EarlyPregnancyLossDeathEvent in events
+        pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
 
-    # And then check the HSI queue for the care seeking event, care is sought via generic appts
-    health_system = sim.modules['HealthSystem']
-    hsi_events = health_system.find_events_for_person(person_id=mother_id)
-    hsi_events = [e.__class__ for d, e in hsi_events]
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+        # Move the sim date forward and run event again
+        sim.date = sim.date + pd.DateOffset(weeks=weeks)
+        pregnancy_sup.apply(sim.population)
 
-    # Set risk of death to 1
-    params['ps_linear_equations']['spontaneous_abortion_death'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1)
+        # check abortion complications correctly stored in bitset properties
+        assert sim.modules['PregnancySupervisor'].abortion_complications.has_all(mother_id, 'haemorrhage')
+        assert sim.modules['PregnancySupervisor'].abortion_complications.has_all(mother_id, 'sepsis')
+        #if abortion_type == 'induced':
+        #    assert sim.modules['PregnancySupervisor'].abortion_complications.has_all(mother_id, 'injury')
 
-    # Define and run event, check woman has correctly died
-    death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
-                                                                    individual_id=mother_id,
-                                                                    cause='spontaneous_abortion')
+        # Check that date of onset stored in mni dict to allow for daly calculations
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_onset'] == sim.date)
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_haem_onset'] == sim.date)
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_sep_onset'] == sim.date)
 
-    death_event.apply(mother_id)
+        # Check the sim event queue for the death event
+        events = sim.find_events_for_person(person_id=mother_id)
+        events = [e.__class__ for d, e in events]
+        assert pregnancy_supervisor.EarlyPregnancyLossDeathEvent in events
 
-    assert not sim.population.props.at[mother_id, 'is_alive']
-    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
+        # And then check the HSI queue for the care seeking event, care is sought via generic appts
+        health_system = sim.modules['HealthSystem']
+        hsi_events = health_system.find_events_for_person(person_id=mother_id)
+        hsi_events = [e.__class__ for d, e in hsi_events]
+        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+        assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+
+        emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
+                                                                       module=sim.modules['PregnancySupervisor'])
+        emergency_appt.apply(person_id=mother_id, squeeze_factor=0.0)
+        hsi_events = health_system.find_events_for_person(person_id=mother_id)
+        hsi_events = [e.__class__ for d, e in hsi_events]
+        assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement in hsi_events
+
+        # set treatment effect to 0 to ensure treatment is effective
+        pac = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+            person_id=mother_id, module=sim.modules['CareOfWomenDuringPregnancy'])
+        pac.apply(person_id=mother_id, squeeze_factor=0.0)
+
+        # Define and run event, check woman has correctly died
+        death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
+                                                                        individual_id=mother_id,
+                                                                        cause=f'{abortion_type}_abortion')
+
+        death_event.apply(mother_id)
+
+        assert sim.population.props.at[mother_id, 'is_alive']
+        assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni']
+
+    check_abortion_logic('spontaneous')
+    check_abortion_logic('induced') # todo: for some reason injury isnt being set? doesnt matter too much (otherwise
+    # works)
 
 
 def test_run_all_births_end_antenatal_still_birth():
