@@ -35,8 +35,18 @@ class MyTestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': '30k_pop', 'directory': './outputs',
-            'custom_levels': {'*': logging.INFO}
+            'filename': '30k_pop_long_run', 'directory': './outputs',
+            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.labour": logging.INFO,
+                "tlo.methods.newborn_outcomes": logging.INFO,
+                "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
+                "tlo.methods.pregnancy_supervisor": logging.INFO,
+                "tlo.methods.postnatal_supervisor": logging.INFO,
+            }
+
         }
 
     def modules(self):
