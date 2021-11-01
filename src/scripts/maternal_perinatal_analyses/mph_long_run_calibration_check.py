@@ -3,11 +3,9 @@ from tlo import logging
 from tlo.scenario import BaseScenario
 from tlo.methods import (
     care_of_women_during_pregnancy,
-    contraception, dummy_contraception,
+    contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -53,7 +51,6 @@ class MyTestScenario(BaseScenario):
         return [
             demography.Demography(resourcefilepath=self.resources),
             contraception.Contraception(resourcefilepath=self.resources),
-            #dummy_contraception.DummyContraceptionModule(),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
@@ -65,8 +62,6 @@ class MyTestScenario(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
