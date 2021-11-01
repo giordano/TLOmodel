@@ -2,13 +2,10 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
-    contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
@@ -40,12 +37,12 @@ class Playing22(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            contraception.Contraception(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
+        if draw_number == 1:
+            assert False
+
         return {
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
