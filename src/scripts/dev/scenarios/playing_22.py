@@ -40,9 +40,6 @@ class Playing22(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        if draw_number == 1:
-            assert False
-
         return {
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
