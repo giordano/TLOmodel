@@ -1,0 +1,97 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_calibrate_shock.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.034444444444444444
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.04888888888888889
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.06333333333333334
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.07777777777777778
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.09222222222222223
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.10666666666666667
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.12111111111111113
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.13555555555555557
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "prob_bleeding_leads_to_shock": 0.15
+        }
+      }
+    }
+  ]
+}
