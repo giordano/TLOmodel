@@ -24,7 +24,7 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 3564
+        self.seed = 8711
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
         self.pop_size = 30000
