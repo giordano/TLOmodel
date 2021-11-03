@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_calibrate_shock.py",
+  "scenario_script_path": "src/scripts/rti/rti_calibrate_shock.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -93,5 +93,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "1662652c13d27dd5c4639102f8ce133f3f7d21c4",
+  "github": "https://github.com/UCL/TLOmodel/blob/1662652c13d27dd5c4639102f8ce133f3f7d21c4/src/scripts/rti/rti_calibrate_shock.py"
 }
