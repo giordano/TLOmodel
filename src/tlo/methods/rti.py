@@ -4568,7 +4568,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        if is_cons_available:
+        if request_outcome:
             rng = self.module.rng
             road_traffic_injuries = self.sim.modules['RTI']
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
