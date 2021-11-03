@@ -4971,7 +4971,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             cons_req_as_footprint=consumables_for_surgery,
             to_log=True)
-        if is_cons_available:
+        if request_outcome:
             injury_columns = persons_injuries.columns
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
