@@ -74,6 +74,8 @@ lower_upper = np.array(list(zip(
 # find the values that fall within our accepted range of incidence based on results of the GBD study
 
 per_param_average_in_shock = mean_percentage_in_shock[:, 'mean'].values
+# target percentage in shock taken from Short Term Outcome of Haemorrhagic Shock in Trauma at Mulago Hospital,
+# an Urban Tertiary Hospital in Sub Saharan Africa, Elaju et al
 expected_percent_in_shock = 56 / 8026
 yerr = abs(lower_upper - per_param_average_in_shock)
 xvals = range(info['number_of_draws'])

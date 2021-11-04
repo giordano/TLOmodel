@@ -2537,7 +2537,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         percent_in_shock = \
             len(shock_index) / len(selected_for_rti_inj) if len(selected_for_rti_inj) > 0 else 'none_injured'
         logger.info(key='Percent_of_shock_in_rti',
-                    data=percent_in_shock,
+                    data={'Percent_of_shock_in_rti': percent_in_shock},
                     description='The percentage of those assigned injuries who were also assign the shock property')
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
