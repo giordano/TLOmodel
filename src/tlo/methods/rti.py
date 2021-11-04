@@ -2424,6 +2424,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_injury_6"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_7"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_8"] = "none"
+        df.loc[diedfromrtiidx, 'rt_in_shock'] = False
         df.loc[diedfromrtiidx, 'rt_date_death_no_med'] = pd.NaT
         df.loc[diedfromrtiidx, 'rt_MAIS_military_score'] = 0
         df.loc[diedfromrtiidx, 'rt_debugging_DALY_wt'] = 0
@@ -5307,6 +5308,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         children_alive = len(df.loc[df['age_years'] < 19])
         self.numerator += n_in_RTI
         self.totinjured += n_in_RTI
+        # percentage of rti patients in shock
+        percent_in_shock = df.rt_in_shock.sum() / n_in_RTI if n_in_RTI > 0 else 'none_injured'
         # How many were disabled
         n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
         # self.permdis += n_perm_disabled
@@ -5422,6 +5425,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'percentage died after med': percent_died_post_care,
             'percent admitted to ICU or HDU': percentage_admitted_to_ICU_or_HDU,
             'cfr_no_med': cfr_no_med,
+            'percent_in_shock': percent_in_shock,
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,
