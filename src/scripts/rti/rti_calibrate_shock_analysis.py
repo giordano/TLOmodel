@@ -38,8 +38,8 @@ params = extract_params(results_folder)
 # 2) Extract a specific log series for all runs:
 extracted = extract_results(results_folder,
                             module="tlo.methods.rti",
-                            key="summary_1m",
-                            column="percent_in_shock",
+                            key="Percent_of_shock_in_rti",
+                            column="Percent_of_shock_in_rti",
                             index="date")
 extracted_incidence_of_death = extract_results(results_folder,
                                                module="tlo.methods.rti",
