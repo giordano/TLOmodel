@@ -39,7 +39,7 @@ params = extract_params(results_folder)
 extracted = extract_results(results_folder,
                             module="tlo.methods.rti",
                             key="summary_1m",
-                            column="percentage died after med",
+                            column="percent_in_shock",
                             index="date")
 extracted_incidence_of_death = extract_results(results_folder,
                                                module="tlo.methods.rti",
@@ -57,49 +57,47 @@ extracted_incidence_of_RTI = extract_results(results_folder,
 in_hospital_mortality = summarize(extracted)
 incidence_of_death = summarize(extracted_incidence_of_death)
 incidence_of_RTI = summarize(extracted_incidence_of_RTI)
-
+percentage_in_shock = summarize(extracted)
 # If only interested in the means
 in_hospital_mortality_onlymeans = summarize(extracted, only_mean=True)
 # get per parameter summaries
-mean_in_hospital_mortality_overall = in_hospital_mortality.mean()
+mean_percentage_in_shock = percentage_in_shock.mean()
 mean_incidence_of_death = incidence_of_death.mean()
 mean_incidence_of_rti = incidence_of_RTI.mean()
 # get upper and lower estimates
-mean_in_hospital_mortality_lower = mean_in_hospital_mortality_overall.loc[:, "lower"]
-mean_in_hospital_mortality_upper = mean_in_hospital_mortality_overall.loc[:, "upper"]
+mean_percent_in_shock_lower = mean_percentage_in_shock.loc[:, "lower"]
+mean_percent_in_shock_upper = mean_percentage_in_shock.loc[:, "upper"]
 lower_upper = np.array(list(zip(
-    mean_in_hospital_mortality_lower.to_list(),
-    mean_in_hospital_mortality_upper.to_list()
+    mean_percent_in_shock_lower.to_list(),
+    mean_percent_in_shock_upper.to_list()
 ))).transpose()
 # find the values that fall within our accepted range of incidence based on results of the GBD study
 
-per_param_average_in_hospital_mortality = mean_in_hospital_mortality_overall[:, 'mean'].values
-expected_in_hospital_mortality = 0.04
-yerr = abs(lower_upper - per_param_average_in_hospital_mortality)
+per_param_average_in_shock = mean_percentage_in_shock[:, 'mean'].values
+expected_percent_in_shock = 56 / 8026
+yerr = abs(lower_upper - per_param_average_in_shock)
 xvals = range(info['number_of_draws'])
 colors = ['lightsteelblue'] * len(xvals)
-best_fit_found = min(per_param_average_in_hospital_mortality, key = lambda x: abs(x - expected_in_hospital_mortality))
-best_fit_index = np.where(per_param_average_in_hospital_mortality == best_fit_found)
+best_fit_found = min(per_param_average_in_shock, key=lambda x: abs(x - expected_percent_in_shock))
+best_fit_index = np.where(per_param_average_in_shock == best_fit_found)
 colors[best_fit_index[0][0]] = 'gold'
 print(f"best fitting parameter value = {params.loc[best_fit_index[0][0]]}")
-print(f"Resulting in-hospital mortality = {best_fit_found}")
+print(f"Resulting percentage of those with RTI in shock = {best_fit_found}")
 print(f"Resulting incidence of death = {mean_incidence_of_death[best_fit_index[0][0]]['mean']}")
 print(f"Resulting incidence of RTI = {mean_incidence_of_rti[best_fit_index[0][0]]['mean']}")
-xlabels = [f"Parameter set\n{val + 1}" for val in range(0, info['number_of_draws'])]
 fig, ax = plt.subplots()
 ax.bar(
     x=xvals,
-    height=mean_in_hospital_mortality_overall[:, 'mean'].values,
+    height=per_param_average_in_shock,
     yerr=yerr,
     color=colors,
 )
 ax.set_xticks(xvals)
-ax.set_xticklabels(xlabels, rotation=90)
-plt.xlabel('In hospital mortality parameter groups')
-plt.ylabel('Percent in-hospital mortality')
-plt.title('Calibration of the in-hospital mortality')
-lowest_death_boundary = params.loc[params['module_param'] == 'RTI:prob_death_iss_less_than_9']
-lowest_value_of_scale_factor = lowest_death_boundary['value'][0] / (102 / 11650)
-highest_value_of_scale_factor = lowest_death_boundary['value'][info['number_of_draws'] - 1] / (102 / 11650)
-plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/in_hospital_mortality_"
-            f"{lowest_value_of_scale_factor}_{highest_value_of_scale_factor}.png", bbox_inches='tight')
+ax.set_xticklabels(np.round(params['value'].to_list(), 3), rotation=90)
+plt.xlabel('prob_bleeding_leads_to_shock')
+plt.ylabel('Percent in shock')
+plt.title('Calibration of the onset of shock for those with RTIs')
+lowest_value_of_param = params['value'].min()
+highest_value_of_param = params['value'].max()
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/percent_in_shock"
+            f"{lowest_value_of_param}_{highest_value_of_param}.png", bbox_inches='tight')

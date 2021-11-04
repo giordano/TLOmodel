@@ -2533,6 +2533,12 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
         shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
         df.loc[shock_index, 'rt_in_shock'] = True
+        # log the percentage of those with RTIs in shock
+        percent_in_shock = \
+            len(shock_index) / len(selected_for_rti_inj) if len(selected_for_rti_inj) > 0 else 'none_injured'
+        logger.info(key='Percent_of_shock_in_rti',
+                    data=percent_in_shock,
+                    description='The percentage of those assigned injuries who were also assign the shock property')
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
         # Assign a date in the future for which when the simulation reaches that date, the person's mortality will be
@@ -5308,8 +5314,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         children_alive = len(df.loc[df['age_years'] < 19])
         self.numerator += n_in_RTI
         self.totinjured += n_in_RTI
-        # percentage of rti patients in shock
-        percent_in_shock = df.rt_in_shock.sum() / n_in_RTI if n_in_RTI > 0 else 'none_injured'
         # How many were disabled
         n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
         # self.permdis += n_perm_disabled
@@ -5425,7 +5429,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'percentage died after med': percent_died_post_care,
             'percent admitted to ICU or HDU': percentage_admitted_to_ICU_or_HDU,
             'cfr_no_med': cfr_no_med,
-            'percent_in_shock': percent_in_shock,
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,
