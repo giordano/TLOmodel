@@ -78,7 +78,7 @@ expected_in_hospital_mortality = 0.04
 yerr = abs(lower_upper - per_param_average_in_hospital_mortality)
 xvals = range(info['number_of_draws'])
 colors = ['lightsteelblue'] * len(xvals)
-best_fit_found = min(per_param_average_in_hospital_mortality, key = lambda x: abs(x - expected_in_hospital_mortality))
+best_fit_found = min(per_param_average_in_hospital_mortality, key=lambda x: abs(x - expected_in_hospital_mortality))
 best_fit_index = np.where(per_param_average_in_hospital_mortality == best_fit_found)
 colors[best_fit_index[0][0]] = 'gold'
 print(f"best fitting parameter value = {params.loc[best_fit_index[0][0]]}")

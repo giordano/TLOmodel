@@ -204,7 +204,7 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-search_range_lower = 1 - params['value'][0][1][0]#
+search_range_lower = 1 - params['value'][0][1][0]
 search_range_upper = 1 - params.iloc[-1]['value'][1][0]
 x_ticks = [f"Parameter \ndistribution {i + 1}" for i in range(0, len(params))]
 # 2) Extract a series for all runs:
@@ -232,7 +232,7 @@ death_incidence.name = 'z'
 # inhospital_mortality_results.name = 'z'
 # inhospital_mortality_results.index = studies_tested
 average_n_inj_in_kch = 7057 / 4776
-best_fit_found = min(average_ninj_in_hos, key = lambda x: abs(x - average_n_inj_in_kch))
+best_fit_found = min(average_ninj_in_hos, key=lambda x: abs(x - average_n_inj_in_kch))
 best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
 colors = ['lightsalmon' for i in average_ninj_in_hos]
 colors[best_fit_index[0][0]] = 'gold'
