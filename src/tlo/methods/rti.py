@@ -929,6 +929,10 @@ class RTI(Module):
             Types.REAL,
             "The probability that this person's lower extremity injury is a Bilateral leg amputation "
         ),
+        'blocked_interventions': Parameter(
+            Types.LIST,
+            "A list of interventions that are blocked in a simulation"
+        )
 
     }
 
@@ -1525,13 +1529,13 @@ class RTI(Module):
                 if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
                     df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
             # schedule major surgeries
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Major_Surgeries(module=self,
-                                                  person_id=person_id),
-                priority=0,
-                topen=self.sim.date + DateOffset(days=count),
-                tclose=self.sim.date + DateOffset(days=15))
+            if 'Major Surgery' not in p['blocked_interventions']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Major_Surgeries(module=self,
+                                                      person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date + DateOffset(days=count),
+                    tclose=self.sim.date + DateOffset(days=15))
 
     def rti_do_for_minor_surgeries(self, person_id, count):
         """
@@ -1572,13 +1576,15 @@ class RTI(Module):
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
             assert counts > 0
+            p = self.parameters
             # schedule the minor surgery
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Minor_Surgeries(module=self,
-                                                  person_id=person_id),
-                priority=0,
-                topen=self.sim.date + DateOffset(days=count),
-                tclose=self.sim.date + DateOffset(days=15))
+            if 'Minor Surgery' not in p['blocked_interventions']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Minor_Surgeries(module=self,
+                                                      person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date + DateOffset(days=count),
+                    tclose=self.sim.date + DateOffset(days=15))
 
     def rti_acute_pain_management(self, person_id):
         """
@@ -1709,13 +1715,15 @@ class RTI(Module):
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
             assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
             # if this person is alive request the hsi
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Fracture_Cast(module=self,
-                                                person_id=person_id),
-                priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + DateOffset(days=15)
-            )
+            p = self.parameters
+            if 'Fracture Casts' not in p['blocked_interventions']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Fracture_Cast(module=self,
+                                                    person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + DateOffset(days=15)
+                )
 
     def rti_ask_for_open_fracture_treatment(self, person_id, counts):
         """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
@@ -2881,8 +2889,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
-                        assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
-                                                         f"{untreated_injuries}"
+                        # assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
+                        #                                  f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value

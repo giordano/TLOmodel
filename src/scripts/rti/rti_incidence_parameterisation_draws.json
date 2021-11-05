@@ -8,7 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.009039801314760077
+          "base_rate_injrti": 0.008039801314760078
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.008595356870315632
+          "base_rate_injrti": 0.007817579092537856
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.008150912425871189
+          "base_rate_injrti": 0.007595356870315634
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0077064679814267435
+          "base_rate_injrti": 0.007373134648093411
         }
       }
     },
@@ -44,7 +44,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0072620235369823
+          "base_rate_injrti": 0.007150912425871189
         }
       }
     },
@@ -53,7 +53,7 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.006817579092537855
+          "base_rate_injrti": 0.006928690203648967
         }
       }
     },
@@ -62,7 +62,7 @@
       "draw_seed": 144909571,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0063731346480934105
+          "base_rate_injrti": 0.006706467981426744
         }
       }
     },
@@ -71,7 +71,7 @@
       "draw_seed": 960362435,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.005928690203648966
+          "base_rate_injrti": 0.006484245759204522
         }
       }
     },
@@ -80,7 +80,7 @@
       "draw_seed": 62598988,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.005484245759204522
+          "base_rate_injrti": 0.0062620235369823
         }
       }
     },
@@ -89,11 +89,11 @@
       "draw_seed": 1505292720,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.005039801314760077
+          "base_rate_injrti": 0.006039801314760077
         }
       }
     }
   ],
-  "commit": "47c2ae8d642389f5b83dd472553d7052c0a6a8a4",
-  "github": "https://github.com/UCL/TLOmodel/blob/47c2ae8d642389f5b83dd472553d7052c0a6a8a4/src/scripts/rti/rti_incidence_parameterisation.py"
+  "commit": "77a0f5e6775d69798638c376572c674f09e6be88",
+  "github": "https://github.com/UCL/TLOmodel/blob/77a0f5e6775d69798638c376572c674f09e6be88/src/scripts/rti/rti_incidence_parameterisation.py"
 }
