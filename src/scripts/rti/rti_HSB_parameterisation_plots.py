@@ -38,13 +38,28 @@ extracted = extract_results(results_folder,
                             key="summary_1m",
                             column="percent sought healthcare",
                             index="date")
+extracted_inc_death = extract_results(results_folder,
+                            module="tlo.methods.rti",
+                            key="summary_1m",
+                            column="incidence of rti death per 100,000",
+                            index="date")
+
 
 # 3) Get summary of the results for that log-element
 prop_sought_healthcare = summarize(extracted)
+inc_death = summarize(extracted_inc_death)
 # If only interested in the means
 prop_sought_healthcare_onlymeans = summarize(extracted, only_mean=True)
+inc_death_only_means = summarize(extracted_inc_death, only_mean=True)
 # get per parameter summaries
 mean_overall = prop_sought_healthcare.mean()
+mean_inc_overall = inc_death.mean()
+inc_mean_upper = mean_inc_overall.loc[:, 'upper']
+inc_mean_lower = mean_inc_overall.loc[:, 'lower']
+lower_upper_inc = np.array(list(zip(
+    inc_mean_lower.to_list(),
+    inc_mean_upper.to_list()
+))).transpose()
 # get upper and lower estimates
 prop_sought_healthcare_lower = mean_overall.loc[:, "lower"]
 prop_sought_healthcare_upper = mean_overall.loc[:, "upper"]
@@ -88,8 +103,6 @@ mean_per_parameter = prop_sought_healthcare_onlymeans.mean()
 
 # 4) Create some plots:
 
-
-
 # i) bar plot to summarize as the value at the end of the run
 prop_sought_healthcare_end = prop_sought_healthcare.iloc[[-1]]
 
@@ -117,28 +130,5 @@ ax.set_xticks(xvals)
 ax.set_xticklabels(xlabels)
 plt.xlabel(param_name)
 plt.show()
-
-# ii) plot to show time-series (means)
-for draw in range(info['number_of_draws']):
-    plt.plot(
-        propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values,
-        label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
-    )
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
-
-# iii) banded plot to show variation across runs
-draw = 0
-plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values, 'b')
-plt.fill_between(
-    propinf.loc[:, (draw, "mean")].index,
-    propinf.loc[:, (draw, "lower")].values,
-    propinf.loc[:, (draw, "upper")].values,
-    color='b',
-    alpha=0.5,
-    label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
-)
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
+plt.clf()
+plt.bar(np.arange(len(params)), mean_inc_overall[:, 'mean'].values, color=colors)

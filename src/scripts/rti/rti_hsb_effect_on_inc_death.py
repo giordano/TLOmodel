@@ -1,5 +1,3 @@
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -21,14 +19,14 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
-        self.smaller_pop_size = 10000
-        self.number_of_samples_in_parameter_range = 11
+        self.smaller_pop_size = 20000
+        self.number_of_samples_in_parameter_range = 8
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
-            'filename': 'rti_hsb_parameterisation',
+            'filename': 'rti_hsb_effect_on_inc_death',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
@@ -39,7 +37,7 @@ class TestScenario(BaseScenario):
         return [
             demography.Demography(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
+            healthsystem.HealthSystem(resourcefilepath=self.resources, service_availability=['*']),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
@@ -51,7 +49,7 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        hsb_cutoff_max = 12
+        hsb_cutoff_max = 9
         hsb_cutoff_min = 1
         parameter_range = range(hsb_cutoff_min, hsb_cutoff_max)
         return {

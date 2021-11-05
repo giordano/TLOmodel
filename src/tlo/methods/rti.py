@@ -1576,9 +1576,8 @@ class RTI(Module):
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
             assert counts > 0
-            p = self.parameters
             # schedule the minor surgery
-            if 'Minor Surgery' not in p['blocked_interventions']:
+            if 'Minor Surgery' not in self.parameters['blocked_interventions']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Minor_Surgeries(module=self,
                                                       person_id=person_id),
@@ -1715,8 +1714,7 @@ class RTI(Module):
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
             assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
             # if this person is alive request the hsi
-            p = self.parameters
-            if 'Fracture Casts' not in p['blocked_interventions']:
+            if 'Fracture Casts' not in self.parameters['blocked_interventions']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
@@ -2889,8 +2887,9 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
-                        # assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
-                        #                                  f"{untreated_injuries}"
+                        if len(self.module.parameters['blocked_interventions']) == 0:
+                            assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
+                                                             f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value
