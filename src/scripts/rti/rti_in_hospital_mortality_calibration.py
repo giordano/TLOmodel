@@ -3,8 +3,6 @@ import numpy as np
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -40,8 +38,6 @@ class TestScenario(BaseScenario):
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
             healthburden.HealthBurden(resourcefilepath=self.resources),

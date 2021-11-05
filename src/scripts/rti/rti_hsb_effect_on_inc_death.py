@@ -20,7 +20,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 20000
-        self.number_of_samples_in_parameter_range = 8
+        self.number_of_samples_in_parameter_range = 11
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
 
@@ -49,7 +49,7 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        hsb_cutoff_max = 9
+        hsb_cutoff_max = 12
         hsb_cutoff_min = 1
         parameter_range = range(hsb_cutoff_min, hsb_cutoff_max)
         return {
