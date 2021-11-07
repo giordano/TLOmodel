@@ -74,8 +74,35 @@
           "rt_emergency_care_ISS_score_cut_off": 8
         }
       }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 9
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 10
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 11
+        }
+      }
     }
   ],
-  "commit": "16b48f5f9741b838d671b252f64e406367976ffe",
-  "github": "https://github.com/UCL/TLOmodel/blob/16b48f5f9741b838d671b252f64e406367976ffe/src/scripts/rti/rti_hsb_effect_on_inc_death.py"
+  "commit": "248538f04b0c2cf0e5af98273dd82476c0f4f5a9",
+  "github": "https://github.com/UCL/TLOmodel/blob/248538f04b0c2cf0e5af98273dd82476c0f4f5a9/src/scripts/rti/rti_hsb_effect_on_inc_death.py"
 }
