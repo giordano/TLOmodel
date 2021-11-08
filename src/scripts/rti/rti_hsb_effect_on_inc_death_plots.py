@@ -258,3 +258,5 @@ create_infographic(index_of_midpoint[0][0],
                    f"midpoint_of_hsb_range_iss_cutoff={params['value'][index_of_midpoint[0][0]]}")
 create_infographic(best_fit_for_inc_index[0][0],
                    f"best_fitting_inc_iss_cutoff={params['value'][best_fit_for_inc_index[0][0]]}")
+for param_value in in_accepted_range[0]:
+    create_infographic(param_value, f"summary_ISS_cut_off={param_value}")
