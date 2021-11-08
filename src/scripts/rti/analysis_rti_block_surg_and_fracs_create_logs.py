@@ -54,8 +54,8 @@ for i in range(0, nsim):
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     )
     # Get the log file
-    logfile = sim.configure_logging(filename="LogFile_minor",
-                                    directory=log_file_location + "all_run")
+    logfile = sim.configure_logging(filename="LogFile_all",
+                                    directory=log_file_location + "all")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
     # Run the simulation
