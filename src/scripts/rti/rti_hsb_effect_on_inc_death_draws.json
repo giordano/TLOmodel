@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/rti/rti_hsb_effect_on_inc_death.py",
   "scenario_seed": 12,
-  "runs_per_draw": 3,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
@@ -103,6 +103,6 @@
       }
     }
   ],
-  "commit": "248538f04b0c2cf0e5af98273dd82476c0f4f5a9",
-  "github": "https://github.com/UCL/TLOmodel/blob/248538f04b0c2cf0e5af98273dd82476c0f4f5a9/src/scripts/rti/rti_hsb_effect_on_inc_death.py"
+  "commit": "1065902f558a1d24e2bf057fc8faef826d9c15b6",
+  "github": "https://github.com/UCL/TLOmodel/blob/1065902f558a1d24e2bf057fc8faef826d9c15b6/src/scripts/rti/rti_hsb_effect_on_inc_death.py"
 }
