@@ -71,5 +71,5 @@ class MyTestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'anc_service_structure': [4, 4]}
+            'PregnancySupervisor': {'anc_service_structure': 4}
         }
