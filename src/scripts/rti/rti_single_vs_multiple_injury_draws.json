@@ -1,11 +1,11 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_single_vs_multiple_injury.py",
-  "scenario_seed": 86,
+  "scenario_script_path": "src/scripts/rti/rti_single_vs_multiple_injury.py",
+  "scenario_seed": 72,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 870190228,
+      "draw_seed": 458437080,
       "parameters": {
         "RTI": {
           "number_of_injured_body_regions_distribution": [
@@ -36,7 +36,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 2117724000,
+      "draw_seed": 2136798995,
       "parameters": {
         "RTI": {
           "number_of_injured_body_regions_distribution": [
@@ -65,5 +65,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "56ac1e950a8cdd00be86d118ff0d55a84d4c0086",
+  "github": "https://github.com/UCL/TLOmodel/blob/56ac1e950a8cdd00be86d118ff0d55a84d4c0086/src/scripts/rti/rti_single_vs_multiple_injury.py"
 }
