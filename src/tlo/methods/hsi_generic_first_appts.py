@@ -55,9 +55,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         assert module is self.sim.modules['HealthSeekingBehaviour']
         # Get symptoms of person
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, "age_years"] < 5
 
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
         self.ACCEPTED_FACILITY_LEVEL = 0
@@ -82,10 +80,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
 
         assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
-
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         if 'injury' in symptoms:
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
+                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
                 self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
                 df = self.sim.population.props
                 if df.loc[person_id, 'rt_in_shock']:

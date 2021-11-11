@@ -39,7 +39,7 @@ log_config = {
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/"
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 3
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
@@ -93,7 +93,9 @@ for i in range(0, nsim):
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     imm_death = sim.modules['RTI'].parameters['imm_death_proportion_rti']
-    sim.modules['RTI'].parameters['base_rate_injrti'] = sim.modules['RTI'].parameters['base_rate_injrti'] * 0.9872
+    sim.modules['RTI'].parameters['base_rate_injrti'] = \
+        sim.modules['RTI'].parameters['base_rate_injrti'] * 0.9872
+    sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 3
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 1
     # Run the simulation
     sim.simulate(end_date=end_date)
@@ -189,7 +191,14 @@ for i in range(0, nsim):
     rti_deaths['estimated_n_deaths'] = rti_deaths['cause'] * scaling_df.loc[rti_deaths.index, 'scale_for_each_year']
     # store the extrapolated number of deaths over the course of the sim
     sing_list_extrapolated_deaths.append(rti_deaths['estimated_n_deaths'].sum())
-    dalys_df = log_df['tlo.methods.healthburden']['dalys']
+    dalys_df = log_df['tlo.methods.healthburden']['dalys_stacked']
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
+    rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+    yll_df['rti_yll'] = [0.0] * len(yll_df)
+    for col in rti_columns:
+        yll_df['rti_yll'] += yll_df[col]
+    dalys_df['yll_stacked'] = yll_df['rti_yll']
+    dalys_df['yld_stacked'] = dalys_df['Transport Injuries'] - dalys_df['yll_stacked']
     dalys_df = dalys_df.groupby('year').sum()
     dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
     dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
@@ -198,7 +207,7 @@ for i in range(0, nsim):
     yld_df['scaled_yld'] = yld_df['RTI'] * scaling_df['scale_for_each_year']
     yld_df = yld_df.dropna()
     sing_list_extrapolated_yld.append(yld_df['scaled_yld'].sum())
-    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death'].groupby('year').sum()
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death_stacked'].groupby('year').sum()
     rti_columns = [col for col in yll_df.columns if 'RTI' in col]
     yll_df['scaled_yll'] = [0.0] * len(yll_df)
     for col in rti_columns:
@@ -243,7 +252,9 @@ for i in range(0, nsim):
                                     directory=log_file_location + "multiple_injury")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-
+    sim.modules['RTI'].parameters['base_rate_injrti'] = \
+        sim.modules['RTI'].parameters['base_rate_injrti']
+    sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 3
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 1
     # Run the simulation
     sim.simulate(end_date=end_date)
@@ -384,6 +395,9 @@ for i in range(0, nsim):
                                     directory=log_file_location + "multiple_injury_no_hs")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['base_rate_injrti'] = \
+        sim.modules['RTI'].parameters['base_rate_injrti']
+    sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 3
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation

@@ -260,3 +260,67 @@ create_infographic(best_fit_for_inc_index[0][0],
                    f"best_fitting_inc_iss_cutoff={params['value'][best_fit_for_inc_index[0][0]]}")
 for param_value in in_accepted_range[0]:
     create_infographic(param_value, f"summary_ISS_cut_off={param_value}")
+# scale normalise the results so that each incidence is equal to the gbd incidence
+scale_to_match_GBD = np.divide(GBD_est_inc, mean_inc_overall[:, 'mean'].values)
+scaled_incidences = mean_inc_overall[:, 'mean'].values * scale_to_match_GBD
+rescaled_incidence_of_death = mean_inc_death_overall[:, 'mean'].values * scale_to_match_GBD
+best_fitting_scaled = min(rescaled_incidence_of_death, key=lambda x: abs(x - WHO_est_in_death))
+best_fitting_scaled_index = np.where(rescaled_incidence_of_death == best_fitting_scaled)[0][0]
+colors_for_inc = ['lightsteelblue'] * len(scaled_incidences)
+colors_for_inc[best_fitting_scaled_index] = 'gold'
+colors_for_inc_death = ['lightsalmon'] * len(rescaled_incidence_of_death)
+colors_for_inc_death[best_fitting_scaled_index] = 'gold'
+
+plt.clf()
+fig = plt.figure(constrained_layout=True)
+# Use GridSpec for customising layout
+gs = fig.add_gridspec(nrows=2, ncols=1)
+# Add an empty axes that occupied the whole first row
+ax1 = fig.add_subplot(gs[0, 0])
+ax1.bar(np.arange(len(scaled_incidences)), scaled_incidences, color=colors_for_inc, width=0.4)
+for idx, val in enumerate(scaled_incidences):
+    ax1.text(idx, val, f"{np.round(val, 2)}", rotation=90)
+ax1.set_title('Incidence of RTI')
+ax1.set_xticks(np.arange(len(params)))
+ax1.set_xticklabels(params['value'].to_list())
+ax1.set_ylabel('Incidence per 100,000 p.y.')
+ax2 = fig.add_subplot(gs[1, 0])
+ax2.set_title('Incidence of Death')
+ax2.bar(np.arange(len(rescaled_incidence_of_death)), rescaled_incidence_of_death, color=colors_for_inc_death, width=0.4)
+for idx, val in enumerate(rescaled_incidence_of_death):
+    ax2.text(idx, val, f"{np.round(val, 2)}", rotation=90)
+ax2.set_xticks(np.arange(len(params)))
+ax2.set_xticklabels(params['value'].to_list())
+ax2.set_ylabel('Incidence of death \nper 100,000 p.y.')
+ax2.set_xlabel('Emergency care ISS cut off score')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/scaled_incidences.png",
+            bbox_inches='tight')
+print('Best ISS cut off score is ')
+print(params['value'].to_list()[best_fitting_scaled_index])
+print('scale factor for current incidence of rti is ')
+print(scale_to_match_GBD[best_fitting_scaled_index])
+plt.clf()
+
+x_vals = params['value'][in_accepted_range[0]]
+fig, ax1 = plt.subplots()
+ax1.set_xlabel('Model runs')
+ax1.set_ylabel('Incidence of death\nper 100,000 p.y.')
+ax1.bar(x_vals, rescaled_incidence_of_death[in_accepted_range[0]], width=0.4, color='lightsalmon',
+        label='Incidence of death')
+ax1.set_xticks(x_vals + 0.2)
+ax1.set_xticklabels(x_vals)
+ax1.set_ylim([0, 50])
+# Adding Twin Axes
+
+ax2 = ax1.twinx()
+
+ax2.set_ylabel('Percent sought care')
+ax2.bar(x_vals + 0.4, mean_overall[:, 'mean'][in_accepted_range[0]], width=0.4, color='lightsteelblue',
+        label='HSB')
+ax2.set_ylim([0, 1])
+ax1.set_title("The model's predicted incidence of death for \nvarying levels of health seeking behaviour")
+# Show plot
+ax1.legend(loc='upper left')
+ax2.legend()
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/HSB_and_inc_death.png",
+            bbox_inches='tight')
