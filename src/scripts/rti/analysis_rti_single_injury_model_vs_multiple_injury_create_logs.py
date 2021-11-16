@@ -65,7 +65,8 @@ sing_fraction_of_healthsystem_usage = []
 sing_inj_icu_usage = []
 sing_list_extrapolated_deaths = []
 sing_list_extrapolated_dalys = []
-
+sing_custom_yld = []
+sing_debugging_yld = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -195,6 +196,28 @@ for i in range(0, nsim):
     dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
     dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
     sing_list_extrapolated_dalys.append(dalys_df['extrapolated_dalys'].sum())
+    # ONLY LOGGING INJURIES THAT HAVE HEALED LEADS TO ISSUES
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['year'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['date'].dt.year
+    log_df['tlo.methods.rti']['rti_health_burden_per_day'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day'].groupby('year').sum()
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']['daly_weights']
+            .to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']
+        ['debugging_daly_weights'].to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] / 365
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] / 365
+    total_yld_in_sim = sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['daly_weights']) / 365
+    total_debugging_yld_in_sim = \
+        sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
+    sing_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
+    sing_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
 
 mult_inj_incidences_of_rti = []
 mult_inj_incidences_of_death = []
@@ -212,6 +235,8 @@ mult_fraction_of_healthsystem_usage = []
 mult_inj_icu_usage = []
 mult_list_extrapolated_deaths = []
 mult_list_extrapolated_dalys = []
+mult_custom_yld = []
+mult_debugging_yld = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -238,6 +263,7 @@ for i in range(0, nsim):
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
+
     log_df = parse_log_file(logfile)
     # Store the incidence of RTI per 100,000 person years in this sim
     mult_inj_incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
@@ -331,6 +357,29 @@ for i in range(0, nsim):
     dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
     dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
     mult_list_extrapolated_dalys.append(dalys_df['extrapolated_dalys'].sum())
+    # ONLY LOGGING INJURIES THAT HAVE HEALED LEADS TO ISSUES
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['year'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['date'].dt.year
+    log_df['tlo.methods.rti']['rti_health_burden_per_day'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day'].groupby('year').sum()
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']['daly_weights']
+            .to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']
+        ['debugging_daly_weights'].to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] / 365
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] / 365
+    total_yld_in_sim = sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['daly_weights']) / 365
+    total_debugging_yld_in_sim = \
+        sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
+    mult_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
+    mult_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
+
 
 
 no_hs_inj_incidences_of_rti = []
@@ -344,6 +393,8 @@ no_hs_percent_sought_care = []
 no_hs_percent_perm_disability = []
 no_hs_list_extrapolated_deaths = []
 no_hs_list_extrapolated_dalys = []
+no_hs_custom_yld = []
+no_hs_debugging_yld = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -424,6 +475,27 @@ for i in range(0, nsim):
     dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
     dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
     no_hs_list_extrapolated_dalys.append(dalys_df['extrapolated_dalys'].sum())
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['year'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['date'].dt.year
+    log_df['tlo.methods.rti']['rti_health_burden_per_day'] = \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day'].groupby('year').sum()
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']['daly_weights']
+            .to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] = \
+        [sum(daly_weights) for daly_weights in log_df['tlo.methods.rti']['rti_health_burden_per_day']
+        ['debugging_daly_weights'].to_list()]
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] / 365
+    log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'] = \
+        scaling_df.loc[log_df['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        log_df['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] / 365
+    total_yld_in_sim = sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['daly_weights']) / 365
+    total_debugging_yld_in_sim = \
+        sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
+    no_hs_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
+    no_hs_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
 
 # Create a results dictionary to save results in
 single_injury_results = {}
@@ -871,3 +943,16 @@ plt.title("The model's predicted incidence of death\n with and without the healt
 plt.savefig(save_file_path + f"multiple_vs_no_hs_inc_of_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
+custom_yld = [np.mean(sing_custom_yld), np.mean(mult_custom_yld), np.mean(no_hs_custom_yld)]
+debugging_yld = [np.mean(sing_debugging_yld), np.mean(mult_debugging_yld), np.mean(no_hs_debugging_yld)]
+plt.bar(np.arange(3), custom_yld,
+        color='lightsteelblue', width=0.4, label='capped')
+plt.bar(np.arange(3) + 0.4, debugging_yld,
+        color='lightsalmon', width=0.4, label='uncapped')
+plt.xticks(np.arange(3) + 0.2, ['Single injury', 'Multiple injury', 'No health\nsystem'])
+plt.title("The model's predicted years living with disability")
+plt.text(np.arange(3), custom_yld, [str(np.round(yld, 2)) for yld in custom_yld])
+plt.text(np.arange(3) + 0.4, debugging_yld, [str(np.round(yld, 2)) for yld in custom_yld])
+plt.legend()
+plt.savefig(save_file_path + f"yld_{imm_death}.png",
+            bbox_inches='tight')

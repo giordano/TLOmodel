@@ -1659,6 +1659,21 @@ class RTI(Module):
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
+    def rti_ask_for_imaging(self, person_id):
+        """
+        A function called by the generic emergency appointment to order imaging for diagnosis
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        if df.at[person_id, 'is_alive']:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
+
     def rti_ask_for_burn_treatment(self, person_id):
         """
         Function called by HSI_RTI_MedicalIntervention to centralise all burn treatment requests. This function
@@ -2326,6 +2341,38 @@ class RTI(Module):
         # Finally return the injury description information
         return inj_df
 
+    def rti_perform_death(self,
+                          person_id: int,
+                          cause: str):
+        """This function is called whenever someone dies due to RTI in the module. This function logs performs the death
+        and logs the health burden at the time of the person's death."""
+        df = self.sim.population.props
+        # calculate the yld of the deceased
+        # get the date of their injury and the date of their death
+        date_of_injury = df.loc[person_id, 'rt_date_inj']
+        date_of_death = self.sim.date
+        # calculate the duration with health burden
+        duration_with_health_burden_in_days = (date_of_death - date_of_injury).days
+        # get the daly weight for this person
+        daly_weight_of_deceased = df.loc[person_id, 'rt_disability']
+        # calculate the days living with disease
+        dld = duration_with_health_burden_in_days * daly_weight_of_deceased
+        # convert days living with disease to years living with disease
+        yld = dld / 365
+        # log the yld of the deceased
+        dict_to_output = {
+            'person_id': person_id,
+            'daly_weight': daly_weight_of_deceased,
+            'days_with_daly_weight': duration_with_health_burden_in_days,
+            'date_of_injury': date_of_injury,
+            'context': 'death'
+        }
+        logger.info(key='rti_exact_yld_on_change',
+                    data=dict_to_output,
+                    description='The daly weight of an injured person and the time spent with that weight')
+        self.sim.modules['Demography'].do_death(individual_id=person_id, cause=cause,
+                                                originating_module=self)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -2481,8 +2528,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_to_die, 'rt_imm_death'] = True
         # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
         for individual_id in selected_to_die:
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
-                                                    originating_module=self.module)
+            self.sim.modules['RTI'].rti_perform_death(individual_id, "RTI_imm_death")
+
         # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
         # Drop those who have died immediately
         selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
@@ -2711,8 +2758,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
-                    self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
-                                                            originating_module=self.module)
+                    self.sim.modules['RTI'].rti_perform_death(person, "RTI_death_without_med")
                 else:
                     # If the people do not die from their injuries despite not getting care, we have to decide when and
                     # to what degree their injuries will heal.
@@ -2848,6 +2894,16 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         road_traffic_injuries = self.module
         df = population.props
         now = self.sim.date
+        # log the health burden of road traffic injuries occurring every day
+        those_with_health_burden_idx = df.loc[df.is_alive & df['rt_disability'] > 0].index
+        rt_daly_weights = df.loc[those_with_health_burden_idx, 'rt_disability']
+        rt_debugging_daly_weights = df.loc[those_with_health_burden_idx, 'rt_debugging_DALY_wt']
+        dict_to_output = {'person_ids': those_with_health_burden_idx.to_list(),
+                          'daly_weights': rt_daly_weights.to_list(),
+                          'debugging_daly_weights': rt_debugging_daly_weights.to_list()}
+        logger.info(key='rti_health_burden_per_day',
+                    data=dict_to_output,
+                    description='The daly weight of all injured persons each day')
         # # Isolate the relevant population
         any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
         relevant_population = any_not_null.index[any_not_null]
@@ -2867,6 +2923,21 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     dateindex = df.loc[person, 'rt_date_to_remove_daly'].index(date)
                     # find the injury code associated with the healed injury
                     code_to_remove = [df.loc[person, f'rt_injury_{dateindex + 1}']]
+                    # calculate the current health burden
+                    current_daly_weight = df.loc[person, 'rt_disability']
+                    days_with_current_daly_weight = (now - df.loc[person, 'rt_date_inj']).days
+                    date_of_injury = df.loc[person, 'rt_date_inj']
+                    dict_to_output = {
+                        'person_id': person,
+                        'daly_weight': current_daly_weight,
+                        'days_with_daly_weight': days_with_current_daly_weight,
+                        'date_of_injury': date_of_injury,
+                        'context': 'change'
+
+                    }
+                    logger.info(key='rti_exact_yld_on_change',
+                                data=dict_to_output,
+                                description='The daly weight of an injured person and the time spent with that weight')
                     # Set the healed injury recovery data back to the default state
                     df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
                     # Remove the daly weight associated with the healed injury code
@@ -3122,8 +3193,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             for col in columns:
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
-                                                                                DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
         # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
@@ -3469,6 +3539,29 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
 
 
+class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
+    """This HSI event is triggered by the generic first appointments. After first arriving into the health system at
+    either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
+    event is caused and x-ray or ct scans are provided as needed"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, RTI)
+        the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        road_traffic_injuries = module.sim.modules['RTI']
+        road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+        self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
+
+    def did_not_run(self, *args, **kwargs):
+        pass
+
+
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
@@ -3549,8 +3642,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # Schedule the death
         df = self.sim.population.props
         df.at[person_id, 'rt_death_from_shock'] = True
-        self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
-                                                originating_module=self.module)
+        self.sim.modules['RTI'].rti_perform_death(person_id, "RTI_death_shock")
         # Log the death
         logger.debug(key='rti_general_message',
                      data=f"This is RTI_Shock_Treatment scheduling a death for person {person_id} who did not recieve "
@@ -4665,8 +4757,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
-                    self.sim.end_date + DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
+                                                                                       DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
             # ------------------------------------- Perm disability from SCI -------------------------------------------
             if 'include_spine_surgery' in self.allowed_interventions:
@@ -4697,8 +4789,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
                     # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                     # it permanent)
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
-                        self.sim.end_date + DateOffset(days=1)
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
+                                                                                           DateOffset(days=1)
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
             # ------------------------------------- Perm disability from amputation ------------------------------------
@@ -4729,8 +4821,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                                                                 [self.treated_code])
                 # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
-                    self.sim.end_date + DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
+                                                                                       DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
             # ============================== Schedule the recovery dates for the non-permanent injuries ================
@@ -5118,8 +5210,7 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                                 description='The injury profile of those who have died due to rtis despite medical care'
                                 )
                     # Schedule the death
-                    self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                            originating_module=self.module)
+                    self.sim.modules['RTI'].rti_perform_death(person_id, "RTI_death_with_med")
                     # Log the death
                     logger.debug(key='rti_general_message',
                                  data=f"This is RTIMedicalInterventionDeathEvent scheduling a death for person "
@@ -5195,8 +5286,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
-            self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_unavailable_med",
-                                                    originating_module=self.module)
+            self.sim.modules['RTI'].rti_perform_death(self, person_id, "RTI_unavailable_med")
+
             # Log the death
             logger.debug(key='rti_general_message',
                          data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on"
