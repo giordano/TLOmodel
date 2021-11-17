@@ -65,8 +65,12 @@ sing_fraction_of_healthsystem_usage = []
 sing_inj_icu_usage = []
 sing_list_extrapolated_deaths = []
 sing_list_extrapolated_dalys = []
+sing_yll = []
+sing_default_yld = []
 sing_custom_yld = []
 sing_debugging_yld = []
+sing_dalys_custom = []
+sing_dalys_debugging = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -218,6 +222,23 @@ for i in range(0, nsim):
         sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
     sing_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
     sing_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
+    yld_df = log_df['tlo.methods.healthburden']['yld_by_causes_of_disability']
+    yld_df = yld_df.groupby('year').sum()
+    yld_df = yld_df.loc[sim_year_range]
+    yld_df['scaled_yld'] = yld_df['RTI'] * scaling_df['scale_for_each_year']
+    sing_default_yld.append(yld_df['scaled_yld'].sum())
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
+    yll_df['RTI'] = [0.0] * len(yll_df)
+    rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+    for col in rti_columns:
+        yll_df['RTI'] += yll_df[col]
+    yll_df = yll_df.groupby('year').sum()
+    yll_df['extrapolated_yll'] = yll_df['RTI'] * scaling_df['scale_for_each_year']
+    sing_yll.append(yll_df['extrapolated_yll'].sum())
+    sing_dalys_custom.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum() +
+                             yll_df['extrapolated_yll'].sum())
+    sing_dalys_debugging.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum() +
+                                yll_df['extrapolated_yll'].sum())
 
 mult_inj_incidences_of_rti = []
 mult_inj_incidences_of_death = []
@@ -237,6 +258,10 @@ mult_list_extrapolated_deaths = []
 mult_list_extrapolated_dalys = []
 mult_custom_yld = []
 mult_debugging_yld = []
+mult_yll = []
+mult_default_yld = []
+mult_dalys_custom = []
+mult_dalys_debugging = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -379,6 +404,23 @@ for i in range(0, nsim):
         sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
     mult_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
     mult_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
+    yld_df = log_df['tlo.methods.healthburden']['yld_by_causes_of_disability']
+    yld_df = yld_df.groupby('year').sum()
+    yld_df = yld_df.loc[sim_year_range]
+    yld_df['scaled_yld'] = yld_df['RTI'] * scaling_df['scale_for_each_year']
+    mult_default_yld.append(yld_df['scaled_yld'].sum())
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
+    yll_df['RTI'] = [0.0] * len(yll_df)
+    rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+    for col in rti_columns:
+        yll_df['RTI'] += yll_df[col]
+    yll_df = yll_df.groupby('year').sum()
+    yll_df['extrapolated_yll'] = yll_df['RTI'] * scaling_df['scale_for_each_year']
+    mult_yll.append(yll_df['extrapolated_yll'].sum())
+    mult_dalys_custom.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum() +
+                             yll_df['extrapolated_yll'].sum())
+    mult_dalys_debugging.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum() +
+                                yll_df['extrapolated_yll'].sum())
 
 
 
@@ -395,6 +437,10 @@ no_hs_list_extrapolated_deaths = []
 no_hs_list_extrapolated_dalys = []
 no_hs_custom_yld = []
 no_hs_debugging_yld = []
+no_hs_yll = []
+no_hs_default_yld = []
+no_hs_dalys_custom = []
+no_hs_dalys_debugging = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -496,6 +542,23 @@ for i in range(0, nsim):
         sum(log_df['tlo.methods.rti']['rti_health_burden_per_day'].sum(axis=0)['debugging_daly_weights']) / 365
     no_hs_custom_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum())
     no_hs_debugging_yld.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum())
+    yld_df = log_df['tlo.methods.healthburden']['yld_by_causes_of_disability']
+    yld_df = yld_df.groupby('year').sum()
+    yld_df = yld_df.loc[sim_year_range]
+    yld_df['scaled_yld'] = yld_df['RTI'] * scaling_df['scale_for_each_year']
+    no_hs_default_yld.append(yld_df['scaled_yld'].sum())
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
+    yll_df['RTI'] = [0.0] * len(yll_df)
+    rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+    for col in rti_columns:
+        yll_df['RTI'] += yll_df[col]
+    yll_df = yll_df.groupby('year').sum()
+    yll_df['extrapolated_yll'] = yll_df['RTI'] * scaling_df['scale_for_each_year']
+    no_hs_yll.append(yll_df['extrapolated_yll'].sum())
+    no_hs_dalys_custom.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum() +
+                              yll_df['extrapolated_yll'].sum())
+    no_hs_dalys_debugging.append(log_df['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'].sum() +
+                                 yll_df['extrapolated_yll'].sum())
 
 # Create a results dictionary to save results in
 single_injury_results = {}
@@ -506,7 +569,7 @@ gbd_data = pd.read_csv('resources/gbd/ResourceFile_Deaths_And_DALYS_GBD2019.csv'
 gbd_deaths = gbd_data.loc[gbd_data['measure_name'] == 'Deaths']
 gbd_deaths = gbd_deaths.loc[gbd_deaths['cause_name'] == 'Road injuries']
 gbd_deaths = gbd_deaths.groupby('Year').sum()
-gbd_deaths = gbd_deaths.loc[sim_year_range, 'GBD_Est'].sum()
+gbd_deaths = gbd_deaths.loc[sim_year_range[: -1], 'GBD_Est'].sum()
 sing_mean_est_deaths = np.mean(sing_list_extrapolated_deaths)
 mult_mean_est_deaths = np.mean(mult_list_extrapolated_deaths)
 data = [gbd_deaths, sing_mean_est_deaths, mult_mean_est_deaths]
@@ -515,7 +578,7 @@ multiple_injury_results['deaths'] = data[2]
 plt.bar(np.arange(len(data)), data, color='lightsteelblue')
 plt.xticks(np.arange(len(data)), ['GBD', 'Single\ninjury', 'Multiple\ninjury'])
 plt.ylabel('Number of RTI deaths')
-plt.title(f"The number of deaths predicted from {sim_start_year} to {sim_end_year} by the GBD model and\n"
+plt.title(f"The number of deaths predicted from {sim_start_year} to {sim_end_year -1} by the GBD model and\n"
           f"the scaled output from the single and the multiple injury models.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, "
           f"years ran: {yearsrun}")
@@ -525,7 +588,7 @@ data = [gbd_deaths, mult_mean_est_deaths]
 plt.bar(np.arange(len(data)), data, color='lightsteelblue')
 plt.xticks(np.arange(len(data)), ['GBD', 'Model'])
 plt.ylabel('Number of RTI deaths')
-plt.title(f"The number of deaths predicted from {sim_start_year} to {sim_end_year}\n"
+plt.title(f"The number of deaths predicted from {sim_start_year} to {sim_end_year - 1}\n"
           f" by the GBD model and the scaled output from our model.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, "
           f"years ran: {yearsrun}")
@@ -534,16 +597,16 @@ plt.clf()
 gbd_dalys = gbd_data.loc[gbd_data['measure_name'] == 'DALYs (Disability-Adjusted Life Years)']
 gbd_dalys = gbd_dalys.loc[gbd_dalys['cause_name'] == 'Road injuries']
 gbd_dalys = gbd_dalys.groupby('Year').sum()
-gbd_dalys = gbd_dalys.loc[sim_year_range, 'GBD_Est'].sum()
-sing_mean_est_dalys = np.mean(sing_list_extrapolated_dalys)
-mult_mean_est_dalys = np.mean(mult_list_extrapolated_dalys)
+gbd_dalys = gbd_dalys.loc[sim_year_range[: - 1], 'GBD_Est'].sum()
+sing_mean_est_dalys = np.mean(sing_dalys_custom)
+mult_mean_est_dalys = np.mean(mult_dalys_custom)
 data = [gbd_dalys, sing_mean_est_dalys, mult_mean_est_dalys]
 single_injury_results['dalys'] = data[1]
 multiple_injury_results['dalys'] = data[2]
 plt.bar(np.arange(len(data)), data, color='lightsteelblue')
 plt.xticks(np.arange(len(data)), ['GBD', 'Single\ninjury', 'Multiple\ninjury'])
 plt.ylabel('Number of RTI DALYs')
-plt.title(f"The number of DALYs predicted from {sim_start_year} to {sim_end_year} by the GBD model and\n"
+plt.title(f"The number of DALYs predicted from {sim_start_year} to {sim_end_year - 1} by the GBD model and\n"
           f"the scaled output from the single and the multiple injury models.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, "
           f"years ran: {yearsrun}")
@@ -553,7 +616,7 @@ data = [gbd_dalys, mult_mean_est_dalys]
 plt.bar(np.arange(len(data)), data, color='lightsteelblue')
 plt.xticks(np.arange(len(data)), ['GBD', 'Model'])
 plt.ylabel('Number of RTI DALYs')
-plt.title(f"The number of DALYs predicted from {sim_start_year} to {sim_end_year}\n"
+plt.title(f"The number of DALYs predicted from {sim_start_year} to {sim_end_year - 1}\n"
           f"by the GBD model and the scaled output from our model.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, "
           f"years ran: {yearsrun}")
@@ -836,7 +899,7 @@ plt.title(f"The effect of allowing multiple injuries\n in the model on populatio
 plt.savefig(save_file_path + f"GBD_vs_multiple_injurie_model_comp_imm_death_{imm_death}.png", bbox_inches='tight')
 plt.clf()
 
-dalys_data = [np.mean(sing_dalys), np.mean(mult_dalys)]
+dalys_data = [sing_mean_est_dalys, mult_mean_est_dalys]
 single_injury_results['dalys'] = dalys_data[0]
 multiple_injury_results['dalys'] = dalys_data[1]
 percent_increase_in_disability_burden = (dalys_data[1] / dalys_data[0]) * 100 - 100
@@ -922,8 +985,8 @@ plt.savefig(save_file_path + f"multiple_vs_no_hs_number_of_deaths_{imm_death}.pn
             bbox_inches='tight')
 plt.clf()
 # Plot the multiple injury model's number of DALYs with and without health system
-mult_mean_est_dalys = np.mean(mult_list_extrapolated_dalys)
-no_hs_mean_est_dalys = np.mean(no_hs_list_extrapolated_dalys)
+mult_mean_est_dalys = np.mean(mult_dalys_custom)
+no_hs_mean_est_dalys = np.mean(no_hs_dalys_custom)
 plt.bar(np.arange(2), [mult_mean_est_dalys, no_hs_mean_est_dalys])
 plt.ylabel('Number of DALYs')
 plt.xticks(np.arange(2), ['Estimated number\n of DALYs\nwith healthsystem',
@@ -943,16 +1006,20 @@ plt.title("The model's predicted incidence of death\n with and without the healt
 plt.savefig(save_file_path + f"multiple_vs_no_hs_inc_of_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
+default_yld = [np.mean(sing_default_yld), np.mean(mult_default_yld), np.mean(no_hs_default_yld)]
 custom_yld = [np.mean(sing_custom_yld), np.mean(mult_custom_yld), np.mean(no_hs_custom_yld)]
 debugging_yld = [np.mean(sing_debugging_yld), np.mean(mult_debugging_yld), np.mean(no_hs_debugging_yld)]
-plt.bar(np.arange(3), custom_yld,
-        color='lightsteelblue', width=0.4, label='capped')
-plt.bar(np.arange(3) + 0.4, debugging_yld,
-        color='lightsalmon', width=0.4, label='uncapped')
-plt.xticks(np.arange(3) + 0.2, ['Single injury', 'Multiple injury', 'No health\nsystem'])
+plt.bar(np.arange(3), default_yld,
+        color='peachpuff', width=0.33, label='default')
+plt.bar(np.arange(3) + 0.33, custom_yld,
+        color='lightsteelblue', width=0.33, label='capped')
+plt.bar(np.arange(3) + 0.66, debugging_yld,
+        color='lightsalmon', width=0.33, label='uncapped')
+plt.xticks(np.arange(3) + 0.33, ['Single injury', 'Multiple injury', 'No health\nsystem'])
 plt.title("The model's predicted years living with disability")
-plt.text(np.arange(3), custom_yld, [str(np.round(yld, 2)) for yld in custom_yld])
-plt.text(np.arange(3) + 0.4, debugging_yld, [str(np.round(yld, 2)) for yld in custom_yld])
+plt.text(np.arange(3), default_yld, [str(np.round(yld, 2)) for yld in default_yld])
+plt.text(np.arange(3) + 0.33, custom_yld, [str(np.round(yld, 2)) for yld in custom_yld])
+plt.text(np.arange(3) + 0.66, debugging_yld, [str(np.round(yld, 2)) for yld in custom_yld])
 plt.legend()
 plt.savefig(save_file_path + f"yld_{imm_death}.png",
             bbox_inches='tight')
