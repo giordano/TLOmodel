@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/rti/rti_single_vs_multiple_injury.py",
-  "scenario_seed": 72,
+  "scenario_seed": 45,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 458437080,
+      "draw_seed": 2100288459,
       "parameters": {
         "RTI": {
           "number_of_injured_body_regions_distribution": [
@@ -30,13 +30,13 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007059380746820029
+          "base_rate_injrti": 0.00715091242587118
         }
       }
     },
     {
       "draw_number": 1,
-      "draw_seed": 2136798995,
+      "draw_seed": 1307974046,
       "parameters": {
         "RTI": {
           "number_of_injured_body_regions_distribution": [
@@ -66,6 +66,6 @@
       }
     }
   ],
-  "commit": "56ac1e950a8cdd00be86d118ff0d55a84d4c0086",
-  "github": "https://github.com/UCL/TLOmodel/blob/56ac1e950a8cdd00be86d118ff0d55a84d4c0086/src/scripts/rti/rti_single_vs_multiple_injury.py"
+  "commit": "44849a9f92d57e7f5bb0a9e2ad59e5984bfb85a5",
+  "github": "https://github.com/UCL/TLOmodel/blob/44849a9f92d57e7f5bb0a9e2ad59e5984bfb85a5/src/scripts/rti/rti_single_vs_multiple_injury.py"
 }

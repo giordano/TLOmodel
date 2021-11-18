@@ -3552,7 +3552,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
         self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
