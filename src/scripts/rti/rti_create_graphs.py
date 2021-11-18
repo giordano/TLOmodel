@@ -483,6 +483,31 @@ def create_rti_data(logfile):
     deaths_in_sim['cause'].unique()
     causes, counts = np.unique(deaths_in_sim['cause'], return_counts=True)
     deaths_in_sim_dict = dict(dict(zip(list(causes), list(counts))))
+    yld_per_year = parsed_log['tlo.methods.healthburden']['yld_by_causes_of_disability'].groupby('year').sum()
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['year'] = \
+        parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['date'].dt.year
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day'] = \
+        parsed_log['tlo.methods.rti']['rti_health_burden_per_day'].groupby('year').sum()
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] = \
+        [sum(daly_weights) for daly_weights in parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['daly_weights']
+            .to_list()]
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] = \
+        [sum(daly_weights) for daly_weights in parsed_log['tlo.methods.rti']['rti_health_burden_per_day']
+        ['debugging_daly_weights'].to_list()]
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'] = \
+        scaling_df.loc[parsed_log['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_healthburden'] / 365
+    parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['scaled_debugging_yld'] = \
+        scaling_df.loc[parsed_log['tlo.methods.rti']['rti_health_burden_per_day'].index, 'scale_for_each_year'] * \
+        parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['total_daily_debugging_healthburden'] / 365
+    custom_yld_in_sim = parsed_log['tlo.methods.rti']['rti_health_burden_per_day']['scaled_yld'].sum()
+    yll_df = parsed_log['tlo.methods.healthburden']['yll_by_causes_of_death_stacked'].groupby('year').sum()
+    yll_df = yll_df.loc[scaling_df.index]
+    rti_cols = [col for col in yll_df.columns if 'RTI' in col]
+    yll_df['RTI_yll'] = [0.0] * len(yll_df)
+    for col in rti_cols:
+        yll_df['RTI_yll'] += yll_df[col]
+    yll_df['scaled_yll'] = yll_df['RTI_yll'] * scaling_df['scale_for_each_year']
     results_dict = {'age_range': sim_age_range,
                     'male_age_range': sim_male_age_range,
                     'female_age_range': sim_female_age_range,
@@ -569,6 +594,9 @@ def create_rti_data(logfile):
                     'mean_ninj_in_hospital': number_of_injuries_in_hospital,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
+                    'yld_custom': custom_yld_in_sim,
+                    'yld_default': sum(yld_per_year.loc[scaling_df.index, 'RTI'] * scaling_df['scale_for_each_year']),
+                    'yll': yll_df['scaled_yll'].sum(),
                     'years_run': years_run,
                     'pop_size': pop_size,
                     'time': time
@@ -1657,6 +1685,59 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
             autopct='%1.1f%%')
     plt.title('The percentage of deaths in the simulation by cause')
     plt.savefig(save_directory + "/" + filename_description + "_" + "Deaths_by_cause.png",
+                bbox_inches='tight')
+    plt.clf()
+    gbd_dates = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+    gbd_yld_estimate_2010_2019 = [17201.73, 16689.13, 18429.77, 17780.11, 20462.97, 19805.86, 21169.19, 19100.62,
+                                  23081.26, 22055.06]
+    gbd_yll_estimate_2010_2019 = [103892.353, 107353.63, 107015.04, 106125.14, 105933.16, 106551.59, 106424.49,
+                                  105551.97, 108052.59, 109301.18]
+    gbd_dalys_estimate_2010_2019 = np.add(gbd_yld_estimate_2010_2019, gbd_yll_estimate_2010_2019)
+    gbd_data = pd.DataFrame(data={'yld': gbd_yld_estimate_2010_2019, 'yll': gbd_yll_estimate_2010_2019,
+                                  'dalys': gbd_dalys_estimate_2010_2019},
+                            index=gbd_dates)
+    sim_date = list(range(2010, int(2010 + r['years_run'].mean())))
+    gbd_data = gbd_data.loc[sim_date]
+    model_yll = r['yll'].mean()
+    gbd_yll = gbd_data['yll'].sum()
+    plt.clf()
+    plt.bar(np.arange(2), [gbd_yll, model_yll], color=['lightsteelblue', 'lightsalmon'])
+    plt.xticks(np.arange(2), ['GBD', 'Model'])
+    plt.ylabel('YLL')
+    plt.title('Year of life lost due to RTI predicted by the GBD study and the model')
+    plt.savefig(save_directory + "/" + filename_description + "_" + "yll.png",
+                bbox_inches='tight')
+    plt.clf()
+    model_yld = r['yld_custom'].mean()
+    gbd_yld = gbd_data['yld'].sum()
+    plt.bar(np.arange(2), [gbd_yld, model_yld], color=['lightsteelblue', 'lightsalmon'])
+    plt.xticks(np.arange(2), ['GBD', 'Model'])
+    plt.ylabel('YLD')
+    plt.title('Year living with disability due to RTI predicted by the GBD study and the model')
+    plt.savefig(save_directory + "/" + filename_description + "_" + "yld.png",
+                bbox_inches='tight')
+    plt.clf()
+    model_dalys = model_yld + model_yll
+    gbd_dalys = gbd_data['dalys'].sum()
+    plt.bar(np.arange(2), [gbd_dalys, model_dalys], color=['lightsteelblue', 'lightsalmon'])
+    plt.xticks(np.arange(2), ['GBD', 'Model'])
+    plt.ylabel('DALYs')
+    plt.title('DALYs due to RTI predicted by the GBD study and the model')
+    plt.savefig(save_directory + "/" + filename_description + "_" + "DALYs.png",
+                bbox_inches='tight')
+    plt.clf()
+    yld = [model_yld, gbd_yld]
+    yll = [model_yll, gbd_yll]
+
+    plt.barh([1], gbd_yld, color='steelblue', label='YLD')
+    plt.barh([1], gbd_yll, color='lightskyblue', label='YLL', left=gbd_yld)
+    plt.barh([0], model_yld, color='darksalmon', label='YLD')
+    plt.barh([0], model_yll, color='coral', label='YLL', left=model_yld)
+    plt.yticks(np.arange(2), ['Model', 'GBD'])
+    plt.xlabel('DALYs')
+    plt.legend()
+    plt.title('DALYs predicted by the GBD study and model broken down\n into YLL and YLD')
+    plt.savefig(save_directory + "/" + filename_description + "_" + "DALYs_breakdown.png",
                 bbox_inches='tight')
     plt.clf()
 

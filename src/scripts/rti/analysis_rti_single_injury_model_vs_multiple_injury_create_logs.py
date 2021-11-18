@@ -1023,3 +1023,12 @@ plt.text(np.arange(3) + 0.66, debugging_yld, [str(np.round(yld, 2)) for yld in c
 plt.legend()
 plt.savefig(save_file_path + f"yld_{imm_death}.png",
             bbox_inches='tight')
+gbd_yld_estimate_2010_2019 = 17201.73 + 16689.13 + 18429.77 + 17780.11 + 20462.97 + 19805.86 + 21169.19 + 19100.62 + \
+                             23081.26 + 22055.06
+plt.clf()
+plt.bar(np.arange(2), [gbd_yld_estimate_2010_2019, np.mean(sing_custom_yld)], color=['lightsteelblue', 'lightsalmon'])
+plt.bar(np.arange(2), ['GBD', 'Model'])
+plt.ylabel('YLD')
+plt.title("The single injury model's predicted years living with disability compared to the GBD estimate")
+plt.savefig(save_file_path + f"yld_sing_gbd_{imm_death}.png",
+            bbox_inches='tight')
