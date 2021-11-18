@@ -3037,7 +3037,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         the_appt_footprint['AccidentsandEmerg'] = 1
 
         # ======================= Design treatment plan, appointment type =============================================
@@ -3582,7 +3582,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             self.is_child = True
         else:
             self.is_child = False
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -3682,7 +3682,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['AccidentsandEmerg'] = 1
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Fracture_Cast'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -3826,7 +3826,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1  # wound debridement requires minor surgery
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -3954,7 +3954,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Under5OPD'] = 1
         else:
             the_appt_footprint['Over5OPD'] = 1
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Suture'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -4067,7 +4067,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Burn_Management'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -4185,7 +4185,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Under5OPD'] = 1
         else:
             the_appt_footprint['Over5OPD'] = 1
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Tetanus_Vaccine'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
@@ -4259,7 +4259,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_Acute_Pain_Management'  # This must begin with the module name
@@ -4597,7 +4597,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MajorSurg'] = 1  # This requires major surgery
 
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
         p = self.module.parameters
 
         # Define the necessary information for an HSI
@@ -4975,7 +4975,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1  # This requires major surgery
 
-        the_accepted_facility_level = 1
+        the_accepted_facility_level = '1b'
 
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
