@@ -28,9 +28,9 @@ xvals = range(info['number_of_draws'])
 params = extract_params(results_folder)
 # 2) Extract a series for all runs:
 people_in_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
-                                          column="incidence of rti per 100,000", index="date")
+                                          column="incidence of rti per 100,000", index="date", do_scaling=False)
 deaths_from_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
-                                            column="incidence of rti death per 100,000", index="date")
+                                            column="incidence of rti death per 100,000", index="date", do_scaling=False)
 cols = pd.MultiIndex.from_product(
         [range(info['number_of_draws']), range(info['runs_per_draw'])],
         names=["draw", "run"]
@@ -249,4 +249,130 @@ plt.ylabel('DALYs')
 plt.title('The DALYs produced in the single injury and\nmultiple injury form of the model')
 plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
             'dalys.png', bbox_inches='tight')
+plt.clf()
+plt.plot(incidence_of_rti.index, incidence_of_rti[0, 'mean'], color='blue', label='RTI')
+plt.plot(incidence_of_death.index, incidence_of_death[0, 'mean'], color='red', label='Death')
+plt.fill_between(incidence_of_rti.index, incidence_of_rti[0, 'lower'], incidence_of_rti[0, 'upper'], color='blue',
+                 alpha=0.5, label='95% C.I.')
+plt.fill_between(incidence_of_death.index, incidence_of_death[0, 'lower'], incidence_of_death[0, 'upper'], color='red',
+                 alpha=0.5, label='95% C.I.')
+plt.ylabel('Incidence per 100,000 p.y.')
+plt.xlabel('Simulation time')
+plt.legend()
+plt.title('The incidence of RTI and death for the single injury model run')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'single_model_run.png', bbox_inches='tight')
+plt.clf()
+plt.plot(incidence_of_rti.index, incidence_of_rti[1, 'mean'], color='blue', label='RTI')
+plt.plot(incidence_of_death.index, incidence_of_death[1, 'mean'], color='red', label='Death')
+plt.fill_between(incidence_of_rti.index, incidence_of_rti[1, 'lower'], incidence_of_rti[1, 'upper'], color='blue',
+                 alpha=0.5, label='95% C.I.')
+plt.fill_between(incidence_of_death.index, incidence_of_death[1, 'lower'], incidence_of_death[1, 'upper'], color='red',
+                 alpha=0.5, label='95% C.I.')
+plt.ylabel('Incidence per 100,000 p.y.')
+plt.xlabel('Simulation time')
+plt.legend()
+plt.title('The incidence of RTI and death for the multiple injury model run')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'multiple_model_run.png', bbox_inches='tight')
+gbd_dates = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+gbd_yld_estimate_2010_2019 = [17201.73, 16689.13, 18429.77, 17780.11, 20462.97, 19805.86, 21169.19, 19100.62, 23081.26,
+                              22055.06]
+gbd_yll_estimate_2010_2019 = [103892.353, 107353.63, 107015.04, 106125.14, 105933.16, 106551.59, 106424.49, 105551.97,
+                              108052.59, 109301.18]
+gbd_dalys_estimate_2010_2019 = np.add(gbd_yld_estimate_2010_2019, gbd_yll_estimate_2010_2019)
+gbd_data = pd.DataFrame(data={'yld': gbd_yld_estimate_2010_2019,
+                              'yll': gbd_yll_estimate_2010_2019,
+                              'dalys': gbd_dalys_estimate_2010_2019},
+                        index=gbd_dates)
+sing_yll = []
+mult_yll = []
+sing_yld = []
+mult_yld = []
+for draw in range(info['number_of_draws']):
+    for run in range(info['runs_per_draw']):
+        yll_df: pd.DataFrame = \
+            load_pickled_dataframes(results_folder, draw, run, "tlo.methods.healthburden")["tlo.methods.healthburden"]
+        yll_df = yll_df['yll_by_causes_of_death_stacked']
+        yll_df = yll_df.groupby('year').sum()
+        rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+        yll_df['yll_rti'] = [0.0] * len(yll_df)
+        for col in rti_columns:
+            yll_df['yll_rti'] += yll_df[col]
+        sim_start_year = min(incidence_of_rti.index.year)
+        sim_end_year = max(incidence_of_rti.index.year)
+        sim_year_range = pd.Index(np.arange(sim_start_year, sim_end_year + 1))
+        pop_size_df: pd.DataFrame = \
+            load_pickled_dataframes(results_folder, draw, run, "tlo.methods.demography")["tlo.methods.demography"]
+        pop_size_df = pop_size_df['population']
+        pop_size_df['year'] = pop_size_df['date'].dt.year
+        pop_size_df = pop_size_df.loc[pop_size_df['year'].isin(sim_year_range)]
+        scaling_df = pd.DataFrame({'total': pop_size_df['total']})
+        data = pd.read_csv("resources/demography/ResourceFile_Pop_Annual_WPP.csv")
+        Data_Pop = data.groupby(by="Year")["Count"].sum()
+        Data_Pop = Data_Pop.loc[sim_year_range]
+        scaling_df['pred_pop_size'] = Data_Pop.to_list()
+        scaling_df['scale_for_each_year'] = scaling_df['pred_pop_size'] / scaling_df['total']
+        scaling_df.index = sim_year_range
+        yll_df = yll_df.loc[sim_year_range]
+        yll_df['scaled_yll'] = yll_df['yll_rti'] * scaling_df['scale_for_each_year']
+        total_yll = yll_df['scaled_yll'].sum()
+        if draw == 0:
+            sing_yll.append(total_yll)
+        else:
+            mult_yll.append(total_yll)
+        yld_df: pd.DataFrame = \
+            load_pickled_dataframes(results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+        yld_df = yld_df['rti_health_burden_per_day']
+        yld_df['year'] = yld_df['date'].dt.year
+        yld_df = yld_df.groupby('year').sum()
+        yld_df['total_daily_healthburden'] = [sum(daly_weights) for daly_weights in yld_df['daly_weights'].to_list()]
+        yld_df['scaled_healthburden'] = yld_df['total_daily_healthburden'] * scaling_df['scale_for_each_year'] / 365
+        total_yld = yld_df['scaled_healthburden'].sum()
+        if draw == 0:
+            sing_yld.append(total_yld)
+        else:
+            mult_yld.append(total_yld)
+sing_dalys = np.add(sing_yld, sing_yll)
+mult_dalys = np.add(mult_yld, mult_yll)
+plt.clf()
+plt.bar(np.arange(2), [gbd_data['dalys'].sum(), np.mean(sing_dalys)], color=['lightsteelblue', 'lightsalmon'])
+plt.xticks(np.arange(2), ['GBD', 'Model'])
+plt.ylabel('DALYs')
+plt.title('The DALYs caused by RTI estimated by the GBD study and the single injury model run')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'single_model_DALYs.png', bbox_inches='tight')
+plt.clf()
+plt.bar(np.arange(2), [gbd_data['dalys'].sum(), np.mean(mult_dalys)], color=['lightsteelblue', 'lightsalmon'])
+plt.xticks(np.arange(2), ['GBD', 'Model'])
+plt.ylabel('DALYs')
+plt.title('The DALYs caused by RTI estimated by the GBD study and the multiple injury model run')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'multiple_model_DALYs.png', bbox_inches='tight')
+plt.clf()
+gbd_yld = gbd_data['yld'].sum()
+gbd_yll = gbd_data['yll'].sum()
+plt.barh([1], gbd_yld, color='steelblue', label='YLD')
+plt.barh([1], gbd_yll, color='lightskyblue', label='YLL', left=gbd_yld)
+plt.barh([0], sing_yld, color='darksalmon', label='YLD')
+plt.barh([0], sing_yll, color='coral', label='YLL', left=sing_yld)
+plt.yticks(np.arange(2), ['Model', 'GBD'])
+plt.xlabel('DALYs')
+plt.legend()
+plt.title('DALYs predicted by the GBD study and model broken down\n into YLL and YLD')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'single_model_DALYs_breakdown.png', bbox_inches='tight')
+plt.clf()
+gbd_yld = gbd_data['yld'].sum()
+gbd_yll = gbd_data['yll'].sum()
+plt.barh([1], gbd_yld, color='steelblue', label='YLD')
+plt.barh([1], gbd_yll, color='lightskyblue', label='YLL', left=gbd_yld)
+plt.barh([0], mult_yld, color='darksalmon', label='YLD')
+plt.barh([0], mult_yll, color='coral', label='YLL', left=mult_yld)
+plt.yticks(np.arange(2), ['Model', 'GBD'])
+plt.xlabel('DALYs')
+plt.legend()
+plt.title('DALYs predicted by the GBD study and model broken down\n into YLL and YLD')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'multiple_model_DALYs_breakdown.png', bbox_inches='tight')
 plt.clf()

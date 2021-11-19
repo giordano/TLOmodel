@@ -1726,8 +1726,6 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     plt.savefig(save_directory + "/" + filename_description + "_" + "DALYs.png",
                 bbox_inches='tight')
     plt.clf()
-    yld = [model_yld, gbd_yld]
-    yll = [model_yll, gbd_yll]
 
     plt.barh([1], gbd_yld, color='steelblue', label='YLD')
     plt.barh([1], gbd_yll, color='lightskyblue', label='YLL', left=gbd_yld)
