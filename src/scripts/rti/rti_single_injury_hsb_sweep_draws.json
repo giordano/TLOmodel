@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_single_injury_hsb_sweep.py",
+  "scenario_script_path": "src/scripts/rti/rti_single_injury_hsb_sweep.py",
   "scenario_seed": 12,
   "runs_per_draw": 10,
   "draws": [
@@ -344,5 +344,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "80a34cf0f710de55ab0459a9d6da37c5d8f9ab45",
+  "github": "https://github.com/UCL/TLOmodel/blob/80a34cf0f710de55ab0459a9d6da37c5d8f9ab45/src/scripts/rti/rti_single_injury_hsb_sweep.py"
 }
