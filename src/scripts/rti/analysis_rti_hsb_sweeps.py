@@ -892,3 +892,38 @@ ax2.set_title('Multiple injury model')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
             f"Incidence_of_deaths.png", bbox_inches='tight')
 plt.clf()
+gbd_data = pd.read_csv('resources/gbd/ResourceFile_Deaths_And_DALYS_GBD2019.csv')
+gbd_data = gbd_data.loc[gbd_data['measure_name'] == 'DALYs (Disability-Adjusted Life Years)']
+gbd_data = gbd_data.loc[gbd_data['Year'].isin(range(2010, 2020))]
+gbd_data = gbd_data.groupby('cause_name').sum()
+gbd_data = gbd_data.nlargest(11, 'GBD_Est')
+old_order_names = gbd_data.index
+old_order_values = gbd_data['GBD_Est'].values
+gbd_data = gbd_data.nlargest(10, 'GBD_Est')
+gbd_data.loc['Road injuries'] = [805800, 0, mult_dalys.mean(), 0, 0]
+gbd_data = gbd_data.sort_values('GBD_Est', ascending=False)
+new_order_names = gbd_data.index
+new_order_values = gbd_data['GBD_Est'].values
+new_order_colors = ['lightsalmon'] * len(old_order_names)
+new_rti_index = np.where((new_order_names == 'Road injuries'))
+new_order_colors[new_rti_index[0][0]] = 'gold'
+
+old_rti_index = np.where((old_order_names == 'Road injuries'))
+old_order_colors = ['lightsteelblue'] * len(old_order_names)
+old_order_colors[old_rti_index[0][0]] = 'gold'
+fig = plt.figure(constrained_layout=True)
+# Use GridSpec for customising layout
+gs = fig.add_gridspec(nrows=2, ncols=1)
+ax1 = fig.add_subplot(gs[0, 0])
+ax1.barh(np.arange(len(old_order_names)), old_order_values, color=old_order_colors)
+ax1.set_yticks(np.arange(len(old_order_names)))
+ax1.set_yticklabels(old_order_names)
+ax1.set_title('GBD ranked total DALYs')
+ax2 = fig.add_subplot(gs[1, 0])
+ax2.barh(np.arange(len(new_order_names)), new_order_values, color=new_order_colors)
+ax2.set_xlabel('Total DALYs 2010-2019')
+ax2.set_yticks(np.arange(len(new_order_names)))
+ax2.set_yticklabels(new_order_names)
+ax2.set_title('New ranked total DALYs')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
+            f"New_daly_rankings.png", bbox_inches='tight')
