@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import squarify
 
 from tlo.analysis.utils import (
     extract_params,
@@ -927,3 +928,27 @@ ax2.set_yticklabels(new_order_names)
 ax2.set_title('New ranked total DALYs')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
             f"New_daly_rankings.png", bbox_inches='tight')
+
+old_order_names = ['HIV/AIDS', 'Neonatal\ndisorders', 'Lower\nrespiratory\ninfections', 'Malaria',
+                   'Diarrheal\ndiseases', 'Tuberculosis', 'Congenital\nbirth\ndefects', 'Meningitis',
+                   'Malnutrition', 'Stroke', 'Road injuries']
+old_order_colors = ['linen', 'navajowhite', 'khaki', 'yellow', 'grey', 'rosybrown', 'red', 'lightsalmon', 'peachpuff',
+                    'lightsteelblue', 'seagreen']
+new_order_names = ['HIV/AIDS', 'Neonatal\ndisorders', 'Lower\nrespiratory\ninfections', 'Malaria',
+                   'Diarrheal\ndiseases', 'Tuberculosis', 'Congenital\nbirth defects', 'Road injuries', 'Meningitis',
+                   'Malnutrition', 'Stroke']
+new_order_colors = ['linen', 'navajowhite', 'khaki', 'yellow', 'grey', 'rosybrown', 'red', 'seagreen', 'lightsalmon',
+                    'peachpuff', 'lightsteelblue']
+fig = plt.figure(constrained_layout=True)
+# Use GridSpec for customising layout
+gs = fig.add_gridspec(nrows=2, ncols=1)
+ax1 = fig.add_subplot(gs[0, 0])
+squarify.plot(old_order_values, label=old_order_names, color=old_order_colors)
+ax1.axis('off')
+ax1.set_title('Total DALYs predicted from 2010-2019 by condition, GBD study')
+ax2 = fig.add_subplot(gs[1, 0])
+squarify.plot(new_order_values, label=new_order_names, color=new_order_colors)
+ax2.axis('off')
+ax2.set_title('Total DALYs predicted from 2010-2019 by condition with RTI model')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
+            f"New_daly_rankings_Tree_diagram.png", bbox_inches='tight')
