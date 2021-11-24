@@ -470,6 +470,7 @@ ax2.legend()
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
             f"hsb_inc_and_death_multiple.png", bbox_inches='tight')
 print('breakpoint')
+
 def extract_yll_yld(results_folder):
     yll = pd.DataFrame()
     yld = pd.DataFrame()
@@ -738,34 +739,56 @@ for draw in range(info['number_of_draws']):
 
 gbd_incidence_death = 12.1
 plt.clf()
-for index in mult_in_accepted_range[0]:
+
+mult_incidence_of_death = mult_rescaled_incidence_of_death[mult_in_accepted_range[0]]
+mult_dalys = mult_mean_daly[mult_in_accepted_range[0]]
+mult_percent_sought_care = mult_mean_hsb[:, 'mean'][mult_in_accepted_range[0]]
+sing_incidence_of_death = sing_rescaled_incidence_of_death[sing_in_accepted_range[0]]
+sing_dalys = sing_mean_daly[sing_in_accepted_range[0]]
+sing_percent_sought_care = sing_mean_hsb[:, 'mean'][sing_in_accepted_range[0]]
+
+for index, value in enumerate(mult_in_accepted_range[0]):
+    fig, ax1 = plt.subplots()
     sing_scaled_inc_death = sing_rescaled_incidence_of_death[index]
     mult_scaled_inc_death = mult_rescaled_incidence_of_death[index]
+    dalys = [gbd_data['dalys'].sum(), sing_dalys[index], mult_dalys[index]]
     gbd_results = [GBD_est_inc, gbd_incidence_death, GBD_est_inc]
     single_results = [sing_scaled_incidences[index], sing_scaled_inc_death, sing_scaled_incidences[index]]
     mult_results = [mult_scaled_incidences[index], mult_scaled_inc_death,
                     mult_scaled_incidences[index] * average_n_inj_per_draws[index]]
-    plt.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
-    plt.bar(np.arange(3) + 0.25, single_results, width=0.25, color='lightsteelblue', label='Single')
-    plt.bar(np.arange(3) + 0.5, mult_results, width=0.25,
+    ax1.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
+    ax1.bar(np.arange(3) + 0.25, single_results, width=0.25, color='lightsteelblue', label='Single')
+    ax1.bar(np.arange(3) + 0.5, mult_results, width=0.25,
             color='lightsalmon', label='Multiple')
-    plt.xticks(np.arange(3) + 0.25, ['Incidence\nof\nRTI', 'Incidence\nof\ndeath', 'Incidence\nof\ninjuries'])
+    ax1.set_xticks(np.arange(4) + 0.25)
+    ax1.set_xticklabels(['Incidence\nof\nRTI', 'Incidence\nof\ndeath', 'Incidence\nof\ninjuries', 'DALYs'])
     for idx, val in enumerate(gbd_results):
-        plt.text(np.arange(3)[idx] - 0.125, gbd_results[idx] + 10, f"{np.round(val, 2)}", fontdict={'fontsize': 9},
+        ax1.text(np.arange(3)[idx] - 0.125, gbd_results[idx] + 10, f"{np.round(val, 2)}", fontdict={'fontsize': 9},
                  rotation=45)
     for idx, val in enumerate(single_results):
-        plt.text(np.arange(3)[idx] + 0.25 - 0.125, single_results[idx] + 10, f"{np.round(val, 2)}",
+        ax1.text(np.arange(3)[idx] + 0.25 - 0.125, single_results[idx] + 10, f"{np.round(val, 2)}",
                  fontdict={'fontsize': 9}, rotation=45)
     for idx, val in enumerate(mult_results):
-        plt.text(np.arange(3)[idx] + 0.5 - 0.125, mult_results[idx] + 10, f"{np.round(val, 2)}",
+        ax1.text(np.arange(3)[idx] + 0.5 - 0.125, mult_results[idx] + 10, f"{np.round(val, 2)}",
                  fontdict={'fontsize': 9},
                  rotation=45)
-    plt.legend()
-    plt.title('Comparing the incidence of RTI, RTI death and injuries\nfor the GBD study, single injury model and\n'
-              'multiple injury model')
-    plt.ylabel('Incidence per \n 100,000 person years')
+    ax1.set_ylim([0, 1500])
+    ax1.legend(loc='upper left')
+    ax1.set_title('Comparing the incidence of RTI, RTI death and injuries\nfor the GBD study, single injury model and\n'
+                  'multiple injury model')
+    ax1.set_ylabel('Incidence per \n 100,000 person years')
+    ax1.axvline(2.75, color='black', linestyle='solid')
+    ax2 = ax1.twinx()
+    ax2.bar([3, 3.25, 3.5], dalys, width=0.25, color=['gold', 'lightsteelblue', 'lightsalmon'])
+    dalys_x_loc = [3, 3.25, 3.5]
+    for idx, val in enumerate(dalys):
+        ax2.text(dalys_x_loc[idx] - 0.05, dalys[idx] + 100000, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9},
+                 rotation=90)
+    ax2.set_ylabel('Total DALYs 2010-2019')
+    ax2.set_ylim([0, 3500000])
     plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/"
-                f"IncidenceSummary_ISS_cut_off_is_{x_vals[index]}.png", bbox_inches='tight')
+                f"IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
     plt.clf()
 
 mult_incidence_of_death = mult_rescaled_incidence_of_death[mult_in_accepted_range[0]]
@@ -952,3 +975,60 @@ ax2.axis('off')
 ax2.set_title('Total DALYs predicted from 2010-2019 by condition with RTI model')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
             f"New_daly_rankings_Tree_diagram.png", bbox_inches='tight')
+# split the deaths into particular causes
+rti_causes_of_death = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death',
+                       'RTI_death_shock']
+sing_per_draw_percent_cause_of_death = []
+for draw in range(info['number_of_draws']):
+    this_draw_percent_cause_of_death = []
+    if draw in sing_in_accepted_range[0]:
+        for run in range(info['runs_per_draw']):
+            df: pd.DataFrame = \
+                load_pickled_dataframes(single_injury_results_folder, draw, run, "tlo.methods.demography")["tlo.methods.demography"]
+            df = df['death']
+            cause_of_death_distribution = []
+            for cause in rti_causes_of_death:
+                cause_of_death_distribution.append(len(df.loc[df['cause'] == cause]))
+            this_draw_percent_cause_of_death.append(list(np.divide(cause_of_death_distribution,
+                                                                   sum(cause_of_death_distribution))))
+        average_percent_by_cause = [float(sum(col)) / len(col) for col in zip(*this_draw_percent_cause_of_death)]
+        sing_per_draw_percent_cause_of_death.append(average_percent_by_cause)
+mult_per_draw_percent_cause_of_death = []
+for draw in range(info['number_of_draws']):
+    this_draw_percent_cause_of_death = []
+    if draw in mult_in_accepted_range[0]:
+        for run in range(info['runs_per_draw']):
+            try:
+                df: pd.DataFrame = \
+                    load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.demography")["tlo.methods.demography"]
+                df = df['death']
+                cause_of_death_distribution = []
+                for cause in rti_causes_of_death:
+                    cause_of_death_distribution.append(len(df.loc[df['cause'] == cause]))
+                this_draw_percent_cause_of_death.append(list(np.divide(cause_of_death_distribution,
+                                                                       sum(cause_of_death_distribution))))
+            except KeyError:
+                this_draw_percent_cause_of_death.append(this_draw_percent_cause_of_death[-1])
+            average_percent_by_cause = [float(sum(col)) / len(col) for col in zip(*this_draw_percent_cause_of_death)]
+            mult_per_draw_percent_cause_of_death.append(average_percent_by_cause)
+sing_ave_cause_of_death = [float(sum(col)) / len(col) for col in zip(*sing_per_draw_percent_cause_of_death)]
+mult_ave_cause_of_death = [float(sum(col)) / len(col) for col in zip(*mult_per_draw_percent_cause_of_death)]
+labels = ['No med', 'With med', 'Unavailable\nmed', 'Death on\nscene', 'Shock']
+plt.clf()
+plt.bar(np.arange(len(sing_ave_cause_of_death)), sing_ave_cause_of_death, color='lightsteelblue', width=0.4,
+        label='Single')
+plt.bar(np.arange(len(mult_ave_cause_of_death)) + 0.4, mult_ave_cause_of_death, color='lightsalmon', width=0.4,
+        label='multiple')
+for idx, percent in enumerate(sing_ave_cause_of_death):
+    plt.text(np.arange(len(sing_ave_cause_of_death))[idx] - 0.05, sing_ave_cause_of_death[idx] + 0.02,
+             f"{np.round(sing_ave_cause_of_death[idx], 2)}", rotation=90)
+for idx, percent in enumerate(mult_ave_cause_of_death):
+    plt.text(np.arange(len(mult_ave_cause_of_death))[idx] + 0.4 - 0.05, mult_ave_cause_of_death[idx] + 0.02,
+             f"{np.round(mult_ave_cause_of_death[idx], 2)}", rotation=90)
+plt.xticks(np.arange(len(labels)) + 0.2, labels)
+plt.legend()
+plt.ylabel('Percent')
+plt.ylim([0, 1])
+plt.title("The average percentage of death by context in the\nsingle and multiple models")
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
+            f"AverageDeathByContextInSingleAndMultipleInjuryModels.png", bbox_inches='tight')
