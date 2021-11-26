@@ -3,6 +3,7 @@ The results of the bachrun were put into the 'outputs' results_folder
 """
 
 from pathlib import Path
+from src.scripts.rti.rti_create_graphs import age_breakdown
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1032,3 +1033,154 @@ plt.ylim([0, 1])
 plt.title("The average percentage of death by context in the\nsingle and multiple models")
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/hsb_sweeps/"
             f"AverageDeathByContextInSingleAndMultipleInjuryModels.png", bbox_inches='tight')
+# plot the average age range for the multiple injury model
+age_range_per_draw = []
+for draw in range(info['number_of_draws']):
+    age_range_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['rti_demography']
+            ages = df['age'].sum()
+            for age in ages:
+                age_range_this_draw.append(age)
+        except KeyError:
+            pass
+    age_range_per_draw.append(age_range_this_draw)
+labels = ['0-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40', '41-45', '46-50', '51-55', '56-60',
+          '61-65', '66-70', '71-75', '76-80', '81-85', '86-90', '90+']
+ages_in_draw = age_breakdown(age_range_per_draw[-1])
+# get gender data
+average_percent_male_per_draw = []
+for draw in range(info['number_of_draws']):
+    ave_percent_male_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['rti_demography']
+            males = df['males_in_rti'].sum()
+            females = df['females_in_rti'].sum()
+            total = males + females
+            percent_male = males / total
+            ave_percent_male_this_draw.append(percent_male)
+        except KeyError:
+            pass
+    average_percent_male_per_draw.append(np.mean(ave_percent_male_this_draw))
+percent_male = average_percent_male_per_draw[-1]
+percent_alcohol_consumption = []
+for draw in range(info['number_of_draws']):
+    ave_percent_alcohol_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['rti_demography']
+            percent_alcohol = np.mean(df['percent_related_to_alcohol'])
+
+            ave_percent_alcohol_this_draw.append(percent_alcohol)
+        except KeyError:
+            pass
+    percent_alcohol_consumption.append(ave_percent_alcohol_this_draw)
+overall_average_percent_alcohol = np.mean([np.mean(alc) for alc in percent_alcohol_consumption])
+plt.clf()
+fig = plt.figure(constrained_layout=True)
+# Use GridSpec for customising layout
+gs = fig.add_gridspec(nrows=2, ncols=2)
+ax1 = fig.add_subplot(gs[0, 0:2])
+
+ax1.bar(np.arange(len(labels)), np.divide(ages_in_draw, sum(ages_in_draw)), color='lightsteelblue')
+ax1.set_xticks(np.arange(len(labels)))
+ax1.set_xticklabels(labels, rotation=90)
+ax1.set_ylabel('Percentage')
+ax1.set_xlabel('Age group')
+ax1.set_title('Age demographics of those in RTI')
+ax2 = fig.add_subplot(gs[1, 0])
+ax2.pie([percent_male, 1 - percent_male], labels=['male', 'female'], colors=['lightsteelblue', 'lightsalmon'],
+        autopct='%1.1f%%', startangle=90)
+ax2.set_title('Gender demographics\nof those in RTI')
+ax3 = fig.add_subplot(gs[1, 1])
+ax3.pie([overall_average_percent_alcohol, 1 - overall_average_percent_alcohol],
+        labels=['Alcohol related', 'Not alcohol related'], colors=['lightsteelblue', 'lightsalmon'],
+        autopct='%1.1f%%', startangle=0)
+ax3.set_title('Alcohol consumption\nof those in RTI')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'Age_Gender_And_Alcohol.png', bbox_inches='tight')
+# get ninj
+
+
+# check calibration of number of injuries per person in hospital
+average_n_inj_in_hospital_per_draws = []
+for draw in range(info['number_of_draws']):
+    ave_n_inj_in_hospital_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['number_of_injuries_in_hospital']
+            total_n_injuries = sum(df['number_of_injuries'])
+            injuries_per_person_in_hos = total_n_injuries / len(df['number_of_injuries'])
+            ave_n_inj_in_hospital_this_draw.append(injuries_per_person_in_hos)
+        except KeyError:
+            pass
+    average_n_inj_in_hospital_per_draws.append(np.mean(ave_n_inj_in_hospital_this_draw))
+average_inj_in_hos_mult = np.mean([average_n_inj_in_hospital_per_draws[mult_in_accepted_range[0][idx]] for idx, val in
+                                   enumerate(mult_in_accepted_range[0])])
+average_inj_in_hos_mult = average_n_inj_in_hospital_per_draws[8] #  this was the origional dist fit to
+average_inj_per_person_general_mult = average_n_inj_per_draws[1]
+average_n_inj_per_person_kamuzu = 7057 / 4776
+ninj_dist = [[1, 2, 3, 4, 5, 6, 7, 8], [0.7362050184224718, 0.19421990546958515, 0.051237591074077896,
+                                        0.013517104401461814, 0.0035659777825202245, 0.0009407486372638106,
+                                        0.0002481810186400668, 6.547319397917849e-05]]
+
+plt.clf()
+fig = plt.figure(constrained_layout=True)
+# Use GridSpec for customising layout
+gs = fig.add_gridspec(nrows=1, ncols=2)
+ax1 = fig.add_subplot(gs[0, 0])
+ax1.plot(ninj_dist[0], ninj_dist[1], color='lightsteelblue')
+ax1.set_xticks(ninj_dist[0])
+ax1.set_xlabel('Number of injuries')
+ax1.set_ylabel('Probablity')
+ax1.set_title('Exponential decay curve used\n to predict number of injuries\nassigned to those with RTI')
+ax2 = fig.add_subplot(gs[0, 1])
+ax2.bar(np.arange(3), [average_n_inj_per_person_kamuzu, average_inj_in_hos_mult, average_inj_per_person_general_mult],
+        color=['lightsteelblue', 'lightsalmon', 'peachpuff'])
+ax2.set_xticks(np.arange(3))
+ax2.set_xticklabels(['Average n\ninjuries\n reported in\n Kamuzu',
+                     'Average n\ninjuries\n in model\nhealth\nsystem',
+                     'Average n\ninjuries\n general'])
+ax2.set_ylabel('Average number of\ninjuries per person')
+ax2.set_title('The average number of injuries\nper person in the model\ncompared to data from KCH')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'NinjSummary.png', bbox_inches='tight')
+# get inhospital mortality
+percentage_death_in_hos = []
+for draw in range(info['number_of_draws']):
+    in_hospital_mort_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(multiple_injury_results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['summary_1m']
+
+            percent_died_after_med = df['percentage died after med'].tolist()
+            for i in percent_died_after_med:
+                if i != 'none_injured':
+                    in_hospital_mort_this_draw.append(i)
+        except KeyError:
+            pass
+    percentage_death_in_hos.append(in_hospital_mort_this_draw)
+mean_perc_death_in_hos = [np.mean(i) for i in percentage_death_in_hos]
+calibrated_in_hos_mortality = mean_perc_death_in_hos[8]
+expected_in_hospital_mortality = (182 + 38) / (3840 + 1227 + 182 + 38)
+plt.clf()
+plt.bar(np.arange(2), [expected_in_hospital_mortality, calibrated_in_hos_mortality],
+        color=['lightsteelblue', 'lightsalmon'])
+plt.xticks(np.arange(2), ['KCH\nin-hospital\nmortality', 'Model\nin-hospital\nmortality'])
+plt.ylabel('Percent')
+plt.title('Multiple injury percent in-hospital mortality')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/BatchResults/'
+            'In_hospital_mortality.png', bbox_inches='tight')
+

@@ -3,8 +3,6 @@ import numpy as np
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -25,7 +23,8 @@ class TestScenario(BaseScenario):
         self.pop_size = 10000
         self.smaller_pop_size = 10000
         self.number_of_samples_in_parameter_range = 6
-        self.number_of_draws = self.number_of_samples_in_parameter_range
+        self.upper_iss_value = 6
+        self.number_of_draws = self.number_of_samples_in_parameter_range * self.upper_iss_value
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -40,8 +39,6 @@ class TestScenario(BaseScenario):
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources, service_availability=['*']),
             healthburden.HealthBurden(resourcefilepath=self.resources),
@@ -61,7 +58,8 @@ class TestScenario(BaseScenario):
         # use if creating own distrubtion
         percent_multiple_max = 0.29901999999999995 + 0.03
         percent_multiple_min = 0.29901999999999995 - 0.03
-        percent_multiple_as_decimal = np.linspace(percent_multiple_min, percent_multiple_max, self.number_of_draws)
+        percent_multiple_as_decimal = np.linspace(percent_multiple_min, percent_multiple_max,
+                                                  self.number_of_samples_in_parameter_range)
         def exponentialdecay(x, a, k):
             y = a * np.exp(k * x)
             return y
@@ -84,10 +82,21 @@ class TestScenario(BaseScenario):
             exponential_prediction = exponential_prediction[:-1]
             exponential_prediction = list(np.divide(exponential_prediction, sum(exponential_prediction)))
             probability_distributions.append(exponential_prediction)
-
+        hsb_cutoff_max = self.upper_iss_value + 1
+        hsb_cutoff_min = 1
+        iss_cut_off_scores = range(hsb_cutoff_min, hsb_cutoff_max)
+        ninj_df = pd.DataFrame()
+        ninj_df['ninj'] = [[[1, 2, 3, 4, 5, 6, 7, 8]]] * len(probability_distributions)
+        ninj_df['dist'] = [[dist] for dist in probability_distributions]
+        ninj_df['number_of_injured_body_regions_distribution'] = ninj_df['ninj'] + ninj_df['dist']
+        grid = self.make_grid(
+            {'number_of_injured_body_regions_distribution': ninj_df['number_of_injured_body_regions_distribution'],
+             'rt_emergency_care_ISS_score_cut_off': iss_cut_off_scores}
+        )
         return {
-            'RTI': {'number_of_injured_body_regions_distribution': [[1, 2, 3, 4, 5, 6, 7, 8],
-                                                                    probability_distributions[draw_number]]
+            'RTI': {'number_of_injured_body_regions_distribution':
+                        grid['number_of_injured_body_regions_distribution'][draw_number],
+                    'rt_emergency_care_ISS_score_cut_off': grid['rt_emergency_care_ISS_score_cut_off'][draw_number]
                     },
             }
 
