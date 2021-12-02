@@ -618,6 +618,9 @@ class Alri(Module):
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
+        # dict to hold the consumables
+        self.consumables_used_in_hsi = dict()
+
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
@@ -763,6 +766,63 @@ class Alri(Module):
         # add prefix to label according to the name of the causes of disability declared
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
+
+    def look_up_consumables(self):
+        """Look up and store the consumables used in each of the HSI."""
+
+        def get_code(package=None, item=None):
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            if package is not None:
+                condition = consumables['Intervention_Pkg'] == package
+                column = 'Intervention_Pkg_Code'
+            else:
+                condition = consumables['Items'] == item
+                column = 'Item_Code'
+            return pd.unique(consumables.loc[condition, column])[0]
+
+        # Full packages
+        self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = get_code(
+            package='Pneumonia treatment (children)')
+        self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = get_code(
+            package='Treatment of severe pneumonia')
+
+        # Individual items
+        item_paracetamol = get_code(item='Paracetamol, tablet, 100 mg')
+        item_oral_amoxicillin = get_code(item='Amoxycillin 250mg_1000_CMST')
+
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'] = {
+            'Intervention_Package_Code': {}, 'Item_Code': {item_oral_amoxicillin: 1, item_paracetamol: 1}}
+
+    def do_when_presentation_with_cough_or_difficult_breathing_level0(self, person_id, hsi_event):
+        """This routine is called when cough or difficulty breathing is a symptom for a child attending
+        a Generic HSI Appointment at level 0. It checks for danger signs and schedules HSI Events appropriately."""
+
+        # Create some short-cuts:
+        schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
+        df = self.sim.population.props
+        p = self.parameters
+
+        # ----- For children over 2 months and under 5 years of age -----
+        if (df.at[person_id, 'age_exact_years'] >= 1 / 6) & (df.at[person_id, 'age_exact_years'] < 5):
+
+            # Check for danger signs
+            symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
+            if 'danger_signs' in symptoms:
+                # refer to health facility, give first dose of antibiotic
+                treatment = 'urgent_referral'
+
+            else:
+                # refer to health facility, give first dose of antibiotic
+                treatment = 'treat_at_home'
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Pneumonia_Treatment_iCCM(
+                    person_id=person_id,
+                    treatment=treatment,
+                    module=self),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1218,7 +1278,7 @@ class Models:
                 Predictor('sex').when('M', p['or_death_ALRI_male']),
                 Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
                 Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
-                Predictor('referral_type').when('hc_referral', p['or_death_ALRI_hc_referral'])
+                Predictor('referral_from_hsa_hc').when(True, p['or_death_ALRI_hc_referral'])
             )
 
         self.death_risk = set_lm_death()
@@ -1540,6 +1600,77 @@ class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
         self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
 
 
+class HSI_Pneumonia_Treatment_iCCM(HSI_Event, IndividualScopeEventMixin):
+    """
+    HSI event for treating cough and/ or difficult breathing at the community level
+    """
+
+    def __init__(self, module, person_id, treatment):
+        super().__init__(module, person_id=person_id)
+        self.treatment = treatment
+
+        self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_iCCM'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the treatment"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Exit if the person is not alive or is not currently infected:
+        if not (person.is_alive and person.ri_current_infection_status):
+            return
+
+        if self.treatment == 'urgent_referral':
+            # get the first dose of antibiotic
+            self.module.get_all_consumables(pkg_codes=self.module.consumables_used_in_hsi[
+                'First_dose_antibiotic_for_referral'])
+            # and refer to facility level 1 or 2
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Pneumonia_Treatment_IMCI(
+                    person_id=person_id,
+                    module=self,
+                    treatment='severe_pneumonia',
+                    first_appointment=False,
+                    hsa_hc_referred=True),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+        else:
+            # Treat uncomplicated cases now
+            prob_of_cure = 1.0
+            self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+
+
+class HSI_Pneumonia_Treatment_IMCI(HSI_Event, IndividualScopeEventMixin):
+    """
+    HSI event for treating cough and/ or difficult breathing at the community level
+    """
+
+    def __init__(self, module, person_id, treatment, first_appointment, hsa_hc_referred):
+        super().__init__(module, person_id=person_id)
+        self.treatment = treatment
+        self.first_appointment = first_appointment
+        self.hsa_hc_referred = hsa_hc_referred
+
+        self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_iCCM'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the treatment"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Exit if the person is not alive or is not currently infected:
+        if not (person.is_alive and person.ri_current_infection_status):
+            return
+
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -1704,8 +1835,7 @@ class AlriPropertiesOfOtherModules(Module):
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
-        'referral_type': Property(Types.CATEGORICAL, 'temporary property',
-                                  categories=['self_referral', 'hc_referral']),
+        'referral_from_hsa_hc': Property(Types.BOOL, 'temporary property'),
     }
 
     def __init__(self, name=None):
@@ -1723,7 +1853,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
         df.loc[df.is_alive, 'va_measles_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
-        df.loc[df.is_alive, 'referral_type'] = 'self_referral'
+        df.loc[df.is_alive, 'referral_from_hsa_hc'] = False
 
     def initialise_simulation(self, sim):
         pass
@@ -1738,5 +1868,5 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
-        df.at[child, 'referral_type'] = 'self_referral'
+        df.at[child, 'referral_from_hsa_hc'] = False
 
