@@ -722,8 +722,11 @@ class Alri(Module):
             self.daly_wts['daly_non_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
             self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
+        # Look-up and store the consumables that are required for each HSI
+        self.look_up_consumables()
+
         # Define the max episode duration
-        self.max_duration_of_episode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
+        self.max_duration_of_episode = DateOffset(days=(self.parameters['days_between_treatment_and_cure'] + 14))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -767,31 +770,43 @@ class Alri(Module):
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
 
+    # def store_consumables(self):
+    #     """Look up and store the consumables used in each of the HSI."""
+    #     def get_code(package=None, item=None):
+    #         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+    #         if package is not None:
+    #             condition = consumables['Intervention_Pkg'] == package
+    #             column = 'Intervention_Pkg_Code'
+    #         else:
+    #             condition = consumables['Items'] == item
+    #             column = 'Item_Code'
+    #         return pd.unique(consumables.loc[condition, column])[0]
+    #
+    #     # Full packages
+    #     self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = get_code(
+    #         package='Pneumonia treatment (children)')
+    #     self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = get_code(
+    #         package='Treatment of severe pneumonia')
+    #
+    #     # Individual items
+    #     item_paracetamol = get_code(item='Paracetamol, tablet, 100 mg')
+    #     item_oral_amoxicillin = get_code(item='Amoxycillin 250mg_1000_CMST')
+    #
+    #     self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'] = {
+    #         'Intervention_Package_Code': {}, 'Item_Code': {item_oral_amoxicillin: 1, item_paracetamol: 1}}
+
     def look_up_consumables(self):
-        """Look up and store the consumables used in each of the HSI."""
+        """Look up and store the consumables item codes used in each of the HSI."""
 
-        def get_code(package=None, item=None):
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-            if package is not None:
-                condition = consumables['Intervention_Pkg'] == package
-                column = 'Intervention_Pkg_Code'
-            else:
-                condition = consumables['Items'] == item
-                column = 'Item_Code'
-            return pd.unique(consumables.loc[condition, column])[0]
+        get_item_codes_from_package = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        # Full packages
-        self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = get_code(
-            package='Pneumonia treatment (children)')
-        self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = get_code(
-            package='Treatment of severe pneumonia')
-
-        # Individual items
-        item_paracetamol = get_code(item='Paracetamol, tablet, 100 mg')
-        item_oral_amoxicillin = get_code(item='Amoxycillin 250mg_1000_CMST')
-
-        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'] = {
-            'Intervention_Package_Code': {}, 'Item_Code': {item_oral_amoxicillin: 1, item_paracetamol: 1}}
+        self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = \
+            get_item_codes_from_package(package='Pneumonia treatment (children)')
+        self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = \
+            get_item_codes_from_package(package='Treatment of severe pneumonia')
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'] = \
+            [get_item_code(item='Paracetamol, tablet, 100 mg')] + [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
 
     def do_when_presentation_with_cough_or_difficult_breathing_level0(self, person_id, hsi_event):
         """This routine is called when cough or difficulty breathing is a symptom for a child attending
@@ -809,17 +824,49 @@ class Alri(Module):
             symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
             if 'danger_signs' in symptoms:
                 # refer to health facility, give first dose of antibiotic
-                treatment = 'urgent_referral'
+                treatment_plan = 'urgent_referral'
 
             else:
                 # refer to health facility, give first dose of antibiotic
-                treatment = 'treat_at_home'
+                treatment_plan = 'treat_at_home'
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Pneumonia_Treatment_iCCM(
-                    person_id=person_id,
-                    treatment=treatment,
-                    module=self),
+            schedule_hsi(HSI_Pneumonia_Treatment_iCCM(
+                person_id=person_id,
+                treatment_plan=treatment_plan,
+                module=self, first_appointment=True),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
+    def do_when_presentation_with_cough_or_difficult_breathing_level1(self, person_id, hsi_event):
+        """This routine is called when cough or difficulty breathing is a symptom for a child attending
+        a Generic HSI Appointment at level 1. It checks for danger signs and schedules HSI Events appropriately."""
+
+        # Create some short-cuts:
+        schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
+        df = self.sim.population.props
+        p = self.parameters
+
+        # ----- For children over 2 months and under 5 years of age -----
+        if (df.at[person_id, 'age_exact_years'] >= 1 / 6) & (df.at[person_id, 'age_exact_years'] < 5):
+
+            # Check for danger signs
+            symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
+            if 'danger_signs' in symptoms:
+                # refer to higher health facility level, give first dose of antibiotic
+                treatment_plan = 'treat_severe_pneumonia'
+                # Todo: first check if facility level has capabilities to treat, if not, then refer
+
+            else:
+                # classify non-severe pneumonia and treat outpatient
+                treatment = 'treat_non_severe_pneumonia'
+
+            schedule_hsi(HSI_Pneumonia_Treatment_IMCI(
+                person_id=person_id,
+                treatment_plan=treatment_plan,
+                module=self,
+                first_appointment=True,
+                hsa_hc_referred=False),
                 priority=0,
                 topen=self.sim.date,
                 tclose=None)
@@ -1370,6 +1417,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
         person = df.loc[person_id]
         m = self.module
+        p = m.parameters
         rng = self.module.rng
         models = m.models
 
@@ -1393,7 +1441,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # Define 'episode end' date. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
-        episode_end = date_of_outcome + m.max_duration_of_episode
+        episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
         # Update the properties in the dataframe:
         df.loc[person_id,
@@ -1605,9 +1653,10 @@ class HSI_Pneumonia_Treatment_iCCM(HSI_Event, IndividualScopeEventMixin):
     HSI event for treating cough and/ or difficult breathing at the community level
     """
 
-    def __init__(self, module, person_id, treatment):
+    def __init__(self, module, person_id, treatment_plan, first_appointment):
         super().__init__(module, person_id=person_id)
-        self.treatment = treatment
+        self.treatment_plan = treatment_plan
+        self.first_appointment = first_appointment
 
         self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_iCCM'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
@@ -1624,16 +1673,17 @@ class HSI_Pneumonia_Treatment_iCCM(HSI_Event, IndividualScopeEventMixin):
         if not (person.is_alive and person.ri_current_infection_status):
             return
 
-        if self.treatment == 'urgent_referral':
+        if self.treatment_plan == 'urgent_referral':
             # get the first dose of antibiotic
-            self.module.get_all_consumables(pkg_codes=self.module.consumables_used_in_hsi[
-                'First_dose_antibiotic_for_referral'])
+            self.get_consumables(
+                item_codes=self.module.consumables_used_in_hsi['First_dose_antibiotic_for_referral'],
+                return_individual_results=True)
             # and refer to facility level 1 or 2
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Pneumonia_Treatment_IMCI(
                     person_id=person_id,
                     module=self,
-                    treatment='severe_pneumonia',
+                    treatment_plan='severe_pneumonia',
                     first_appointment=False,
                     hsa_hc_referred=True),
                 priority=0,
@@ -1642,23 +1692,26 @@ class HSI_Pneumonia_Treatment_iCCM(HSI_Event, IndividualScopeEventMixin):
         else:
             # Treat uncomplicated cases now
             prob_of_cure = 1.0
-            self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+            if self.get_consumables(
+                item_codes=self.module.consumables_used_in_hsi[
+                    'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
+                self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
 
 
 class HSI_Pneumonia_Treatment_IMCI(HSI_Event, IndividualScopeEventMixin):
     """
-    HSI event for treating cough and/ or difficult breathing at the community level
+    HSI event for treating cough and/ or difficult breathing at the primary level (health centres)
     """
 
-    def __init__(self, module, person_id, treatment, first_appointment, hsa_hc_referred):
+    def __init__(self, module, person_id, treatment_plan, first_appointment, hsa_hc_referred):
         super().__init__(module, person_id=person_id)
-        self.treatment = treatment
+        self.treatment_plan = treatment_plan
         self.first_appointment = first_appointment
         self.hsa_hc_referred = hsa_hc_referred
 
-        self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_iCCM'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1'
+        self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_IMCI'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1670,6 +1723,70 @@ class HSI_Pneumonia_Treatment_IMCI(HSI_Event, IndividualScopeEventMixin):
         # Exit if the person is not alive or is not currently infected:
         if not (person.is_alive and person.ri_current_infection_status):
             return
+
+        if self.treatment_plan == 'treat_severe_pneumonia':
+            # check consumables availability
+            prob_of_cure = 1.0
+            if self.get_consumables(
+                item_codes=self.module.consumables_used_in_hsi[
+                    'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
+                self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+            else:
+                # refer to facility level 1b or 2
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Pneumonia_Treatment_IMCI_hospital(
+                        person_id=person_id,
+                        module=self,
+                        treatment_plan='treat_severe_pneumonia',
+                        first_appointment=False,
+                        hsa_hc_referred=True),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
+
+        elif self.treatment_plan == 'treat_non_severe_pneumonia':
+            # Treat uncomplicated cases now
+            prob_of_cure = 1.0
+            if self.get_consumables(
+                item_codes=self.module.consumables_used_in_hsi[
+                    'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
+                self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+
+
+class HSI_Pneumonia_Treatment_IMCI_hospital(HSI_Event, IndividualScopeEventMixin):
+    """
+    HSI event for treating cough and/ or difficult breathing at the secondary level (hospital)
+    """
+
+    def __init__(self, module, person_id, treatment_plan, first_appointment, hsa_hc_referred):
+        super().__init__(module, person_id=person_id)
+        self.treatment_plan = treatment_plan
+        self.first_appointment = first_appointment
+        self.hsa_hc_referred = hsa_hc_referred
+
+        self.TREATMENT_ID = 'HSI_Pneumonia_Treatment_IMCI'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the treatment"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Exit if the person is not alive or is not currently infected:
+        if not (person.is_alive and person.ri_current_infection_status):
+            return
+
+        # Treat uncomplicated cases now
+        prob_of_cure = 1.0
+        if self.get_consumables(
+            item_codes=self.module.consumables_used_in_hsi[
+                'Treatment_Severe_Pneumonia'], return_individual_results=True):
+            self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS

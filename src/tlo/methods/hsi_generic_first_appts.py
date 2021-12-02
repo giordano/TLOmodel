@@ -412,6 +412,13 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                         topen=sim.date,
                     )
 
+    # ------ ALRI ------
+    if df.at[person_id, 'age_years'] < 5:
+        if 'cough' or 'difficult_breathing' in symptoms:
+            if 'Alri' in sim.modules:
+                sim.modules['Alri'].do_when_presentation_with_cough_or_difficult_breathing_level1(
+                    person_id=person_id, hsi_event=hsi_event)
+
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:
         sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
