@@ -204,20 +204,38 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-search_range_lower = 1 - params['value'][0][1][0]
-search_range_upper = 1 - params.iloc[-1]['value'][1][0]
+search_range_lower = 1 - params.loc[params['module_param'] == 'RTI:number_of_injured_body_regions_distribution',
+                                    'value'][0][1][0]
+search_range_upper = 1 - params.iloc[-2]['value'][1][0]
 x_ticks = [f"Parameter \ndistribution {i + 1}" for i in range(0, len(params))]
 # 2) Extract a series for all runs:
 n_inj_overall = extract_results_number_of_injuries(results_folder, module="tlo.methods.rti", key='Injury_information',
-                                           column='Number_of_injuries')
-n_people_in_rti = extract_results(results_folder, module="tlo.methods.rti", key='summary_1m', column='number involved in a rti')
+                                                   column='Number_of_injuries')
+n_inj_overall.index = ['draw_1', 'draw_2', 'draw_3']
 average_n_inj_per_draw = n_inj_overall.mean()
+n_people_in_rti = extract_results(results_folder, module="tlo.methods.rti", key='summary_1m', column='number involved in a rti')
 average_n_people_per_draw = summarize(n_people_in_rti, only_mean=True).sum()
 overall_average_n_inj_per_person = average_n_inj_per_draw / average_n_people_per_draw
-n_inj_per_person_in_hos = extract_results_for_irregular_logs(results_folder, module="tlo.methods.rti", key="number_of_injuries_in_hospital",
+n_inj_per_person_in_hos = extract_results_for_irregular_logs(results_folder, module="tlo.methods.rti",
+                                                             key="number_of_injuries_in_hospital",
                                                              column="number_of_injuries", index="date")
 deaths_from_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
                                             column="incidence of rti death per 100,000", index="date")
+rti_inc = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
+                          column="incidence of rti per 100,000", index="date")
+extracted_hsb = extract_results(results_folder,
+                                module="tlo.methods.rti",
+                                key="summary_1m",
+                                column="percent sought healthcare",
+                                index="date")
+percent_inhospital_mortality = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
+                                               column="percentage died after med")
+prop_sought_healthcare_onlymeans = summarize(extracted_hsb, only_mean=True)
+prop_sought_healthcare_onlymeans = prop_sought_healthcare_onlymeans.transpose()
+prop_sought_healthcare_onlymeans = prop_sought_healthcare_onlymeans.mean(axis=1)
+percent_inhospital_mortality_means = summarize(percent_inhospital_mortality, only_mean=True)
+percent_inhospital_mortality_means = percent_inhospital_mortality_means.transpose()
+percent_inhospital_mortality_means = percent_inhospital_mortality_means.mean(axis=1)
 # percent_inhospital_mortality = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
 #                                                    column="percentage died after med")
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
@@ -226,14 +244,52 @@ average_ninj_in_hos.name = 'z'
 # average_ninj.index = studies_tested
 death_incidence = summarize(deaths_from_rti_incidence, only_mean=True).mean(axis=0)
 death_incidence.name = 'z'
+rti_incidence = summarize(rti_inc, only_mean=True).mean(axis=0)
 # death_incidence.index = studies_tested
 # inhospital_mortality_results = pd.Series([percent_inhospital_mortality[0].mean().mean() for i in
 #                                          range(0, info['number_of_draws'])])
 # inhospital_mortality_results.name = 'z'
 # inhospital_mortality_results.index = studies_tested
+idxs = []
+cut_off_scores_df = params.loc[params['module_param'] == 'RTI:rt_emergency_care_ISS_score_cut_off']
+cut_off_scores = cut_off_scores_df['value'].unique()
+for score in cut_off_scores:
+    idxs.append(cut_off_scores_df.loc[cut_off_scores_df['value'] == score].index)
+
 average_n_inj_in_kch = 7057 / 4776
-best_fit_found = min(average_ninj_in_hos, key=lambda x: abs(x - average_n_inj_in_kch))
-best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
+best_fitting_distribution_per_score = []
+best_fitting_ave_n = []
+best_fit_dist_df = pd.DataFrame(columns=['best_fitting_dist', 'ave_n_inj_in_hospital', 'unscaled_inc_death', 'inc_rti',
+                                         'mean_perc_hsb', 'percent_in_hos_mort'])
+for n, idx in enumerate(idxs):
+    best_fit_found = min(average_ninj_in_hos[idx], key=lambda x: abs(x - average_n_inj_in_kch))
+    best_fitting_ave_n.append(best_fit_found)
+    best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
+    params_in_run = params.loc[best_fit_index]
+    best_fitting_distribution_per_score.append(
+        params_in_run.loc[
+            params_in_run['module_param'] == 'RTI:number_of_injured_body_regions_distribution'
+            ]['value'].values[0]
+    )
+    inc_death = death_incidence.loc[best_fit_index].values[0]
+    inc_rti = rti_incidence.loc[best_fit_index].values[0]
+    mean_perc_hsb = prop_sought_healthcare_onlymeans.loc[best_fit_index].values[0]
+    inhospital_mortality = percent_inhospital_mortality_means.loc[best_fit_index].to_list()[0]
+    best_fit_dist_df.loc['ISS_cut_off_' + str(n + 1)] = \
+        [
+            params_in_run.loc[
+                params_in_run['module_param'] == 'RTI:number_of_injured_body_regions_distribution'
+                ]['value'].values[0],
+            best_fit_found,
+            inc_death,
+            inc_rti,
+            mean_perc_hsb,
+            inhospital_mortality
+        ]
+best_fit_dist_df['scale_for_inc'] = 954.2 / best_fit_dist_df['inc_rti']
+best_fit_dist_df['scaled_inc'] = best_fit_dist_df['inc_rti'] * best_fit_dist_df['scale_for_inc']
+best_fit_dist_df['scaled_inc_death'] = best_fit_dist_df['scale_for_inc'] * best_fit_dist_df['unscaled_inc_death']
+best_fit_dist_df.to_csv('C:/Users/Robbie Manning Smith/Desktop/rti_n_inj_dist_per_hsb.csv')
 colors = ['lightsalmon' for i in average_ninj_in_hos]
 colors[best_fit_index[0][0]] = 'gold'
 # plot number of injuries
