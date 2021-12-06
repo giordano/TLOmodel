@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "src/scripts/rti/rti_in_hospital_mortality_calibration.py",
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_in_hospital_mortality_calibration.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -13,7 +13,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -27,7 +27,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -41,7 +41,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -55,7 +55,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -69,7 +69,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -83,7 +83,7 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 1.0
+          "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
     },
@@ -97,7 +97,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -111,7 +111,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -125,7 +125,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -139,7 +139,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -153,7 +153,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -167,7 +167,7 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 2.0
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -181,7 +181,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -195,7 +195,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -209,7 +209,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -223,7 +223,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -237,7 +237,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -251,7 +251,7 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 3.0
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -265,7 +265,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -279,7 +279,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -293,7 +293,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -307,7 +307,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -321,7 +321,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -335,7 +335,7 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 4.0
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -349,7 +349,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -363,7 +363,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -377,7 +377,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -391,7 +391,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -405,7 +405,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -419,7 +419,7 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 5.0
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -433,7 +433,7 @@
           "prob_death_iss_16_24": 0.040279870055668014,
           "prob_death_iss_25_35": 0.1720930232,
           "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -447,7 +447,7 @@
           "prob_death_iss_16_24": 0.04402480932692308,
           "prob_death_iss_25_35": 0.18809302320000001,
           "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -461,7 +461,7 @@
           "prob_death_iss_16_24": 0.04776974859817813,
           "prob_death_iss_25_35": 0.2040930232,
           "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -475,7 +475,7 @@
           "prob_death_iss_16_24": 0.051514687869433196,
           "prob_death_iss_25_35": 0.22009302320000002,
           "prob_death_iss_35_plus": 0.374239055992647,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -489,7 +489,7 @@
           "prob_death_iss_16_24": 0.05525962714068825,
           "prob_death_iss_25_35": 0.23609302319999997,
           "prob_death_iss_35_plus": 0.40144493834558814,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -503,11 +503,9 @@
           "prob_death_iss_16_24": 0.059004566411943314,
           "prob_death_iss_25_35": 0.2520930232,
           "prob_death_iss_35_plus": 0.42865082069852933,
-          "rt_emergency_care_ISS_score_cut_off": 6.0
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     }
-  ],
-  "commit": "cb8b6e71deb16cbfae147aba6e90ee407b45b4a7",
-  "github": "https://github.com/UCL/TLOmodel/blob/cb8b6e71deb16cbfae147aba6e90ee407b45b4a7/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
+  ]
 }
