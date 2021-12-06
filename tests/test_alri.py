@@ -26,7 +26,9 @@ from tlo.methods.alri import (
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
-    HSI_Alri_GenericTreatment,
+    HSI_iCCM_Pneumonia_Treatment,
+    HSI_IMCI_Pneumonia_Treatment,
+    HSI_IMCI_Hospital_Pneumonia_Treatment,
     Models,
 )
 
@@ -661,8 +663,12 @@ def test_treatment(tmpdir):
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
+    params = sim.modules['Alri'].parameters
+    params['5day_amoxicillin_treatment_failure_by_day6'] = 0.0
+    params['5day_amoxicillin_relapse_by_day14'] = 0.0
+
     # Run the 'do_treatment' function
-    sim.modules['Alri'].do_treatment(person_id=person_id, prob_of_cure=1.0)
+    sim.modules['Alri'].do_treatment(person_id=person_id, appointment_type='referred', facility_level='2')
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
@@ -726,7 +732,8 @@ def test_use_of_HSI(tmpdir):
     assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
     # Run the HSI event
-    hsi = HSI_Alri_GenericTreatment(person_id=person_id, module=sim.modules['Alri'])
+    hsi = HSI_iCCM_Pneumonia_Treatment(person_id=person_id, treatment_plan='treat_non_severe_pneumonia',
+                                       appointment_type='first_appointment', module=sim.modules['Alri'])
     hsi.run(squeeze_factor=0.0)
 
     # Check that person is now on treatment:
