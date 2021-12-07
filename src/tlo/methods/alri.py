@@ -854,7 +854,7 @@ class Alri(Module):
         a Generic HSI Appointment at level 1. It checks for danger signs and schedules HSI Events appropriately."""
 
         # get the classification
-        classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event, facility_level='0')
+        classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event, facility_level='1a' or '1b')
         if classification == 'IMCI_severe_pneumonia':
             # refer to health facility, give first dose of antibiotic
             treatment_plan = 'treat_severe_pneumonia'
@@ -867,7 +867,31 @@ class Alri(Module):
             person_id=person_id,
             module=self,
             treatment_plan=treatment_plan,
-            first_appointment=True,
+            appointment_type='first_appointment',
+            hsa_hc_referred=False),
+            priority=0,
+            topen=self.sim.date,
+            tclose=None)
+
+    def do_when_presentation_with_cough_or_difficult_breathing_level2(self, person_id, hsi_event):
+        """This routine is called when cough or difficulty breathing is a symptom for a child attending
+        a Generic HSI Appointment at level 2 """
+
+        # get the classification
+        classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event, facility_level='2')
+        if classification == 'IMCI_severe_pneumonia':
+            # treat severe pneumonia
+            treatment_plan = 'treat_severe_pneumonia'
+        else:
+            # treat pneumonia
+            treatment_plan = 'treat_non_severe_pneumonia'
+
+        # schedule the HSI with IMCI depending on treatment plan
+        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_IMCI_Hospital_Pneumonia_Treatment(
+            person_id=person_id,
+            module=self,
+            treatment_plan=treatment_plan,
+            appointment_type='first_appointment',
             hsa_hc_referred=False),
             priority=0,
             topen=self.sim.date,
@@ -966,7 +990,7 @@ class Alri(Module):
 
         # -----------------------------------------------
         # Follow-up appointment for the current illness
-        if appointment_type == 'follow_up_appointment':
+        if appointment_type == 'follow_up':
             # TODO: add a probability of death or recovery
             # Cancel the death
             self.cancel_death_date(person_id)
@@ -1026,6 +1050,9 @@ class Alri(Module):
                 priority=0,
                 topen=self.sim.date + DateOffset(days=3),
                 tclose=None)
+
+        # if first appointment at facility level 2, return for follow-up
+        # TODO: follow-up at level 2
 
     def cancel_death_date(self, person_id):
         """Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
@@ -1991,6 +2018,16 @@ class HSI_IMCI_Hospital_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin
             person['ri_referred_from_hsa_hc'] = True
 
         # Treat now
+        print(self.get_consumables(
+            item_codes=self.module.consumables_used_in_hsi[
+                'Treatment_Severe_Pneumonia'], return_individual_results=True))
+
+        consumables_available = self.get_consumables(
+            item_codes=self.module.consumables_used_in_hsi[
+                'Treatment_Severe_Pneumonia'], return_individual_results=True)
+        x_ray_availability = consumables_available.get(175)
+        print(x_ray_availability)
+
         if self.get_consumables(
             item_codes=self.module.consumables_used_in_hsi[
                 'Treatment_Severe_Pneumonia'], return_individual_results=True):

@@ -28,13 +28,13 @@ output_files = dict()
 
 
 # Establish the simulation object
-start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=2010, month=12, day=31)
-popsize = 2000
+start_date = Date(2010, 1, 1)
+end_date = Date(2019, 12, 31)
+popsize = 10000
 
 log_config = {
     "filename": "Logfile",
-    "directory": "./outputs",
+    "directory": "C:/Users/sejjil0/PycharmProjects/TLOmodel",
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.alri": logging.INFO,
@@ -58,7 +58,8 @@ sim.register(
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
 
     # Register disease modules of interest
-    alri.Alri(resourcefilepath=resourcefilepath)
+    alri.Alri(resourcefilepath=resourcefilepath),
+    alri.AlriPropertiesOfOtherModules()
 )
 
 # Run the simulation
