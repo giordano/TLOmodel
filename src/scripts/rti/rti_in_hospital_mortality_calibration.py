@@ -53,8 +53,8 @@ class TestScenario(BaseScenario):
         hsb_cutoff_max = self.upper_iss_value + 1
         hsb_cutoff_min = 1
         iss_cut_off_scores = range(hsb_cutoff_min, hsb_cutoff_max)
-        multiplication_factor_max = 1.325581395 + 0.25
-        multiplication_factor_min = 1.325581395 - 0.25
+        multiplication_factor_max = 1.625581395 + 0.25
+        multiplication_factor_min = 1.625581395 - 0.25
         scale_factor = np.linspace(multiplication_factor_min, multiplication_factor_max,
                                    num=self.number_of_samples_in_parameter_range)
         grid = self.make_grid(

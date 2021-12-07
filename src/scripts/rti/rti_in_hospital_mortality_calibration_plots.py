@@ -34,13 +34,18 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
+idxs = []
+cut_off_scores_df = params.loc[params['module_param'] == 'RTI:rt_emergency_care_ISS_score_cut_off']
+cut_off_scores = cut_off_scores_df['value'].unique()
+for score in cut_off_scores:
+    idxs.append(cut_off_scores_df.loc[cut_off_scores_df['value'] == score].index)
 # params = extract_params_from_json(results_folder, 'rti_incidence_parameterisation.py', 'RTI', 'base_rate_injrti')
 # 2) Extract a specific log series for all runs:
-extracted = extract_results(results_folder,
-                            module="tlo.methods.rti",
-                            key="summary_1m",
-                            column="percentage died after med",
-                            index="date")
+extracted_perc_in_hos_death = extract_results(results_folder,
+                                              module="tlo.methods.rti",
+                                              key="summary_1m",
+                                              column="percentage died after med",
+                                              index="date")
 extracted_incidence_of_death = extract_results(results_folder,
                                                module="tlo.methods.rti",
                                                key="summary_1m",
@@ -54,16 +59,16 @@ extracted_incidence_of_RTI = extract_results(results_folder,
                                              index="date"
                                              )
 # 3) Get summary of the results for that log-element
-in_hospital_mortality = summarize(extracted)
+in_hospital_mortality = summarize(extracted_perc_in_hos_death)
 incidence_of_death = summarize(extracted_incidence_of_death)
 incidence_of_RTI = summarize(extracted_incidence_of_RTI)
 
 # If only interested in the means
-in_hospital_mortality_onlymeans = summarize(extracted, only_mean=True)
+in_hospital_mortality_onlymeans = summarize(extracted_perc_in_hos_death, only_mean=True)
+mean_in_hospital_mortality_per_draw = in_hospital_mortality_onlymeans.mean()
 # get per parameter summaries
 mean_in_hospital_mortality_overall = in_hospital_mortality.mean()
 mean_incidence_of_death = incidence_of_death.mean()
-mean_incidence_of_rti = incidence_of_RTI.mean()
 # get upper and lower estimates
 mean_in_hospital_mortality_lower = mean_in_hospital_mortality_overall.loc[:, "lower"]
 mean_in_hospital_mortality_upper = mean_in_hospital_mortality_overall.loc[:, "upper"]
@@ -73,8 +78,33 @@ lower_upper = np.array(list(zip(
 ))).transpose()
 # find the values that fall within our accepted range of incidence based on results of the GBD study
 
-per_param_average_in_hospital_mortality = mean_in_hospital_mortality_overall[:, 'mean'].values
-expected_in_hospital_mortality = 0.04
+mean_incidence_of_rti = incidence_of_RTI.mean()
+expected_in_hospital_mortality = 221 / 5246
+mean_in_hos_mort = in_hospital_mortality_onlymeans.mean()
+best_fitting_in_hos_mort = []
+best_fitting_scale_factor = []
+best_fit_in_hos_mort_df = pd.DataFrame(columns=['best_fitting_scale_fac', 'unscaled_inc_death', 'inc_rti',
+                                                'percent_in_hos_mort'])
+for n, idx in enumerate(idxs):
+    best_fit_found = min(mean_in_hos_mort[idx], key=lambda x: abs(x - expected_in_hospital_mortality))
+    best_fitting_in_hos_mort.append(best_fit_found)
+    best_fit_index = np.where(mean_in_hos_mort == best_fit_found)
+    params_in_run = params.loc[best_fit_index]
+    best_fitting_scale_factor.append(
+        params_in_run.loc[params_in_run['module_param'] == 'RTI:prob_death_iss_less_than_9']['value'].values[0] /
+        (102 / 11650)
+    )
+    inc_death = mean_incidence_of_death.loc[best_fit_index].values[0]
+    inc_rti = mean_incidence_of_rti.loc[best_fit_index].values[0]
+    best_fit_in_hos_mort_df.loc['ISS_cut_off_' + str(n + 1)] = \
+        [
+            params_in_run.loc[params_in_run['module_param'] == 'RTI:prob_death_iss_less_than_9']['value'].values[0] /
+            (102 / 11650),
+            inc_death,
+            inc_rti,
+            best_fit_found
+        ]
+best_fit_in_hos_mort_df.to_csv("C:/Users/Robbie Manning Smith/Desktop/in_hos_mort.csv")
 yerr = abs(lower_upper - per_param_average_in_hospital_mortality)
 xvals = range(info['number_of_draws'])
 colors = ['lightsteelblue'] * len(xvals)
