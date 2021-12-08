@@ -73,7 +73,10 @@ class TestScenario(BaseScenario):
 
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
         parameter_df['scale_factor'] = [1.875581395, 1.875581395, 1.875581395, 1.775581395, 1.775581395, 1.475581395]
-
+        scale_for_inc = [1.0270861999667444, 1.0373195691920685, 1.0215936563566232, 0.999956113910908,
+                         0.9826625920372962, 0.9812138623152221]
+        current_inc = 0.00715091242587118
+        parameter_df['base_rate_inj_rti'] = np.multiply(current_inc, scale_for_inc)
         return {
             'RTI': {'prob_death_iss_less_than_9': parameter_df['scale_factor'][draw_number] * (102 / 11650),
                     'prob_death_iss_10_15': parameter_df['scale_factor'][draw_number] * (7 / 528),
@@ -83,7 +86,8 @@ class TestScenario(BaseScenario):
                     'rt_emergency_care_ISS_score_cut_off': int(parameter_df['rt_emergency_care_ISS_score_cut_off'][
                                                                    draw_number]),
                     'number_of_injured_body_regions_distribution':
-                        parameter_df['number_of_injured_body_regions_distribution'][draw_number]},
+                        parameter_df['number_of_injured_body_regions_distribution'][draw_number],
+                    'base_rate_inj_rti': parameter_df['base_rate_inj_rti'][draw_number] * current_inc},
             }
 
 
