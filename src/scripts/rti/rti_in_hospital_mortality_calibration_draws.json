@@ -8,11 +8,11 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -22,11 +22,11 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -36,11 +36,11 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -50,11 +50,11 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01204371693476395,
-          "prob_death_iss_10_15": 0.018236874554924242,
-          "prob_death_iss_16_24": 0.051514687869433196,
-          "prob_death_iss_25_35": 0.22009302320000002,
-          "prob_death_iss_35_plus": 0.374239055992647,
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -64,11 +64,11 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -78,11 +78,11 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01379478989613734,
-          "prob_death_iss_10_15": 0.020888389706439393,
-          "prob_death_iss_16_24": 0.059004566411943314,
-          "prob_death_iss_25_35": 0.2520930232,
-          "prob_death_iss_35_plus": 0.42865082069852933,
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
           "rt_emergency_care_ISS_score_cut_off": 1
         }
       }
@@ -92,11 +92,11 @@
       "draw_seed": 144909571,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -106,11 +106,11 @@
       "draw_seed": 960362435,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -120,11 +120,11 @@
       "draw_seed": 62598988,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -134,11 +134,11 @@
       "draw_seed": 1505292720,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01204371693476395,
-          "prob_death_iss_10_15": 0.018236874554924242,
-          "prob_death_iss_16_24": 0.051514687869433196,
-          "prob_death_iss_25_35": 0.22009302320000002,
-          "prob_death_iss_35_plus": 0.374239055992647,
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -148,11 +148,11 @@
       "draw_seed": 1798504726,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -162,11 +162,11 @@
       "draw_seed": 145874993,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01379478989613734,
-          "prob_death_iss_10_15": 0.020888389706439393,
-          "prob_death_iss_16_24": 0.059004566411943314,
-          "prob_death_iss_25_35": 0.2520930232,
-          "prob_death_iss_35_plus": 0.42865082069852933,
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
           "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
@@ -176,11 +176,11 @@
       "draw_seed": 1721057204,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -190,11 +190,11 @@
       "draw_seed": 1268891525,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -204,11 +204,11 @@
       "draw_seed": 143543949,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -218,11 +218,11 @@
       "draw_seed": 354439641,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01204371693476395,
-          "prob_death_iss_10_15": 0.018236874554924242,
-          "prob_death_iss_16_24": 0.051514687869433196,
-          "prob_death_iss_25_35": 0.22009302320000002,
-          "prob_death_iss_35_plus": 0.374239055992647,
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -232,11 +232,11 @@
       "draw_seed": 1962582434,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -246,11 +246,11 @@
       "draw_seed": 970465739,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01379478989613734,
-          "prob_death_iss_10_15": 0.020888389706439393,
-          "prob_death_iss_16_24": 0.059004566411943314,
-          "prob_death_iss_25_35": 0.2520930232,
-          "prob_death_iss_35_plus": 0.42865082069852933,
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
           "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
@@ -260,11 +260,11 @@
       "draw_seed": 589309558,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -274,11 +274,11 @@
       "draw_seed": 1601311818,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -288,11 +288,11 @@
       "draw_seed": 1219033472,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -302,11 +302,11 @@
       "draw_seed": 755903861,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01204371693476395,
-          "prob_death_iss_10_15": 0.018236874554924242,
-          "prob_death_iss_16_24": 0.051514687869433196,
-          "prob_death_iss_25_35": 0.22009302320000002,
-          "prob_death_iss_35_plus": 0.374239055992647,
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -316,11 +316,11 @@
       "draw_seed": 455623784,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -330,11 +330,11 @@
       "draw_seed": 2077248716,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01379478989613734,
-          "prob_death_iss_10_15": 0.020888389706439393,
-          "prob_death_iss_16_24": 0.059004566411943314,
-          "prob_death_iss_25_35": 0.2520930232,
-          "prob_death_iss_35_plus": 0.42865082069852933,
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
           "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
@@ -344,11 +344,11 @@
       "draw_seed": 1907932429,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
+          "prob_death_iss_less_than_9": 0.01204371693476395,
+          "prob_death_iss_10_15": 0.018236874554924242,
+          "prob_death_iss_16_24": 0.051514687869433196,
+          "prob_death_iss_25_35": 0.22009302320000002,
+          "prob_death_iss_35_plus": 0.374239055992647,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -358,11 +358,11 @@
       "draw_seed": 2068156498,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -372,11 +372,11 @@
       "draw_seed": 1514987609,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
+          "prob_death_iss_less_than_9": 0.01379478989613734,
+          "prob_death_iss_10_15": 0.020888389706439393,
+          "prob_death_iss_16_24": 0.059004566411943314,
+          "prob_death_iss_25_35": 0.2520930232,
+          "prob_death_iss_35_plus": 0.42865082069852933,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -386,11 +386,11 @@
       "draw_seed": 1771840803,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01204371693476395,
-          "prob_death_iss_10_15": 0.018236874554924242,
-          "prob_death_iss_16_24": 0.051514687869433196,
-          "prob_death_iss_25_35": 0.22009302320000002,
-          "prob_death_iss_35_plus": 0.374239055992647,
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -400,11 +400,11 @@
       "draw_seed": 9703358,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -414,11 +414,11 @@
       "draw_seed": 815512676,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.01379478989613734,
-          "prob_death_iss_10_15": 0.020888389706439393,
-          "prob_death_iss_16_24": 0.059004566411943314,
-          "prob_death_iss_25_35": 0.2520930232,
-          "prob_death_iss_35_plus": 0.42865082069852933,
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
           "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
@@ -426,48 +426,6 @@
     {
       "draw_number": 30,
       "draw_seed": 91165091,
-      "parameters": {
-        "RTI": {
-          "prob_death_iss_less_than_9": 0.009417107492703863,
-          "prob_death_iss_10_15": 0.014259601827651515,
-          "prob_death_iss_16_24": 0.040279870055668014,
-          "prob_death_iss_25_35": 0.1720930232,
-          "prob_death_iss_35_plus": 0.2926214089338235,
-          "rt_emergency_care_ISS_score_cut_off": 6
-        }
-      }
-    },
-    {
-      "draw_number": 31,
-      "draw_seed": 635542945,
-      "parameters": {
-        "RTI": {
-          "prob_death_iss_less_than_9": 0.010292643973390558,
-          "prob_death_iss_10_15": 0.015585359403409091,
-          "prob_death_iss_16_24": 0.04402480932692308,
-          "prob_death_iss_25_35": 0.18809302320000001,
-          "prob_death_iss_35_plus": 0.3198272912867647,
-          "rt_emergency_care_ISS_score_cut_off": 6
-        }
-      }
-    },
-    {
-      "draw_number": 32,
-      "draw_seed": 223499934,
-      "parameters": {
-        "RTI": {
-          "prob_death_iss_less_than_9": 0.011168180454077253,
-          "prob_death_iss_10_15": 0.016911116979166665,
-          "prob_death_iss_16_24": 0.04776974859817813,
-          "prob_death_iss_25_35": 0.2040930232,
-          "prob_death_iss_35_plus": 0.3470331736397058,
-          "rt_emergency_care_ISS_score_cut_off": 6
-        }
-      }
-    },
-    {
-      "draw_number": 33,
-      "draw_seed": 1749199991,
       "parameters": {
         "RTI": {
           "prob_death_iss_less_than_9": 0.01204371693476395,
@@ -480,22 +438,22 @@
       }
     },
     {
-      "draw_number": 34,
-      "draw_seed": 2084680127,
+      "draw_number": 31,
+      "draw_seed": 635542945,
       "parameters": {
         "RTI": {
-          "prob_death_iss_less_than_9": 0.012919253415450643,
-          "prob_death_iss_10_15": 0.019562632130681816,
-          "prob_death_iss_16_24": 0.05525962714068825,
-          "prob_death_iss_25_35": 0.23609302319999997,
-          "prob_death_iss_35_plus": 0.40144493834558814,
+          "prob_death_iss_less_than_9": 0.012919253415450645,
+          "prob_death_iss_10_15": 0.01956263213068182,
+          "prob_death_iss_16_24": 0.05525962714068826,
+          "prob_death_iss_25_35": 0.23609302320000003,
+          "prob_death_iss_35_plus": 0.4014449383455882,
           "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
     {
-      "draw_number": 35,
-      "draw_seed": 791670112,
+      "draw_number": 32,
+      "draw_seed": 223499934,
       "parameters": {
         "RTI": {
           "prob_death_iss_less_than_9": 0.01379478989613734,
@@ -506,8 +464,50 @@
           "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
+    },
+    {
+      "draw_number": 33,
+      "draw_seed": 1749199991,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.014670326376824035,
+          "prob_death_iss_10_15": 0.02221414728219697,
+          "prob_death_iss_16_24": 0.06274950568319838,
+          "prob_death_iss_25_35": 0.2680930232,
+          "prob_death_iss_35_plus": 0.4558567030514706,
+          "rt_emergency_care_ISS_score_cut_off": 6
+        }
+      }
+    },
+    {
+      "draw_number": 34,
+      "draw_seed": 2084680127,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.015545862857510731,
+          "prob_death_iss_10_15": 0.023539904857954548,
+          "prob_death_iss_16_24": 0.06649444495445345,
+          "prob_death_iss_25_35": 0.2840930232,
+          "prob_death_iss_35_plus": 0.48306258540441177,
+          "rt_emergency_care_ISS_score_cut_off": 6
+        }
+      }
+    },
+    {
+      "draw_number": 35,
+      "draw_seed": 791670112,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.016421399338197425,
+          "prob_death_iss_10_15": 0.024865662433712122,
+          "prob_death_iss_16_24": 0.0702393842257085,
+          "prob_death_iss_25_35": 0.30009302320000003,
+          "prob_death_iss_35_plus": 0.5102684677573529,
+          "rt_emergency_care_ISS_score_cut_off": 6
+        }
+      }
     }
   ],
-  "commit": "e4a5c74f2080f64bd69b092e85e9803e14e52df6",
-  "github": "https://github.com/UCL/TLOmodel/blob/e4a5c74f2080f64bd69b092e85e9803e14e52df6/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
+  "commit": "4d5db1d09e08e47964232193f740a93f08615372",
+  "github": "https://github.com/UCL/TLOmodel/blob/4d5db1d09e08e47964232193f740a93f08615372/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
 }
