@@ -28,7 +28,7 @@ from tlo.methods.alri import (
     AlriPropertiesOfOtherModules,
     HSI_iCCM_Pneumonia_Treatment,
     HSI_IMCI_Pneumonia_Treatment,
-    HSI_IMCI_Hospital_Pneumonia_Treatment,
+    HSI_Hospital_Inpatient_Pneumonia_Treatment,
     Models,
 )
 
@@ -143,7 +143,8 @@ def test_integrity_of_linear_models(tmpdir):
                     assert pd.isnull(bacterial_coinfection)
                 else:
                     # viral primary infection- may have a bacterial coinfection or may not:
-                    assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
+                    assert pd.isnull(bacterial_coinfection) or \
+                           bacterial_coinfection in alri.pathogens['bacterial'] + ['none']
                     # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
                     if va_pneumo_all_doses:
                         assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'

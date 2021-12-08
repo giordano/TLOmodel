@@ -29,12 +29,12 @@ output_files = dict()
 
 # Establish the simulation object
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
+end_date = Date(2012, 1, 1)
 popsize = 10000
 
 log_config = {
     "filename": "Logfile",
-    "directory": "C:/Users/sejjil0/PycharmProjects/TLOmodel",
+    "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.alri": logging.INFO,
@@ -67,4 +67,5 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # Read the results
-output = parse_log_file(sim.log_filepath)
+# output = parse_log_file(sim.log_filepath)
+

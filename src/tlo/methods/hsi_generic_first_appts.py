@@ -139,9 +139,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                     person_id=person_id, hsi_event=hsi_event)
 
-        if 'cough' or 'difficult_breathing' in symptoms:
+        if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
-                sim.modules['Alri'].do_when_presentation_with_cough_or_difficult_breathing_level0(
+                sim.modules['Alri'].do_when_presentation_with_cough_or_difficult_breathing(
                     person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
@@ -414,7 +414,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     # ------ ALRI ------
     if df.at[person_id, 'age_years'] < 5:
-        if 'cough' or 'difficult_breathing' in symptoms:
+        if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
                 sim.modules['Alri'].do_when_presentation_with_cough_or_difficult_breathing_level1(
                     person_id=person_id, hsi_event=hsi_event)
