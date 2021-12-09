@@ -87,7 +87,7 @@ class TestScenario(BaseScenario):
                                                                    draw_number]),
                     'number_of_injured_body_regions_distribution':
                         parameter_df['number_of_injured_body_regions_distribution'][draw_number],
-                    'base_rate_injrti': parameter_df['base_rate_injrti'][draw_number] * current_inc},
+                    'base_rate_injrti': parameter_df['base_rate_injrti'][draw_number]},
             }
 
 
