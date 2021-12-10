@@ -1,0 +1,118 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/full_calibrated_single_injury.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01770932968829225,
+          "prob_death_iss_10_15": 0.026815876338388164,
+          "prob_death_iss_16_24": 0.07574825913053082,
+          "prob_death_iss_25_35": 0.323629319009576,
+          "prob_death_iss_35_plus": 0.550288823683562,
+          "rt_emergency_care_ISS_score_cut_off": 2,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.007417781396934902
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.01903236657127272,
+          "prob_death_iss_10_15": 0.02881924936659407,
+          "prob_death_iss_16_24": 0.08140729549244964,
+          "prob_death_iss_25_35": 0.3478071694985524,
+          "prob_death_iss_35_plus": 0.5914000584304429,
+          "rt_emergency_care_ISS_score_cut_off": 3,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.007305326771431749
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.0174315998605527,
+          "prob_death_iss_10_15": 0.026395331413919948,
+          "prob_death_iss_16_24": 0.07456032309172067,
+          "prob_death_iss_25_35": 0.3185539425497082,
+          "prob_death_iss_35_plus": 0.5416588177545589,
+          "rt_emergency_care_ISS_score_cut_off": 4,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.007150598600291369
+        }
+      }
+    }
+  ]
+}
