@@ -64,7 +64,7 @@ class TestScenario(BaseScenario):
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
         parameter_df['scale_factor'] = [1.875581395 * 1.07843, 1.875581395 * 1.1589978526983375,
                                         1.775581395 * 1.1213015334257184]
-        scale_for_inc = [1.0373195691920685, 1.0215936563566232, 0.999956113910908]
+        scale_for_inc = [1.0373195691920685 * 0.972901, 1.0215936563566232 * 1.003746, 0.999956113910908 * 1.022104]
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         return {

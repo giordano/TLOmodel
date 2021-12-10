@@ -386,4 +386,25 @@ ax2.set_yticklabels(new_order_names)
 ax2.set_title('New ranked total DALYs')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
             f"New_DALY_rankings.png", bbox_inches='tight')
+# create a comparison between multiple injury model run and single injury model run
+# 0) Find results_folder associated with a given batch_file and get most recent
+single_results_folder = get_scenario_outputs('full_calibrated_single_injury.py', outputspath)[- 1]
 
+
+# get main paper results, incidence of RTI, incidence of death and DALYs
+sing_extracted_incidence_of_death = extract_results(single_results_folder,
+                                                    module="tlo.methods.rti",
+                                                    key="summary_1m",
+                                                    column="incidence of rti death per 100,000",
+                                                    index="date"
+                                                    )
+sing_extracted_incidence_of_RTI = extract_results(single_results_folder,
+                                                  module="tlo.methods.rti",
+                                                  key="summary_1m",
+                                                  column="incidence of rti per 100,000",
+                                                  index="date"
+                                                  )
+sing_yll, sing_yld = extract_yll_yld(single_results_folder)
+sing_mean_incidence_of_death = summarize(sing_extracted_incidence_of_death, only_mean=True).mean()
+sing_mean_incidence_of_RTI = summarize(sing_extracted_incidence_of_RTI, only_mean=True).mean()
+sing_scale_for_inc = np.divide(gbd_inc, sing_mean_incidence_of_RTI)
