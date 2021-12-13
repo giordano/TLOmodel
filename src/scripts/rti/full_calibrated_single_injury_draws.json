@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/rti/full_calibrated_single_injury.py",
   "scenario_seed": 12,
-  "runs_per_draw": 3,
+  "runs_per_draw": 4,
   "draws": [
     {
       "draw_number": 0,
@@ -36,7 +36,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007216766938859362
+          "base_rate_injrti": 0.007285851694631611
         }
       }
     },
@@ -73,7 +73,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007332692525517533
+          "base_rate_injrti": 0.007250412824168078
         }
       }
     },
@@ -115,6 +115,6 @@
       }
     }
   ],
-  "commit": "a6d0e006e9a1c552eb42b46d1d8364d460b13d6d",
-  "github": "https://github.com/UCL/TLOmodel/blob/a6d0e006e9a1c552eb42b46d1d8364d460b13d6d/src/scripts/rti/full_calibrated_single_injury.py"
+  "commit": "d2f7cbc51bbdf8029a9f8fd25e9e8ed00e3580b6",
+  "github": "https://github.com/UCL/TLOmodel/blob/d2f7cbc51bbdf8029a9f8fd25e9e8ed00e3580b6/src/scripts/rti/full_calibrated_single_injury.py"
 }

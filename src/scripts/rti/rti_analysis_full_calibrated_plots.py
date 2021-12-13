@@ -476,11 +476,11 @@ for draw in range(info['number_of_draws']):
 
 for index, value in enumerate(hsb_in_accepted_range[0]):
     fig, ax1 = plt.subplots()
-    sing_inc_death = sing_scaled_inc_death[index]
+    sing_inc_death = sing_mean_incidence_of_death[index]
     mult_scaled_inc_death = results_df['inc_death'][value]
     dalys = [gbd_data['dalys'].sum(), sing_dalys[index], mult_dalys[value]]
     gbd_results = [954.2, 12.1, 954.2]
-    single_results = [sing_scaled_incidences[index], sing_inc_death, sing_scaled_incidences[index]]
+    single_results = [sing_mean_incidence_of_RTI[index], sing_inc_death, sing_mean_incidence_of_RTI[index]]
     mult_results = [results_df['inc'][value], mult_scaled_inc_death,
                     results_df['inc'][value] * average_n_inj_per_draws[value]]
     ax1.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
@@ -517,3 +517,8 @@ for index, value in enumerate(hsb_in_accepted_range[0]):
     plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
                 f"IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
     plt.clf()
+print('stop')
+
+results_df['injury_incidence'] = results_df['inc'] * average_n_inj_per_draws
+min(results_df.loc[hsb_in_accepted_range[0], 'injury_incidence'])
+
