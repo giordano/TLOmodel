@@ -40,7 +40,7 @@ class TestScenario(BaseScenario):
         return [
             demography.Demography(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, service_availability=['*']),
+            healthsystem.HealthSystem(resourcefilepath=self.resources, service_availability=[]),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
