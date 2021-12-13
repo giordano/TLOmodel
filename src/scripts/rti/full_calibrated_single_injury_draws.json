@@ -36,7 +36,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007417781396934902
+          "base_rate_injrti": 0.007216766938859362
         }
       }
     },
@@ -73,7 +73,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007305326771431749
+          "base_rate_injrti": 0.007332692525517533
         }
       }
     },
@@ -110,11 +110,11 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007150598600291369
+          "base_rate_injrti": 0.007308655431752209
         }
       }
     }
   ],
-  "commit": "c9bc3eaf2daeb7600b751a691afe85a7758b939a",
-  "github": "https://github.com/UCL/TLOmodel/blob/c9bc3eaf2daeb7600b751a691afe85a7758b939a/src/scripts/rti/full_calibrated_single_injury.py"
+  "commit": "a6d0e006e9a1c552eb42b46d1d8364d460b13d6d",
+  "github": "https://github.com/UCL/TLOmodel/blob/a6d0e006e9a1c552eb42b46d1d8364d460b13d6d/src/scripts/rti/full_calibrated_single_injury.py"
 }

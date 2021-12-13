@@ -408,3 +408,112 @@ sing_yll, sing_yld = extract_yll_yld(single_results_folder)
 sing_mean_incidence_of_death = summarize(sing_extracted_incidence_of_death, only_mean=True).mean()
 sing_mean_incidence_of_RTI = summarize(sing_extracted_incidence_of_RTI, only_mean=True).mean()
 sing_scale_for_inc = np.divide(gbd_inc, sing_mean_incidence_of_RTI)
+sing_scaled_inc_death = sing_mean_incidence_of_death * sing_scale_for_inc
+sing_scaled_inc_death = list(sing_scaled_inc_death)
+sing_dalys = sing_yld.mean() + sing_yll.mean()
+sing_dalys = list(sing_dalys)
+sing_scaled_dalys = np.multiply(sing_dalys, sing_scale_for_inc)
+mult_inc_death = mean_incidence_of_death[hsb_in_accepted_range[0]]
+mult_dalys = results_df.loc[hsb_in_accepted_range[0], 'DALYs']
+plt.clf()
+plt.bar(np.arange(len(mult_dalys)), mult_dalys, label='Multiple injury', color='lightsteelblue', width=0.4)
+plt.bar(np.arange(len(sing_dalys)) + 0.4, sing_scaled_dalys, label='Single injury', color='lightsalmon', width=0.4)
+plt.ylabel('DALYs')
+plt.legend()
+plt.title('A comparison of the DALYs predicted by the \nmultiple and single injury forms of the model')
+plt.xticks(np.arange(len(sing_dalys)) + 0.2, mult_dalys.index + 1)
+plt.xlabel('ISS cut-off score')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"mult_vs_single_DALYs.png", bbox_inches='tight')
+plt.clf()
+plt.bar(np.arange(len(mult_dalys)), mult_inc_death, label='Multiple injury', color='lightsteelblue', width=0.4)
+plt.bar(np.arange(len(sing_dalys)) + 0.4, sing_mean_incidence_of_death, label='Single injury', color='lightsalmon',
+        width=0.4)
+plt.ylabel('Incidence per 100,000 p.y.')
+plt.legend()
+plt.title('A comparison of the incidence of death\npredicted by the multiple and single injury\nforms of the model')
+plt.xticks(np.arange(len(sing_dalys)) + 0.2, mult_dalys.index + 1)
+plt.xlabel('ISS cut-off score')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"mult_vs_single_inc_death.png", bbox_inches='tight')
+mean_percentage_reduction_in_deaths = np.mean(100 * (np.divide(list(mult_inc_death),
+                                                               list(sing_mean_incidence_of_death)) - 1))
+mean_percentage_reduction_in_dalys = np.mean(100 * (np.divide(list(mult_dalys),
+                                                              list(sing_scaled_dalys)) - 1))
+plt.clf()
+plt.bar([0, 1], [mean_percentage_reduction_in_deaths, mean_percentage_reduction_in_dalys], color=['lightsteelblue',
+                                                                                                  'lightsalmon'])
+plt.xticks([0, 1], ['Deaths', 'DALYs'])
+plt.ylabel('Percent')
+plt.title('Percent increase in deaths and DALYs\nattributable to multiple injuries')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"mult_vs_single_percent_increase.png", bbox_inches='tight')
+sing_scaled_incidences = sing_scale_for_inc * sing_mean_incidence_of_RTI
+
+gbd_dates = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+gbd_yld_estimate_2010_2019 = [17201.73, 16689.13, 18429.77, 17780.11, 20462.97, 19805.86, 21169.19, 19100.62,
+                              23081.26, 22055.06]
+gbd_yll_estimate_2010_2019 = [103892.353, 107353.63, 107015.04, 106125.14, 105933.16, 106551.59, 106424.49,
+                              105551.97, 108052.59, 109301.18]
+gbd_dalys_estimate_2010_2019 = np.add(gbd_yld_estimate_2010_2019, gbd_yll_estimate_2010_2019)
+gbd_data = pd.DataFrame(data={'yld': gbd_yld_estimate_2010_2019, 'yll': gbd_yll_estimate_2010_2019,
+                              'dalys': gbd_dalys_estimate_2010_2019},
+                        index=gbd_dates)
+average_n_inj_per_draws = []
+for draw in range(info['number_of_draws']):
+    ave_n_inj_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['Injury_information']
+            total_n_injuries = sum(df.sum(axis=0)['Number_of_injuries'])
+            injuries_per_person = total_n_injuries / len(df.sum(axis=0)['Number_of_injuries'])
+            ave_n_inj_this_draw.append(injuries_per_person)
+        except KeyError:
+            ave_n_inj_this_draw.append(np.mean(ave_n_inj_this_draw))
+    average_n_inj_per_draws.append(np.mean(ave_n_inj_this_draw))
+
+for index, value in enumerate(hsb_in_accepted_range[0]):
+    fig, ax1 = plt.subplots()
+    sing_inc_death = sing_scaled_inc_death[index]
+    mult_scaled_inc_death = results_df['inc_death'][value]
+    dalys = [gbd_data['dalys'].sum(), sing_dalys[index], mult_dalys[value]]
+    gbd_results = [954.2, 12.1, 954.2]
+    single_results = [sing_scaled_incidences[index], sing_inc_death, sing_scaled_incidences[index]]
+    mult_results = [results_df['inc'][value], mult_scaled_inc_death,
+                    results_df['inc'][value] * average_n_inj_per_draws[value]]
+    ax1.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
+    ax1.bar(np.arange(3) + 0.25, single_results, width=0.25, color='lightsteelblue', label='Single')
+    ax1.bar(np.arange(3) + 0.5, mult_results, width=0.25,
+            color='lightsalmon', label='Multiple')
+    ax1.set_xticks(np.arange(4) + 0.25)
+    ax1.set_xticklabels(['Incidence\nof\nRTI', 'Incidence\nof\ndeath', 'Incidence\nof\ninjuries', 'DALYs'])
+    for idx, val in enumerate(gbd_results):
+        ax1.text(np.arange(3)[idx] - 0.125, gbd_results[idx] + 10, f"{np.round(val, 2)}", fontdict={'fontsize': 9},
+                 rotation=45)
+    for idx, val in enumerate(single_results):
+        ax1.text(np.arange(3)[idx] + 0.25 - 0.125, single_results[idx] + 10, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9}, rotation=45)
+    for idx, val in enumerate(mult_results):
+        ax1.text(np.arange(3)[idx] + 0.5 - 0.125, mult_results[idx] + 10, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9},
+                 rotation=45)
+    ax1.set_ylim([0, 1800])
+    ax1.legend(loc='upper left')
+    ax1.set_title('Comparing the incidence of RTI, RTI death and injuries\nfor the GBD study, single injury model and\n'
+                  'multiple injury model')
+    ax1.set_ylabel('Incidence per \n 100,000 person years')
+    ax1.axvline(2.75, color='black', linestyle='solid')
+    ax2 = ax1.twinx()
+    ax2.bar([3, 3.25, 3.5], dalys, width=0.25, color=['gold', 'lightsteelblue', 'lightsalmon'])
+    dalys_x_loc = [3, 3.25, 3.5]
+    for idx, val in enumerate(dalys):
+        ax2.text(dalys_x_loc[idx] - 0.05, dalys[idx] + 100000, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9},
+                 rotation=90)
+    ax2.set_ylabel('Total DALYs 2010-2019')
+    ax2.set_ylim([0, 4500000])
+    plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+                f"IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
+    plt.clf()

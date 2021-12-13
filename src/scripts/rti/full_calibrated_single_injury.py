@@ -24,7 +24,7 @@ class TestScenario(BaseScenario):
         self.pop_size = 20000
         self.smaller_pop_size = 20000
         self.number_of_draws = 3
-        self.runs_per_draw = 3
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
@@ -64,7 +64,7 @@ class TestScenario(BaseScenario):
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
         parameter_df['scale_factor'] = [1.875581395 * 1.07843, 1.875581395 * 1.1589978526983375,
                                         1.775581395 * 1.1213015334257184]
-        scale_for_inc = [1.0373195691920685 * 0.972901, 1.0215936563566232 * 1.003746, 0.999956113910908 * 1.022104]
+        scale_for_inc = [1.0188702169351476, 1.0139143639819888, 1.0220591438527946]
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         return {
