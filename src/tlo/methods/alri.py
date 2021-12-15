@@ -918,15 +918,14 @@ class Alri(Module):
                     item_codes=self.consumables_used_in_hsi[
                         'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
                     self.do_treatment(person_id=person_id,
-                                      appointment_type=self.appointment_type,
-                                      facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                      appointment_type='first_appointment',
+                                      facility_level=facility_level)
                 else:
                     # if no consumables refer to health facility
                     health_system.schedule_hsi_event(
                         HSI_IMCI_Pneumonia_Treatment(
                             person_id=person_id,
                             module=self,
-                            treatment_plan='treat_non_severe_pneumonia',
                             appointment_type='first_appointment',
                             hsa_hc_referred=True),
                         priority=0,
@@ -940,41 +939,35 @@ class Alri(Module):
         if facility_level == '1a' or '1b':
             # get the classification
             classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event, facility_level='1a' or '1b')
-            if classification == 'IMCI_severe_pneumonia':
-                # refer to health facility, give first dose of antibiotic
-                treatment_plan = 'treat_severe_pneumonia'
-            else:
-                # treat now
-                treatment_plan = 'treat_non_severe_pneumonia'
 
-            # IMCI severe pneumonia, needing referral
-            if treatment_plan == 'treat_severe_pneumonia':
+            # IMCI severe pneumonia at level 1a/1b - requires first dose IM antibiotic and referral to hospital
+            if classification == 'IMCI_severe_pneumonia':
                 # first check if facility level has capabilities to treat severe pneumonia, if not, then refer
                 if health_system.get_consumables(
                     item_codes=self.consumables_used_in_hsi[
                         'Treatment_Severe_Pneumonia'], return_individual_results=True):
                     self.do_treatment(person_id=person_id,
-                                      appointment_type=self.appointment_type,
-                                      facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                      appointment_type='first_appointment',
+                                      facility_level=facility_level)
 
+                # Or
                 else:
-                    # Give first dose of antibiotic and refer to hospital
+                    # give first dose of antibiotic and refer to hospital
                     health_system.get_consumables(
                         item_codes=self.consumables_used_in_hsi[
                             'First_dose_antibiotic_for_referral'], return_individual_results=True)
-                    # refer to facility level 1b or 2
+                    # and refer to facility level 1b or 2
                     health_system.schedule_hsi_event(
                         HSI_Hospital_Inpatient_Pneumonia_Treatment(
                             person_id=person_id,
                             module=self,
-                            treatment_plan='treat_severe_pneumonia',
                             appointment_type='referred',
                             hsa_hc_referred=True),
                         priority=0,
                         topen=self.sim.date,
                         tclose=None)
 
-            elif treatment_plan == 'treat_non_severe_pneumonia':
+            else:  # classification = IMCI_non_severe_pneumonia
                 # Treat uncomplicated cases now
                 if health_system.get_consumables(
                     item_codes=self.consumables_used_in_hsi[
@@ -983,33 +976,45 @@ class Alri(Module):
                                       appointment_type=self.appointment_type,
                                       facility_level=self.ACCEPTED_FACILITY_LEVEL)
 
-            elif treatment_plan == 'urgent_referral':
-                # refer to facility level 1b or 2
-                health_system.schedule_hsi_event(
-                    HSI_Hospital_Inpatient_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self,
-                        treatment_plan='treat_severe_pneumonia',
-                        appointment_type='referred',
-                        hsa_hc_referred=True),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)
-
-            elif treatment_plan == 'continue_current_treatment':
-                return
+            # elif treatment_plan == 'urgent_referral':
+            #     # refer to facility level 1b or 2
+            #     health_system.schedule_hsi_event(
+            #         HSI_Hospital_Inpatient_Pneumonia_Treatment(
+            #             person_id=person_id,
+            #             module=self,
+            #             treatment_plan='treat_severe_pneumonia',
+            #             appointment_type='referred',
+            #             hsa_hc_referred=True),
+            #         priority=0,
+            #         topen=self.sim.date,
+            #         tclose=None)
+            #
+            # elif treatment_plan == 'continue_current_treatment':
+            #     return
 
         # ----------------------------------------------
         # facility level 2 -----------------------------
         if facility_level == '2':
             # get the classification
             classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event, facility_level='2')
-            if classification == 'iCCM_very_severe_pneumonia' or 'iCCM_severe_pneumonia':
-                # refer to health facility, give first dose of antibiotic
-                treatment_plan = 'urgent_referral'
-            else:
-                # treat now
-                treatment_plan = 'treat_at_home'
+
+            # IMCI severe pneumonia at level 2 - treat at inpatient
+            if classification == 'IMCI_severe_pneumonia':
+                if health_system.get_consumables(
+                    item_codes=self.consumables_used_in_hsi[
+                        'Treatment_Severe_Pneumonia'], return_individual_results=True):
+                    self.do_treatment(person_id=person_id,
+                                      appointment_type='first_appointment',
+                                      facility_level=facility_level)
+
+            else:  # classification = IMCI_non_severe_pneumonia
+                # IMCI non-severe pneumonia at level 2 - treat at outpatient
+                if health_system.get_consumables(
+                    item_codes=self.consumables_used_in_hsi[
+                        'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
+                    self.do_treatment(person_id=person_id,
+                                      appointment_type='first_appointment',
+                                      facility_level=facility_level)
 
     def do_treatment(self, person_id, appointment_type, facility_level):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
@@ -1875,7 +1880,7 @@ class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a template for the HSI interaction events. It just shows the checks to use each time.
+    HSI event for treating cough and/ or difficult breathing at the primary level (health centres)
     """
 
     def __init__(self, module, person_id):
@@ -1896,7 +1901,37 @@ class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not (person.is_alive and person.ri_current_infection_status):
             return
 
-        self.module.assess_child_with_cough_or_difficult_breathing_level_1(person_id, hsi_event=self)
+        self.module.assess_child_with_cough_or_difficult_breathing(person_id,
+                                                                   hsi_event=self, facility_level='1a')
+
+
+class HSI_Hospital_Inpatient_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is inpatient treatment of severe pneumonia. It require inpatient bed days
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'HSI_Hospital_Inpatient_Pneumonia_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the treatment"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Exit if the person is not alive or is not currently infected:
+        if not (person.is_alive and person.ri_current_infection_status):
+            return
+
+        self.module.assess_child_with_cough_or_difficult_breathing(person_id,
+                                                                   hsi_event=self, facility_level='1a')
+
 
 
 # ---------------------------------------------------------------------------------------------------------
