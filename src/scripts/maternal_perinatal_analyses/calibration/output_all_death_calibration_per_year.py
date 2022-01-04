@@ -14,7 +14,7 @@ scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'outputs_standard_mph_calibration-2021-11-15T200744Z/death'
+graph_location = 'output_graphs_30k_standard_mph_calibration-2021-11-18T095751Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -22,8 +22,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026,
-             2027, 2028,  2029]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]#, 2021, 2022, 2023, 2024, 2025, 2026,
+             #2027, 2028,  2029]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -755,7 +755,7 @@ for cause, tr in zip(simplified_causes, trs):
     if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
         deaths = get_mean_and_quants_from_str_df(death_results, cause)[0]
 
-    elif cause == 'neonatal_sepsis':
+    elif cause == 'neonatal_sepsis':  # TODO: ERROR HERE( also early_onset_sepsis and late_onset_neonatal_sepsis) labels
         early = get_mean_and_quants_from_str_df(death_results, 'early_onset_neonatal_sepsis')[0]
         late = get_mean_and_quants_from_str_df(death_results, 'late_onset_sepsis')[0]
         deaths = [x + y for x, y in zip(early, late)]
@@ -782,34 +782,67 @@ for cause, tr in zip(simplified_causes, trs):
 
 # proportion causes for preterm birth
 # DALYS
-# todo: break down into composite indicators to find out which one is raising over time (death looks stable)
-dalys = extract_results(
+# todo: i think we just want stacked...
+
+# add in GBD?
+
+def get_dalys(df_):
+    df_.drop(columns='date').groupby(['year']).sum().stack()
+
+
+dalys_stacked = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
-                key="dalys",
+                key="dalys_stacked",
                 custom_generate_series=(
-                    lambda df_: df_.drop(
+                    lambda df: df.drop(
                         columns='date'
-                    ).rename(
-                        columns={'age_range': 'age_grp'}
                     ).groupby(['year']).sum().stack()
                 ),
-                do_scaling=True
-            )
-yearly_mat_dalys = list()
-yearly_neo_dalys = list()
+                do_scaling=True)
+
+stacked_mat_dalys = list()
+stacked_mat_dalys_lq = list()
+stacked_mat_dalys_uq = list()
+
+stacked_neo_dalys = list()
+stacked_neo_dalys_lq = list()
+stacked_neo_dalys_uq = list()
 
 for year in sim_years:
-    if year in dalys.index:
-        yearly_mat_dalys.append(dalys.loc[year, 'Maternal Disorders'].mean())
-        yearly_neo_dalys.append(dalys.loc[year, 'Neonatal Disorders'].mean())
+    if year in dalys_stacked.index:
+        stacked_mat_dalys.append(dalys_stacked.loc[year, 'Maternal Disorders'].mean())
+        stacked_mat_dalys_lq.append(dalys_stacked.loc[year, 'Maternal Disorders'].quantile(0.025))
+        stacked_mat_dalys_uq.append(dalys_stacked.loc[year, 'Maternal Disorders'].quantile(0.925))
+
+        stacked_neo_dalys.append(dalys_stacked.loc[year, 'Neonatal Disorders'].mean())
+        stacked_neo_dalys_lq.append(dalys_stacked.loc[year, 'Neonatal Disorders'].quantile(0.025))
+        stacked_neo_dalys_uq.append(dalys_stacked.loc[year, 'Neonatal Disorders'].quantile(0.925))
+
 
 fig, ax = plt.subplots()
-ax.plot(sim_years, yearly_mat_dalys, label="Maternal DALYs", color='deepskyblue')
-ax.plot(sim_years, yearly_neo_dalys, label="Neonatal DALYs", color='olivedrab')
+ax.plot(sim_years, stacked_mat_dalys, label="Maternal DALYs", color='deepskyblue')
+ax.fill_between(sim_years, stacked_mat_dalys_lq, stacked_mat_dalys_uq, color='b', alpha=.1)
+
+ax.plot(sim_years, stacked_neo_dalys, label="Neonatal DALYs", color='olivedrab')
+ax.fill_between(sim_years, stacked_neo_dalys_lq, stacked_neo_dalys_uq, color='g', alpha=.1)
 plt.xlabel('Year')
-plt.ylabel("Disability Adjusted Life Years")
+plt.ylabel("Disability Adjusted Life Years (stacked)")
 plt.title('Total DALYs per Year Attributable to Maternal/Neonatal disorders')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/dalys.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/dalys_stacked.png')
 plt.show()
+
+dalys_stacked = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+                key="dalys_stacked",
+                custom_generate_series=(
+                    lambda df_: df_.drop(
+                        columns='date').
+                        groupby(['year'])['Maternal Disorders'].sum()
+                ),
+                do_scaling=True)
+
+# todo: move to scenrio files
+# 1.) define HSIs of interest

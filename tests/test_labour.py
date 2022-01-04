@@ -72,6 +72,7 @@ def set_pregnancy_characteristics(sim, mother_id):
 
 def register_modules(ignore_cons_constraints):
     """Register all modules that are required for labour to run"""
+    _cons_availability = 'all' if ignore_cons_constraints else 'none'
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -80,13 +81,8 @@ def register_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+                                           cons_availability=_cons_availability),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
@@ -508,7 +504,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -814,7 +810,7 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):

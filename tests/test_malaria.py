@@ -119,7 +119,7 @@ def test_remove_malaria_test(tmpdir):
             resourcefilepath=resourcefilepath,
             service_availability=service_availability,
             mode_appt_constraints=0,
-            ignore_cons_constraints=True,
+            cons_availability='all',
             ignore_priority=True,
             capabilities_coefficient=0.0,
             disable=False,  # disables the health system constraints so all HSI events run
@@ -209,7 +209,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                 the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
                 self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
                 self.ALERT_OTHER_DISEASES = []
 
             def apply(self, person_id, squeeze_factor):
@@ -329,7 +329,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                 the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
                 self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
                 self.ALERT_OTHER_DISEASES = []
 
             def apply(self, person_id, squeeze_factor):

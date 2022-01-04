@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -53,7 +54,7 @@ class CareOfWomenDuringPregnancy(Module):
         self.current_parameters = dict()
 
         # and then define a dictionary which will hold the required consumables for each intervention
-        self.item_codes_for_consumables_required_pregnancy = dict()
+        self.item_codes_preg_consumables = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
     ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
@@ -73,20 +74,8 @@ class CareOfWomenDuringPregnancy(Module):
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
             Types.LIST, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
-        'effect_of_iron_replacement_for_resolving_anaemia': Parameter(
-            Types.LIST, 'treatment effectiveness of iron replacement in resolving anaemia'),
-        'effect_of_folate_replacement_for_resolving_anaemia': Parameter(
-            Types.LIST, 'treatment effectiveness of folate replacement in resolving anaemia'),
-        'effect_of_b12_replacement_for_resolving_anaemia': Parameter(
-            Types.LIST, 'treatment effectiveness of b12 replacement in resolving anaemia'),
         'treatment_effect_blood_transfusion_anaemia': Parameter(
             Types.LIST, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
-        'effect_of_iron_replacement_for_resolving_iron_def': Parameter(
-            Types.LIST, 'treatment effectiveness of iron replacement in resolving iron deficiency'),
-        'effect_of_folate_replacement_for_resolving_folate_def': Parameter(
-            Types.LIST, 'treatment effectiveness of folate replacement in resolving folate deficiency'),
-        'effect_of_b12_replacement_for_resolving_b12_def': Parameter(
-            Types.LIST, 'treatment effectiveness of b12 replacement in resolving b12 deficiency'),
         'prob_evac_procedure_pac': Parameter(
             Types.LIST, 'Probabilities that a woman will receive D&C, MVA or misoprostal as treatment for abortion '),
 
@@ -160,8 +149,6 @@ class CareOfWomenDuringPregnancy(Module):
     PROPERTIES = {
         'ac_total_anc_visits_current_pregnancy': Property(Types.INT, 'rolling total of antenatal visits this woman has '
                                                                      'attended during her pregnancy'),
-        'ac_facility_type': Property(Types.CATEGORICAL, 'Type of facility that a woman will receive ANC in for her '
-                                                        'pregnancy', categories=['none', 'health_centre', 'hospital']),
         'ac_date_next_contact': Property(Types.DATE, 'Date on which this woman is scheduled to return for her next '
                                                      'ANC contact'),
         'ac_to_be_admitted': Property(Types.BOOL, 'Whether this woman requires admission following an ANC visit'),
@@ -215,7 +202,6 @@ class CareOfWomenDuringPregnancy(Module):
         df = population.props
 
         df.loc[df.is_alive, 'ac_total_anc_visits_current_pregnancy'] = 0
-        df.loc[df.is_alive, 'ac_facility_type'] = 'none'
         df.loc[df.is_alive, 'ac_date_next_contact'] = pd.NaT
         df.loc[df.is_alive, 'ac_to_be_admitted'] = False
         df.loc[df.is_alive, 'ac_receiving_iron_folic_acid'] = False
@@ -240,338 +226,156 @@ class CareOfWomenDuringPregnancy(Module):
                                                ['mva', 'd_and_c', 'misoprostol', 'antibiotics', 'blood_products',
                                                 'injury_repair'])
 
-    def define_required_consumables(self):
+    def get_and_store_pregnancy_item_codes(self):
         """
         This function defines the required consumables for each intervention delivered during this module and stores
         them in a module level dictionary called within HSIs
         """
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        get_item_code_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
-        item1 = pd.unique(consumables.loc[consumables["Items"] == "Epinephrine, ampoule, 1 mg/ml", "Item_Code"])[0]
-
-        item2 = pd.unique(consumables.loc[consumables["Items"] == "Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",
-                                                                  "Item_Code"])[0]
-
-        item3 = pd.unique(
-            consumables.loc[consumables["Items"] == "Sodium chloride, injectable solution, 0,9 %, 500 ml",
-                            "Item_Code"])[0]
-
-        item4 = pd.unique(consumables.loc[consumables["Items"] == "Syringe, needle + swab", "Item_Code"])[0]
-
-        item5 = pd.unique(consumables.loc[consumables["Items"] == "Suture pack", "Item_Code"])[0]
-
-        item6 = pd.unique(consumables.loc[consumables["Items"] == "Gauze pad, 10 x 10 cm, sterile", "Item_Code"])[0]
-
-        item7 = pd.unique(consumables.loc[consumables["Items"] == "Ampicillin, powder for injection, 500 mg, vial",
-                                          "Item_Code"])[0]
-
-        item8 = pd.unique(consumables.loc[consumables["Items"] == "Gentamycin, injection, 40 mg/ml in 2 ml vial",
-                                          "Item_Code"])[0]
-
-        item9 = pd.unique(consumables.loc[consumables["Items"] == "Metronidazole, injection, 500 mg in 100 ml vial",
-                                          "Item_Code"])[0]
-
-        item10 = pd.unique(consumables.loc[consumables["Items"] == "Paracetamol, tablet, 500 mg", "Item_Code"])[0]
-
-        item11 = pd.unique(consumables.loc[consumables["Items"] == "Pethidine, 50 mg/ml, 2 ml ampoule", "Item_Code"])[0]
-
-        # key = name of the item, value = item code
-        ep_cons = {'epinephrine': item1, 'lidocaine': item2, 'sodium_chloride': item3, 'syringe': item4,
-                   'suture_pack': item5,  'gauze': item6, 'ampicillin': item7, 'gentamycin': item8,
-                   'metronidazole': item9, 'paracetamol': item10, 'pethidine': item11}
-
-        self.item_codes_for_consumables_required_pregnancy['ectopic_pregnancy'] = ep_cons
+        self.item_codes_preg_consumables['ectopic_pregnancy'] =\
+            [get_item_code_from_name('Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg')] + \
+            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Suture pack')] + \
+            [get_item_code_from_name('Gauze pad, 10 x 10 cm, sterile')] + \
+            [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
+            [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
+            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
+            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')]
 
         # ------------------------------------------- POST ABORTION CARE ----------------------------------------------
-        item1 = pd.unique(consumables.loc[consumables["Items"] == "Misoprostol, tablet, 200 mcg", "Item_Code"])[0]
+        self.item_codes_preg_consumables['post_abortion_care'] = \
+            [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
+            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
+            [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
+            [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
+            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
+            [get_item_code_from_name('Tetracycline, tablet, 500 mg')] + \
+            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
+            [get_item_code_from_name('Methylergometrine, Injection  0.2 mg/ml, 1 ml amp')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] +\
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')]
 
-        item2 = pd.unique(consumables.loc[consumables["Items"] == "Paracetamol, tablet, 500 mg",
-                                          "Item_Code"])[0]
-
-        item3 = pd.unique(consumables.loc[consumables["Items"] == "Ampicillin, powder for injection, 500 mg, vial",
-                                          "Item_Code"])[0]
-
-        item4 = pd.unique(consumables.loc[consumables["Items"] == "Gentamycin, injection, 40 mg/ml in 2 ml vial",
-                                          "Item_Code"])[0]
-
-        item5 = pd.unique(consumables.loc[consumables["Items"] == "Metronidazole, injection, 500 mg in 100 ml vial",
-                                          "Item_Code"])[0]
-
-        item6 = pd.unique(consumables.loc[consumables["Items"] == "Tetracycline, tablet, 500 mg", "Item_Code"])[0]
-
-        item7 = pd.unique(consumables.loc[consumables["Items"] == "Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",
-                                          "Item_Code"])[0]
-
-        item8 = pd.unique(consumables.loc[consumables["Items"] == "Syringe, needle + swab", "Item_Code"])[0]
-
-        item9 = pd.unique(consumables.loc[consumables["Items"] == "Methylergometrine, Injection  0.2 mg/ml, 1 ml amp",
-                                                                  "Item_Code"])[0]
-
-        item10 = pd.unique(consumables.loc[consumables["Items"] == "Pethidine, 50 mg/ml, 2 ml ampoule", "Item_Code"])[0]
-
-        item11 = pd.unique(consumables.loc[consumables["Items"] == "Sodium chloride, injectable solution, 0,9 %, 500 ml",
-                                                                   "Item_Code"])[0]
-
-        pac_cons = {'misoprostol': item1, 'paracetamol': item2, 'ampicillin': item3, 'gentamycin': item4,
-                    'metronidazole': item5, 'tetracycline': item6, 'lidocaine': item7, 'syringe': item8,
-                    'methylergometrine': item9, 'pethidine': item10, 'sodium_chloride': item11}
-
-        self.item_codes_for_consumables_required_pregnancy['post_abortion_care'] = pac_cons
+        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
+        self.item_codes_preg_consumables['blood_test_equipment'] = \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
-        item = pd.unique(consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
-        dp_cons = {'test_strips': item}
-
-        self.item_codes_for_consumables_required_pregnancy['urine_dipstick'] = dp_cons
+        self.item_codes_preg_consumables['urine_dipstick'] = [get_item_code_from_name('Test strips, urine analysis')]
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg',
-                            'Item_Code'])[0]
-
-        ifa_cons = {'ifa': item}
-
-        self.item_codes_for_consumables_required_pregnancy['iron_folic_acid'] = ifa_cons
+        self.item_codes_preg_consumables['iron_folic_acid'] = \
+            [get_item_code_from_name('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')]
 
         # --------------------------------- BALANCED ENERGY AND PROTEIN ----------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
-
-        bep_cons = {'diet_supps': item}
-
-        self.item_codes_for_consumables_required_pregnancy['balanced_energy_protein'] = bep_cons
+        self.item_codes_preg_consumables['balanced_energy_protein'] = \
+            [get_item_code_from_name('Dietary supplements (country-specific)')]
 
         # --------------------------------- INSECTICIDE TREATED NETS ------------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Insecticide-treated net', 'Item_Code'])[0]
-
-        itn_cons = {'bed_net': item}
-
-        self.item_codes_for_consumables_required_pregnancy['itn'] = itn_cons
+        self.item_codes_preg_consumables['itn'] = [get_item_code_from_name('Insecticide-treated net')]
 
         # --------------------------------- TETANUS TOXOID VACCINATION  ------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tetanus toxoid, injection', 'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-
-        tt_cons = {'tetanus_vaccine': item1, 'syringe': item2}
-
-        self.item_codes_for_consumables_required_pregnancy['tetanus_toxoid'] = tt_cons
+        self.item_codes_preg_consumables['tetanus_toxoid'] = \
+            [get_item_code_from_name('Tetanus toxoid, injection')] +\
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # --------------------------------- CALCIUM SUPPLEMENTS -----------------------------------------------------
-        item = pd.unique(consumables.loc[consumables['Items'] == 'Calcium, tablet, 600 mg', 'Item_Code'])[0]
-
-        ca_cons = {'calcium_supps': item}
-
-        self.item_codes_for_consumables_required_pregnancy['calcium'] = ca_cons
+        self.item_codes_preg_consumables['calcium'] = [get_item_code_from_name('Calcium, tablet, 600 mg')]
 
         # -------------------------------- HAEMOGLOBIN TESTING -------------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item4 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        hb_test_cons = {'hb_test': item1, 'blood_tube': item2, 'syringe':item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['hb_test'] = hb_test_cons
+        self.item_codes_preg_consumables['hb_test'] = \
+            [get_item_code_from_name('Haemoglobin test (HB)')]
 
         # ------------------------------------------- ALBENDAZOLE -----------------------------------------------------
-        item = pd.unique(consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
-
-        alben_cons = {'albendazole': item}
-
-        self.item_codes_for_consumables_required_pregnancy['albendazole'] = alben_cons
+        self.item_codes_preg_consumables['albendazole'] = [get_item_code_from_name('Albendazole 200mg_1000_CMST')]
 
         # ------------------------------------------- HEP B TESTING ---------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        hep_b_cons = {'hep_b_test':item1, 'syringe': item2, 'gloves': item3}
-
-        self.item_codes_for_consumables_required_pregnancy['hep_b_test'] = hep_b_cons
+        self.item_codes_preg_consumables['hep_b_test'] = \
+            [get_item_code_from_name('Hepatitis B test kit-Dertemine_100 tests_CMST')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ------------------------------------------- SYPHILIS TESTING ------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item4 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        syph_test_cons = {'syphilis_test': item1, 'blood_tube': item2, 'syringe': item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['syphilis_test'] = syph_test_cons
+        self.item_codes_preg_consumables['syphilis_test'] = \
+            [get_item_code_from_name('Test, Rapid plasma reagin (RPR)')]
 
         # ------------------------------------------- SYPHILIS TREATMENT ----------------------------------------------
-        item1 = pd.unique( consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, '
-                                                                   'powder for injection, 2.4 million IU',
-                                                                   'Item_Code'])[0]
-
-        item2 = pd.unique(consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-
-        syph_treatment_cons = {'benzylpenicillin': item1, 'syringe': item2}
-
-        self.item_codes_for_consumables_required_pregnancy['syphilis_treatment'] = syph_treatment_cons
+        self.item_codes_preg_consumables['syphilis_treatment'] = \
+            [get_item_code_from_name('Benzathine benzylpenicillin, powder for injection, 2.4 million IU')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ----------------------------------------------- IPTP --------------------------------------------------------
-        item = pd.unique(consumables.loc[consumables['Items'] == 'Sulfamethoxazole + trimethropin, '
-                                                                 'tablet 400 mg + 80 mg', 'Item_Code'])[0]
-
-        iptp_cons = {'iptp': item}
-
-        self.item_codes_for_consumables_required_pregnancy['iptp'] = iptp_cons
+        self.item_codes_preg_consumables['iptp'] =\
+            [get_item_code_from_name('Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg')]
 
         # ----------------------------------------------- GDM TEST ----------------------------------------------------
-        item1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
-
-        item2 = pd.unique(consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-
-        item3 = pd.unique(consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-
-        item4 = pd.unique(consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair',
-                                          'Item_Code'])[0]
-
-        gdm_test_cons = {'gdm_test': item1, 'blood_tube': item2, 'syringe': item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['gdm_test'] = gdm_test_cons
+        self.item_codes_preg_consumables['gdm_test'] = \
+            [get_item_code_from_name('Blood glucose level test')]
 
         # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Complete blood count', 'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item4 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        fbc_test_cons = {'fbc_test': item1, 'blood_tube': item2, 'syringe': item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['full_blood_count'] = fbc_test_cons
-
-        #  --------------------------------- ANAEMIA DEFICIENCY TREATMENT --------------------------------------------
-        item = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'ferrous sulphate 200 mg, coated (65 mg iron)_1000_IDA', 'Item_Code'])[0]
-
-        iron_cons = {'ferrous_sulphate': item}
-
-        self.item_codes_for_consumables_required_pregnancy['iron_treatment'] = iron_cons
-
-        item = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA', 'Item_Code'])[0]
-
-        b12_cons = {'vit_b12': item}
-
-        self.item_codes_for_consumables_required_pregnancy['b12_treatment'] = b12_cons
+        self.item_codes_preg_consumables['full_blood_count'] = \
+            [get_item_code_from_name('Complete blood count')]
 
         # ---------------------------------------- BLOOD TRANSFUSION -------------------------------------------------
-        item1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-
-        item2 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                                                      'Item_Code'])[0]
-
-        transfusion_cons = {'blood': item1, 'giving_set': item2}
-
-        self.item_codes_for_consumables_required_pregnancy['blood_transfusion'] = transfusion_cons
+        self.item_codes_preg_consumables['blood_transfusion'] = \
+            [get_item_code_from_name('Blood, one unit')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-
-        oral_anti_htns_cons = {'methyldopa': item}
-
-        self.item_codes_for_consumables_required_pregnancy['oral_antihypertensives'] = oral_anti_htns_cons
+        self.item_codes_preg_consumables['oral_antihypertensives'] = \
+            [get_item_code_from_name('Methyldopa 250mg_1000_CMST')]
 
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
-                            'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item4 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        iv_anti_htns_cons = {'hydralazine': item1, 'water_for_injection': item2, 'syringe': item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['iv_antihypertensives'] = iv_anti_htns_cons
+        self.item_codes_preg_consumables['iv_antihypertensives'] = \
+            [get_item_code_from_name('Hydralazine, powder for injection, 20 mg ampoule')] + \
+            [get_item_code_from_name('Water for injection, 10ml_Each_CMST')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ---------------------------------------- MAGNESIUM SULFATE ------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule',
-                            'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-
-        ec_treatment_cons = {'mgso4': item1, 'syringe': item2}
-
-        self.item_codes_for_consumables_required_pregnancy['magnesium_sulfate'] = ec_treatment_cons
+        self.item_codes_preg_consumables['magnesium_sulfate'] = \
+            [get_item_code_from_name('Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # -------------------------------------- ANTIBIOTICS FOR PROM ------------------------------------------------
-        item1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-                            'Item_Code'])[0]
-        item2 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-        item3 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item4 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        abx_prom_cons = {'benzylpenicillin': item1, 'water_for_injection': item2, 'syringe': item3, 'gloves': item4}
-
-        self.item_codes_for_consumables_required_pregnancy['abx_for_prom'] = abx_prom_cons
+        self.item_codes_preg_consumables['abx_for_prom'] = \
+            [get_item_code_from_name('Benzathine benzylpenicillin, powder for injection, 2.4 million IU')] + \
+            [get_item_code_from_name('Water for injection, 10ml_Each_CMST')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ----------------------------------- ORAL DIABETIC MANAGEMENT -----------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Glibenclamide 5mg_1000_CMST', 'Item_Code'])[0]
-
-        oral_anti_diabs_cons = {'glibenclamide': item}
-
-        self.item_codes_for_consumables_required_pregnancy['oral_diabetic_treatment'] = oral_anti_diabs_cons
+        self.item_codes_preg_consumables['oral_diabetic_treatment'] = \
+            [get_item_code_from_name('Glibenclamide 5mg_1000_CMST')]
 
         # ---------------------------------------- INSULIN ----------------------------------------------------------
-        item = pd.unique(
-            consumables.loc[consumables['Items'] == 'Insulin soluble 100 IU/ml, 10ml_each_CMST',
-                            'Item_Code'])[0]
-
-        insulin_cons = {'insulin': item}
-
-        self.item_codes_for_consumables_required_pregnancy['insulin_treatment'] = insulin_cons
+        self.item_codes_preg_consumables['insulin_treatment'] = \
+            [get_item_code_from_name('Insulin soluble 100 IU/ml, 10ml_each_CMST')]
 
     def initialise_simulation(self, sim):
 
-        # We register the logging event and schedule to run each year
-        sim.schedule_event(AntenatalCareLoggingEvent(self),
-                           sim.date + DateOffset(years=1))
-
-        # call the following function to store the required consumables for the simulation run within the appropriate
+        # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.define_required_consumables()
+        self.get_and_store_pregnancy_item_codes()
 
         # ==================================== REGISTERING DX_TESTS =================================================
         params = self.current_parameters
+        item_codes = self.item_codes_preg_consumables
+
         # Next we register the relevant dx_tests used within this module...
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-
-            # TODO: ADD CONSUMABLES TO DX TESTS WHEN NEW FUNCTIONALITY IS IN
 
             # This test represents measurement of blood pressure used in ANC screening to detect hypertension in
             # pregnancy
@@ -584,28 +388,36 @@ class CareOfWomenDuringPregnancy(Module):
             # This test represents a urine dipstick which is used to measuring the presence and amount of protein in a
             # womans urine, proteinuria being indicative of pre-eclampsia/eclampsia
             urine_dipstick_protein=DxTest(
-                property='ps_htn_disorders', target_categories=['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
+                property='ps_htn_disorders',
+                target_categories=['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
+                item_codes=item_codes['urine_dipstick'],
                 sensitivity=params['sensitivity_urine_protein_1_plus'],
                 specificity=params['specificity_urine_protein_1_plus']),
 
 
             # This test represents point of care haemoglobin testing used in ANC to detect anaemia (all-severity)
             point_of_care_hb_test=DxTest(
-                property='ps_anaemia_in_pregnancy', target_categories=['mild', 'moderate', 'severe'],
+                property='ps_anaemia_in_pregnancy',
+                target_categories=['mild', 'moderate', 'severe'],
+                item_codes=item_codes['hb_test'],
                 sensitivity=params['sensitivity_poc_hb_test'],
                 specificity=params['specificity_poc_hb_test']),
 
             # This test represents laboratory based full blood count testing used in hospitals to determine severity of
             # anaemia via Hb levels
             full_blood_count_hb=DxTest(
-                property='ps_anaemia_in_pregnancy', target_categories=['mild', 'moderate', 'severe'],
+                property='ps_anaemia_in_pregnancy',
+                target_categories=['mild', 'moderate', 'severe'],
+                item_codes=item_codes['full_blood_count'],
                 sensitivity=params['sensitivity_fbc_hb_test'],
                 specificity=params['specificity_fbc_hb_test']),
 
             # This test represents point of care glucose testing used in ANC to detect hyperglycemia, associated with
             # gestational diabetes
             blood_test_glucose=DxTest(
-                property='ps_gest_diab', target_categories=['uncontrolled'],
+                property='ps_gest_diab',
+                target_categories=['uncontrolled'],
+                item_codes=item_codes['gdm_test'],
                 sensitivity=params['sensitivity_blood_test_glucose'],
                 specificity=params['specificity_blood_test_glucose']),
 
@@ -613,6 +425,7 @@ class CareOfWomenDuringPregnancy(Module):
             # gestational diabetes
             blood_test_syphilis=DxTest(
                 property='ps_syphilis',
+                item_codes=item_codes['syphilis_test'],
                 sensitivity=params['sensitivity_blood_test_syphilis'],
                 specificity=params['specificity_blood_test_syphilis']))
 
@@ -620,38 +433,39 @@ class CareOfWomenDuringPregnancy(Module):
             logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
                                                'testing will not happen in antenatal care')
 
-    # This function is used within this and other modules to reset properties from this module when a woman is no longer
-    # pregnant to ensure in future pregnancies properties arent incorrectly set to certain values
     def care_of_women_in_pregnancy_property_reset(self, ind_or_df, id_or_index):
+        """
+        This function is called following birth/pregnancy loss to reset the variables stored in this module. This
+        prevents women experiencing the effects of these properties in future pregnancies
+        :param ind_or_df: Wether this function is being applied to an individual or indexes from the DF.
+        :param id_or_index: individual id OR set of indexes to change the properties
+        :return:
+        """
         df = self.sim.population.props
 
         if ind_or_df == 'individual':
-            set = df.at
-            # todo: seems like this crashes when it shouldnt have even been called
-            # assert not set[id_or_index, 'is_pregnant']
+            update = df.at
         else:
-            set = df.loc
-            assert not set[id_or_index, 'is_pregnant'].any()
+            update = df.loc
 
-        set[id_or_index, 'ac_total_anc_visits_current_pregnancy'] = 0
-        set[id_or_index, 'ac_to_be_admitted'] = False
-        set[id_or_index, 'ac_date_next_contact'] = pd.NaT
-        set[id_or_index, 'ac_facility_type'] = 'none'
-        set[id_or_index, 'ac_receiving_iron_folic_acid'] = False
-        set[id_or_index, 'ac_receiving_bep_supplements'] = False
-        set[id_or_index, 'ac_receiving_calcium_supplements'] = False
-        set[id_or_index, 'ac_doses_of_iptp_received'] = 0
-        set[id_or_index, 'ac_itn_provided'] = False
-        set[id_or_index, 'ac_ttd_received'] = 0
-        set[id_or_index, 'ac_gest_htn_on_treatment'] = False
-        set[id_or_index, 'ac_gest_diab_on_treatment'] = 'none'
-        set[id_or_index, 'ac_ectopic_pregnancy_treated'] = False
-        set[id_or_index, 'ac_received_abx_for_prom'] = False
-        set[id_or_index, 'ac_received_abx_for_chorioamnionitis'] = False
-        set[id_or_index, 'ac_mag_sulph_treatment'] = False
-        set[id_or_index, 'ac_iv_anti_htn_treatment'] = False
-        set[id_or_index, 'ac_received_blood_transfusion'] = False
-        set[id_or_index, 'ac_admitted_for_immediate_delivery'] = 'none'
+        update[id_or_index, 'ac_total_anc_visits_current_pregnancy'] = 0
+        update[id_or_index, 'ac_to_be_admitted'] = False
+        update[id_or_index, 'ac_date_next_contact'] = pd.NaT
+        update[id_or_index, 'ac_receiving_iron_folic_acid'] = False
+        update[id_or_index, 'ac_receiving_bep_supplements'] = False
+        update[id_or_index, 'ac_receiving_calcium_supplements'] = False
+        update[id_or_index, 'ac_doses_of_iptp_received'] = 0
+        update[id_or_index, 'ac_itn_provided'] = False
+        update[id_or_index, 'ac_ttd_received'] = 0
+        update[id_or_index, 'ac_gest_htn_on_treatment'] = False
+        update[id_or_index, 'ac_gest_diab_on_treatment'] = 'none'
+        update[id_or_index, 'ac_ectopic_pregnancy_treated'] = False
+        update[id_or_index, 'ac_received_abx_for_prom'] = False
+        update[id_or_index, 'ac_received_abx_for_chorioamnionitis'] = False
+        update[id_or_index, 'ac_mag_sulph_treatment'] = False
+        update[id_or_index, 'ac_iv_anti_htn_treatment'] = False
+        update[id_or_index, 'ac_received_blood_transfusion'] = False
+        update[id_or_index, 'ac_admitted_for_immediate_delivery'] = 'none'
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -659,7 +473,6 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_total_anc_visits_current_pregnancy'] = 0
         df.at[child_id, 'ac_to_be_admitted'] = False
         df.at[child_id, 'ac_date_next_contact'] = pd.NaT
-        df.at[child_id, 'ac_facility_type'] = 'none'
         df.at[child_id, 'ac_receiving_iron_folic_acid'] = False
         df.at[child_id, 'ac_receiving_bep_supplements'] = False
         df.at[child_id, 'ac_receiving_calcium_supplements'] = False
@@ -679,10 +492,10 @@ class CareOfWomenDuringPregnancy(Module):
 
     def further_on_birth_care_of_women_in_pregnancy(self, mother_id):
         """
-        This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
-        code related to the antenatal care module that should be ran on_birth for all births - it has been parcelled
-        into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth code is
-        ran in the correct sequence (as this can vary depending on how modules are registered)
+        This function is called by the on_birth function of NewbornOutcomes module following a live birth or the Labour
+         module following an intrapartum stillbirth . This function contains additional code related to the antenatal
+         care module that should be ran following all births/late stillbirths - this is to ensure each modules
+         (pregnancy,antenatal care, labour, newborn, postnatal) on_birth code is ran in the correct sequence
         :param mother_id: mothers individual id
         """
         df = self.sim.population.props
@@ -715,10 +528,20 @@ class CareOfWomenDuringPregnancy(Module):
 
     #  ================================ ADDITIONAL ANTENATAL HELPER FUNCTIONS =========================================
     def get_approx_days_of_pregnancy(self, person_id):
+        """
+        This function calculates the approximate number of days remaining in a womans pregnancy- assuming all
+         pregnancies go to full term (40 weeks gestational age)
+        :param person_id: Mothers individual id
+        :return: Approximate number of days left in a term pregnancy
+        """
         df = self.sim.population.props
+
         approx_days = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+
+        # Ensure only a positive number of days is returned
         if approx_days < 1:
             approx_days = 7
+
         assert approx_days > 1
         return round(approx_days)
 
@@ -764,14 +587,12 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Return a gestation beyond the normal length of pregnancy. This wont be used for scheduling because women
         # arent scheduled ANC past 42 weeks (see next function)
-        # TODO: replace with cleaner fix for next version
         else:
             recommended_gestation_next_anc = 50
 
         return recommended_gestation_next_anc
 
-    def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc,
-                                 facility_level):
+    def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc):
         """
         This function is responsible for scheduling a womans next ANC contact in the schedule if she chooses to seek
         care again.  It is called by each of the ANC HSIs.
@@ -779,12 +600,11 @@ class CareOfWomenDuringPregnancy(Module):
         :param visit_to_be_scheduled: Number if next visit in the schedule (2-8)
         :param recommended_gestation_next_anc: Gestational age in weeks a woman should be for the next visit in her
         schedule
-        :param facility_level: facility level that the next ANC contact in the schedule will occur at
         """
         df = self.sim.population.props
         params = self.current_parameters
 
-        # Prevent women returning to ANC at very late gestations- this needs to be reviewed and linked with induction
+        # Prevent women returning to ANC at very late gestational age
         if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 42:
             return
 
@@ -798,34 +618,27 @@ class CareOfWomenDuringPregnancy(Module):
             # forward from a womans first ANC contact (we assume she will always seek care within the same facility
             # level)
             if visit_to_be_scheduled == 2:
-                visit = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 3:
-                visit = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 4:
-                visit = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 5:
-                visit = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 6:
-                visit = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 7:
-                visit = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 8:
-                visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self, person_id=individual_id)
 
-            # This function uses a womans gestation age to determine when the next visit should occur and schedules it
+            # This function uses a womans gestational age to determine when the next visit should occur and schedules it
             # accordingly
             def calculate_visit_date_and_schedule_visit(visit):
                 # We subtract this womans current gestational age from the recommended gestational age for the next
@@ -887,14 +700,8 @@ class CareOfWomenDuringPregnancy(Module):
         assert df.at[individual_id, 'ac_to_be_admitted']
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
 
-        # Use a weighted random draw to determine which level of facility the woman will be admitted too
-        # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
-        facility_level = int(self.rng.choice([1, 2], p=[0.5, 0.5]))
-
-        # Schedule the HSI
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
-            facility_level_this_hsi=facility_level)
+            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
                                                             topen=self.sim.date,
@@ -907,6 +714,12 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[individual_id, 'ac_to_be_admitted'] = False
 
     def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
+        """
+        This function is called if HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment is unable to run to ensure
+         women still experience risk of death associated with the complication they had sought treatment for (as risk of
+        death is applied following treatment within the HSI)
+        :param hsi_event: HSI event in which the function has been called:
+        """
         df = self.sim.population.props
         individual_id = hsi_event.target
 
@@ -926,17 +739,27 @@ class CareOfWomenDuringPregnancy(Module):
         This function is called to check if specific interventions within the ANC matrix should run for an individual.
         If the individual has received the intervention the appropriate amount of times per pregnancy then the
         intervention wont run again
+        :param person_id: individual id
+        :param int_1: first intervention (i.e. first tetanus vaccine)
+        :param int2: second intervention (i.e. second tetanus vaccine)
+        :return BOOL (should the intervention be delivered)
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        # If the first intervention hasn't already been given, store within the mni, return True so the intervention is
+        # delivered
         if int_1 not in mni[person_id]['anc_ints']:
             mni[person_id]['anc_ints'].append(int_1)
             return True
 
+        # If the second intervention hasn't already been given, store within the mni, return True so the intervention is
+        # delivered
         elif int2 not in mni[person_id]['anc_ints']:
             mni[person_id]['anc_ints'].append(int2)
             return True
 
+        # If both of the interventions have been delivered, return false to prevent the intervention being delivered
+        # again
         elif int_1 and int2 in mni[person_id]['anc_ints']:
             return False
 
@@ -954,10 +777,12 @@ class CareOfWomenDuringPregnancy(Module):
         hypertension_diagnosed = False
         proteinuria_diagnosed = False
 
-        # Delivery of the intervention is conditioned on the availability of the consumable and a random draw against a
-        # probability that the intervention would be delivered (used to calibrate to SPA data- acts as proxy for
-        # clinical quality)
+        # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
+        # would be delivered (used to calibrate to SPA data- acts as proxy for clinical quality)
         if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
+
+            # If the intervention will be delivered the dx_manager runs, returning True if the consumables are
+            # available and the test detects protein in the urine
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
                                                                        hsi_event=hsi_event):
 
@@ -965,8 +790,9 @@ class CareOfWomenDuringPregnancy(Module):
                 proteinuria_diagnosed = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'dipstick'})
 
-        # The process is repeated for blood pressure monitoring- although not conditioned on consumables
+        # The process is repeated for blood pressure monitoring
         if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
+
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
@@ -1005,22 +831,32 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         person_id = hsi_event.target
         params = self.current_parameters
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
         if not df.at[person_id, 'ac_receiving_iron_folic_acid']:
-            consumables = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {module_cons['iron_folic_acid']['ifa']: self.get_approx_days_of_pregnancy(person_id)}}
 
-            outcome_of_request_for_consumables = hsi_event.get_all_consumables(footprint=consumables)
+            days = self.get_approx_days_of_pregnancy(person_id)
+            cons = {_i: days for _i in self.item_codes_preg_consumables['iron_folic_acid']}
+
+            avail = hsi_event.get_consumables(item_codes=cons)
 
             # As with previous interventions - condition on consumables and probability intervention is delivered
-            if outcome_of_request_for_consumables and (self.rng.random_sample() < params['prob_intervention_'
-                                                                                         'delivered_ifa']):
+            if avail and (self.rng.random_sample() < params['prob_intervention_delivered_ifa']):
+
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iron_folic_acid'})
 
+                # Importantly, only women who will be adherent to iron will experience the benefits of the
+                # treatment effect
                 if self.rng.random_sample() < params['prob_adherent_ifa']:
                     df.at[person_id, 'ac_receiving_iron_folic_acid'] = True
+
+                    # Women started on IFA at this stage may already be anaemic, we here apply a probability that
+                    # starting on a course of IFA will correct anaemia prior to follow up
+                    if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+
+                        # Store date of resolution for daly calculations
+                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
+                            person_id, f'{df.at[person_id, "ps_anaemia_in_pregnancy"]}_anaemia_resolution')
+                        df.at[person_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
     def balance_energy_and_protein_supplementation(self, hsi_event):
         """This function contains the intervention balance energy and protein supplementation delivered during ANC.
@@ -1028,33 +864,34 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
+        # Check the woman is not already receiving the supplements
         if not df.at[person_id, 'ac_receiving_bep_supplements']:
-            consumables = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {module_cons['balanced_energy_protein']['diet_supps']:
-                                  self.get_approx_days_of_pregnancy(person_id)}}
 
-            outcome_of_request_for_consumables = hsi_event.get_all_consumables(footprint=consumables)
+            # If the consumables are available...
+            days = self.get_approx_days_of_pregnancy(person_id)
+            cons = {_i: days for _i in self.item_codes_preg_consumables['balanced_energy_protein']}
+            avail = hsi_event.get_consumables(item_codes=cons)
 
-            if outcome_of_request_for_consumables and (df.at[person_id, 'li_bmi'] == 1):
+            # And she is deemed to be at risk (i.e. BMI < 18) she is started on supplements
+            if avail and (df.at[person_id, 'li_bmi'] == 1):
                 df.at[person_id, 'ac_receiving_bep_supplements'] = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'b_e_p'})
 
     def insecticide_treated_bednet(self, hsi_event):
+        """This function contains the intervention providing insecticide treated bednets to reduce risk of maternal
+        malaria infection
+        :param hsi_event: HSI event in which the function has been called
+        """
         df = self.sim.population.props
         person_id = hsi_event.target
         params = self.current_parameters
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(item_codes=module_cons['itn']['bed_net'])
+        avail = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['itn'])
 
         # If available, women are provided with a bed net at ANC1. The effect of these nets is determined
-        # through the malaria module - not yet coded. n.b any interventions involving non-obstetric diseases have been
-        # discussed with Tara
-        if outcome_of_request_for_consumables and (self.rng.random_sample() < params['prob_intervention_delivered'
-                                                                                     '_llitn']):
+        # through the malaria module
+        if avail and (self.rng.random_sample() < params['prob_intervention_delivered_llitn']):
             df.at[person_id, 'ac_itn_provided'] = True
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'LLITN'})
 
@@ -1063,6 +900,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # TODO: TB module in master is currently commented out, this is legacy code and a placeholder to ensure women
         #  are screened for TB
+
         # TB screening...
         # Currently we schedule women to the TB screening HSI in the TB module, however this may over-use resources so
         # possible the TB screening should also just live in this code
@@ -1087,17 +925,16 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.current_parameters
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
         if not self.check_intervention_should_run_and_update_mni(person_id, 'tt_1', 'tt_2'):
             return
 
-        # Define required consumables
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-            item_codes=list(module_cons['tetanus_toxoid'].values()))
+        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['tetanus_toxoid'],
+                                                return_individual_results=True)
+        key_consumable_avail = list(consumables.values())[0]
 
         # If the consumables are available and the HCW will deliver the vaccine, the intervention is given
-        if outcome_of_request_for_consumables and (self.rng.random_sample() < params['prob_intervention_delivered_tt']):
+        if key_consumable_avail and (self.rng.random_sample() < params['prob_intervention_delivered_tt']):
             df.at[person_id, 'ac_ttd_received'] += 1
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'tt'})
 
@@ -1107,40 +944,38 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        if not df.at[person_id, 'ac_receiving_calcium_supplements'] and \
-            ((df.at[person_id, 'la_parity'] == 0) or (df.at[person_id, 'la_parity'] > 4)):
+        # If the woman is not already receiving supplements AND has been designated as high risk for pre-eclampsia
+        # (as defined by ANC guidelines) then she will receive the interventions, conditional on consumables
+        if not df.at[person_id, 'ac_receiving_calcium_supplements'] and ((df.at[person_id, 'la_parity'] == 0)
+                                                                         or (df.at[person_id, 'la_parity'] > 4)):
 
-            consumables = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {module_cons['calcium']['calcium_supps']:
-                                  self.get_approx_days_of_pregnancy(person_id) * 3}}
+            dose = self.get_approx_days_of_pregnancy(person_id) * 3
+            cons = {_i: dose for _i in self.item_codes_preg_consumables['calcium']}
+            avail = hsi_event.get_consumables(item_codes=cons)
 
-            outcome_of_request_for_consumables = hsi_event.get_all_consumables(footprint=consumables)
-
-            # If the consumables are available and the HCW will provide the tablets, the intervention is given
-            if outcome_of_request_for_consumables:
+            if avail:
                 df.at[person_id, 'ac_receiving_calcium_supplements'] = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'calcium'})
 
     def point_of_care_hb_testing(self, hsi_event):
         """
-        This function contains the intervention point of care haemoglobin testing provided to women during ANC to detect
-        anaemia during pregnancy
+        This function contains the intervention point of care haemoglobin testing provided to women during ANC1/ANC6
+        to detect anaemia during pregnancy
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.current_parameters
 
+        # If this woman has already had her Hb checked twice during pregnancy she will not receive another Hb test
         if not self.check_intervention_should_run_and_update_mni(person_id, 'hb_1', 'hb_2'):
             return
 
-        # We log all the consumables required above but we only condition the event test happening on the availability
-        # of the test itself
-        if self.rng.random_sample() < params['prob_intervention_delivered_poct']:
+        # Run check against probability of testing being delivered
+        elif self.rng.random_sample() < params['prob_intervention_delivered_poct']:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
+            hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
             # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
             # for further care
@@ -1156,8 +991,8 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
+        # If this woman has already had deworming the intervention is not delivered again
         if 'albend' in mni[person_id]['anc_ints']:
             return
         else:
@@ -1165,11 +1000,11 @@ class CareOfWomenDuringPregnancy(Module):
 
             # We run this function to store the associated consumables with albendazole administration. This
             # intervention has no effect in the model due to limited evidence
-            outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-                item_codes=list(module_cons['albendazole'].values()))
 
             # If the consumables are available and the HCW will provide the tablets, the intervention is given
-            if outcome_of_request_for_consumables:
+            avail = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['albendazole'])
+
+            if avail:
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'albendazole'})
 
     def hep_b_testing(self, hsi_event):
@@ -1179,18 +1014,21 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
+        # If this woman has already been tested for hep b twice in her pregnancy the intervention will not run
         if not self.check_intervention_should_run_and_update_mni(person_id, 'hep_b_1', 'hep_b_2'):
             return
         else:
-            # This intervention is a place holder prior to the Hepatitis B module being codes
-            outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-                item_codes=list(module_cons['hep_b_test'].values()))
+            # This intervention is a place holder prior to the Hepatitis B module being coded
+            # Define the consumables
+            consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['hep_b_test'],
+                                                    return_individual_results=True)
+
+            key_consumable_avail = list(consumables.values())[0]
 
             # We log all the consumables required above but we only condition the event test happening on the
             # availability of the test itself
-            if outcome_of_request_for_consumables:
+            if key_consumable_avail:
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
 
     def syphilis_screening_and_treatment(self, hsi_event):
@@ -1202,29 +1040,29 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
         person_id = hsi_event.target
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
+        # If this woman has already been screened twice for syphilis then the intervention will not run
         if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
             return
-        else:
 
-            # We log all the consumables required above but we only condition the event test happening on the
-            # availability of the test itself
-            if self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
+        elif self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
+            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
 
-                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_syphilis',
-                                                                           hsi_event=hsi_event):
+            hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
-                    # If the test detects that the mother has syphilis treatment is admistered and we assume her
-                    # infection is treated
-                    outcome_of_request_for_consumables_treatment = hsi_event.get_all_consumables(
-                        item_codes=list(module_cons['syphilis_treatment'].values()))
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_syphilis',
+                                                                       hsi_event=hsi_event):
 
-                    if outcome_of_request_for_consumables_treatment:
-                        df.at[person_id, 'ps_syphilis'] = False
-                        logger.info(key='anc_interventions', data={'mother': person_id,
-                                                                   'intervention': 'syphilis_treat'})
+                consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['syphilis_'
+                                                                                                    'treatment'],
+                                                        return_individual_results=True)
+
+                key_consumable_avail = list(consumables.values())[0]
+
+                if key_consumable_avail:
+                    # We assume that treatment is 100% effective at curing infection
+                    df.at[person_id, 'ps_syphilis'] = False
+                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
 
     def hiv_testing(self, hsi_event):
         """
@@ -1235,12 +1073,16 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        # If she has already been tested for HIV she will not be tested again during ANC
         if 'hiv' in mni[person_id]['anc_ints']:
             return
         else:
             if 'Hiv' in self.sim.modules:
+
+                # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
                 if ~df.at[person_id, 'hv_diagnosed']:
                     mni[person_id]['anc_ints'].append('hiv')
+
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                        HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                        topen=self.sim.date,
@@ -1258,24 +1100,25 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
         if 'Malaria' in self.sim.modules:
+
+            # Only women who are not already receiving treatment for malaria receive IPTP
             if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
                 # Test to ensure only 5 doses are able to be administered
                 assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6
 
-                outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-                    item_codes=list(module_cons['iptp'].values()))
+                avail = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['iptp'])
 
-                if (self.rng.random_sample() < params['prob_intervention_delivered_iptp']) and \
-                    outcome_of_request_for_consumables:
+                if self.rng.random_sample() < params['prob_intervention_delivered_iptp']:
+                    if avail:
+                        logger.debug(key='message', data=f'giving IPTp for person {person_id}')
 
-                    # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the
-                    # number of doses received during this pregnancy are stored as an integer
-                    df.at[person_id, 'ac_doses_of_iptp_received'] += 1
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iptp'})
+                        # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the
+                        # number of doses received during this pregnancy are stored as an integer
+                        df.at[person_id, 'ac_doses_of_iptp_received'] += 1
+                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iptp'})
 
     def gdm_screening(self, hsi_event):
         """This function contains intervention of gestational diabetes screening during ANC. Screening is only conducted
@@ -1287,6 +1130,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        # Women already screened will not be screened again
         if 'gdm_screen' in mni[person_id]['anc_ints']:
             return
         else:
@@ -1295,23 +1139,26 @@ class CareOfWomenDuringPregnancy(Module):
             if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                                  'ps_prev_stillbirth']:
 
-                # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
-                # she is referred for treatment
-                if (self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']) and \
-                    self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
-                                                                            hsi_event=hsi_event):
+                # If they are available, the test is conducted
+                if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
 
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
-                    mni[person_id]['anc_ints'].append('gdm_screen')
+                    hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
-                    # We assume women with a positive GDM screen will be admitted (if they are not already receiving
-                    # outpatient care)
-                    if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+                    # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
+                    # she is referred for treatment
+                    if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
+                                                                               hsi_event=hsi_event):
 
-                        # Store onset after diagnosis as daly weight is tied to diagnosis
-                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'gest_diab_onset')
+                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+                        mni[person_id]['anc_ints'].append('gdm_screen')
 
-                        df.at[person_id, 'ac_to_be_admitted'] = True
+                        # We assume women with a positive GDM screen will be admitted (if they are not already receiving
+                        # outpatient care)
+                        if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+
+                            # Store onset after diagnosis as daly weight is tied to diagnosis
+                            self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'gest_diab_onset')
+                            df.at[person_id, 'ac_to_be_admitted'] = True
 
     def interventions_delivered_each_visit_from_anc2(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women every time they attend ANC
@@ -1323,10 +1170,10 @@ class CareOfWomenDuringPregnancy(Module):
         self.balance_energy_and_protein_supplementation(hsi_event=hsi_event)
         self.calcium_supplementation(hsi_event=hsi_event)
 
-    def check_anc1_can_run(self, hsi_event, individual_id, squeeze_factor, gest_age_next_contact):
+    def check_anc1_can_run(self, individual_id, squeeze_factor, gest_age_next_contact):
         """
-        This function is called by the first ANC contact to determine if it can run
-        :param hsi_event: HSI event in which the function has been called
+        This function is called by the first ANC contact and runs a series of checks to determine if the HSI should run
+        on the date it has been scheduled for
         :param individual_id: individual id
         :param squeeze_factor: squeeze_factor of the HSI calling this function
         :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
@@ -1337,8 +1184,10 @@ class CareOfWomenDuringPregnancy(Module):
 
         visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
             self.sim.modules['CareOfWomenDuringPregnancy'],
-            person_id=individual_id, facility_level_of_this_hsi=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            person_id=individual_id)
 
+        # Calculate the difference between the current date and when anc1 was scheduled for this woman at the start of
+        # pregnancy
         date_difference = self.sim.date - df.at[individual_id, 'ps_date_of_anc1']
 
         # Only women who are alive, still pregnant and not in labour can attend ANC1
@@ -1389,11 +1238,11 @@ class CareOfWomenDuringPregnancy(Module):
         else:
             return True
 
-    def check_subsequent_anc_can_run(self, hsi_event, individual_id, this_contact, this_visit_number, squeeze_factor,
+    def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
                                      gest_age_next_contact):
         """
-        This function is called by all subsequent ANC contacts to determine if they can run
-        :param hsi_event: HSI event in which the function has been called
+        This function is called by the subsequent ANC contacts and runs a series of checks to determine if the HSI
+        should run on the date it has been scheduled for
         :param individual_id: individual id
         :param this_contact: HSI object of the current ANC contact that needs to be rebooked
         :param this_visit_number: Number of the next ANC contact in the schedule
@@ -1405,14 +1254,13 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.current_parameters
 
-        # todo: seems like this is allowing things to run which is shouldnt
-
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
         ga_for_anc_dict = {2: 20, 3: 26, 4: 30, 5: 34, 6: 36, 7: 38, 8: 40}
 
-        # If women have died, are no longer pregnant, are in labour or more than a week has past since the HSI was
-        # scheduled then it will not run
+        # If women have died, are no longer pregnant, are in labour, are postnatal, are pregnant but with a gestational
+        # age lower than required for this anc visit or are 'late' to attend this visit (usually for visits scheduled in
+        # one pregnancy but running in a subsequent one) it will not run
         if ~df.at[individual_id, 'is_alive'] \
             or ~df.at[individual_id, 'is_pregnant'] \
             or df.at[individual_id, 'la_currently_in_labour']\
@@ -1427,8 +1275,7 @@ class CareOfWomenDuringPregnancy(Module):
             logger.debug(key='msg', data=f'Mother {individual_id} was due to receive ANC today but she is an inpatient'
                                          f'- we will now determine if she will return for this visit in the future')
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
-                                          recommended_gestation_next_anc=gest_age_next_contact,
-                                          facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                                          recommended_gestation_next_anc=gest_age_next_contact)
             return False
 
         # If the squeeze factor is too high she will return tomorrow
@@ -1461,6 +1308,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Run dx_test for anaemia...
         # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
         # assume the reported anaemia is mild
+        hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
@@ -1476,117 +1324,6 @@ class CareOfWomenDuringPregnancy(Module):
         else:
             return 'none'
 
-    def treatment_of_anaemia_causing_deficiencies(self, individual_id, hsi_event):
-        """
-        This function contains treatment for deficiencies that may be contributing to anaemia in pregnancy. It is called
-         by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women admitted due to anaemia
-        :param individual_id: individual_id
-        :param hsi_event: HSI event in which the function has been called
-        """
-        df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
-        params = self.current_parameters
-        pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
-
-        # If iron or folate deficient, a woman will need to take additional daily supplements. If B12 deficient this
-        # should occur monthly
-        # todo: this isnt very tidy, also no consumables for some, also remove?
-        consumables = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {module_cons['iron_treatment']['ferrous_sulphate']:
-                              self.get_approx_days_of_pregnancy(individual_id),
-                          module_cons['b12_treatment']['vit_b12']:
-                              self.get_approx_days_of_pregnancy(individual_id),
-                          module_cons['b12_treatment']['vit_b12']:
-                              np.ceil(self.get_approx_days_of_pregnancy(individual_id) / 31)}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables)
-
-        # Treatment is provided dependent on deficiencies present
-        if pregnancy_deficiencies.has_any([individual_id], 'iron', first=True):
-
-            # If the treatment is available we assume it has two effect, first in resolving the deficiency and second in
-            # resolving a womans current anaemia
-            if outcome_of_request_for_consumables['Item_Code'][module_cons['iron_treatment']['ferrous_sulphate']]:
-                if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_anaemia']:
-
-                    # If the woman is no longer anaemic after treatment we store a date of resolution for daly
-                    # calculations
-                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
-                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                          f'anaemia_resolution')
-
-                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-
-                if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_iron_def']:
-                    pregnancy_deficiencies.unset([individual_id], 'iron')
-
-        if pregnancy_deficiencies.has_any([individual_id], 'folate', first=True):
-            if outcome_of_request_for_consumables['Item_Code'][module_cons['b12_treatment']['vit_b12']]:
-                if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_anaemia']:
-
-                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
-                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                          f'anaemia_resolution')
-
-                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-
-                if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_folate_def']:
-                    pregnancy_deficiencies.unset([individual_id], 'folate')
-
-        if pregnancy_deficiencies.has_any([individual_id], 'b12', first=True):
-            if outcome_of_request_for_consumables['Item_Code'][module_cons['b12_treatment']['vit_b12']]:
-                if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_anaemia']:
-
-                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
-                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                          f'anaemia_resolution')
-
-                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-
-                if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_b12_def']:
-                    pregnancy_deficiencies.unset([individual_id], 'b12')
-
-    def start_iron_and_folic_acid(self, individual_id, hsi_event):
-        """
-        This function contains initiation of iron and folic acid supplementation. It is called
-        by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women admitted due to anaemia who have not been
-         given iron and folic acid supplements during ANC
-        :param individual_id: individual_id
-        :param hsi_event: HSI event in which the function has been called
-        """
-        df = self.sim.population.props
-        params = self.current_parameters
-        module_cons = self.item_codes_for_consumables_required_pregnancy
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
-
-        consumables = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {module_cons['iron_folic_acid']['ifa']: self.get_approx_days_of_pregnancy(individual_id)}}
-
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(footprint=consumables)
-
-        # Start iron and folic acid treatment
-        if outcome_of_request_for_consumables:
-            if self.rng.random_sample() < params['prob_adherent_ifa']:
-                df.at[individual_id, 'ac_receiving_iron_folic_acid'] = True
-
-            logger.debug(key='msg', data=f'Mother {individual_id} has been started on IFA supplementation after being '
-                                         f'admitted for anaemia')
-
-            # Women started on IFA at this stage are already anaemic, we here apply a probability that
-            # starting on a course of IFA will correct anaemia prior to follow up
-            if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
-
-                # Store date of resolution for daly calculations
-                store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                  f'anaemia_resolution')
-
-                df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-
     def antenatal_blood_transfusion(self, individual_id, hsi_event, cause):
         """
         This function contains the intervention 'blood transfusion'. It is called by either
@@ -1598,35 +1335,33 @@ class CareOfWomenDuringPregnancy(Module):
         :param cause: (STR) cause of woman needed transfusion ['antepartum_haem', 'abortion', 'severe_anaemia']
         """
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
         params = self.current_parameters
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-            item_codes=list(module_cons['blood_transfusion'].values()))
+        # Check for consumables
+        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_transfusion'],
+                                                return_individual_results=True)
+        key_consumable_avail = list(consumables.values())[0]
 
         # If the blood is available we assume the intervention can be delivered
-        if outcome_of_request_for_consumables:
+        if key_consumable_avail and (cause == 'severe_anaemia'):
 
-            logger.debug(key='msg', data=f'Mother {individual_id} is receiving an antenatal blood transfusion due '
-                                         f'to {cause}')
+            # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
+            # RBCs will correct this woman's severe anaemia
+            if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
+                store_dalys_in_mni(individual_id, 'severe_anaemia_resolution')
+                df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
-            if cause == 'severe_anaemia':
-                # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
-                # RBCs will correct this woman's severe anaemia
-                if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
-                    store_dalys_in_mni(individual_id, 'severe_anaemia_resolution')
-                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+        # If the woman has experience haemorrhage post abortion we store that the intervention has been received in
+        # this property which reduces her risk of death
+        elif key_consumable_avail and (cause == 'abortion'):
+            self.pac_interventions.set(individual_id, 'blood_products')
 
-            # If the woman has experience haemorrhage post abortion we store that the intervention has been received in
-            # this property which reduces her risk of death
-            elif cause == 'abortion':
-                self.pac_interventions.set(individual_id, 'blood_products')
-
-            # If the cause is antepartum haemorrhage we use this property to reduce a womans risk of death following
-            # treatment
-            else:
-                df.at[individual_id, 'ac_received_blood_transfusion'] = True
+        # If the cause is antepartum haemorrhage we use this property to reduce a womans risk of death following
+        # treatment
+        elif key_consumable_avail and (cause == 'antepartum_haem'):
+            # TODO: this currently isnt being picked up in labour (does nothing)
+            df.at[individual_id, 'ac_received_blood_transfusion'] = True
 
     def initiate_maintenance_anti_hypertensive_treatment(self, individual_id, hsi_event):
         """
@@ -1637,20 +1372,15 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        consumables = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {module_cons['oral_antihypertensives']['methyldopa']:
-                            (4 * self.get_approx_days_of_pregnancy(individual_id))}}
+        # Calculate the approximate dose for the remainder of pregnancy and check availability
+        dose = self.get_approx_days_of_pregnancy(individual_id) * 4
+        cons = {_i: dose for _i in self.item_codes_preg_consumables['oral_antihypertensives']}
+        avail = hsi_event.get_consumables(item_codes=cons)
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(footprint=consumables)
-
-        # If they are available then the woman is started on treatment
-        if outcome_of_request_for_consumables:
+        # If the consumables are available then the woman is started on treatment
+        if avail:
             df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
-            logger.debug(key='msg', data=f'Mother {individual_id} has been started on regular antihypertensives due to '
-                                         f'her HDP')
 
     def initiate_treatment_for_severe_hypertension(self, individual_id, hsi_event):
         """
@@ -1662,20 +1392,19 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-            item_codes=list(module_cons['iv_antihypertensives'].values()))
+        # Define the consumables and check their availability
+        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['iv_antihypertensives'],
+                                                return_individual_results=True)
+        key_consumable_avail = list(consumables.values())[0]
 
-        # If they hydralazine is available we assume the intervention can be delivered
-        if outcome_of_request_for_consumables:
+        # If they are available then the woman is started on treatment
+        if key_consumable_avail:
 
             # We assume women treated with antihypertensives would no longer be severely hypertensive- meaning they
             # are not at risk of death from severe gestational hypertension in the PregnancySupervisor event
             if df.at[individual_id, 'ps_htn_disorders'] == 'severe_gest_htn':
                 df.at[individual_id, 'ps_htn_disorders'] = 'gest_htn'
-                logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
-                                             f'part of treatment regime for severe gestational hypertension')
 
             # We dont assume antihypertensives convert severe pre-eclampsia/eclampsia to a more mild version of the
             # disease (as the disease is multi-system and hypertension is only one contributing factor to mortality) but
@@ -1683,9 +1412,6 @@ class CareOfWomenDuringPregnancy(Module):
             if (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or (df.at[individual_id,
                                                                                            'ps_htn_disorders'] ==
                                                                                      'eclampsia'):
-
-                logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
-                                             f'part of treatment regime for severe pre-eclampsia/eclampsia')
                 df.at[individual_id, 'ac_iv_anti_htn_treatment'] = True
 
     def treatment_for_severe_pre_eclampsia_or_eclampsia(self, individual_id, hsi_event):
@@ -1697,16 +1423,14 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-            item_codes=list(module_cons['magnesium_sulfate'].values()))
+        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['magnesium_sulfate'],
+                                                return_individual_results=True)
+        key_consumable_avail = list(consumables.values())[0]
 
-        # If they hydralazine is available we assume the intervention can be delivered
-        if outcome_of_request_for_consumables:
+        # If available deliver the treatment
+        if key_consumable_avail:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
-            logger.debug(key='msg', data=f'Mother {individual_id} has received magnesium sulphate during her admission '
-                                         f'for severe pre-eclampsia/eclampsia')
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
         """
@@ -1716,24 +1440,20 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        module_cons = self.item_codes_for_consumables_required_pregnancy
 
-        outcome_of_request_for_consumables = hsi_event.get_all_consumables(
-            item_codes=list(module_cons['abx_for_prom'].values()))
+        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['abx_for_prom'],
+                                                return_individual_results=True)
+        key_consumable_avail = list(consumables.values())[0]
 
-        # If the antibiotics are available we assume the intervention can be delivered
-        if outcome_of_request_for_consumables:
+        if key_consumable_avail:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
-            logger.debug(key='msg', data=f'Mother {individual_id} has received antibiotics following admission due to '
-                                         f'PROM')
 
     def ectopic_pregnancy_treatment_doesnt_run(self, hsi_event):
         """
         This function is called within HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy if the event cannot
         run/the intervention cannot be delivered. This ensures that women with ectopic pregnancies that haven't ruptured
         will experience rupture and risk of death without treatment
-        :param individual_id: individual_id
-        :return:
+        :param hsi_event: HSI event in which the function has been called
         """
         individual_id = hsi_event.target
         df = self.sim.population.props
@@ -1796,14 +1516,14 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
     the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient ward in the
     case of complications """
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        assert self.ACCEPTED_FACILITY_LEVEL != 0
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        assert self.ACCEPTED_FACILITY_LEVEL not in {'0'}  # TODO: also not None, but that causes error in doc build
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1814,36 +1534,17 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
         # Check this visit can run
-        can_anc1_run = self.module.check_anc1_can_run(self, person_id, squeeze_factor, gest_age_next_contact)
+        can_anc1_run = self.module.check_anc1_can_run(person_id, squeeze_factor, gest_age_next_contact)
 
         if can_anc1_run:
             # Check only women who have not attended any ANC contacts during this pregnancy arrive at this
             # event
             assert mother.ac_total_anc_visits_current_pregnancy == 0
 
+            # Add variables to the mni dictionary to store information on interventions received and GA at first visit
             anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
                         'anc_ints': []}
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
-
-            logger.info(key='anc1', data={'mother': person_id,
-                                          'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
-
-            # We generate the facility type that this HSI is occurring at (dependent on facility level) - we currently
-            # assume women will present to the same facility level and type for any future ANC visits
-
-            if self.ACCEPTED_FACILITY_LEVEL == 1:
-                # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
-                facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
-                df.at[person_id, 'ac_facility_type'] = facility_type
-                logger.info(key='anc_facility_type', data=f'{facility_type}')
-
-            elif self.ACCEPTED_FACILITY_LEVEL > 1:
-                logger.info(key='anc_facility_type', data='hospital')
-                df.at[person_id, 'ac_facility_type'] = 'hospital'
-
-            logger.debug(key='message', data=f'mother {person_id} presented for ANC1 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             # We add a visit to a rolling total of ANC visits in this pregnancy
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -1883,8 +1584,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # Then we determine if this woman will return for her next ANC visit
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1911,13 +1611,13 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SecondAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1927,19 +1627,14 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
         this_contact = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+            self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, individual_id=person_id, this_contact=this_contact,
+        can_anc_run = self.module.check_subsequent_anc_can_run(individual_id=person_id, this_contact=this_contact,
                                                                this_visit_number=2, squeeze_factor=squeeze_factor,
                                                                gest_age_next_contact=gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 2 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 1
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 19
@@ -1955,8 +1650,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             # And we schedule the next ANC appointment
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
             # in addition to intervention delivered in ANC2
@@ -2008,13 +1702,13 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ThirdAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2023,20 +1717,13 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 3, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 3, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='message', data=f'mother {person_id}presented for ANC 3 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 2
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 25
@@ -2049,8 +1736,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 30:
                 self.module.iptp_administration(hsi_event=self)
@@ -2093,13 +1779,13 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2108,20 +1794,13 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 4, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 4, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='message', data=f'mother {person_id}presented for ANC 4 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 3
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 29
@@ -2134,8 +1813,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 34:
                 self.module.iptp_administration(hsi_event=self)
@@ -2150,9 +1828,6 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.iptp_administration(hsi_event=self)
-
-            elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
-                pass
 
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
@@ -2177,13 +1852,13 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2192,19 +1867,13 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 5, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 5, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 5 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 33
             assert mother.ac_total_anc_visits_current_pregnancy == 4
@@ -2217,8 +1886,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 36:
                 self.module.iptp_administration(hsi_event=self)
@@ -2230,9 +1898,6 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
             elif mother.ps_gestational_age_in_weeks < 40:
                 self.module.iptp_administration(hsi_event=self)
-
-            elif mother.ps_gestational_age_in_weeks >= 40:
-                pass
 
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
@@ -2257,13 +1922,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2272,20 +1937,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 6, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 6, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 6 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 5
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 35
@@ -2299,17 +1957,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
             elif mother.ps_gestational_age_in_weeks < 40:
                 self.module.iptp_administration(hsi_event=self)
-
-            elif mother.ps_gestational_age_in_weeks >= 40:
-                pass
 
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
@@ -2334,13 +1988,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2349,19 +2003,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 7, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 7, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 6
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 37
@@ -2375,11 +2023,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=8,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-
-            elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
-                pass
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
@@ -2404,13 +2048,13 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EighthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2419,20 +2063,13 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 8, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 8, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a'
-                                         f' {df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 7
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 39
@@ -2456,14 +2093,20 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
 
 class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeEventMixin):
-    """  """
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    """
+     This is HSI_CareOfWomenDuringPregnancy_FocusedANCVisit which is scheduled by the PregnancySupervisor if the
+     parameter 'anc_service_structure' == 4. This HSI replicates the ANC service structured used within Malawi prior
+     to 2016. We use this HSI to replicate the Focused ANC service structure (4 visits at approx 16, 22, 30, 36 weeks)
+     within some analyses as the scheduled of interventions per visit is different from the ANC8 structure. This event
+     represents all four ANC visits.
+     """
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FocusedANCVisit'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         assert self.ACCEPTED_FACILITY_LEVEL != 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -2472,8 +2115,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         mother = df.loc[person_id]
         params = self.module.current_parameters
 
-        # --------------------------------------- CHECKS... ---------------------------------------
-        # todo: allow spread of weeks?
+        # First we determine at what point in this womans pregnancy should she return for another visit
         if mother.ps_gestational_age_in_weeks < 22:
             recommended_gestation_next_anc = 22
         elif 22 <= mother.ps_gestational_age_in_weeks < 30:
@@ -2483,16 +2125,17 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         else:
             recommended_gestation_next_anc = 50
 
+        # We calculate the difference between todays date and the date this event should run
         if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
             date_difference = self.sim.date - df.at[person_id, 'ps_date_of_anc1']
         else:
             date_difference = self.sim.date - df.at[person_id, 'ac_date_next_contact']
 
         visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
-            self.sim.modules['CareOfWomenDuringPregnancy'],
-            person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-        # Only women who are alive, still pregnant and not in labour can attend ANC1
+        # Only women who are alive, still pregnant, not in labour, less than a week 'over due' for the event, have
+        # attended less than four visits and are greater than 7 weeks pregnant will undergo the HSI
         if (
             not df.at[person_id, 'is_alive'] or
             not df.at[person_id, 'is_pregnant'] or
@@ -2503,6 +2146,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         ):
             return
 
+        # Women who are inpatients at the time the HSI should run will return at the next reccommended point in
+        # pregnancy
         elif df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
             weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
@@ -2522,26 +2167,12 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return
 
-        # --------------------------------------- LOGGING AND FURTHER CHECKS.... ----------------------------------
-
+        # Add variables to the mni dictionary to store information on interventions received and GA at first visit
         if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
-            logger.info(key='anc1', data={'mother': person_id,
-                                          'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
 
             anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
                         'anc_ints': []}
-
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
-
-        if self.ACCEPTED_FACILITY_LEVEL == 1:
-            # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
-            facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
-            df.at[person_id, 'ac_facility_type'] = facility_type
-            logger.info(key='anc_facility_type', data=f'{facility_type}')
-
-        elif self.ACCEPTED_FACILITY_LEVEL > 1:
-            logger.info(key='anc_facility_type', data='hospital')
-            df.at[person_id, 'ac_facility_type'] = 'hospital'
 
         # We add a visit to a rolling total of ANC visits in this pregnancy
         df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -2550,7 +2181,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         assert not pd.isnull(mother.ps_gestational_age_in_weeks)
         assert mother.ps_gestational_age_in_weeks >= 7
 
-        # --------------------------------------- INTERVENTIONS ---------------------------------------------------
+        # Next interventions are delivered according to gestational age and visit number
         self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
         self.module.iron_and_folic_acid_supplementation(hsi_event=self)
         self.module.iptp_administration(hsi_event=self)
@@ -2565,17 +2196,16 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         if (
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
             ((mother.ps_gestational_age_in_weeks > 20) and (df.at[person_id, 'ac_total_anc_visits_current_'
-                                                                            'pregnancy'] == 1)):
+                                                                             'pregnancy'] == 1)):
             self.module.albendazole_administration(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
         elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or\
             ((mother.ps_gestational_age_in_weeks > 30) and (df.at[person_id, 'ac_total_anc_visits_current_'
-                                                                            'pregnancy'] == 1)):
+                                                                             'pregnancy'] == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
 
-        # --------------------------------------- SCHEDULE NEXT VISIT ---------------------------------------
-
+        # Following this the womans next visit is scheduled (if she hasnt already attended 4 visits)
         if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] < 4:
             if df.at[person_id, 'ps_anc4']:
                 weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
@@ -2624,7 +2254,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
 
         self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2658,13 +2288,11 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-
-        # TODO: remove and schedule through ED
 
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
             return
@@ -2673,11 +2301,8 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
-            facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
-
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
-                facility_level_this_hsi=facility_level)
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
                                                                 topen=self.sim.date,
@@ -2693,6 +2318,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
     def not_available(self):
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
+
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare. This HSI can be scheduled by any of the ANC HSIs
@@ -2704,14 +2330,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
     to the LabourOnset Event
     """
 
-    def __init__(self, module, person_id, facility_level_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalWardInpatientCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
         beddays = self.module.calculate_beddays(person_id)
@@ -2758,19 +2384,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # Women are started on daily iron and folic acid supplementation (if they are not already receiving
                     # supplements) as treatment for mild/moderate anaemia
                     if ~mother.ac_receiving_iron_folic_acid:
-                        self.module.start_iron_and_folic_acid(person_id, self)
-
-                    # Some anaemia causing deficiencies (folate, B12)  are detected via a FBC, and therefore can be
-                    # these deficiencies can be treated via this function
-                    self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
+                        self.module.iron_and_folic_acid_supplementation(self)
 
                 elif fbc_result == 'severe':
                     # In the case of severe anaemia (Hb <7) then, in addition to the above treatments, this woman
                     # should receive a blood transfusion to correct her anaemia
                     self.module.antenatal_blood_transfusion(person_id, self, cause='severe_anaemia')
-                    self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
                     if ~mother.ac_receiving_iron_folic_acid:
-                        self.module.start_iron_and_folic_acid(person_id, self)
+                        self.module.iron_and_folic_acid_supplementation(self)
 
                 if fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
                     # Women treated for anaemia will need follow up to ensure the treatment has been effective. Clinical
@@ -2851,20 +2472,17 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
                 # Finally This property stores what type of delivery this woman is being admitted for
-
                 delivery_mode = ['induction_now', 'avd_now', 'caesarean_now']
 
+                # Mode of delivery is dependent on individual case severity. We use a probability weighted random draw
+                # to determine mode of delivery here
                 if mother.ps_htn_disorders == 'eclampsia':
-
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
                         delivery_mode,  p=params['prob_delivery_modes_ec'])
 
                 elif mother.ps_htn_disorders == 'severe_pre_eclamp':
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
                         delivery_mode, p=params['prob_delivery_modes_spe'])
-
-                logger.debug(key='msg', data=f'{person_id} will be admitted for delivery  due to '
-                                             f'{mother.ps_htn_disorders}')
 
             # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
             # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
@@ -2878,8 +2496,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # caesarean delivery due to high risk of mortality/morbidity
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                     logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
-
-                    # todo:delete
                     mni[person_id]['cs_indication'] = 'an_aph_pa'
 
                 # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
@@ -2888,20 +2504,18 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # bleed and her current gestation at the time of bleeding
 
                     if mother.ps_antepartum_haemorrhage == 'severe':
+
                         # Women experiencing severe bleeding are admitted immediately for caesarean section
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
-
-                        # todo:delete
                         mni[person_id]['cs_indication'] = 'an_aph_pp'
 
                     elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks >= 37):
                         # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
                         # for caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
-                        logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                        # todo:delete
+                        logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
                         mni[person_id]['cs_indication'] = 'an_aph_pp'
 
                     elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
@@ -2910,7 +2524,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean when her gestation '
                                                      f'has increased due to APH')
-                        # todo:delete
                         mni[person_id]['cs_indication'] = 'an_aph_pp'
 
                         # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
@@ -2939,6 +2552,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                  f' has increase due prom/chorio')
 
             # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
+            # Women with chorioamnionitis are admitted for delivery (and will receive antibiotics in the labour module)
             if mother.ps_chorioamnionitis:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
                 logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
@@ -3007,7 +2621,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3030,11 +2644,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
-                facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
-
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
-                    facility_level_this_hsi=facility_level)
+                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
                                                                     topen=self.sim.date,
@@ -3057,21 +2668,18 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
      pregnancy. This event manages repeat blood testing for women who were found to have GDM and treated. If the woman
      remains hyperglycaemic she is moved to the next line treatment and scheduled to return for follow up.
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
-        module_cons = self.module.item_codes_for_consumables_required_pregnancy
 
         from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
 
@@ -3080,34 +2688,20 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
 
         if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient and mother.ps_gest_diab != 'none' \
                 and (mother.ac_gest_diab_on_treatment != 'none') and (mother.ps_gestational_age_in_weeks > 21):
-            logger.debug(key='msg', data=f'Mother {person_id} has presented for review of her GDM')
-
-            # Nothing happens to women who arrive at follow up with well controlled GDM (treatment is effective). We now
-            # assume that the treatment they are on (started in AntenatalWardInpatientCare) remains effective for the
-            # length of their pregnancy
-            if (mother.ps_gest_diab == 'controlled') and (mother.ac_gest_diab_on_treatment != 'none'):
-                logger.debug(key='msg', data=f'Mother {person_id} has well controlled GDM on current treatment and '
-                                             f'doesnt need a further check up at present')
 
             # If the treatment a woman was started on has not controlled her hyperglycemia she will be started on the
             # next treatment
-            elif mother.ps_gest_diab == 'uncontrolled':
+            if mother.ps_gest_diab == 'uncontrolled':
 
                 # Women for whom diet and exercise was not effective in controlling hyperglycemia are started on oral
                 # meds
                 if mother.ac_gest_diab_on_treatment == 'diet_exercise':
-
-                    # Currently we assume women are given enough tablets to last the length of their pregnancy
-                    consumables = {
-                        'Intervention_Package_Code': {},
-                        'Item_Code': {
-                            module_cons['oral_diabetic_treatment']['glibenclamide']:
-                                4 * self.module.get_approx_days_of_pregnancy(person_id)}}
-
-                    outcome_of_request_for_consumables = self.get_all_consumables(footprint=consumables)
+                    dose = self.module.get_approx_days_of_pregnancy(person_id) * 2
+                    cons = {_i: dose for _i in self.module.item_codes_preg_consumables['oral_antidiabetics']}
+                    avail = self.module.get_consumables(item_codes=cons)
 
                     # If the meds are available women are started on that treatment
-                    if outcome_of_request_for_consumables:
+                    if avail:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'orals'
 
                         # Assume new treatment is effective in controlling blood glucose on initiation
@@ -3131,15 +2725,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # This process is repeated for mothers for whom oral medication is not effectively controlling their
                 # blood sugar- they are started on insulin
                 if mother.ac_gest_diab_on_treatment == 'orals':
-                    consumables = {
-                        'Intervention_Package_Code': {},
-                        'Item_Code': {
-                            module_cons['insulin_treatment']['insulin']:
-                                4 * self.module.get_approx_days_of_pregnancy(person_id)}}
+                    cons = {_i: 5 for _i in self.module.item_codes_preg_consumables['insulin']}
+                    avail = self.module.get_consumables(item_codes=cons)
 
-                    outcome_of_request_for_consumables = self.get_all_consumables(footprint=consumables)
-
-                    if outcome_of_request_for_consumables:
+                    if avail:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'
                         df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
@@ -3196,7 +2785,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # any hospital?
+        self.ACCEPTED_FACILITY_LEVEL = '1b'  # any hospital?
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 
@@ -3205,19 +2794,23 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         mother = df.loc[person_id]
         params = self.module.current_parameters
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
-        module_cons = self.module.item_codes_for_consumables_required_pregnancy
-
-        # todo: simplify treatment? remove bitset?
-        # todo: this should be determiend on consumable availibility. i.e. if septic, and abx avail then treatment etc.
 
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
                                                                      'other', first=True):
             return
 
-        self.get_all_consumables(item_codes=list(module_cons['post_abortion_care'].values()))
+        # We check only women with complications post abortion are sent to this event
+        assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', first=True)
 
-        random_draw = self.module.rng.choice(['d_and_c', 'mva', 'misoprostol'], p=params['prob_evac_procedure_pac'])
-        self.module.pac_interventions.set(person_id, random_draw)
+        # Check the availability of consumables
+        avail = self.get_consumables(item_codes=self.module.item_codes_preg_consumables['post_abortion_care'])
+
+        # If consumables are available then individual interventions can be delivered
+        if avail:
+            evac_procedures = ['d_and_c', 'mva', 'misoprostol']
+            probability_of_evac_procedure = params['prob_evac_procedure_pac']
+            random_draw = self.module.rng.choice(evac_procedures, p=probability_of_evac_procedure)
+            self.module.pac_interventions.set(person_id, random_draw)
 
         # Women who are septic following their abortion are given antibiotics
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
@@ -3252,13 +2845,13 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        module_cons = self.module.item_codes_for_consumables_required_pregnancy
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
         if not mother.is_alive or (mother.ps_ectopic_pregnancy == 'none'):
@@ -3269,15 +2862,11 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                                          f'presenting and will now undergo treatment')
 
         # We define the required consumables and check their availability
-        outcome_of_consumables_check = self.get_all_consumables(
-            item_codes=list(module_cons['ectopic_pregnancy'].values()))
+        avail = self.get_consumables(item_codes=self.module.item_codes_preg_consumables['ectopic_pregnancy'])
 
         # If they are available then treatment can go ahead
-        if outcome_of_consumables_check:
+        if avail:
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]['delete_mni'] = True
-
-            logger.debug(key='message', data=f'Mother {person_id} will now undergo surgery due to ectopic pregnancy as '
-                                             f'consumables are available')
 
             # For women who have sought care after they have experienced rupture we use this treatment variable to
             # reduce risk of death (women who present prior to rupture do not pass through the death event as we assume
@@ -3290,8 +2879,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
             # consumables) we schedule these women to arrive at the rupture event as they have not received treatment
             if df.at[person_id, 'ps_ectopic_pregnancy'] == 'not_ruptured':
                 self.module.ectopic_pregnancy_treatment_doesnt_run(person_id)
-                logger.debug(key='msg', data=f'Mother {person_id} could not receive treatment due to insufficient '
-                                             f'consumables')
+
 
     def never_ran(self):
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)
@@ -3302,19 +2890,3 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
     def not_available(self):
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)
-
-
-class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
-        if total_births_last_year == 0:
-            total_births_last_year = 1
-

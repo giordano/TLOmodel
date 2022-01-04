@@ -281,7 +281,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=True,
-                         ignore_cons_constraints=True,
+                         cons_availability='all',
                      ),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                                    spurious_symptoms=spurious_symptoms
@@ -354,7 +354,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -367,8 +367,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
@@ -429,7 +429,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -493,7 +493,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -557,7 +557,7 @@ def test_run_each_of_the_HSI():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -672,7 +672,7 @@ def test_do_treatment_for_those_that_will_die_if_consumables_available():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -820,7 +820,7 @@ def test_do_treatment_for_those_that_will_not_die():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(

@@ -23,7 +23,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 67
+seed = 223
 
 # The resource files
 try:
@@ -106,7 +106,7 @@ def register_all_modules():
     modules"""
 
     log_config = {
-        "filename": "parity_200k",  # The name of the output file (a timestamp will be appended).
+        "filename": "test_failing",  # The name of the output file (a timestamp will be appended).
         "directory": "./outputs",
         # The default output path is `./outputs`. Change it here, if necessary
         "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
@@ -133,7 +133,8 @@ def register_all_modules():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -157,9 +158,9 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2016, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 
@@ -191,8 +192,6 @@ def test_run_all_pregnant():
     df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
     for person in all.index:
         sim.modules['Labour'].set_date_of_labour(person)
-
-
 
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
