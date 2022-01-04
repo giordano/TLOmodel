@@ -25,7 +25,7 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 888
+        self.seed = 663
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 1)
         self.pop_size = 30000
@@ -57,7 +57,8 @@ class TestScenario(BaseScenario):
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
-                                      ignore_cons_constraints=True),
+                                      cons_availability='all',
+                                      mode_appt_constraints=1),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
