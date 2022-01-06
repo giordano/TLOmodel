@@ -5508,6 +5508,11 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             cfr_no_med = died_no_healthcare / did_not_seek_healthcare
         else:
             cfr_no_med = 'all_sought_care'
+        # calculate incidence rate per 100,000 of deaths on scene
+        if n_alive > 0:
+            inc_death_on_scene = len(df.loc[df.rt_imm_death]) / n_alive
+        else:
+            inc_death_on_scene = 0
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': inc_rti,
@@ -5515,6 +5520,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'incidence of rti death per 100,000': inc_rti_death,
             'incidence of death post med per 100,000': inc_post_med_death,
             'incidence of prehospital death per 100,000': inc_imm_death,
+            'incidence of death on scene per 100,000': inc_death_on_scene,
             'incidence of death without med per 100,000': inc_death_no_med,
             'incidence of death due to unavailable med per 100,000': inc_death_unavailable_med,
             'incidence of fractures per 100,000': frac_incidence,

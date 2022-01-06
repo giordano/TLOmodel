@@ -79,8 +79,7 @@ def extract_yll_yld(results_folder):
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 1]
-
+results_folder = Path('outputs/rmjlra2@ucl.ac.uk/rti_analysis_full_calibrated-2021-12-09T140232Z')
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
@@ -521,4 +520,79 @@ print('stop')
 
 results_df['injury_incidence'] = results_df['inc'] * average_n_inj_per_draws
 min(results_df.loc[hsb_in_accepted_range[0], 'injury_incidence'])
-
+no_hs_results = get_scenario_outputs('rti_analysis_full_calibrated_no_hs.py.py', outputspath)[- 1]
+no_hs_extracted_incidence_of_death = extract_results(no_hs_results,
+                                                     module="tlo.methods.rti",
+                                                     key="summary_1m",
+                                                     column="incidence of rti death per 100,000",
+                                                     index="date"
+                                                     )
+no_hs_extracted_incidence_of_RTI = extract_results(no_hs_results,
+                                                   module="tlo.methods.rti",
+                                                   key="summary_1m",
+                                                   column="incidence of rti per 100,000",
+                                                   index="date"
+                                                   )
+no_hs_yll, no_hs_yld = extract_yll_yld(no_hs_results)
+no_hs_mean_inc_rti = summarize(no_hs_extracted_incidence_of_RTI, only_mean=True).mean()
+no_hs_mean_inc_death = summarize(no_hs_extracted_incidence_of_death, only_mean=True).mean()
+scale_for_no_hs = np.divide(gbd_inc, no_hs_mean_inc_rti)
+no_hs_scaled_inc = no_hs_mean_inc_rti * scale_for_no_hs
+no_hs_scaled_inc_death = no_hs_mean_inc_death * scale_for_no_hs
+no_hs_dalys = no_hs_yll.mean() + no_hs_yld.mean()
+no_hs_scaled_dalys = np.multiply(list(no_hs_dalys), list(scale_for_no_hs))
+mean_no_hs_inc_death = no_hs_scaled_inc_death.mean()
+mean_no_hs_dalys = np.mean(no_hs_scaled_dalys)
+plt.clf()
+plt.bar([0, 1], [mult_inc_death[hsb_in_accepted_range[0]].mean(), mean_no_hs_inc_death],
+        color=['lightsteelblue', 'lightsalmon'])
+plt.xticks([0, 1], ['With health\nsystem', 'Without health\nsystem'])
+plt.ylabel('Incidence per 100,000 p.y.')
+plt.title('Incidence of death with and without the health system')
+for idx, val in enumerate([mult_inc_death[hsb_in_accepted_range[0]].mean(), mean_no_hs_inc_death]):
+    plt.text(idx - 0.08, val + 5, f"{np.round(val, 2)}")
+plt.ylim([0, 200])
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"hs_no_hs_inc_death.png", bbox_inches='tight')
+plt.clf()
+plt.bar([0, 1], [mult_dalys[hsb_in_accepted_range[0]].mean(), mean_no_hs_dalys],
+        color=['lightsteelblue', 'lightsalmon'])
+plt.xticks([0, 1], ['With health\nsystem', 'Without health\nsystem'])
+plt.ylabel('DALYs')
+plt.title('Number of DALYs with and without the health system')
+for idx, val in enumerate([mult_dalys[hsb_in_accepted_range[0]].mean(), mean_no_hs_dalys]):
+    plt.text(idx - 0.15, val + 500000, f"{np.round(val, 2)}")
+plt.ylim([0, 14000000])
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"hs_no_hs_inc_dalys.png", bbox_inches='tight')
+plt.clf()
+mult_percent_cause_of_death = []
+rti_causes_of_death = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death',
+                       'RTI_death_shock']
+for draw in range(info['number_of_draws']):
+    this_draw_percent_cause_of_death = []
+    if draw in hsb_in_accepted_range[0]:
+        for run in range(info['runs_per_draw']):
+            df: pd.DataFrame = \
+                load_pickled_dataframes(results_folder, draw, run, "tlo.methods.demography")["tlo.methods.demography"]
+            df = df['death']
+            cause_of_death_distribution = []
+            for cause in rti_causes_of_death:
+                cause_of_death_distribution.append(len(df.loc[df['cause'] == cause]))
+            this_draw_percent_cause_of_death.append(list(np.divide(cause_of_death_distribution,
+                                                                   sum(cause_of_death_distribution))))
+        average_percent_by_cause = [float(sum(col)) / len(col) for col in zip(*this_draw_percent_cause_of_death)]
+        mult_percent_cause_of_death.append(average_percent_by_cause)
+mult_cause_of_death = [float(sum(col)) / len(col) for col in zip(*mult_percent_cause_of_death)]
+cause_of_death_dict = {'cause': rti_causes_of_death,
+                       'percent': mult_cause_of_death}
+cause_of_death_df = pd.DataFrame(cause_of_death_dict)
+cause_of_death_df['nice_name'] = ['Death without\nmed', 'Death with\nmed', 'Death due to\nunavailable med',
+                                  'Death on\nscene', 'Death from\nshock']
+cause_of_death_df = cause_of_death_df.loc[cause_of_death_df['percent'] > 0]
+plt.clf()
+plt.pie(cause_of_death_df.percent, labels=cause_of_death_df.nice_name,
+        colors=['lightsteelblue', 'lightsalmon', 'peachpuff'], autopct='%1.1f%%', startangle=90)
+plt.title('Predicted context of RTI death in model')
+plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+            f"percent_death_by_cause.png", bbox_inches='tight')

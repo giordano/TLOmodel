@@ -1,0 +1,97 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.001
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.002288888888888889
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.003577777777777778
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.004866666666666667
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.006155555555555556
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.0074444444444444445
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.008733333333333333
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.010022222222222224
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.011311111111111112
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "imm_death_proportion_rti": 0.0126
+        }
+      }
+    }
+  ]
+}
