@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py",
+  "scenario_script_path": "src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -93,5 +93,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "cd98af99c974a8bdc636d7dfb1e58b603625acea",
+  "github": "https://github.com/UCL/TLOmodel/blob/cd98af99c974a8bdc636d7dfb1e58b603625acea/src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py"
 }
