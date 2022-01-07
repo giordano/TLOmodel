@@ -8,7 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.005
+          "imm_death_proportion_rti": 0.068
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.015555555555555555
+          "imm_death_proportion_rti": 0.07033333333333333
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.026111111111111113
+          "imm_death_proportion_rti": 0.07266666666666667
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.03666666666666667
+          "imm_death_proportion_rti": 0.075
         }
       }
     },
@@ -44,7 +44,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.04722222222222222
+          "imm_death_proportion_rti": 0.07733333333333334
         }
       }
     },
@@ -53,7 +53,7 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.057777777777777775
+          "imm_death_proportion_rti": 0.07966666666666666
         }
       }
     },
@@ -62,7 +62,7 @@
       "draw_seed": 144909571,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.06833333333333334
+          "imm_death_proportion_rti": 0.082
         }
       }
     },
@@ -71,7 +71,7 @@
       "draw_seed": 960362435,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.0788888888888889
+          "imm_death_proportion_rti": 0.08433333333333333
         }
       }
     },
@@ -80,7 +80,7 @@
       "draw_seed": 62598988,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.08944444444444445
+          "imm_death_proportion_rti": 0.08666666666666667
         }
       }
     },
@@ -89,11 +89,11 @@
       "draw_seed": 1505292720,
       "parameters": {
         "RTI": {
-          "imm_death_proportion_rti": 0.1
+          "imm_death_proportion_rti": 0.089
         }
       }
     }
   ],
-  "commit": "7208641cab7a9436bb16af9b43f8c14a9dbcb8a7",
-  "github": "https://github.com/UCL/TLOmodel/blob/7208641cab7a9436bb16af9b43f8c14a9dbcb8a7/src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py"
+  "commit": "6ab1e0141c5e3c3479e73214f440b369f7316e6e",
+  "github": "https://github.com/UCL/TLOmodel/blob/6ab1e0141c5e3c3479e73214f440b369f7316e6e/src/scripts/rti/rti_analysis_fit_incidence_of_on_scene.py"
 }
