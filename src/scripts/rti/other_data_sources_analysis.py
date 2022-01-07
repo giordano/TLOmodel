@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+# ====================== look at DHS data ==============================================================================
+data = pd.read_stata("C:/Users/Robbie Manning Smith/Desktop/ihs data/DHS data/2017/MWPR7IDT/MWPR7IFL.DTA",
+                     convert_categoricals=False)
+
 # ===================== Look at the data from other countries in the GBD study =========================================
 data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/all_countries_inc_data.csv")
 death_inc_data = data.loc[data['measure'] == 'Deaths']
