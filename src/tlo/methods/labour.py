@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -879,8 +878,19 @@ class Labour(Module):
             # This equation is used to determine the probability that a woman will seek care for PNC after delivery
             'postnatal_check': LinearModel.custom(
                 labour_lm.predict_postnatal_check, parameters=params),
-
         }
+
+        # Here we create a dict with all the models to be scaled and the 'target' rate parameter
+        mod = self.la_linear_models
+        models_to_be_scaled = {'ur': [mod['uterine_rupture_ip'], 'prob_uterine_rupture'],
+                               'pn': [mod['postnatal_check'], 'odds_will_attend_pnc'],
+                               'hb': [mod['probability_delivery_at_home'], 'odds_deliver_at_home'],
+                               'hc': [mod['probability_delivery_health_centre'], 'odds_deliver_in_health_centre']}
+
+        # Scale all models updating the parameter used as the intercept of the linear models
+        for k in models_to_be_scaled:
+            self.sim.modules['PregnancySupervisor'].scale_linear_model_at_initialisation(
+                module_of_interest=self, model=models_to_be_scaled[k][0], parameter_key=models_to_be_scaled[k][1])
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -1155,7 +1165,7 @@ class Labour(Module):
 
             # For 'complications' stored in a biset property - they are set here
             if (complication == 'obstruction_cpd') or (complication == 'obstruction_malpres_malpos') or \
-              (complication == 'obstruction_other'):
+               (complication == 'obstruction_other'):
 
                 df.at[individual_id, 'la_obstructed_labour'] = True
                 self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'obstructed_labour_onset')
@@ -1634,7 +1644,7 @@ class Labour(Module):
             # ------------------------------ STEROIDS FOR PRETERM LABOUR -------------------------------
             # Next we see if women in pre term labour will receive antenatal corticosteroids
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
-                mni[person_id]['labour_state'] == 'late_preterm_labour':
+               mni[person_id]['labour_state'] == 'late_preterm_labour':
 
                 avail = hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['antenatal_steroids'])
 
@@ -1774,7 +1784,8 @@ class Labour(Module):
         """
         This function represents the diagnosis and management of obstructed labour during labour. This function
         defines the required consumables and administers the intervention if available. The intervention in this
-        function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
+        function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
+        Labour
         :param hsi_event: HSI event in which the function has been called:
         (STR) 'hc' == health centre, 'hp' == hospital
         """
@@ -1786,7 +1797,7 @@ class Labour(Module):
 
         if ('assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']) or \
             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
-            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
+           (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
             return
 
         elif df.at[person_id, 'la_obstructed_labour']:
@@ -1979,8 +1990,10 @@ class Labour(Module):
         if 'assessment_and_treatment_of_pph_retained_placenta' not in params['allowed_interventions']:
             return
 
-        elif (df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']) or\
-              df.at[person_id, 'pn_postpartum_haem_secondary']:
+        elif (
+            (df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']) or
+            df.at[person_id, 'pn_postpartum_haem_secondary']
+             ):
 
             # Log the consumables but dont condition the treatment on their availability - the primary mechanism of this
             # intervention doesnt require consumables
@@ -2032,7 +2045,8 @@ class Labour(Module):
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
-        elif mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
+        elif mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'manual_removal_'
+                                                                                               'placenta'):
 
             self.pph_treatment.set(person_id, 'surgery')
             logger.debug(key='msg',
@@ -2304,8 +2318,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
-            elif params['list_limits_for_defining_term_status'][2] <= gestational_age_in_days <= \
-                params['list_limits_for_defining_term_status'][3]:
+            elif params['list_limits_for_'
+                        'defining_term_status'][2] <= gestational_age_in_days <= params['list_limits_for_'
+                                                                                        'defining_term_status'][3]:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
@@ -2314,8 +2329,10 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                'type': 'early_preterm_labour',
                                                                'timing': 'intrapartum'})
 
-            elif params['list_limits_for_defining_term_status'][4] <= gestational_age_in_days <= \
-                params['list_limits_for_defining_term_status'][5]:
+            elif params['list_limits_for_defining_term_status'][4] <= gestational_age_in_days <= params['list_limits'
+                                                                                                        '_for_defining'
+                                                                                                        '_term_'
+                                                                                                        'status'][5]:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
@@ -2336,7 +2353,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             assert mni[individual_id]['labour_state'] is not None
             labour_state = mni[individual_id]['labour_state']
             logger.info(key='message', data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
-                                             f'{labour_state} on date {self.sim.date}')
+                                            f'{labour_state} on date {self.sim.date}')
 
             # ----------------------------------- FOETAL WEIGHT/BIRTH WEIGHT ----------------------------------------
             # Here we determine the weight of the foetus being carried by this mother, this is calculated here to allow
@@ -2661,7 +2678,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
         # complications
 
         if (person.is_alive and person.is_pregnant and ~person.la_intrapartum_still_birth) or \
-            (~person.is_alive and mni[mother_id]['death_in_labour'] and ~person.la_intrapartum_still_birth):
+           (~person.is_alive and mni[mother_id]['death_in_labour'] and ~person.la_intrapartum_still_birth):
             logger.info(key='message', data=f'A Birth is now occurring, to mother {mother_id}')
 
             # If the mother is pregnant with twins, we call the do_birth function twice and then link the twins
@@ -2720,8 +2737,10 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             else:
                 # We use a linear model to determine if women without complications will receive any postnatal care
                 prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[[mother_id]], mode_of_delivery=mni[mother_id]['mode_of_delivery'],
-                    delivery_setting=mni[mother_id]['delivery_setting'])[mother_id]
+                    df.loc[[mother_id]],
+                    mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=df.loc[[mother_id]].index),
+                    delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=df.loc[[mother_id]].index)
+                )[mother_id]
                 has_comps = False
 
             # If she will receive PNC, we determine if this will happen less than 48 hours from birth or later
@@ -3101,8 +3120,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding
         # Treatment is varied accordingly to underlying cause of bleeding
 
-        if mni[person_id]['referred_for_surgery'] and self.timing == 'postpartum' and \
-            (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary']):
+        if (mni[person_id]['referred_for_surgery'] and
+            (self.timing == 'postpartum') and
+           (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary'])):
             self.module.surgical_management_of_pph(self)
 
         # =========================================== BLOOD TRANSFUSION ===============================================
@@ -3149,14 +3169,14 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         repro_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
 
-        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & \
-                       (df.age_years < 50)
-        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & \
-                       (df.age_years < 50)
-        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & \
-                       (df.age_years < 50)
-        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & \
-                       (df.age_years < 50)
+        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & (df.age_years
+                                                                                                           < 50)
+        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & (df.age_years
+                                                                                                    < 50)
+        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & (df.age_years
+                                                                                                 < 50)
+        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & (df.age_years
+                                                                                                < 50)
 
         prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
         prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
@@ -3167,4 +3187,3 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                   'labour': prop_in_labour,
                                                   'pn': prop_pn,
                                                   'ip': prop_ip})
-

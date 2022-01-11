@@ -1,5 +1,3 @@
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -25,22 +23,20 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 663
+        self.seed = 22
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
-        self.pop_size = 30000
-        self.number_of_draws = 10
+        self.end_date = Date(2021, 1, 2)
+        self.pop_size = 5000
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'normal_30k_pop',
+            'filename': 'focused_anc_test_10k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO,
-                "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
@@ -57,8 +53,7 @@ class TestScenario(BaseScenario):
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
-                                      cons_availability='all',
-                                      mode_appt_constraints=1),
+                                      ignore_cons_constraints=True),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
@@ -74,6 +69,7 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+            'PregnancySupervisor': {'anc_service_structure': 4}
         }
 
 
