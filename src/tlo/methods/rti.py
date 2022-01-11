@@ -33,6 +33,7 @@ class RTI(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
+        self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {"SymptomManager",
                          "HealthBurden"}
@@ -58,6 +59,54 @@ class RTI(Module):
     SWAPPING_CODES = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b', 'P674a',
                       'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884', '813bo', '813co', '813do',
                       '813eo']
+
+    NO_TREATMENT_RECOVERY_TIMES_IN_DAYS = {
+        '112': 49,
+        '113': 49,
+        '1101': 7,
+        '211': 49,
+        '212': 49,
+        '241': 7,
+        '2101': 7,
+        '291': 7,
+        '342': 42,
+        '343': 42,
+        '361': 7,
+        '363': 14,
+        '322': 42,
+        '323': 42,
+        '3101': 7,
+        '3113': 56,
+        '412': 35,
+        '414': 365,
+        '461': 7,
+        '463': 14,
+        '453a': 84,
+        '453b': 84,
+        '441': 14,
+        '442': 14,
+        '4101': 7,
+        '552': 90,
+        '553': 90,
+        '554': 90,
+        '5101': 7,
+        '5113': 56,
+        '612': 63,
+        '712a': 70,
+        '712b': 70,
+        '722': 84,
+        '7101': 7,
+        '7113': 56,
+        '813do': 240,
+        '812': 70,
+        '813eo': 240,
+        '813bo': 240,
+        '813co': 240,
+        '822a': 60,
+        '822b': 180,
+        '8101': 7,
+        '8113': 56
+    }
 
     # Module parameters
     PARAMETERS = {
@@ -2341,38 +2390,6 @@ class RTI(Module):
         # Finally return the injury description information
         return inj_df
 
-    def rti_perform_death(self,
-                          person_id: int,
-                          cause: str):
-        """This function is called whenever someone dies due to RTI in the module. This function logs performs the death
-        and logs the health burden at the time of the person's death."""
-        df = self.sim.population.props
-        # calculate the yld of the deceased
-        # get the date of their injury and the date of their death
-        date_of_injury = df.loc[person_id, 'rt_date_inj']
-        date_of_death = self.sim.date
-        # calculate the duration with health burden
-        duration_with_health_burden_in_days = (date_of_death - date_of_injury).days
-        # get the daly weight for this person
-        daly_weight_of_deceased = df.loc[person_id, 'rt_disability']
-        # calculate the days living with disease
-        dld = duration_with_health_burden_in_days * daly_weight_of_deceased
-        # convert days living with disease to years living with disease
-        yld = dld / 365
-        # log the yld of the deceased
-        dict_to_output = {
-            'person_id': person_id,
-            'daly_weight': daly_weight_of_deceased,
-            'days_with_daly_weight': duration_with_health_burden_in_days,
-            'date_of_injury': date_of_injury,
-            'context': 'death'
-        }
-        logger.info(key='rti_exact_yld_on_change',
-                    data=dict_to_output,
-                    description='The daly weight of an injured person and the time spent with that weight')
-        self.sim.modules['Demography'].do_death(individual_id=person_id, cause=cause,
-                                                originating_module=self)
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -2477,10 +2494,10 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_injury_6"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_7"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_8"] = "none"
-        df.loc[diedfromrtiidx, 'rt_in_shock'] = False
         df.loc[diedfromrtiidx, 'rt_date_death_no_med'] = pd.NaT
         df.loc[diedfromrtiidx, 'rt_MAIS_military_score'] = 0
         df.loc[diedfromrtiidx, 'rt_debugging_DALY_wt'] = 0
+        df.loc[diedfromrtiidx, 'rt_in_shock'] = False
         # reset whether they have been selected for an injury this month
         df['rt_road_traffic_inc'] = False
 
@@ -2528,8 +2545,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_to_die, 'rt_imm_death'] = True
         # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
         for individual_id in selected_to_die:
-            self.sim.modules['RTI'].rti_perform_death(individual_id, "RTI_imm_death")
-
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                    originating_module=self.module)
         # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
         # Drop those who have died immediately
         selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
@@ -2758,7 +2775,8 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
-                    self.sim.modules['RTI'].rti_perform_death(person, "RTI_death_without_med")
+                    self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
+                                                            originating_module=self.module)
                 else:
                     # If the people do not die from their injuries despite not getting care, we have to decide when and
                     # to what degree their injuries will heal.
@@ -2812,40 +2830,6 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         non_empty_injuries = persons_injuries[persons_injuries != "none"]
                         non_empty_injuries = non_empty_injuries.dropna(axis=1)
                         injury_columns = non_empty_injuries.columns
-                        # create a dictionary to store recovery times in
-                        no_treatment_recovery_times_in_days = {
-                            '112': 49,
-                            '211': 49,
-                            '212': 49,
-                            '412': 35,
-                            '612': 63,
-                            '712a': 70,
-                            '712b': 70,
-                            '712c': 70,
-                            '811': 70,
-                            '812': 70,
-                            '322': 42,
-                            '722': 84,
-                            '822a': 60,
-                            '822b': 180,
-                            '241': 7,
-                            '342': 42,
-                            '441': 14,
-                            '442': 14,
-                            '552': 90,
-                            '361': 7,
-                            '461': 7,
-                            '291': 7,
-                            '1101': 7,
-                            '2101': 7,
-                            '3101': 7,
-                            '4101': 7,
-                            '5101': 7,
-                            '6101': 7,
-                            '7101': 7,
-                            '8101': 7
-                        }
-
                         columns = \
                             injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person, [code])[0])
                         # assign a recovery date
@@ -2853,11 +2837,25 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         # would normally be sent directly to the health system. In the instance that a serious injury
                         # occurs and no treatment is recieved but the person survives assume they will be disabled for
                         # the duration of the simulation
-                        if code in no_treatment_recovery_times_in_days.keys():
+                        if code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = \
-                                self.sim.date + DateOffset(days=no_treatment_recovery_times_in_days[code])
+                                self.sim.date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code])
                         else:
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
+                        # remove the injury code from columns to be treated, as they have not sought care and have
+                        # survived without treatment
+                        if code in df.loc[person, 'rt_injuries_to_cast']:
+                            df.loc[person, 'rt_injuries_to_cast'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_minor_surgery']:
+                            df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_major_surgery']:
+                            df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
+                            df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
                         assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
 
@@ -2894,16 +2892,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         road_traffic_injuries = self.module
         df = population.props
         now = self.sim.date
-        # log the health burden of road traffic injuries occurring every day
-        those_with_health_burden_idx = df.loc[df.is_alive & df['rt_disability'] > 0].index
-        rt_daly_weights = df.loc[those_with_health_burden_idx, 'rt_disability']
-        rt_debugging_daly_weights = df.loc[those_with_health_burden_idx, 'rt_debugging_DALY_wt']
-        dict_to_output = {'person_ids': those_with_health_burden_idx.to_list(),
-                          'daly_weights': rt_daly_weights.to_list(),
-                          'debugging_daly_weights': rt_debugging_daly_weights.to_list()}
-        logger.info(key='rti_health_burden_per_day',
-                    data=dict_to_output,
-                    description='The daly weight of all injured persons each day')
         # # Isolate the relevant population
         any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
         relevant_population = any_not_null.index[any_not_null]
@@ -2923,21 +2911,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     dateindex = df.loc[person, 'rt_date_to_remove_daly'].index(date)
                     # find the injury code associated with the healed injury
                     code_to_remove = [df.loc[person, f'rt_injury_{dateindex + 1}']]
-                    # calculate the current health burden
-                    current_daly_weight = df.loc[person, 'rt_disability']
-                    days_with_current_daly_weight = (now - df.loc[person, 'rt_date_inj']).days
-                    date_of_injury = df.loc[person, 'rt_date_inj']
-                    dict_to_output = {
-                        'person_id': person,
-                        'daly_weight': current_daly_weight,
-                        'days_with_daly_weight': days_with_current_daly_weight,
-                        'date_of_injury': date_of_injury,
-                        'context': 'change'
-
-                    }
-                    logger.info(key='rti_exact_yld_on_change',
-                                data=dict_to_output,
-                                description='The daly weight of an injured person and the time spent with that weight')
                     # Set the healed injury recovery data back to the default state
                     df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
                     # Remove the daly weight associated with the healed injury code
@@ -2958,9 +2931,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
-                        if len(self.module.parameters['blocked_interventions']) == 0:
-                            assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
-                                                             f"{untreated_injuries}"
+                        assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
+                                                         f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value
@@ -2975,6 +2947,28 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
 #
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
+class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
+    """This HSI event is triggered by the generic first appointments. After first arriving into the health system at
+    either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
+    event is caused and x-ray or ct scans are provided as needed"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, RTI)
+        the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        road_traffic_injuries = module.sim.modules['RTI']
+        road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+        self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
+
+    def did_not_run(self, *args, **kwargs):
+        pass
+
 
 class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.
@@ -3037,7 +3031,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_accepted_facility_level = '1b'
         the_appt_footprint['AccidentsandEmerg'] = 1
 
         # ======================= Design treatment plan, appointment type =============================================
@@ -3193,7 +3186,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             for col in columns:
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
+                                                                                DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
         # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
@@ -3222,7 +3216,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
         # ================ Determine how long the person will be in hospital based on their ISS score ==================
@@ -3539,29 +3533,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
 
 
-class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
-    """This HSI event is triggered by the generic first appointments. After first arriving into the health system at
-    either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
-    event is caused and x-ray or ct scans are provided as needed"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, RTI)
-        the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        road_traffic_injuries = module.sim.modules['RTI']
-        road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
-        self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
-
-    def did_not_run(self, *args, **kwargs):
-        pass
-
-
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
@@ -3582,10 +3553,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             self.is_child = True
         else:
             self.is_child = False
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3594,41 +3564,30 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        consumables_shock = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # TODO: find a more complete list of required consumables for adults
         if self.is_child:
-            item_code_fluid_replacement = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-            item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
-                                                           "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
-            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
-                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                                          'Item_Code'])[0]
-            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
-                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
-                                                         'Item_Code'])[0]
-            consumables_shock['Item_Code'].update({item_code_cannula: 1, item_code_fluid_replacement: 1,
-                                                   item_code_dextrose: 1, item_code_blood: 1, item_code_oxygen: 1})
+            self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+                get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Blood, one unit'): 1,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_child']
+            )
         else:
-            item_code_fluid_replacement = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
-                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
-                                                         'Item_Code'])[0]
-            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
-                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                                          'Item_Code'])[0]
-            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_cannula: 1,
-                                                   item_code_oxygen: 1, item_code_blood: 1})
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_shock,
-            to_log=True)
+            self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Blood, one unit'): 1,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_adult']
+            )
+
         if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
@@ -3642,7 +3601,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # Schedule the death
         df = self.sim.population.props
         df.at[person_id, 'rt_death_from_shock'] = True
-        self.sim.modules['RTI'].rti_perform_death(person_id, "RTI_death_shock")
+        self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
+                                                originating_module=self.module)
         # Log the death
         logger.debug(key='rti_general_message',
                      data=f"This is RTI_Shock_Treatment scheduling a death for person {person_id} who did not recieve "
@@ -3682,10 +3642,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['AccidentsandEmerg'] = 1
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Fracture_Cast'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3698,7 +3657,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         # get a shorthand reference to RTI and consumables modules
         road_traffic_injuries = self.sim.modules['RTI']
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         # Find the untreated injuries
         untreated_injury_cols = \
@@ -3710,7 +3669,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # check if they have a fracture that requires a sling
         codes = ['712a']
         _, slingcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert p['rt_diagnosed'], 'person sent here has not been diagnosed'
@@ -3722,23 +3680,13 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Check this injury assigned to be treated here is actually had by the person
         assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
         # If they have a fracture that needs a cast, ask for plaster of paris
-        if fracturecastcounts > 0:
-            plaster_of_paris_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({plaster_of_paris_code: fracturecastcounts})
-        # If they have a fracture that needs a sling, ask for bandage.
-
-        if slingcounts > 0:
-            sling_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Bandage, crepe 7.5cm x 1.4m long , when stretched', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({sling_code: slingcounts})
-        # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_fractures,
-            to_log=True)
+        self.module.item_codes_for_consumables_required['fracture_treatment'] = {
+            get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts,
+            get_item_code('Bandage, crepe 7.5cm x 1.4m long , when stretched'): slingcounts,
+        }
+        is_cons_available = self.get_consumables(
+            self.module.item_codes_for_consumables_required['fracture_treatment']
+        )
         # if the consumables are available then the appointment can run
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -3826,10 +3774,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1  # wound debridement requires minor surgery
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3839,14 +3786,13 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
         road_traffic_injuries = self.sim.modules['RTI']
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check if they have a fracture that requires a cast
         codes = ['813bo', '813co', '813do', '813eo']
         _, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         assert open_fracture_counts > 0
-        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
@@ -3854,41 +3800,26 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
-            # Ask for ceftriaxon antibiotics as first choice.
-            first_choice_antibiotic_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'ceftriaxon 500 mg, powder for injection_10_IDA',
-                                'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({first_choice_antibiotic_code: 1})
-            # Ask for sterilized gauze
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_cetrimide_chlorhexidine: 1})
-            consumables_key = "Gauze, absorbent 90cm x 40m_each_CMST"
-            item_code_gauze = pd.unique(consumables.loc[consumables['Items'] == consumables_key, 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_gauze: 1})
-            # Ask for suture kit
-            item_code_suture_kit = pd.unique(
-                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_suture_kit: 1})
+            self.module.item_codes_for_consumables_required['open_fracture_treatment'] = {
+                get_item_code('ceftriaxon 500 mg, powder for injection_10_IDA'): 1,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
+                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+                get_item_code('Suture pack'): 1,
+            }
             # If wound is "grossly contaminated" administer Metronidazole
             # todo: parameterise the probability of wound contamination
             p = self.module.parameters
             prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
             rand_for_contamination = self.module.rng.random_sample(size=1)
             if rand_for_contamination < prob_open_fracture_contaminated:
-                conaminated_wound_metronidazole_code = pd.unique(
-                    consumables.loc[consumables['Items'] ==
-                                    'Metronidazole, injection, 500 mg in 100 ml vial',
-                                    'Item_Code'])[0]
-                consumables_fractures['Item_Code'].update({conaminated_wound_metronidazole_code: 1})
-
+                self.module.item_codes_for_consumables_required['open_fracture_treatment'].update(
+                    {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1}
+                )
         # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_fractures,
-            to_log=True)
+        is_cons_available = self.get_consumables(
+            self.module.item_codes_for_consumables_required['open_fracture_treatment']
+        )
+
         if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
@@ -3954,14 +3885,13 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Under5OPD'] = 1
         else:
             the_appt_footprint['Over5OPD'] = 1
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Suture'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
@@ -3978,57 +3908,33 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         # Check that the person sent here has an injury that is treated by this HSI event
         assert lacerationcounts > 0
         if lacerationcounts > 0:
-            # check the number of suture kits required and request them
-            item_code_suture_kit = pd.unique(
-                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            consumables_open_wound_1 = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_suture_kit: lacerationcounts,
-                              item_code_cetrimide_chlorhexidine: lacerationcounts}
+            self.module.item_codes_for_consumables_required['laceration_treatment'] = {
+                get_item_code('Suture pack'): lacerationcounts,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): lacerationcounts,
+
             }
-
-            is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_open_wound_1,
-                to_log=True)['Item_Code']
-
-            cond = is_cons_available_1
+            # check the number of suture kits required and request them
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['laceration_treatment']
+            )
 
             # Availability of consumables determines if the intervention is delivered...
-            if cond[item_code_suture_kit]:
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has open wound treatment available which has been used for person "
                                   f"{person_id}."
                              )
                 logger.debug(key='rti_general_message',
                              data=f"This facility treated their {lacerationcounts} open wounds")
-                if cond[item_code_cetrimide_chlorhexidine]:
-                    logger.debug(key='rti_general_message',
-                                 data="This laceration was cleaned before stitching")
-                    df.at[person_id, 'rt_med_int'] = True
-                    columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
-                    for col in columns:
-                        # heal time for lacerations is roughly two weeks according to:
-                        # https://www.facs.org/~/media/files/education/patient%20ed/wound_lacerations.ashx#:~:text=of%20
-                        # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
-                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                        DateOffset(days=14)
-                        assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
-                else:
-                    logger.debug(key='rti_general_message',
-                                 data=f"This laceration wasn't cleaned before stitching, person {person_id} is at risk "
-                                      f"of infection")
-                    df.at[person_id, 'rt_med_int'] = True
-                    columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
-                    for col in columns:
-                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                        DateOffset(days=14)
-                        assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
-
+                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
+                for col in columns:
+                    # heal time for lacerations is roughly two weeks according to:
+                    # https://www.facs.org/~/media/files/education/patient%20ed/wound_lacerations.ashx#:~:text=of%20
+                    # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                    DateOffset(days=14)
+                    assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
             else:
                 self.module.rti_ask_for_suture_kit(person_id)
                 logger.debug(key='rti_general_message',
@@ -4067,16 +3973,15 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Burn_Management'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         p = self.module.parameters
         self.prob_mild_burns = p['prob_mild_burns']
 
     def apply(self, person_id, squeeze_factor):
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
@@ -4094,13 +3999,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
         if burncounts > 0:
             # Request materials for burn treatment
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            item_code_gauze = pd.unique(
-                consumables.loc[
-                    consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
-                    'Item_Code'])[0]
+            self.module.item_codes_for_consumables_required['burn_treatment'] = {
+                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
+
+            }
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
             idx2, bigburncounts = \
                 road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
@@ -4109,24 +4012,13 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
+                self.module.item_codes_for_consumables_required['burn_treatment'].update(
+                    {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1}
+                )
 
-                item_code_fluid_replacement = pd.unique(
-                    consumables.loc[consumables['Items'] ==
-                                    "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-                consumables_burns = {
-                    'Intervention_Package_Code': dict(),
-                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                                  item_code_fluid_replacement: 1, item_code_gauze: burncounts}}
-
-            else:
-                consumables_burns = {
-                    'Intervention_Package_Code': dict(),
-                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                                  item_code_gauze: burncounts}}
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_burns,
-                to_log=True)['Item_Code']
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['burn_treatment']
+            )
             if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has burn treatment available which has been used for person "
@@ -4185,10 +4077,9 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Under5OPD'] = 1
         else:
             the_appt_footprint['Over5OPD'] = 1
-        the_accepted_facility_level = '1b'
         self.TREATMENT_ID = 'RTI_Tetanus_Vaccine'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -4208,17 +4099,13 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         assert counts > 0
         # If they have a laceration/burn ask request the tetanus vaccine
         if counts > 0:
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-            item_code_tetanus = pd.unique(
-                consumables.loc[consumables['Items'] == 'Tetanus toxoid, injection', 'Item_Code'])[0]
-            consumables_tetanus = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_tetanus: 1}
+            get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+            self.module.item_codes_for_consumables_required['tetanus_treatment'] = {
+                get_item_code('Tetanus toxoid, injection'): 1
             }
-            is_tetanus_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_tetanus,
-                to_log=True)
+            is_tetanus_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['tetanus_treatment']
+            )
             if is_tetanus_available:
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
@@ -4256,15 +4143,11 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Under5OPD'] = 1
         else:
             the_appt_footprint['Over5OPD'] = 1
-        # Define the facilities at which this event can occur (only one is allowed)
-        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-        #                            ['Facility_Level']))
-        the_accepted_facility_level = '1b'
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_Acute_Pain_Management'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -4277,7 +4160,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         road_traffic_injuries = self.sim.modules['RTI']
         pain_level = "none"
         # create a dictionary to associate the level of pain to the codes
@@ -4320,44 +4203,26 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.info(key='Requested_Pain_Management',
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
-            item_code_paracetamol = pd.unique(
-                consumables.loc[consumables['Items'] == "Paracetamol 500mg_1000_CMST",
-                                'Item_Code'])[0]
-            item_code_diclofenac = pd.unique(
-                consumables.loc[consumables['Items'] == "diclofenac sodium 25 mg, enteric coated_1000_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy_paracetamol = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_paracetamol: 1}}
-            pain_management_strategy_diclofenac = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_diclofenac: 1}}
-
             if df.loc[person_id, 'age_years'] < 16:
-                # or df.iloc[person_id]['is_pregnant']
-                # If they are under 16 or pregnant only give them paracetamol
-                is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_paracetamol,
-                    to_log=True)['Item_Code'][item_code_paracetamol]
-                cond = is_paracetamol_available
-                logger.debug(key='rti_general_message',
-                             data=f"Person {person_id} requested paracetamol for their pain relief")
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                }
+                cond = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
             else:
-                # Multiple options, give them what's available or random pick between them (for now)
-                is_diclofenac_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_diclofenac,
-                    to_log=True)['Item_Code'][item_code_diclofenac]
-
-                is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_paracetamol,
-                    to_log=True)['Item_Code'][item_code_paracetamol]
-
-                cond1 = is_paracetamol_available
-                cond2 = is_diclofenac_available
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("diclofenac sodium 25 mg, enteric coated_1000_IDA"): 1
+                }
+                cond1 = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                }
+                cond2 = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
                 if (cond1 is True) & (cond2 is True):
                     which = self.module.rng.random_sample(size=1)
                     if which <= 0.5:
@@ -4409,18 +4274,12 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.info(key='Requested_Pain_Management',
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
-            item_code_tramadol = pd.unique(
-                consumables.loc[consumables['Items'] == "tramadol HCl 100 mg/2 ml, for injection_100_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy_tramadol = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_tramadol: 1}}
-
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=pain_management_strategy_tramadol,
-                to_log=True)
+            self.module.item_codes_for_consumables_required['pain_management'] = {
+                get_item_code("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['pain_management']
+            )
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested tramadol for moderate pain relief")
 
@@ -4447,18 +4306,12 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
             # give morphine
-            item_code_morphine = pd.unique(
-                consumables.loc[consumables['Items'] == "morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_morphine: 1}}
-
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=pain_management_strategy,
-                to_log=True)
+            self.module.item_codes_for_consumables_required['pain_management'] = {
+                get_item_code("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['pain_management']
+            )
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested morphine for severe pain relief")
 
@@ -4597,12 +4450,11 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MajorSurg'] = 1  # This requires major surgery
 
-        the_accepted_facility_level = '1b'
         p = self.module.parameters
 
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.allowed_interventions = p['allowed_interventions']
@@ -4611,116 +4463,84 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        rng = self.module.rng
+        road_traffic_injuries = self.sim.modules['RTI']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # Request first draft of consumables used in major surgery
-        # request a general anaesthetic
-        general_anaesthetic_item_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Halothane (fluothane)_250ml_CMST", 'Item_Code'])[0]
-        # clean the site of the surgery
-        sterilise_surgical_site_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
-        # tools to begin surgery
-        scalpel_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Scalpel blade size 22 (individually wrapped)_100_CMST",
-                            'Item_Code'])[0]
-        # administer an IV
-        cannula_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Cannula iv  (winged with injection pot) 20_each_CMST",
-                            'Item_Code'])[0]
-        iv_giving_set_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Giving set iv administration + needle 15 drops/ml_each_CMST",
-                            'Item_Code'])[0]
-        iv_fluid_code = pd.unique(
-            consumables.loc[consumables['Items'] == "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
-                            'Item_Code'])[0]
-        # repair incision made
-        suture_pack_code = pd.unique(consumables.loc[consumables['Items'] == "Suture pack", 'Item_Code'])[0]
-        gauze_code = pd.unique(consumables.loc[consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
-                                               'Item_Code'])[0]
-        # administer pain killer
-        painkiller_code = pd.unique(consumables.loc[consumables['Items'] == 'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                                    'Item_Code'])[0]
-        # administer antibiotic
-        antibiotic_code = pd.unique(consumables.loc[consumables['Items'] == "Ampicillin injection 500mg, PFR_each_CMST",
-                                                    'Item_Code'])[0]
-        # equipment used by surgeon, gloves and facemask
-        gloves_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'Disposables gloves, powder free, 100 pieces per box',
-                            'Item_Code'])[0]
-        facemask_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'surgical face mask, disp., with metal nose piece_50_IDA',
-                            'Item_Code'])[0]
-        # request syringe
-        syringe_code = pd.unique(consumables.loc[consumables['Items'] == "Syringe, Autodisable SoloShot IX ",
-                                                 'Item_Code'])[0]
-        consumables_for_surgery = {
-            'Intervention_Package_Code': dict(),
-            'Item_Code': {general_anaesthetic_item_code: 1,
-                          sterilise_surgical_site_code: 1,
-                          scalpel_code: 1,
-                          cannula_code: 1,
-                          iv_giving_set_code: 1,
-                          iv_fluid_code: 1,
-                          suture_pack_code: 1,
-                          gauze_code: 1,
-                          painkiller_code: 1,
-                          antibiotic_code: 1,
-                          gloves_code: 1,
-                          facemask_code: 1,
-                          syringe_code: 1
-                          }
+        self.module.item_codes_for_consumables_required['major_surgery'] = {
+            # request a general anaesthetic
+            get_item_code("Halothane (fluothane)_250ml_CMST"): 1,
+            # clean the site of the surgery
+            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 1,
+            # tools to begin surgery
+            get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
+            # administer an IV
+            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
+            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+            # repair incision made
+            get_item_code("Suture pack"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+            # administer pain killer
+            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
+            # administer antibiotic
+            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
+            # equipment used by surgeon, gloves and facemask
+            get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
+            get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
+            # request syringe
+            get_item_code("Syringe, Autodisable SoloShot IX "): 1
         }
-        request_outcome = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_for_surgery,
-            to_log=True)
+
+        request_outcome = self.get_consumables(
+                self.module.item_codes_for_consumables_required['major_surgery']
+            )
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-
+        # todo: think about consequences of certain consumables not being available for major surgery and model health
+        #  outcomes
+        # Isolate the relevant injury information
+        surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+                                    '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363', '782',
+                                    '782a', '782b', '782c', '783', '822a', '882', '883', '884', 'P133a', 'P133b',
+                                    'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b', 'P782c', 'P783',
+                                    'P882', 'P883', 'P884']
+        # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury
+        # codes here
+        if 'include_spine_surgery' in self.allowed_interventions:
+            additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
+                                'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+        # If we have allowed greater access to thoroscopy, include the codes treated by thoroscopy here
+        if 'include_thoroscopy' in self.allowed_interventions:
+            additional_codes = ['441', '443', '453', '453a', '453b', '463']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+        injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
+        assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
+            'This person has asked for surgery but does not have an appropriate injury'
+        # check the people sent here have at least one injury treated by this HSI event
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
+        assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
+        # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
+        # injury is being treated in this surgery
+        # find index for untreated injuries
+        idx_for_untreated_injuries = np.where(pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly']))
+        # find untreated injury codes that are treated with major surgery
+        relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+        # check that the person sent here has an appropriate code(s)
+        assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
+                                         persons_injuries.values[0][idx_for_untreated_injuries])
+        # choose a code at random
+        self.treated_code = rng.choice(relevant_codes)
         if request_outcome:
-            rng = self.module.rng
-            road_traffic_injuries = self.sim.modules['RTI']
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
             # RTI_Med
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
-            # Isolate the relevant injury information
-            surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d',
-                                        '134a', '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                        '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
-                                        'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
-                                        'P782c', 'P783', 'P882', 'P883', 'P884']
-            # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury
-            # codes here
-            if 'include_spine_surgery' in self.allowed_interventions:
-                additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
-                                    'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
-                for code in additional_codes:
-                    surgically_treated_codes.append(code)
-            # If we have allowed greater access to thoroscopy, include the codes treated by thoroscopy here
-            if 'include_thoroscopy' in self.allowed_interventions:
-                additional_codes = ['441', '443', '453', '453a', '453b', '463']
-                for code in additional_codes:
-                    surgically_treated_codes.append(code)
-            persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-            injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
-            assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
-                'This person has asked for surgery but does not have an appropriate injury'
-            # check the people sent here have at least one injury treated by this HSI event
-            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
-            assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
-            # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
-            # injury is being treated in this surgery
-            # find index for untreated injuries
-            idx_for_untreated_injuries = np.where(pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly']))
-            # find untreated injury codes that are treated with major surgery
-            relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
-            # check that the person sent here has an appropriate code(s)
-            assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
-                                             persons_injuries.values[0][idx_for_untreated_injuries])
-            # choose a code at random
-            self.treated_code = rng.choice(relevant_codes)
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
             codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
@@ -4757,8 +4577,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
-                                                                                       DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                    self.sim.end_date + DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
             # ------------------------------------- Perm disability from SCI -------------------------------------------
             if 'include_spine_surgery' in self.allowed_interventions:
@@ -4789,8 +4609,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
                     # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                     # it permanent)
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
-                                                                                           DateOffset(days=1)
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                        self.sim.end_date + DateOffset(days=1)
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
             # ------------------------------------- Perm disability from amputation ------------------------------------
@@ -4821,8 +4641,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                                                                 [self.treated_code])
                 # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
-                                                                                       DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                    self.sim.end_date + DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
             # ============================== Schedule the recovery dates for the non-permanent injuries ================
@@ -4897,8 +4717,24 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             assert self.treated_code not in df.loc[person_id, 'rt_injuries_for_major_surgery'], \
                 ['Treated injury code not removed', self.treated_code]
         else:
-            self.module.rti_do_for_major_surgeries(person_id=person_id,
-                                                   count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
+            # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
+            life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
+                                         '112',  # Depressed skull fracture
+                                         'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
+                                         '342', '343', '361', '363',  # Injuries to neck
+                                         '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
+                                         '782b',  # Unilateral arm amputation
+                                         '783',  # Bilateral arm amputation
+                                         '883',  # Unilateral lower limb amputation
+                                         '884',  # Bilateral lower limb amputation
+                                         '552', '553', '554'  # Internal organ injuries
+                                         ]
+            if (self.treated_code in life_threatening_injuries) & df.loc[person_id, 'is_alive']:
+                self.sim.schedule_event(RTI_No_Lifesaving_Medical_Intervention_Death_Event(self.module, person_id),
+                                        self.sim.date)
+            else:
+                self.module.rti_do_for_major_surgeries(person_id=person_id,
+                                                       count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
             return hs.get_blank_appt_footprint()
 
     def did_not_run(self, person_id):
@@ -4915,22 +4751,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
-
-        # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
-        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
-                                     '112',  # Depressed skull fracture
-                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
-                                     '342', '343', '361', '363',  # Injuries to neck
-                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
-                                     '782b',  # Unilateral arm amputation
-                                     '783',  # Bilateral arm amputation
-                                     '883',  # Unilateral lower limb amputation
-                                     '884',  # Bilateral lower limb amputation
-                                     '552', '553', '554'  # Internal organ injuries
-                                     ]
-        if (self.treated_code in life_threatening_injuries) & df.loc[person_id, 'is_alive']:
-            self.sim.schedule_event(RTI_No_Lifesaving_Medical_Intervention_Death_Event(self.module, person_id),
-                                    self.sim.date)
 
 
 class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
@@ -4975,80 +4795,43 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1  # This requires major surgery
 
-        the_accepted_facility_level = '1b'
-
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-
-        # request a local anaesthetic
-        local_anaesthetic_item_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml", 'Item_Code'])[0]
-        # clean the site of the surgery
-        sterilise_surgical_site_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
-        # tools to begin surgery
-        scalpel_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Scalpel blade size 22 (individually wrapped)_100_CMST",
-                            'Item_Code'])[0]
-        # administer an IV
-        cannula_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Cannula iv  (winged with injection pot) 20_each_CMST",
-                            'Item_Code'])[0]
-        iv_giving_set_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Giving set iv administration + needle 15 drops/ml_each_CMST",
-                            'Item_Code'])[0]
-        iv_fluid_code = pd.unique(
-            consumables.loc[consumables['Items'] == "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
-                            'Item_Code'])[0]
-        # repair incision made
-        suture_pack_code = pd.unique(consumables.loc[consumables['Items'] == "Suture pack", 'Item_Code'])[0]
-        gauze_code = pd.unique(consumables.loc[consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
-                                               'Item_Code'])[0]
-        # administer pain killer
-        painkiller_code = pd.unique(consumables.loc[consumables['Items'] == 'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                                    'Item_Code'])[0]
-        # administer antibiotic
-        antibiotic_code = \
-            pd.unique(consumables.loc[consumables['Items'] == "Ampicillin injection 500mg, PFR_each_CMST",
-                                      'Item_Code'])[0]
-        # equipment used by surgeon, gloves and facemask
-        gloves_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'Disposables gloves, powder free, 100 pieces per box',
-                            'Item_Code'])[0]
-        facemask_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'surgical face mask, disp., with metal nose piece_50_IDA',
-                            'Item_Code'])[0]
-        # request syringe
-        syringe_code = pd.unique(consumables.loc[consumables['Items'] == "Syringe, Autodisable SoloShot IX ",
-                                                 'Item_Code'])[0]
-        consumables_for_surgery = {
-            'Intervention_Package_Code': dict(),
-            'Item_Code': {local_anaesthetic_item_code: 1,
-                          sterilise_surgical_site_code: 1,
-                          scalpel_code: 1,
-                          cannula_code: 1,
-                          iv_giving_set_code: 1,
-                          iv_fluid_code: 1,
-                          suture_pack_code: 1,
-                          gauze_code: 1,
-                          painkiller_code: 1,
-                          antibiotic_code: 1,
-                          gloves_code: 1,
-                          facemask_code: 1,
-                          syringe_code: 1
-                          }
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+        # Request first draft of consumables used in major surgery
+        self.module.item_codes_for_consumables_required['minor_surgery'] = {
+            # request a local anaesthetic
+            get_item_code("Halothane (fluothane)_250ml_CMST"): 1,
+            # clean the site of the surgery
+            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 1,
+            # tools to begin surgery
+            get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
+            # administer an IV
+            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
+            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+            # repair incision made
+            get_item_code("Suture pack"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+            # administer pain killer
+            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
+            # administer antibiotic
+            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
+            # equipment used by surgeon, gloves and facemask
+            get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
+            get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
+            # request syringe
+            get_item_code("Syringe, Autodisable SoloShot IX "): 1
         }
-
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
         surgically_treated_codes = ['322', '211', '212', '323', '722', '291', '241', '811', '812', '813a', '813b',
@@ -5074,13 +4857,14 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # need to determine whether this person has an injury which will treated with external fixation
         external_fixation_codes = ['811', '812', '813a', '813b', '813c']
         if treated_code in external_fixation_codes:
-            item_code_external_fixator = pd.unique(
-                consumables.loc[consumables['Items'] == 'External fixator', 'Item_Code'])[0]
-            consumables_for_surgery['Item_Code'].update({item_code_external_fixator: 1})
-        request_outcome = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_for_surgery,
-            to_log=True)
+            self.module.item_codes_for_consumables_required['minor_surgery'].update(
+                {get_item_code('External fixator'): 1}
+            )
+        request_outcome = self.get_consumables(
+                self.module.item_codes_for_consumables_required['minor_surgery']
+            )
+        # todo: think about consequences of certain consumables not being available for minor surgery and model health
+        #  outcomes
         if request_outcome:
             injury_columns = persons_injuries.columns
             # create a dictionary to store the recovery times for each injury in days
@@ -5210,7 +4994,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                                 description='The injury profile of those who have died due to rtis despite medical care'
                                 )
                     # Schedule the death
-                    self.sim.modules['RTI'].rti_perform_death(person_id, "RTI_death_with_med")
+                    self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                            originating_module=self.module)
                     # Log the death
                     logger.debug(key='rti_general_message',
                                  data=f"This is RTIMedicalInterventionDeathEvent scheduling a death for person "
@@ -5269,7 +5054,17 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
         untreated_injuries = []
-        prob_death = 0
+        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
+                                     '112',  # Depressed skull fracture
+                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
+                                     '342', '343', '361', '363',  # Injuries to neck
+                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
+                                     '782b',  # Unilateral arm amputation
+                                     '783',  # Bilateral arm amputation
+                                     '883',  # Unilateral lower limb amputation
+                                     '884',  # Bilateral lower limb amputation
+                                     '552', '553', '554'  # Internal organ injuries
+                                     ]
         # Find which injuries are left untreated by finding injuries which haven't been set a recovery time
         for col in non_empty_injuries:
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
@@ -5277,6 +5072,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         # people can have multiple untreated injuries, most serious injury will be used to determine the likelihood of
         # their passing, so create an empty list to store probabilities of death associated with this person's untreated
         # injury and take the max value
+        # filter out injuries which won't be life threatening if not treated
+        untreated_injuries = [code for code in untreated_injuries if code in life_threatening_injuries]
         prob_deaths = []
         for injury in untreated_injuries:
             for severity_level in untreated_dict:
@@ -5286,12 +5083,37 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
-            self.sim.modules['RTI'].rti_perform_death(self, person_id, "RTI_unavailable_med")
-
+            self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_unavailable_med",
+                                                    originating_module=self.module)
             # Log the death
             logger.debug(key='rti_general_message',
                          data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on"
                               f" date {self.sim.date}")
+        else:
+            # person has survived their injuries despite the lack of treatment. Assign a recovery date to their injuries
+            # If a spinal injury, amputation, TBI is untreated, assign this injury's recovery time to the end of the
+            # simulation
+            codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
+                     '782a', '782b', '782c', '783', '882', '883', '884', '133', '133a', '133b', '133c', '133d', '134',
+                     '134a', '134b', '135']
+            for injury in untreated_injuries:
+                if injury in codes:
+                    # Track whether they are permanently disabled
+                    df.at[person_id, 'rt_perm_disability'] = True
+                    # Find the column and code where the permanent injury is stored
+                    df.loc[person_id, col] = "P" + injury
+                    # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
+                    # it permanent)
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = \
+                        self.sim.end_date + DateOffset(days=1)
+                    assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+                else:
+                    # check if the injury has a heal time associated with no treamtent
+                    if injury in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = \
+                            self.sim.end_date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[injury])
+                        if injury in df.loc[person_id, 'rt_injuries_for_major_surgery']:
+                            df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(injury)
 
 
 # ---------------------------------------------------------------------------------------------------------
