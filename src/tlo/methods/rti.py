@@ -1585,6 +1585,10 @@ class RTI(Module):
                     priority=0,
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
+            else:
+                df.at[person_id, 'rt_injuries_for_major_surgery'] = []
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_do_for_minor_surgeries(self, person_id, count):
         """
@@ -1633,6 +1637,13 @@ class RTI(Module):
                     priority=0,
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
+            else:
+                # remove the injury code from this treatment option
+                df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+
+
 
     def rti_acute_pain_management(self, person_id):
         """
@@ -1772,6 +1783,7 @@ class RTI(Module):
             fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
             # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by
             # rti_fracture_cast coincide
+            print('oi')
             assert len(set(df.loc[person_id, 'rt_injuries_to_cast']) & set(fracture_codes)) > 0, \
                 'This person has asked for a fracture cast'
             # Check they have an injury treated by HSI_RTI_Fracture_Cast
@@ -1786,6 +1798,11 @@ class RTI(Module):
                     topen=self.sim.date,
                     tclose=self.sim.date + DateOffset(days=15)
                 )
+            else:
+                df.at[person_id, 'rt_injuries_to_cast'] = []
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+
 
     def rti_ask_for_open_fracture_treatment(self, person_id, counts):
         """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
@@ -2770,8 +2787,19 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 # Create a random number to determine mortality
                 rand_for_death = self.module.rng.random_sample(1)
                 # create a variable to show if a person has died due to their untreated injuries
-                # for each rt_MAIS_military_score, determine mortality
-                prob_death = probabilities_of_death[str(df.loc[person, 'rt_MAIS_military_score'])]
+                # find which injuries have been untreated
+                untreated_injuries = []
+                persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
+                non_empty_injuries = persons_injuries[persons_injuries != "none"]
+                non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                for col in non_empty_injuries:
+                    if pd.isnull(df.loc[person, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
+                        untreated_injuries.append(df.at[person, col])
+                mais_scores = []
+                for injury in untreated_injuries:
+                    mais_scores.append(self.module.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][-1])
+                max_untreated_injury = max(mais_scores)
+                prob_death = probabilities_of_death[str(max_untreated_injury)]
                 if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
@@ -4845,9 +4873,6 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # check they have at least one injury treated by minor surgery
         _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         assert counts > 0
-        # find the injuries this person has
-        non_empty_injuries = persons_injuries[persons_injuries != "none"]
-        non_empty_injuries = non_empty_injuries.dropna(axis=1)
         # find the injuries which will be treated here
         relevant_codes = np.intersect1d(df.loc[person_id, 'rt_injuries_for_minor_surgery'], surgically_treated_codes)
         # Check that a code has been selected to be treated
