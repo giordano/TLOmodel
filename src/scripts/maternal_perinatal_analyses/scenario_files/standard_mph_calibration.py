@@ -23,10 +23,10 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 229
+        self.seed = 8756
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 1)
-        self.pop_size = 30000
+        self.pop_size = 10000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
@@ -56,7 +56,7 @@ class TestScenario(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
                                       cons_availability='all',
-                                      mode_appt_constraints=2),
+                                      mode_appt_constraints=1),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
