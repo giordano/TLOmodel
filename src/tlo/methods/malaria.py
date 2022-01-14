@@ -321,6 +321,7 @@ class Malaria(Module):
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
         df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
+        # select new infections
         alive_uninfected = alive & ~df.ma_is_infected
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
@@ -362,7 +363,6 @@ class Malaria(Module):
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
         # SEVERE CASES
-        # todo check the date of infection is correct - not a previous one
         severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
 
         children = severe & (df.age_exact_years < 5)
@@ -388,7 +388,7 @@ class Malaria(Module):
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
             # symptom onset occurs one week after infection
-            # death occurs 1-7 days after symptom onset
+            # death occurs 1-7 days after symptom onset, 8+ days after infection
             random_date = rng.randint(low=8, high=14)
             random_days = pd.to_timedelta(random_date, unit="d")
 
@@ -725,9 +725,11 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"] and \
-            (df.at[individual_id, "ma_inf_type"] != "severe"):
+        if not df.at[individual_id, "is_alive"]:
             return
+
+        # death should only occur if severe malaria case
+        assert df.at[individual_id, "ma_inf_type"] == "severe"
 
         # if on treatment, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
