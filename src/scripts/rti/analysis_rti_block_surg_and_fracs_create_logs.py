@@ -34,7 +34,7 @@ yearsrun = 3
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 20000
+pop_size = 10000
 nsim = 2
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/blocked_interventions/'
@@ -80,7 +80,7 @@ for i in range(0, nsim):
                                     directory=log_file_location + "minor")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-
+    sim.modules['RTI'].parameters['base_rate_injrti'] *= 20
     sim.modules['RTI'].parameters['blocked_interventions'] = ['Minor Surgery']
     # Run the simulation
     sim.simulate(end_date=end_date)
@@ -104,6 +104,7 @@ for i in range(0, nsim):
                                     directory=log_file_location + "major")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['base_rate_injrti'] *= 20
     sim.modules['RTI'].parameters['blocked_interventions'] = ['Major Surgery']
 
     sim.simulate(end_date=end_date)
@@ -127,6 +128,7 @@ for i in range(0, nsim):
                                     directory=log_file_location + "casts")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['base_rate_injrti'] *= 20
     sim.modules['RTI'].parameters['blocked_interventions'] = ['Fracture Casts']
 
     sim.simulate(end_date=end_date)

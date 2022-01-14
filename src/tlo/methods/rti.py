@@ -50,9 +50,9 @@ class RTI(Module):
     INJURY_CODES = ['none', '112', '113', '133a', '133b', '133c', '133d', '134a', '134b', '135', '1101', '1114', '211',
                     '212', '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323', '3101', '3113',
                     '412', '414', '461', '463', '453a', '453b', '441', '442', '443', '4101', '4113', '552', '553',
-                    '554', '5101', '5113', '612', '673a', '673b',  '674a', '674b', '675a', '675b', '676', '712a',
+                    '554', '5101', '5113', '612', '673a', '673b', '674a', '674b', '675a', '675b', '676', '712a',
                     '712b', '712c', '722', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do', '812',
-                    '813eo', '813a', '813b', '813bo', '813c', '813co',  '822a', '822b', '882', '883', '884', '8101',
+                    '813eo', '813a', '813b', '813bo', '813c', '813co', '822a', '822b', '882', '883', '884', '8101',
                     '8113', 'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P673a', 'P673b', 'P674a',
                     'P674b', 'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
 
@@ -1031,7 +1031,9 @@ class RTI(Module):
                                                       'probability of mortality without medical intervention'),
         'rt_date_death_no_med': Property(Types.DATE, 'the date which the person has is scheduled to die without medical'
                                                      'intervention'),
-        'rt_debugging_DALY_wt': Property(Types.REAL, 'The true value of the DALY weight burden')
+        'rt_debugging_DALY_wt': Property(Types.REAL, 'The true value of the DALY weight burden'),
+        'rt_injuries_left_untreated': Property(Types.LIST, 'A list of injuries that have been left untreated due to a '
+                                                           'blocked intervention')
     }
 
     # Declare Metadata
@@ -1464,6 +1466,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_injuries_for_major_surgery'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_to_heal_with_time'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_for_open_fracture_treatment'] = pd.Series([[] for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_left_untreated'] = pd.Series([[] for _ in range(alive_count)])
 
     def initialise_simulation(self, sim):
         """At the start of the simulation we schedule a logging event, which records the relevant information
@@ -1562,14 +1565,14 @@ class RTI(Module):
                 additional_codes = ['441', '443', '453', '453a', '453b', '463']
                 surgically_treated_codes.extend(additional_codes)
             # check this person has an injury which should be treated here
-            assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
-                'This person has asked for surgery but does not have an appropriate injury'
+            if count == 0:
+                assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
+                    'This person has asked for surgery but does not have an appropriate injury'
             # isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             # Check whether the person sent to surgery has an injury which actually requires surgery
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
             assert counts > 0, 'This person has been sent to major surgery without the right injuries'
-            assert len(person.rt_injuries_for_major_surgery) > 0
             # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
             # already been treated
             for code in person.rt_injuries_for_major_surgery:
@@ -1586,9 +1589,12 @@ class RTI(Module):
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
             else:
-                df.at[person_id, 'rt_injuries_for_major_surgery'] = []
-                # reset the time to check whether the person has died from their injuries
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+                if count == 0:
+                    df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_for_major_surgery']
+                    # remove the injury code from this treatment option
+                    df.at[person_id, 'rt_injuries_for_major_surgery'] = []
+                    # reset the time to check whether the person has died from their injuries
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_do_for_minor_surgeries(self, person_id, count):
         """
@@ -1612,8 +1618,9 @@ class RTI(Module):
             surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '811', '812', '813a',
                                         '813b', '813c']
             # check that the person requesting surgery has an injury in their minor surgery treatment plan
-            assert len(df.at[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
-                'this person has asked for a minor surgery but does not need it'
+            assert len(df.at[person_id, 'rt_injuries_for_minor_surgery']) > 0 or \
+                   len(df.at[person_id, 'rt_injuries_left_untreated']) > 0, 'this person has asked for a minor ' \
+                                                                            'surgery but does not need it'
             # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been
             # treated
             for code in df.at[person_id, 'rt_injuries_for_minor_surgery']:
@@ -1622,8 +1629,9 @@ class RTI(Module):
                 assert pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
-            assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
-                'This person has asked for a minor surgery but does not need it'
+            if count == 0:
+                assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
+                    'This person has asked for a minor surgery but does not need it'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
@@ -1638,12 +1646,12 @@ class RTI(Module):
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
             else:
-                # remove the injury code from this treatment option
-                df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
-                # reset the time to check whether the person has died from their injuries
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
-
-
+                if count == 0:
+                    df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_for_minor_surgery']
+                    # remove the injury code from this treatment option
+                    df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
+                    # reset the time to check whether the person has died from their injuries
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_acute_pain_management(self, person_id):
         """
@@ -1799,10 +1807,10 @@ class RTI(Module):
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
+                df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_to_cast']
                 df.at[person_id, 'rt_injuries_to_cast'] = []
                 # reset the time to check whether the person has died from their injuries
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_ask_for_open_fracture_treatment(self, person_id, counts):
         """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
@@ -2204,6 +2212,7 @@ class RTI(Module):
         df.at[child_id, 'rt_MAIS_military_score'] = 0
         df.at[child_id, 'rt_date_death_no_med'] = pd.NaT
         df.at[child_id, 'rt_debugging_DALY_wt'] = 0
+        df.at[child_id, 'rt_injuries_left_untreated'] = []
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -2499,6 +2508,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.at[index, 'rt_injuries_for_major_surgery'] = []
             df.at[index, 'rt_injuries_to_heal_with_time'] = []
             df.at[index, 'rt_injuries_for_open_fracture_treatment'] = []
+            df.at[index, 'rt_injuries_left_untreated'] = []
         df.loc[diedfromrtiidx, "rt_diagnosed"] = False
         df.loc[diedfromrtiidx, "rt_polytrauma"] = False
         df.loc[diedfromrtiidx, "rt_inj_severity"] = "none"
@@ -2832,6 +2842,9 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     injuries = df.loc[[person], RTI.INJURY_COLUMNS].values.tolist()
                     # Cannot iterate correctly over list like [[1,2,3]], so need to flatten
                     flattened_injuries = [item for sublist in injuries for item in sublist if item != 'none']
+                    if df.loc[person, 'rt_med_int']:
+                        flattened_injuries = [injury for injury in flattened_injuries if injury in
+                                              df.loc[person, 'rt_injuries_left_untreated']]
                     persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
                     for code in flattened_injuries:
                         swapable_code = np.intersect1d(code, swapping_codes)
@@ -2865,26 +2878,46 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         # would normally be sent directly to the health system. In the instance that a serious injury
                         # occurs and no treatment is recieved but the person survives assume they will be disabled for
                         # the duration of the simulation
-                        if code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
-                            df.loc[person, 'rt_date_to_remove_daly'][columns] = \
-                                self.sim.date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code])
+
+                        # if they haven't sought care at all we don't need to specify which injuries need a recovery
+                        # date assigned
+                        if not df.loc[person, 'rt_med_int']:
+                            if code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
+                                df.loc[person, 'rt_date_to_remove_daly'][columns] = \
+                                    self.sim.date + DateOffset(
+                                        days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code]
+                                    )
+                            else:
+                                df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + \
+                                                                                    DateOffset(days=1)
                         else:
-                            df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
+                            # if they have sought medical care and it hasn't been provided, we need to make sure only
+                            # the untreated injuries have a recovery date assigned here
+                            if ((code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys()) &
+                                (code in df.loc[person, 'rt_injuries_left_untreated'])):
+                                df.loc[person, 'rt_date_to_remove_daly'][columns] = \
+                                    self.sim.date + DateOffset(
+                                        days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code]
+                                    )
+                            else:
+                                df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + \
+                                                                                    DateOffset(days=1)
                         # remove the injury code from columns to be treated, as they have not sought care and have
                         # survived without treatment
-                        if code in df.loc[person, 'rt_injuries_to_cast']:
-                            df.loc[person, 'rt_injuries_to_cast'].remove(code)
-                        if code in df.loc[person, 'rt_injuries_for_minor_surgery']:
-                            df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
-                        if code in df.loc[person, 'rt_injuries_for_major_surgery']:
-                            df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
-                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
-                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
-                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
-                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
-                        if code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
-                            df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
-                        assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
+                        if code in df.loc[person, 'rt_injuries_left_untreated']:
+                            if code in df.loc[person, 'rt_injuries_to_cast']:
+                                df.loc[person, 'rt_injuries_to_cast'].remove(code)
+                            if code in df.loc[person, 'rt_injuries_for_minor_surgery']:
+                                df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
+                            if code in df.loc[person, 'rt_injuries_for_major_surgery']:
+                                df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
+                            if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                                df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                            if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                                df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                            if code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
+                                df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
+                            assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
 
 class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
@@ -2959,6 +2992,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
+                        df
                         assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
                                                          f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
@@ -3507,26 +3541,40 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         person_untreated_injuries = df.loc[[person_id], untreated_injury_cols]
 
         for treatment in single_option_treatments:
-            _, inj_counts = road_traffic_injuries.rti_find_and_count_injuries(person_untreated_injuries,
-                                                                              single_option_treatments[treatment])
-            if inj_counts > 0 & df.loc[person_id, 'is_alive']:
-                if treatment == 'suture':
-                    road_traffic_injuries.rti_ask_for_suture_kit(person_id=person_id)
-                if treatment == 'burn':
-                    road_traffic_injuries.rti_ask_for_burn_treatment(person_id=person_id)
-                if treatment == 'fracture':
-                    road_traffic_injuries.rti_ask_for_fracture_casts(person_id=person_id)
-                if treatment == 'tetanus':
-                    road_traffic_injuries.rti_ask_for_tetanus(person_id=person_id)
-                if treatment == 'pain':
-                    road_traffic_injuries.rti_acute_pain_management(person_id=person_id)
-                if treatment == 'open':
-                    road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id,
-                                                                              counts=self.open_fractures)
+            # If a person has an injury that hasn't been deliberately left untreated then schedule a treatment, or if
+            # the treatment is pain management
+            untreated_injuries = list(non_empty_injuries.values[0])
+            deliberately_untreated_injuries = df.loc[person_id, 'rt_injuries_left_untreated']
+            injuries_left_to_treat = [injury for injury in untreated_injuries if injury not in
+                                      deliberately_untreated_injuries]
+            no_injuries_for_this_treatment = (len(set(injuries_left_to_treat) &
+                                                  set(single_option_treatments[treatment])) == 0)
+            condition_to_skip = no_injuries_for_this_treatment & (treatment != 'pain')
+            # print('stop')
+            if condition_to_skip:
+                pass
+            else:
+                _, inj_counts = road_traffic_injuries.rti_find_and_count_injuries(person_untreated_injuries,
+                                                                                  single_option_treatments[treatment])
+                print('stop')
+                if inj_counts > 0 & df.loc[person_id, 'is_alive']:
+                    if treatment == 'suture':
+                        road_traffic_injuries.rti_ask_for_suture_kit(person_id=person_id)
+                    if treatment == 'burn':
+                        road_traffic_injuries.rti_ask_for_burn_treatment(person_id=person_id)
+                    if treatment == 'fracture':
+                        road_traffic_injuries.rti_ask_for_fracture_casts(person_id=person_id)
+                    if treatment == 'tetanus':
+                        road_traffic_injuries.rti_ask_for_tetanus(person_id=person_id)
+                    if treatment == 'pain':
+                        road_traffic_injuries.rti_acute_pain_management(person_id=person_id)
+                    if treatment == 'open':
+                        road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id,
+                                                                                  counts=self.open_fractures)
 
         treatment_plan = \
-            p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] +  \
-            p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment'] +  \
+            p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
+            p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment'] + \
             p['rt_injuries_to_cast']
         # make sure injuries are treated in one place only
         assert len(treatment_plan) == len(set(treatment_plan))
@@ -4521,8 +4569,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         }
 
         request_outcome = self.get_consumables(
-                self.module.item_codes_for_consumables_required['major_surgery']
-            )
+            self.module.item_codes_for_consumables_required['major_surgery']
+        )
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -4886,8 +4934,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 {get_item_code('External fixator'): 1}
             )
         request_outcome = self.get_consumables(
-                self.module.item_codes_for_consumables_required['minor_surgery']
-            )
+            self.module.item_codes_for_consumables_required['minor_surgery']
+        )
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
@@ -5060,7 +5108,7 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         df = self.sim.population.props
         # create a dictionary to store the injuries and corresponding probability of death for untreated injuries
         untreated_dict = {'non-lethal': [['241', '291', '322', '323', '461', '442', '1101', '2101', '3101', '4101',
-                                         '5101', '7101', '8101', '722', '822a', '822b'], 0],
+                                          '5101', '7101', '8101', '722', '822a', '822b'], 0],
                           'severe': [['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135', '342', '343',
                                       '361', '363', '414', '441', '443', '453a', '453b', '463', '552', '553', '554',
                                       '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
