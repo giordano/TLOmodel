@@ -139,7 +139,7 @@ class Malaria(Module):
         "ma_date_symptoms": Property(
             Types.DATE, "Date of symptom start for clinical infection"
         ),
-        "ma_date_death": Property(Types.DATE, "Date of scheduled death due to malaria"),
+        "ma_date_death": Property(Types.DATE, "Date of death due to malaria"),
         "ma_tx": Property(Types.BOOL, "Currently on anti-malarial treatment"),
         "ma_date_tx": Property(
             Types.DATE, "Date treatment started for most recent malaria episode"
@@ -327,25 +327,31 @@ class Malaria(Module):
         df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
+        # todo this will select all currently infected - just want new infections
         alive_infected = alive & df.ma_is_infected
 
-        alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
+        # draw from asymptomatic to allocate clinical cases
+        # todo replace to select only new infections
+        # alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
+        alive_infected_asym = now_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
         df.loc[now_clinical, "ma_date_symptoms"] = now
         df.loc[now_clinical, "ma_clinical_counter"] += 1
 
-        alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
-        now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
+        # draw from clinical cases to allocate severe cases
+        # alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
+        now_severe = _draw_incidence_for("monthly_prob_sev", now_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
         df.loc[now_severe, "ma_date_symptoms"] = now
 
-        alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
+        # alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
+        alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
         # clinical - can't use now_clinical, because some clinical may have become severe
-        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_symptoms == now)]
+        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
@@ -353,7 +359,10 @@ class Malaria(Module):
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
         # SEVERE CASES
+        # todo check the date of infection is correct - not a previous one
         severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_symptoms == now)
+        assert (df.loc[severe, "ma_date_infected"] == df.loc[severe, "ma_date_symptoms"]).all()
+
         children = severe & (df.age_exact_years < 5)
         adult = severe & (df.age_exact_years >= 5)
 
@@ -370,6 +379,11 @@ class Malaria(Module):
         death = df.index[severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
+            # todo remove
+            print(df.at[person, "ma_inf_type"])
+            print(df.at[person, "ma_date_infected"])
+            print(df.at[person, "ma_date_symptoms"])
+
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
@@ -706,7 +720,8 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"] and \
+            (df.at[individual_id, "ma_inf_type"] != "severe"):
             return
 
         # if on treatment, will reduce probability of death
