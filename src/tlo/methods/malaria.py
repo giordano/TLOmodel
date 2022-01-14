@@ -336,14 +336,15 @@ class Malaria(Module):
         alive_infected_asym = now_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
-        df.loc[now_clinical, "ma_date_symptoms"] = now
+        # todo symptom onset date set by clinical_symptoms function
+        # df.loc[now_clinical, "ma_date_symptoms"] = now
         df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases
         # alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
         now_severe = _draw_incidence_for("monthly_prob_sev", now_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
-        df.loc[now_severe, "ma_date_symptoms"] = now
+        # df.loc[now_severe, "ma_date_symptoms"] = now
 
         # alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
         alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
@@ -355,13 +356,14 @@ class Malaria(Module):
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
+        # check symptom onset occurs in one week
+        assert (df.loc[clin, "ma_date_infected"] < df.loc[clin, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
         # SEVERE CASES
         # todo check the date of infection is correct - not a previous one
-        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_symptoms == now)
-        assert (df.loc[severe, "ma_date_infected"] == df.loc[severe, "ma_date_symptoms"]).all()
+        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
 
         children = severe & (df.age_exact_years < 5)
         adult = severe & (df.age_exact_years >= 5)
@@ -369,6 +371,8 @@ class Malaria(Module):
         # update symptoms for all new severe infections
         self.severe_symptoms(df, df.index[children], child=True)
         self.severe_symptoms(df, df.index[adult], child=False)
+        # check symptom onset occurs in one week
+        assert (df.loc[severe, "ma_date_infected"] < df.loc[severe, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -379,15 +383,13 @@ class Malaria(Module):
         death = df.index[severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
-            # todo remove
-            print(df.at[person, "ma_inf_type"])
-            print(df.at[person, "ma_date_infected"])
-            print(df.at[person, "ma_date_symptoms"])
 
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
-            random_date = rng.randint(low=0, high=7)
+            # symptom onset occurs one week after infection
+            # death occurs 1-7 days after symptom onset
+            random_date = rng.randint(low=8, high=14)
             random_days = pd.to_timedelta(random_date, unit="d")
 
             death_event = MalariaDeathEvent(
@@ -528,7 +530,7 @@ class Malaria(Module):
         now = self.sim.date
 
         # TODO this schedules symptom onset on 1st of each month for everybody
-        df.loc[clinical_index, "ma_date_symptoms"] = now
+        df.loc[clinical_index, "ma_date_symptoms"] = self.sim.date + pd.DateOffset(days=7)
 
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
@@ -538,6 +540,7 @@ class Malaria(Module):
             symptom_string=symptom_list,
             add_or_remove="+",
             disease_module=self,
+            date_of_onset=self.sim.date + pd.DateOffset(days=7),
             duration_in_days=p["dur_clin"],
         )
 
@@ -552,6 +555,7 @@ class Malaria(Module):
                     symptom_string="severe_anaemia",
                     add_or_remove="+",
                     disease_module=self,
+                    date_of_onset=self.sim.date + pd.DateOffset(days=7),
                     duration_in_days=None,
                 )
 
@@ -572,7 +576,7 @@ class Malaria(Module):
         rng = self.rng
         now = self.sim.date
 
-        df.loc[severe_index, "ma_date_symptoms"] = now
+        df.loc[severe_index, "ma_date_symptoms"] = self.sim.date + pd.DateOffset(days=7)
 
         # general symptoms - applied to all
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
@@ -582,6 +586,7 @@ class Malaria(Module):
             symptom_string=symptom_list,
             add_or_remove="+",
             disease_module=self,
+            date_of_onset=self.sim.date + pd.DateOffset(days=7),
             duration_in_days=None,
         )
 
