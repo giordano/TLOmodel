@@ -328,23 +328,26 @@ class Malaria(Module):
         df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
-        # todo this will select all currently infected - just want new infections
+        # todo this will select all currently infected
         alive_infected = alive & df.ma_is_infected
 
         # draw from asymptomatic to allocate clinical cases
-        # todo replace to select only new infections
-        # alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
-        alive_infected_asym = now_infected & (df.ma_inf_type == "asym")
+        # todo select all currently infected with asym - subset will become clinical
+        alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
+        # alive_infected_asym = now_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
+        df.loc[now_clinical, "ma_date_infected"] = now  # updated infection date
         # todo symptom onset date set by clinical_symptoms function
         # df.loc[now_clinical, "ma_date_symptoms"] = now
         df.loc[now_clinical, "ma_clinical_counter"] += 1
 
-        # draw from clinical cases to allocate severe cases
-        # alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
-        now_severe = _draw_incidence_for("monthly_prob_sev", now_clinical)
+        # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
+        alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
+        now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
+        df.loc[now_severe, "ma_date_infected"] = now  # updated infection date
+        # todo symptom onset date set by severe_symptoms function
         # df.loc[now_severe, "ma_date_symptoms"] = now
 
         # alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
@@ -529,8 +532,9 @@ class Malaria(Module):
         rng = self.rng
         now = self.sim.date
 
-        # TODO this schedules symptom onset on 1st of each month for everybody
-        df.loc[clinical_index, "ma_date_symptoms"] = self.sim.date + pd.DateOffset(days=7)
+        date_symptom_onset = now + pd.DateOffset(days=7)
+
+        df.loc[clinical_index, "ma_date_symptoms"] = date_symptom_onset
 
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
@@ -540,7 +544,7 @@ class Malaria(Module):
             symptom_string=symptom_list,
             add_or_remove="+",
             disease_module=self,
-            date_of_onset=self.sim.date + pd.DateOffset(days=7),
+            date_of_onset=date_symptom_onset,
             duration_in_days=p["dur_clin"],
         )
 
@@ -555,7 +559,7 @@ class Malaria(Module):
                     symptom_string="severe_anaemia",
                     add_or_remove="+",
                     disease_module=self,
-                    date_of_onset=self.sim.date + pd.DateOffset(days=7),
+                    date_of_onset=date_symptom_onset,
                     duration_in_days=None,
                 )
 
@@ -574,9 +578,9 @@ class Malaria(Module):
         df = population
         p = self.parameters
         rng = self.rng
-        now = self.sim.date
+        date_symptom_onset = self.sim.date + pd.DateOffset(days=7)
 
-        df.loc[severe_index, "ma_date_symptoms"] = self.sim.date + pd.DateOffset(days=7)
+        df.loc[severe_index, "ma_date_symptoms"] = date_symptom_onset
 
         # general symptoms - applied to all
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
@@ -586,7 +590,7 @@ class Malaria(Module):
             symptom_string=symptom_list,
             add_or_remove="+",
             disease_module=self,
-            date_of_onset=self.sim.date + pd.DateOffset(days=7),
+            date_of_onset=date_symptom_onset,
             duration_in_days=None,
         )
 
@@ -1166,21 +1170,25 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = self.sim.population.props
 
-        # select people with clinical malaria and symptoms for at least 5 days
+        # select people with clinical malaria and treatment for at least 3 days
         # or severe cases on treatment for at least 7 days
+        # todo remove cure for severe cases - run draw for death/cure in death event
         clinical_inf = df.index[df.is_alive &
                                 (df.ma_inf_type == "clinical") &
-                                (df.ma_date_symptoms < (self.sim.date - DateOffset(days=5)))]
+                                (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
 
-        severe_inf = df.index[df.is_alive &
-                              (df.ma_inf_type == "severe") &
-                              (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
+        # severe_inf = df.index[df.is_alive &
+        #                       (df.ma_inf_type == "severe") &
+        #                       (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
 
         # clear symptoms
-        all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
+        # all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
 
+        # self.sim.modules["SymptomManager"].clear_symptoms(
+        #     person_id=all_cured, disease_module=self.module
+        # )
         self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=all_cured, disease_module=self.module
+            person_id=clinical_inf, disease_module=self.module
         )
 
         # change properties
