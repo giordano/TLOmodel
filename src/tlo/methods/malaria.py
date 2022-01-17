@@ -742,12 +742,15 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
             # if draw -> death
             if prob < self.module.parameters["treatment_adjustment"]:
-                self.sim.schedule_event(
-                    demography.InstantaneousDeath(
-                        self.module, individual_id, cause=self.cause
-                    ),
-                    self.sim.date,
-                )
+                self.sim.modules['Demography'].do_death(
+                    individual_id=individual_id, cause=self.cause, originating_module=self.module)
+
+                # self.sim.schedule_event(
+                #     demography.InstantaneousDeath(
+                #         self.module, individual_id, cause=self.cause
+                #     ),
+                #     self.sim.date,
+                # )
 
                 df.at[individual_id, "ma_date_death"] = self.sim.date
 
@@ -759,12 +762,15 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
         # if not on treatment - death will occur
         else:
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(
-                    self.module, individual_id, cause=self.cause
-                ),
-                self.sim.date,
-            )
+            self.sim.modules['Demography'].do_death(
+                individual_id=individual_id, cause=self.cause, originating_module=self.module)
+
+            # self.sim.schedule_event(
+            #     demography.InstantaneousDeath(
+            #         self.module, individual_id, cause=self.cause
+            #     ),
+            #     self.sim.date,
+            # )
 
             df.at[individual_id, "ma_date_death"] = self.sim.date
 
