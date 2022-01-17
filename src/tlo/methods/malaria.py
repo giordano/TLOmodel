@@ -755,7 +755,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
             else:
                 df.at[individual_id, "ma_tx"] = False
                 df.loc[individual_id, "ma_inf_type"] = "asym"
-                df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
+                # df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
 
         # if not on treatment - death will occur
         else:
@@ -1202,7 +1202,7 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         # change properties
         df.loc[clinical_and_treated, "ma_tx"] = False
         df.loc[clinical_and_treated, "ma_inf_type"] = "asym"
-        df.loc[clinical_and_treated, "ma_date_symptoms"] = pd.NaT
+        # df.loc[clinical_and_treated, "ma_date_symptoms"] = pd.NaT
 
 
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
