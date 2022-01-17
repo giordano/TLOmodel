@@ -447,7 +447,7 @@ def test_severe_malaria_deaths(tmpdir):
     df.at[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
     assert not df.at[person_id, 'ma_tx']
-    assert df.at[person_id, "ma_date_tx"] == pd.NaT
+    assert df.at[person_id, "ma_date_tx"] is pd.NaT
     assert df.at[person_id, "ma_tx_counter"] == 0
 
     # run the death event
