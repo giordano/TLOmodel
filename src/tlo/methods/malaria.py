@@ -740,6 +740,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, "ma_tx"]:
             prob = self.module.rng.rand()
 
+            # if draw -> death
             if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
@@ -750,6 +751,13 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
                 df.at[individual_id, "ma_date_death"] = self.sim.date
 
+            # else if draw does not result in death -> cure
+            else:
+                df.at[individual_id, "ma_tx"] = False
+                df.loc[individual_id, "ma_inf_type"] = "asym"
+                df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
+
+        # if not on treatment - death will occur
         else:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(
@@ -1163,7 +1171,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=5))
+        super().__init__(module, frequency=DateOffset(days=3))
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaCureEvent: symptom resolution for malaria cases')
@@ -1173,7 +1181,7 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         # select people with clinical malaria and treatment for at least 3 days
         # or severe cases on treatment for at least 7 days
         # todo remove cure for severe cases - run draw for death/cure in death event
-        clinical_inf = df.index[df.is_alive &
+        clinical_and_treated = df.index[df.is_alive &
                                 (df.ma_inf_type == "clinical") &
                                 (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
 
@@ -1188,13 +1196,13 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         #     person_id=all_cured, disease_module=self.module
         # )
         self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=clinical_inf, disease_module=self.module
+            person_id=clinical_and_treated, disease_module=self.module
         )
 
         # change properties
-        df.loc[all_cured, "ma_tx"] = False
-        df.loc[all_cured, "ma_inf_type"] = "asym"
-        df.loc[all_cured, "ma_date_symptoms"] = pd.NaT
+        df.loc[clinical_and_treated, "ma_tx"] = False
+        df.loc[clinical_and_treated, "ma_inf_type"] = "asym"
+        df.loc[clinical_and_treated, "ma_date_symptoms"] = pd.NaT
 
 
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
