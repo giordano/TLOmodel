@@ -1,9 +1,9 @@
 """
 this file runs the malaria module and outputs graphs with data for comparison
 """
+import random
 import time
 from pathlib import Path
-import random
 
 import pandas as pd
 from matplotlib import pyplot as plt

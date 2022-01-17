@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -1178,10 +1178,9 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # select people with clinical malaria and treatment for at least 3 days
-        # or severe cases on treatment for at least 7 days
         clinical_and_treated = df.index[df.is_alive &
-                                (df.ma_inf_type == "clinical") &
-                                (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
+                                        (df.ma_inf_type == "clinical") &
+                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
 
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=clinical_and_treated, disease_module=self.module
