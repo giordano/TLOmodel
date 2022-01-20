@@ -5416,7 +5416,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             cfr_no_med = 'all_sought_care'
         # calculate incidence rate per 100,000 of deaths on scene
         if n_alive > 0:
-            inc_death_on_scene = (len(df.loc[df.rt_imm_death]) / n_alive) * 100000
+            inc_death_on_scene = (len(df.loc[df.rt_imm_death]) / n_alive) * 100000 * (1 / 12)
         else:
             inc_death_on_scene = 0
         dict_to_output = {

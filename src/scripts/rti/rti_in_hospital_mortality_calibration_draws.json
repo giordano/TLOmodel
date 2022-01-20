@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_in_hospital_mortality_calibration.py",
+  "scenario_script_path": "src/scripts/rti/rti_in_hospital_mortality_calibration.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -507,5 +507,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "944935b617723ef93a346044b3e3128a484c10ca",
+  "github": "https://github.com/UCL/TLOmodel/blob/944935b617723ef93a346044b3e3128a484c10ca/src/scripts/rti/rti_in_hospital_mortality_calibration.py"
 }

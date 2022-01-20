@@ -50,8 +50,8 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        prob_imm_death_min = 0.068
-        prob_imm_death_max = 0.089
+        prob_imm_death_min = 0.068 * (1 / 12)
+        prob_imm_death_max = 0.089 * (1 / 12)
         prob_imm_death_range = np.linspace(prob_imm_death_min, prob_imm_death_max,
                                            num=self.number_of_samples_in_parameter_range)
         return {

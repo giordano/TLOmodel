@@ -49,3 +49,19 @@ plt.title("Calibration of the model's on scene mortality to\n"
           "The National Road Safety Council's (NRSC) estimate")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/DALYs_vs_hsb.png",
             bbox_inches='tight')
+
+extracted_incidence_of_death_on_scene_person_years = \
+    extract_results(results_folder,
+                    module="tlo.methods.rti",
+                    key="summary_1m",
+                    column="incidence of prehospital death per 100,000",
+                    index="date"
+                    )
+other_on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene_person_years, only_mean=True).mean()
+extracted_incidence_of_death_on_scene_person_years = \
+    extract_results(results_folder,
+                    module="tlo.methods.rti",
+                    key="summary_1m",
+                    column="incidence of prehospital death per 100,000",
+                    index="date"
+                    )

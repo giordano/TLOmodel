@@ -79,7 +79,7 @@ lower_upper = np.array(list(zip(
 # find the values that fall within our accepted range of incidence based on results of the GBD study
 
 mean_incidence_of_rti = incidence_of_RTI.mean()
-expected_in_hospital_mortality = 221 / 5246
+expected_in_hospital_mortality = 144 / 7416
 mean_in_hos_mort = in_hospital_mortality_onlymeans.mean()
 best_fitting_in_hos_mort = []
 best_fitting_scale_factor = []
@@ -104,6 +104,10 @@ for n, idx in enumerate(idxs):
             inc_rti,
             best_fit_found
         ]
+
+inc_scale_factor = 954.2 / best_fit_in_hos_mort_df['inc_rti']
+best_fit_in_hos_mort_df['scaled_inc'] = best_fit_in_hos_mort_df['inc_rti'] * inc_scale_factor
+best_fit_in_hos_mort_df['scaled_inc_death'] = best_fit_in_hos_mort_df['unscaled_inc_death'] * inc_scale_factor
 best_fit_in_hos_mort_df.to_csv("C:/Users/Robbie Manning Smith/Desktop/in_hos_mort.csv")
 yerr = abs(lower_upper - per_param_average_in_hospital_mortality)
 xvals = range(info['number_of_draws'])
