@@ -9,8 +9,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -39,12 +37,12 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
 pop_size = 10000
-nsim = 2
+nsim = 5
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
 # Prior to using Azure batches I have used for loops to handle longer model runs. To get the information I need
@@ -170,8 +168,6 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),

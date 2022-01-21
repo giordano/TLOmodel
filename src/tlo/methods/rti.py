@@ -5113,6 +5113,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
         self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
         self.prop_death_burns_no_treatment = p['prop_death_burns_no_treatment']
+        self.allowed_interventions = p['allowed_interventions']
+
 
     def apply(self, person_id):
         # self.scheduled_death = 0
@@ -5137,6 +5139,36 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
+        # drop injuries that have a treatment scheduled
+        person = df.loc[person_id]
+        treatment_plan = (
+            person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
+            person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
+        )
+        maj_surg_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a', '134b',
+                          '135', '552', '553', '554', '342', '343', '414', '361', '363', '782', '782a', '782b', '782c',
+                          '783', '822a', '882', '883', '884', 'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b',
+                          'P135', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
+        # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury
+        # codes here
+        if 'include_spine_surgery' in self.allowed_interventions:
+            additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
+                                'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
+            for code in additional_codes:
+                maj_surg_codes.append(code)
+        # If we have allowed greater access to thoroscopy, include the codes treated by thoroscopy here
+        if 'include_thoroscopy' in self.allowed_interventions:
+            additional_codes = ['441', '443', '453', '453a', '453b', '463']
+            for code in additional_codes:
+                maj_surg_codes.append(code)
+        for col in non_empty_injuries:
+            # create the conditions to ignore untreated injuries
+            injury_treated_elsewhere = non_empty_injuries[col].values.to_list()[0] in treatment_plan
+            injury_not_treated_by_major_surgery = non_empty_injuries[col].values.to_list()[0] not in maj_surg_codes
+            condition_to_remove_column = injury_treated_elsewhere or injury_not_treated_by_major_surgery
+            if condition_to_remove_column:
+                non_empty_injuries = non_empty_injuries.drop(col, axis=1)
+
         untreated_injuries = []
         life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
                                      '112',  # Depressed skull fracture
