@@ -846,28 +846,69 @@ class Alri(Module):
         get_item_codes_from_package = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
+        # packages
         self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = \
             get_item_codes_from_package(package='Pneumonia treatment (children)')
         self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = \
             get_item_codes_from_package(package='Treatment of severe pneumonia')
-        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'] = \
-            [get_item_code(item='Paracetamol, tablet, 100 mg')] + [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
 
-        # TODO: consumables_in_hsi - lookup each second option of antibiotic individually.
-        self.consumables_used_in_hsi['Antibiotic_therapy_for_pulmonary_complications_1st_line'] = \
+        # Treatment of non-severe pneumonia in the community
+        self.consumables_used_in_hsi['iCCM_Amoxicillin_for_non_severe_Pneumonia'] = \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # Referral process at the community
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_iCCM'] = \
+            [get_item_code(item='Paracetamol, tablet, 100 mg')] + \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # Referral process at health centres
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_IMCI'] = \
+            [get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # First line of antibiotics for severe pneumonia
+        self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
             [get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST')] + \
             [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code(item='Flucloxacillin 250mg_100_CMST')]
-        # self.consumables_used_in_hsi['Antibiotic_therapy_for_pulmonary_complications_2st_line'] = \
-        #     [get_item_code(item='Amocilling 3g (5MU), PFR_each_CMST')] + \
-        #     [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-        #     [get_item_code(item='Flucloxacillin 250mg_100_CMST')]
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # Second line of antibiotics for severe pneumonia
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
+            [get_item_code(item='Ceftriaxone 1g, PFR_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # Second line of antibiotics for severe pneumonia, if Staph is suspected
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Staph_Pneumonia'] = \
+            [get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')] + \
+            [get_item_code(item='Cloxacillin discs 5mcg_50_CMST')]
+
+        # Oxygen for hypoxaemia
+        self.consumables_used_in_hsi['Oxygen_Therapy'] = \
+            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')] + \
+            [get_item_code(item='Nasal prongs')]
+
+        # X-ray scan
+        self.consumables_used_in_hsi['X_ray_scan'] = \
+            [get_item_code(item='X-ray')]
+
+        # Treat wheeze
+        self.consumables_used_in_hsi['Brochodilator_and_Steroids'] = \
+            [get_item_code(item='Salbutamol, syrup, 2 mg/5 ml')] + \
+            [get_item_code(item='Prednisolone 5mg_100_CMST')]
+
+        # Maintenance of fluids via nasograstric tube
+        self.consumables_used_in_hsi['Fluid_Maintenance'] = \
+            [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
 
     def pneumonia_classification_iCCM_IMCI(self, person_id, hsi_event):
-        """Based on symptoms presented, classify WHO-pneumonia severity.
-        Note: iCCM & IMCI classifications assumed to be the same for Malawi -- in the community,
-         fast-breathing and chest-indrawing pneumonia can in treaed by HSAs.
-        IMCI classifications: common_cold, non_severe_pneumonia, severe_pneumonia"""
+        """Based on symptoms presented, classify WHO-pneumonia severity."""
 
         df = self.sim.population.props
         facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -881,37 +922,28 @@ class Alri(Module):
         # ----- For children over 2 months and under 5 years of age -----
         if (df.at[person_id, 'age_exact_years'] >= 1/6) & (df.at[person_id, 'age_exact_years'] < 5):
 
-            if ('tachypnoea' or 'chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
-                classification = 'IMCI_non_severe_pneumonia'
-            if 'danger_signs' in symptoms:
-                classification = 'IMCI_severe_pneumonia'
-            if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
-                ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                  ('danger_signs' not in symptoms)):
-                classification = 'IMCI_common_cold'
+            if facility_level == '0':
+                if 'tachypnoea' in symptoms and (
+                 ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
+                    classification = 'iCCM_non_severe_pneumonia'
+                if 'chest_indrawing' in symptoms and ('danger_signs' not in symptoms):
+                    classification = 'iCCM_severe_pneumonia'
+                if 'danger_signs' in symptoms:
+                    classification = 'iCCM_very_severe_pneumonia'
+                if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
+                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                    ('danger_signs' not in symptoms)):
+                    classification = 'IMCI_common_cold'
 
-            # if facility_level == '0':
-            #     if 'tachypnoea' in symptoms and (
-            #      ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
-            #         classification = 'iCCM_non_severe_pneumonia'
-            #     if 'chest_indrawing' in symptoms and ('danger_signs' not in symptoms):
-            #         classification = 'iCCM_severe_pneumonia'
-            #     if 'danger_signs' in symptoms:
-            #         classification = 'iCCM_very_severe_pneumonia'
-            #     if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
-            #         ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-            #         ('danger_signs' not in symptoms)):
-            #         classification = 'iCCM_common_cold'
-
-            # if facility_level == '1a' or '1b' or '2':
-            #     if ('tachypnoea' or 'chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
-            #         classification = 'IMCI_non_severe_pneumonia'
-            #     if 'danger_signs' in symptoms:
-            #         classification = 'IMCI_severe_pneumonia'
-            #     if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
-            #         ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-            #         ('danger_signs' not in symptoms)):
-            #         classification = 'IMCI_common_cold'
+            if facility_level == '1a' or '1b' or '2':
+                if ('tachypnoea' or 'chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
+                    classification = 'IMCI_non_severe_pneumonia'
+                if 'danger_signs' in symptoms:
+                    classification = 'IMCI_severe_pneumonia'
+                if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
+                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                    ('danger_signs' not in symptoms)):
+                    classification = 'IMCI_common_cold'
 
         # ----- For infants under 2 months of age -----
         if df.at[person_id, 'age_exact_years'] < 1/6:
@@ -939,10 +971,10 @@ class Alri(Module):
             classification = self.pneumonia_classification_iCCM_IMCI(person_id, hsi_event)
 
             # iCCM severe pneumonia, needing referral - give 1st dose antibiotic and refer to health facility
-            if classification == 'IMCI_severe_pneumonia':
+            if classification == 'iCCM_severe_pneumonia' or 'iCCM_very_severe_pneumonia':
                 # get the first dose of antibiotic
                 hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['First_dose_antibiotic_for_referral'],
+                    item_codes=self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_iCCM'],
                     return_individual_results=True)
                 # and refer to facility level 1
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -954,12 +986,12 @@ class Alri(Module):
                     tclose=None)
 
             # iCCM uncomplicated pneumonia, can be treated in the community (in current generic HSI level 0)
-            elif classification == 'IMCI_non_severe_pneumonia':
+            elif classification == 'iCCM_non_severe_pneumonia':
                 if hsi_event.get_consumables(
                     item_codes=self.consumables_used_in_hsi[
-                        'Treatment_Non_severe_Pneumonia'], return_individual_results=True):
+                        'iCCM_Amoxicillin_for_non_severe_Pneumonia']):
                     self.do_alri_treatment(person_id=person_id, hsi_event=hsi_event,
-                                           treatment='Treatment_Non_severe_Pneumonia')
+                                           treatment='iCCM_Amoxicillin_for_non_severe_Pneumonia')
                 # iCCM uncomplicated pneumonia, can be treated in the community (in current generic HSI level 0)
                 else:
                     # if no consumables refer to health facility
@@ -1008,7 +1040,7 @@ class Alri(Module):
                     # give first dose of antibiotic and refer to hospital
                     hsi_event.get_consumables(
                         item_codes=self.consumables_used_in_hsi[
-                            'First_dose_antibiotic_for_referral'], return_individual_results=True)
+                            'First_dose_antibiotic_for_referral_IMCI'], return_individual_results=True)
                     # and refer to facility level 1b or 2
                     health_system.schedule_hsi_event(
                         HSI_Hospital_Inpatient_Pneumonia_Treatment(
@@ -1174,7 +1206,7 @@ class Alri(Module):
                 df.loc[person_id, 'ri_treatment_failure_or_relapse'] = True
                 # Change to 2nd line antibiotics
                 if hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['Antibiotic_therapy_for_pulmonary_complications_1st_line'],
+                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'],
                         return_individual_results=True):
                     # Cancel the death
                     self.cancel_death_date(person_id)
@@ -1214,7 +1246,7 @@ class Alri(Module):
                 # give first dose of antibiotic and refer to hospital
                 hsi_event.get_consumables(
                     item_codes=self.consumables_used_in_hsi[
-                        'First_dose_antibiotic_for_referral'], return_individual_results=True)
+                        'First_dose_antibiotic_for_referral_iCCM'], return_individual_results=True)
                 # and refer to facility level 1b or 2
                 health_system.schedule_hsi_event(
                     HSI_IMCI_Pneumonia_Treatment(
@@ -1241,7 +1273,7 @@ class Alri(Module):
                     # give first dose of antibiotic and refer to hospital
                     hsi_event.get_consumables(
                         item_codes=self.consumables_used_in_hsi[
-                            'First_dose_antibiotic_for_referral'], return_individual_results=True)
+                            'First_dose_antibiotic_for_referral_IMCI'], return_individual_results=True)
                     # and refer to facility level 1b or 2
                     health_system.schedule_hsi_event(
                         HSI_Hospital_Inpatient_Pneumonia_Treatment(
