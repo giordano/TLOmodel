@@ -336,20 +336,20 @@ def get_cons_cost_per_year(results_folder):
     return final_cost_data
 
 
-baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
-intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
+#baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
+#intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
 
-fig, ax = plt.subplots()
-ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
-ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
-ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
-ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
-plt.xlabel('Year')
-plt.ylabel("Total Cost (USD)")
-plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
-plt.legend()
+#fig, ax = plt.subplots()
+#ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
+#ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
+#ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
+#ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
+#plt.xlabel('Year')
+#plt.ylabel("Total Cost (USD)")
+#plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
+#plt.legend()
 # plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
-plt.show()
+#plt.show()
 
 # (DALYS)
 
@@ -358,7 +358,7 @@ def get_yearly_dalys(folder):
     dalys = extract_results(
                 folder,
                 module="tlo.methods.healthburden",
-                key="dalys",
+                key="dalys_stacked",
                 custom_generate_series=(
                     lambda df_: df_.drop(
                         columns='date'

@@ -39,10 +39,10 @@ class PregnancySupervisor(Module):
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
 
-    INIT_DEPENDENCIES = {'Demography', 'Malaria', 'Labour', 'CareOfWomenDuringPregnancy', 'Hiv', 'Lifestyle',
+    INIT_DEPENDENCIES = {'Demography', 'Malaria', 'Labour',  'Hiv', 'Lifestyle',
                          'CardioMetabolicDisorders'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'CareOfWomenDuringPregnancy', 'HealthBurden'}
 
     ADDITIONAL_DEPENDENCIES = {
          'Contraception', 'HealthSystem'}
@@ -495,7 +495,7 @@ class PregnancySupervisor(Module):
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period
         sim.schedule_event(OverrideKeyParameterForAnalysis(self),
-                           Date(2021, 1, 1))
+                           Date(2020, 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -2293,6 +2293,17 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
             mean = mean / (1 - mean)
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and ~np.isnan(mean)) else 1.0
             params['odds_early_init_anc4'] = scaled_intercept
+
+            params['prob_intervention_delivered_urine_ds'] = 1
+            params['prob_intervention_delivered_bp'] = 1
+            params['prob_intervention_delivered_ifa'] = 1
+            params['prob_adherent_ifa'] = 1
+            params['prob_intervention_delivered_llitn'] = 1
+            params['prob_intervention_delivered_tt'] = 1
+            params['prob_intervention_delivered_poct'] = 1
+            params['prob_intervention_delivered_syph_test'] = 1
+            params['prob_intervention_delivered_iptp'] = 1
+            params['prob_intervention_delivered_gdm_test'] = 1
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

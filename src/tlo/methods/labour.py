@@ -54,11 +54,13 @@ class Labour(Module):
         self.item_codes_lab_consumables = dict()
 
     INIT_DEPENDENCIES = {
-        'Demography', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
+        'Demography', 'PostnatalSupervisor', 'Lifestyle',
         'HealthSystem'
     }
 
     ADDITIONAL_DEPENDENCIES = {
+        'PregnancySupervisor',
+        'CareOfWomenDuringPregnancy',
         'Contraception',
         'NewbornOutcomes',
         'Hiv'

@@ -25,14 +25,14 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 456
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2026, 1, 2)
-        self.pop_size = 10000
+        self.end_date = Date(2026, 1, 1)
+        self.pop_size = 5000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'increased_scenario_15k', 'directory': './outputs',
+            'filename': 'increased_scenario_5k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -55,7 +55,7 @@ class TestScenario(BaseScenario):
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
-                                      ignore_cons_constraints=True),
+                                      cons_availability='all'),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
@@ -71,7 +71,9 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'switch_anc_coverage': True}
+            'PregnancySupervisor': {'switch_anc_coverage': True,
+                                    'target_anc_coverage_for_analysis': 0.85},
+
         }
 
 

@@ -52,9 +52,10 @@ class CareOfWomenDuringPregnancy(Module):
         # and then define a dictionary which will hold the required consumables for each intervention
         self.item_codes_preg_consumables = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
-    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle', 'Malaria', 'Hiv', 'Depression'}
+    ADDITIONAL_DEPENDENCIES = {'PregnancySupervisor', 'Contraception', 'Labour', 'Lifestyle', 'Malaria', 'Hiv',
+                               'Depression'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
