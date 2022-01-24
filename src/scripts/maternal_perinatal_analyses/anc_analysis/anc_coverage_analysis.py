@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    get_scenario_outputs, load_pickled_dataframes
+    get_scenario_outputs, create_pickles_locally
 )
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 # from tlo.methods.demography import get_scaling_factor
@@ -17,7 +17,7 @@ intervention_scenario_filename = 'increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'analysis_test_baseline_vs_increased_anc_scenario_(15k)-2021-11-12T154552Z'
+graph_location = 'anc_analysis_dummy_baseline_anc_scenario-2022-01-24T115204Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -33,7 +33,7 @@ def get_mean_and_quants_from_str_df(df, complication):
     yearly_mean_number = list()
     yearly_lq = list()
     yearly_uq = list()
-    for year in sim_years:
+    for year in intervention_years:
         if complication in df.loc[year].index:
             yearly_mean_number.append(df.loc[year, complication].mean())
             yearly_lq.append(df.loc[year, complication].quantile(0.025))
@@ -71,8 +71,8 @@ def get_total_births_per_year(folder):
         module="tlo.methods.demography",
         key="on_birth",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-        ),
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+        do_scaling=True
     )
     total_births_per_year = analysis_utility_functions.get_mean_and_quants(births_results, intervention_years)[0]
     return total_births_per_year
@@ -165,8 +165,8 @@ def get_yearly_death_data(folder, births):
                                                             intervention_years)
     nmr = analysis_utility_functions.get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels, 1000,
                                                             intervention_years)
-    crude_m_deaths = get_mean_and_quants(death_results_labels, 'Maternal Disorders')
-    crude_n_deaths = get_mean_and_quants(death_results_labels, 'Neonatal Disorders')
+    crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders')
+    crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders')
 
     return {'mmr': mmr,
             'nmr': nmr,
@@ -197,14 +197,14 @@ def get_mmr_nmr_graphs(bdata, idata, group):
 
 
 get_mmr_nmr_graphs(baseline_death_data['mmr'], intervention_death_data['mmr'], 'Maternal')
-get_mmr_nmr_graphs(baseline_death_data['nmr'], baseline_death_data['nmr'], 'Neonatal')
+get_mmr_nmr_graphs(baseline_death_data['nmr'], intervention_death_data['nmr'], 'Neonatal')
 
 
 def get_crude_death_graphs_graphs(b_deaths, i_deaths, group):
     b_deaths_ci = [(x - y) / 2 for x, y in zip(b_deaths[2], b_deaths[1])]
     i_deaths_ci = [(x - y) / 2 for x, y in zip(i_deaths[2], i_deaths[1])]
 
-    N = len(b_deaths)
+    N = len(b_deaths[0])
     ind = np.arange(N)
     width = 0.35
     plt.bar(ind, b_deaths[0], width, label='Baseline', yerr=b_deaths_ci, color='teal')
@@ -304,7 +304,7 @@ def get_dalys_from_scenario(results_folder):
         stacked_dalys_lq = list()
         stacked_dalys_uq = list()
 
-        for year in sim_years:
+        for year in intervention_years:
             if year in dalys_stacked.index:
                 stacked_dalys.append(dalys_stacked.loc[year, f'{group} Disorders'].mean())
                 stacked_dalys_lq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025))
@@ -323,14 +323,14 @@ baseline_maternal_dalys = baseline_dalys[0]
 baseline_neonatal_dalys = baseline_dalys[1]
 
 intervention_dalys = get_dalys_from_scenario(intervention_results_folder)
-intervention_maternal_dalys = baseline_dalys[0]
-intervention_neonatal_dalys = baseline_dalys[1]
+intervention_maternal_dalys = intervention_dalys[0]
+intervention_neonatal_dalys = intervention_dalys[1]
 
 
 def get_daly_graphs(group, bl_dalys, int_dalys):
     fig, ax = plt.subplots()
-    ax.plot(sim_years, bl_dalys[0], label=f"{group} Baseline DALYs", color='deepskyblue')
-    ax.fill_between(sim_years, bl_dalys[1], bl_dalys[2], color='b', alpha=.1)
+    ax.plot(intervention_years, bl_dalys[0], label=f"{group} Baseline DALYs", color='deepskyblue')
+    ax.fill_between(intervention_years, bl_dalys[1], bl_dalys[2], color='b', alpha=.1)
 
     ax.plot(intervention_years, int_dalys[0], label=f"{group} Intervention DALYs", color='olivedrab')
     ax.fill_between(intervention_years, int_dalys[1], int_dalys[2], color='g', alpha=.1)
@@ -346,7 +346,7 @@ get_daly_graphs('Neonatal', baseline_neonatal_dalys, intervention_neonatal_dalys
 
 
 # =============================================  COSTS/HEALTH SYSTEM =================================================
-# 1.) Healthcare worker time
+# 1.) Healthcare worker time cost
 # 2.) Consumables cost
 # 3.) Approximated total cost
 # 4.) Approximated total cost per pregnancy

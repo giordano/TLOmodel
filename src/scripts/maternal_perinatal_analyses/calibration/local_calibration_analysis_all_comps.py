@@ -40,8 +40,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    log_filepath="./outputs/calibration_files/test_pph_traetment_calibration_111__2021-10-20T133832.log")}
-new_parse_log_2015 = {2015: parse_log_file(
+    log_filepath="./outputs/sejjj49@ucl.ac.uk/baseline_anc_scenario-2022-01-24T115204Z/1/0/baseline_scenario_5k__2022-01-24T115437.log")}
+
+"""new_parse_log_2015 = {2015: parse_log_file(
     log_filepath="./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
@@ -97,3 +98,4 @@ pregnancies_2016 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(l
 graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('low_birth_weight', master_dict_nb_2010,
                                                                           total_births_2010, 12.5,
                                                                           ['firebrick', 'lightcoral'], 100)
+"""
