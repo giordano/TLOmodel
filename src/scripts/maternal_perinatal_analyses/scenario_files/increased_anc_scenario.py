@@ -23,7 +23,7 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 456
+        self.seed = 123
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2026, 1, 1)
         self.pop_size = 5000
@@ -72,8 +72,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'PregnancySupervisor': {'switch_anc_coverage': True,
-                                    'target_anc_coverage_for_analysis': 0.85},
-
+                                    'target_anc_coverage_for_analysis': 9},
         }
 
 
