@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
@@ -26,6 +27,41 @@ intervention_results_folder = get_scenario_outputs(intervention_scenario_filenam
 sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027,
              2028, 2029, 2030]
 intervention_years = [2020, 2021, 2022, 2023, 2024, 2025]
+
+
+def get_mean_and_quants_from_str_df(df, complication):
+    yearly_mean_number = list()
+    yearly_lq = list()
+    yearly_uq = list()
+    for year in sim_years:
+        if complication in df.loc[year].index:
+            yearly_mean_number.append(df.loc[year, complication].mean())
+            yearly_lq.append(df.loc[year, complication].quantile(0.025))
+            yearly_uq.append(df.loc[year, complication].quantile(0.925))
+        else:
+            yearly_mean_number.append(0)
+            yearly_lq.append(0)
+            yearly_uq.append(0)
+
+    return [yearly_mean_number, yearly_lq, yearly_uq]
+
+
+def get_mean_and_quants(df, sim_years):
+    year_means = list()
+    lower_quantiles = list()
+    upper_quantiles = list()
+
+    for year in sim_years:
+        if year in df.index:
+            year_means.append(df.loc[year].mean(axis=1).iloc[0])
+            lower_quantiles.append(df.loc[year].iloc[0].quantile(0.025))
+            upper_quantiles.append(df.loc[year].iloc[0].quantile(0.925))
+        else:
+            year_means.append(0)
+            lower_quantiles.append(0)
+            lower_quantiles.append(0)
+
+    return [year_means, lower_quantiles, upper_quantiles]
 
 
 # GET BIRTHS...
@@ -111,31 +147,35 @@ plt.xlabel('Year')
 plt.ylabel('Coverage of ANC4')
 plt.title('ANC4 coverage in baseline and intervention scenarios from 2020')
 plt.legend()
-# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc4_intervention_coverage.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc4_intervention_coverage.png')
 plt.show()
 
 
-#  --------------------------------------------- MATERNAL DEATH ------------------------------------------------------
-def get_yearly_mmr_and_nnmr(folder, births):
+#  ------------------------------------------ MATERNAL AND NEONATAL DEATH ---------------------------------------------
+def get_yearly_death_data(folder, births):
     death_results_labels = extract_results(
         folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()
-        ),
-    )
-    mm = analysis_utility_functions.get_comp_mean_and_rate('Maternal Disorders', births, death_results_labels, 100000,
-                                                           intervention_years)
-    nm = analysis_utility_functions.get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels, 1000,
-                                                           intervention_years)
-    return [mm, nm]
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
+        do_scaling=True)
+
+    mmr = analysis_utility_functions.get_comp_mean_and_rate('Maternal Disorders', births, death_results_labels, 100000,
+                                                            intervention_years)
+    nmr = analysis_utility_functions.get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels, 1000,
+                                                            intervention_years)
+    crude_m_deaths = get_mean_and_quants(death_results_labels, 'Maternal Disorders')
+    crude_n_deaths = get_mean_and_quants(death_results_labels, 'Neonatal Disorders')
+
+    return {'mmr': mmr,
+            'nmr': nmr,
+            'crude_m_deaths': crude_m_deaths,
+            'crude_n_deaths': crude_n_deaths}
 
 
-baseline_mmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[0]
-intervention_mmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[0]
-baseline_nmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[1]
-intervention_nmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[1]
+baseline_death_data = get_yearly_death_data(baseline_results_folder, baseline_births)
+intervention_death_data = get_yearly_death_data(intervention_results_folder, intervention_births)
 
 
 def get_mmr_nmr_graphs(bdata, idata, group):
@@ -152,58 +192,168 @@ def get_mmr_nmr_graphs(bdata, idata, group):
         plt.ylabel("Deaths per 100,000 live births")
     plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
     plt.legend()
-    # plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
     plt.show()
 
 
-get_mmr_nmr_graphs(baseline_mmr, intervention_mmr, 'Maternal')
-get_mmr_nmr_graphs(baseline_nmr, intervention_nmr, 'Neonatal')
+get_mmr_nmr_graphs(baseline_death_data['mmr'], intervention_death_data['mmr'], 'Maternal')
+get_mmr_nmr_graphs(baseline_death_data['nmr'], baseline_death_data['nmr'], 'Neonatal')
 
 
-# STILLBIRTH
+def get_crude_death_graphs_graphs(b_deaths, i_deaths, group):
+    b_deaths_ci = [(x - y) / 2 for x, y in zip(b_deaths[2], b_deaths[1])]
+    i_deaths_ci = [(x - y) / 2 for x, y in zip(i_deaths[2], i_deaths[1])]
+
+    N = len(b_deaths)
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, b_deaths[0], width, label='Baseline', yerr=b_deaths_ci, color='teal')
+    plt.bar(ind + width, i_deaths[0], width, label='Intervention', yerr=i_deaths_ci, color='olivedrab')
+    plt.ylabel(f'Total {group} Deaths (scaled)')
+    plt.title(f'Yearly Baseline {group} Deaths Compared to Intervention')
+    plt.xticks(ind + width / 2, intervention_years)
+    plt.legend(loc='best')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/crude_deaths_comparison.png')
+    plt.show()
+
+
+get_crude_death_graphs_graphs(baseline_death_data['crude_m_deaths'], intervention_death_data['crude_m_deaths'],
+                              'Maternal')
+get_crude_death_graphs_graphs(baseline_death_data['crude_n_deaths'], intervention_death_data['crude_n_deaths'],
+                              'Neonatal')
+
+
+# STILLBIRTH # todo: happy with scaling?
 def get_yearly_sbr_data(folder, births):
     an_stillbirth_results = extract_results(
         folder,
         module="tlo.methods.pregnancy_supervisor",
         key="antenatal_stillbirth",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-        ),
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+        do_scaling=True
     )
     ip_stillbirth_results = extract_results(
         folder,
         module="tlo.methods.labour",
         key="intrapartum_stillbirth",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-        ),
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+        do_scaling=True
     )
 
     an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, intervention_years)
     ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, intervention_years)
 
+    crude_sb = [x + y for x, y in zip(an_still_birth_data[0], ip_still_birth_data[0])]
+    crude_sb_lqs = [x + y for x, y in zip(an_still_birth_data[1], ip_still_birth_data[1])]
+    crude_sb_uqs = [x + y for x, y in zip(an_still_birth_data[2], ip_still_birth_data[2])]
+
     total_sbr = [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[0], ip_still_birth_data[0], births)]
     total_lqs = [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[1], ip_still_birth_data[1], births)]
     total_uqs = [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[2], ip_still_birth_data[2], births)]
 
-    return [total_sbr, total_lqs, total_uqs]
+    return {'sbr': [total_sbr, total_lqs, total_uqs],
+            'crude_sb': [crude_sb, crude_sb_lqs, crude_sb_uqs]}
 
-
-baseline_sbr = get_yearly_sbr_data(baseline_results_folder, baseline_births)
-intervention_sbr = get_yearly_sbr_data(intervention_results_folder, intervention_births)
+baseline_sb_data = get_yearly_sbr_data(baseline_results_folder, baseline_births)
+intervention_sb_data = get_yearly_sbr_data(intervention_results_folder, intervention_births)
 
 fig, ax = plt.subplots()
-ax.plot(intervention_years, baseline_sbr[0], label="Baseline (mean)", color='deepskyblue')
-ax.fill_between(intervention_years, baseline_sbr[1], baseline_sbr[2], color='b', alpha=.1)
-ax.plot(intervention_years, intervention_sbr[0], label="Intervention (mean)", color='olivedrab')
-ax.fill_between(intervention_years, intervention_sbr[1], intervention_sbr[2], color='g', alpha=.1)
+ax.plot(intervention_years, baseline_sb_data['sbr'][0], label="Baseline (mean)", color='deepskyblue')
+ax.fill_between(intervention_years, baseline_sb_data['sbr'][1], baseline_sb_data['sbr'][2], color='b', alpha=.1)
+ax.plot(intervention_years, intervention_sb_data['sbr'][0], label="Intervention (mean)", color='olivedrab')
+ax.fill_between(intervention_years, intervention_sb_data['sbr'][1], intervention_sb_data['sbr'][2], color='g', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel("Stillbirths per 1000 live births")
 plt.title('Stillbirth Rate per Year at Baseline and Under Intervention')
 plt.legend()
-# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
 plt.show()
 
+b_sb_ci = [(x - y) / 2 for x, y in zip(baseline_sb_data['crude_sb'][2], baseline_sb_data['crude_sb'][1])]
+i_sb_ci = [(x - y) / 2 for x, y in zip(intervention_sb_data['crude_sb'][2], intervention_sb_data['crude_sb'][1])]
+
+N = len(baseline_sb_data['crude_sb'][0])
+ind = np.arange(N)
+width = 0.35
+plt.bar(ind, baseline_sb_data['crude_sb'][0], width, label='Baseline', yerr=b_sb_ci, color='teal')
+plt.bar(ind + width, intervention_sb_data['crude_sb'][0], width, label='Intervention', yerr=i_sb_ci,
+        color='olivedrab')
+plt.ylabel('Total Stillbirths (scaled)')
+plt.title('Yearly Baseline Stillbirths Compared to Intervention')
+plt.xticks(ind + width / 2, intervention_years)
+plt.legend(loc='best')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/crude_stillbirths_comparison.png')
+plt.show()
+
+
+# =================================================== DALYS ==========================================================
+def get_dalys_from_scenario(results_folder):
+    dalys_stacked = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=(
+            lambda df: df.drop(
+                columns='date').groupby(['year']).sum().stack()),
+        do_scaling=True)
+
+    def extract_dalys_tlo_model(group):
+        stacked_dalys = list()
+        stacked_dalys_lq = list()
+        stacked_dalys_uq = list()
+
+        for year in sim_years:
+            if year in dalys_stacked.index:
+                stacked_dalys.append(dalys_stacked.loc[year, f'{group} Disorders'].mean())
+                stacked_dalys_lq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025))
+                stacked_dalys_uq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.925))
+
+        return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
+
+
+    maternal_dalys = extract_dalys_tlo_model('Maternal')
+    neonatal_dalys = extract_dalys_tlo_model('Neonatal')
+
+    return [maternal_dalys, neonatal_dalys]
+
+baseline_dalys = get_dalys_from_scenario(baseline_results_folder)
+baseline_maternal_dalys = baseline_dalys[0]
+baseline_neonatal_dalys = baseline_dalys[1]
+
+intervention_dalys = get_dalys_from_scenario(intervention_results_folder)
+intervention_maternal_dalys = baseline_dalys[0]
+intervention_neonatal_dalys = baseline_dalys[1]
+
+
+def get_daly_graphs(group, bl_dalys, int_dalys):
+    fig, ax = plt.subplots()
+    ax.plot(sim_years, bl_dalys[0], label=f"{group} Baseline DALYs", color='deepskyblue')
+    ax.fill_between(sim_years, bl_dalys[1], bl_dalys[2], color='b', alpha=.1)
+
+    ax.plot(intervention_years, int_dalys[0], label=f"{group} Intervention DALYs", color='olivedrab')
+    ax.fill_between(intervention_years, int_dalys[1], int_dalys[2], color='g', alpha=.1)
+    plt.xlabel('Year')
+    plt.ylabel("Disability Adjusted Life Years (stacked)")
+    plt.title(f'Total DALYs per Year Attributable to {group} disorders')
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_dalys_stacked.png')
+    plt.show()
+
+get_daly_graphs('Maternal', baseline_maternal_dalys, intervention_maternal_dalys)
+get_daly_graphs('Neonatal', baseline_neonatal_dalys, intervention_neonatal_dalys)
+
+
+# =============================================  COSTS/HEALTH SYSTEM =================================================
+# 1.) Healthcare worker time
+# 2.) Consumables cost
+# 3.) Approximated total cost
+# 4.) Approximated total cost per pregnancy
+# Cost per daly averted?
+
+
+"""
 # HEALTH CARE WORKER TIME
 # todo: not sure if we can extract this yet from master....
 capacity = extract_results(
@@ -259,23 +409,10 @@ capacity = extract_results(
 # plt.show()
 
 
+
+
 # =================================================== CONSUMABLE COST =================================================
-def get_mean_and_quants(df, sim_years):
-    year_means = list()
-    lower_quantiles = list()
-    upper_quantiles = list()
 
-    for year in sim_years:
-        if year in df.index:
-            year_means.append(df.loc[year].mean(axis=1).iloc[0])
-            lower_quantiles.append(df.loc[year].iloc[0].quantile(0.025))
-            upper_quantiles.append(df.loc[year].iloc[0].quantile(0.925))
-        else:
-            year_means.append(0)
-            lower_quantiles.append(0)
-            lower_quantiles.append(0)
-
-    return [year_means, lower_quantiles, upper_quantiles]
 
 
 draws = [0, 1, 2, 3, 4]
@@ -354,49 +491,6 @@ def get_cons_cost_per_year(results_folder):
 # (DALYS)
 
 
-def get_yearly_dalys(folder):
-    dalys = extract_results(
-                folder,
-                module="tlo.methods.healthburden",
-                key="dalys_stacked",
-                custom_generate_series=(
-                    lambda df_: df_.drop(
-                        columns='date'
-                    ).rename(
-                        columns={'age_range': 'age_grp'}
-                    ).groupby(['year']).sum().stack()
-                ),
-                do_scaling=True
-            )
-    yearly_mat_dalys = list()
-    yearly_neo_dalys = list()
-
-    for year in intervention_years:
-        if year in dalys.index:
-            yearly_mat_dalys.append(dalys.loc[year, 'Maternal Disorders'].mean())
-            yearly_neo_dalys.append(dalys.loc[year, 'Neonatal Disorders'].mean())
-
-    return [yearly_mat_dalys, yearly_neo_dalys]
-
-
-baseline_dalys = get_yearly_dalys(baseline_results_folder)
-intervention_dalys = get_yearly_dalys(baseline_results_folder)
-
-
-def daly_graphs(condition, b_data, i_data):
-    fig, ax = plt.subplots()
-    ax.plot(intervention_years, b_data, label="Baseline (mean)", color='deepskyblue')
-    ax.plot(intervention_years, i_data, label="Intervention (mean)", color='olivedrab')
-    plt.xlabel('Year')
-    plt.ylabel("Disability Adjusted Life Years")
-    plt.title(f'Total DALYs per Year Attributable to {condition} disorders')
-    plt.legend()
-    # plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
-    plt.show()
-
-
-daly_graphs('Maternal', baseline_dalys[0], intervention_dalys[0])
-daly_graphs('Neonatal', baseline_dalys[1], intervention_dalys[1])
 
 # ======================================================= ANC 4 ======================================================
 
@@ -458,3 +552,4 @@ daly_graphs('Neonatal', baseline_dalys[1], intervention_dalys[1])
 # HEALTH CARE WORKER TIME
 # CONSUMABLES
 # (DALYS)
+"""
