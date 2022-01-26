@@ -17,7 +17,7 @@ intervention_scenario_filename = 'increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_increased_anc_scenario-2022-01-25T092014Z'
+graph_location = 'output_graphs_increased_anc_scenario-2022-01-26T100338Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
