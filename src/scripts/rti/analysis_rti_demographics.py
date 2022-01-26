@@ -42,7 +42,7 @@ start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
 pop_size = 10000
-nsim = 5
+nsim = 30
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
 # Prior to using Azure batches I have used for loops to handle longer model runs. To get the information I need
@@ -162,6 +162,10 @@ per_sim_average_percentage_lx_open = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
+    seed_data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/Run_seeds.csv", index_col='Index')
+    sim_data = {'Seed': 'the seed is ' + str(sim._seed_seq.entropy), 'Run successful': 1}
+    seed_data = seed_data.append(sim_data, ignore_index=True)
+    seed_data.to_csv("C:/Users/Robbie Manning Smith/Desktop/Run_seeds.csv", index='Index', index_label='Index')
     # Register the modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -180,339 +184,339 @@ for i in range(0, nsim):
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
-    log_df = parse_log_file(logfile)
-    # Get the relevant information from the rti_demography logging
-    demog = log_df['tlo.methods.rti']['rti_demography']
-    # get total number of males and females with RTI in this sim
-    males.append(sum(demog['males_in_rti']))
-    females.append(sum(demog['females_in_rti']))
-    # Get the total number of injured persons
-    list_number_of_crashes.append(sum(demog['males_in_rti']) + sum(demog['females_in_rti']))
-    # Get the total age demographics of those with RTI in the sim
-    this_sim_ages = demog['age'].tolist()
-    # Get the male and female age demographics of those with RTI in the sim
-    this_sim_male_ages = demog['male_age'].tolist()
-    this_sim_female_ages = demog['female_age'].tolist()
-    # Store the ages of those involved in RTI in this sim
-    for elem in this_sim_ages:
-        for item in elem:
-            sim_age_range.append(item)
-    # Store the ages of the males involved in RTI in this sim
-    for elem in this_sim_male_ages:
-        for item in elem:
-            sim_male_age_range.append(item)
-    # Store the ages of the females involved in RTI in this sim
-    for elem in this_sim_female_ages:
-        for item in elem:
-            sim_female_age_range.append(item)
-    # Store the percent of crashes attributable to alcohol
-    percents_attributable_to_alcohol.append(demog['percent_related_to_alcohol'].tolist())
-    # Store the total number of people disabled after RTIs
-    list_number_of_disabilities.append(log_df['tlo.methods.rti']['summary_1m']
-                                       ['number permanently disabled'].iloc[-1])
-    # Store the number of deaths in the sim by each cause in their respective lists
-    number_of_deaths_pre_hospital.append(
-        log_df['tlo.methods.rti']['summary_1m']['number immediate deaths'].sum())
-    number_of_deaths_in_hospital.append(
-        log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum())
-    number_of_deaths_no_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['number deaths without med'].sum())
-    number_of_deaths_unavailable_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['number deaths unavailable med'].sum())
-    # Store the number of prehospital deaths in 2010
-    # Create and extra column in log_df['tlo.methods.rti']['summary_1m'] which stores the year information
-    log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
-    # group log_df['tlo.methods.rti']['summary_1m'] by simulated year
-    grouped_by_year = log_df['tlo.methods.rti']['summary_1m'].groupby('year')
-    # store the number of prehospital deaths in 2010
-    number_of_prehospital_deaths_2010.append(grouped_by_year.get_group(2010)['number immediate deaths'].sum())
-
-    # Store the percentage of those who sought health care. I made the logging output 'none_injured' if no one
-    # was injured that month, so need to filter out those instances
-    percent_sought_healthcare.append(
-        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
-         'none_injured']
-    )
-    # Store the percentage of patients admitted to ICU or HDU
-    percent_admitted_to_icu_or_hdu.append(
-        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
-         'none_injured']
-    )
-    # Create a dataframe which handles the information on ICU patients to create a picture of which injuries the
-    # model is predicting will need a stay in ICU
-    icu_df = log_df['tlo.methods.rti']['ICU_patients']
-    # Drop the date of the logging
-    icu_df = icu_df.drop('date', axis=1)
-    road_traffic_injuries = sim.modules['RTI']
-    # Find all the fracture injuries in ICU patients
-    frac_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
-                  '811', '812', '813', '813a', '813b', '813c', '813bo', '813co', '813do', '813eo']
-    idx, frac_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, frac_codes)
-    # Find the percentage of ICU patients with fractures
-    perc_frac = (len(idx) / len(icu_df)) * 100
-    # Find all the dislocation injuries in ICU patients
-    dislocationcodes = ['322', '323', '722', '822', '822a', '822b']
-    idx, dis_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, dislocationcodes)
-    # Find the percentage of ICU patients with dislocations
-    perc_dis = (len(idx) / len(icu_df)) * 100
-    # Find all the traumatic brain injuries in ICU patients
-    tbi_codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
-    idx, tbi_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, tbi_codes)
-    # Find the percentage of ICU patients with TBI
-    perc_tbi = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with soft tissue injuries
-    softtissueinjcodes = ['241', '342', '343', '441', '442', '443']
-    idx, soft_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, softtissueinjcodes)
-    # Find the percentage of ICU patients with soft tissue injury
-    perc_soft = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with internal organ injuries
-    organinjurycodes = ['453', '453a', '453b', '552', '553', '554']
-    idx, int_o_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, organinjurycodes)
-    # Find the percentage of ICU patients with internal organ injury
-    perc_int_o = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with internal bleeding
-    internalbleedingcodes = ['361', '363', '461', '463']
-    idx, int_b_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, internalbleedingcodes)
-    # Find the percentage of ICU patients with internal bleeding
-    perc_int_b = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with spinal cord injuries
-    spinalcordinjurycodes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
-    idx, sci_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, spinalcordinjurycodes)
-    # Find the percentage of ICU patients with spinal cord injuries
-    perc_sci = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with amputations
-    amputationcodes = ['782', '782a', '782b', '783', '882', '883', '884']
-    idx, amp_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, amputationcodes)
-    # Find the percentage of ICU patients with amputations
-    perc_amp = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with eye injuries
-    eyecodes = ['291']
-    idx, eyecounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, eyecodes)
-    # Find the percentage of ICU patients with eye injuries
-    perc_eye = (len(idx) / len(icu_df)) * 100
-    # Find all the ICU patients with laterations
-    externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
-    idx, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df,
-                                                                                      externallacerationcodes)
-    # Find the percentage of ICU patients with lacerations
-    perc_lac = (len(idx) / len(icu_df)) * 100
-    # Find all the  ICU patients with burns
-    burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-    idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, burncodes)
-    # Find the percentage of ICU patients with burns
-    perc_burn = (len(idx) / len(icu_df)) * 100
-    # check if anyone was admitted to ICU in this sim
-    if len(icu_df) > 0:
-        # Store injury information
-        ICU_frac.append(perc_frac)
-        ICU_dis.append(perc_dis)
-        ICU_tbi.append(perc_tbi)
-        ICU_soft.append(perc_soft)
-        ICU_int_o.append(perc_int_o)
-        ICU_int_b.append(perc_int_b)
-        ICU_sci.append(perc_sci)
-        ICU_amp.append(perc_amp)
-        ICU_eye.append(perc_eye)
-        ICU_lac.append(perc_lac)
-        ICU_burn.append(perc_burn)
-    # Store the percentage of people who died after seeking healthcare in this sim
-    percent_died_after_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() /
-        log_df['tlo.methods.rti']['model_progression']['total_sought_medical_care'].iloc[-1]
-    )
-    # Store the incidence of RTI per 100,000 person years in this sim
-    incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
-    # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
-    incidences_of_death.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti death per 100,000'].tolist())
-    incidences_of_death_pre_hospital.append(
-        log_df['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
-    )
-    incidences_of_death_post_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['incidence of death post med per 100,000'].tolist()
-    )
-    incidences_of_death_no_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['incidence of death without med per 100,000'].tolist()
-    )
-    incidences_of_death_unavailable_med.append(
-        log_df['tlo.methods.rti']['summary_1m']
-        ['incidence of death due to unavailable med per 100,000'].tolist()
-    )
-    # Store incidences of death average per year in this sim
-    log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
-    incidences_of_death_yearly_average.append(
-        log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti death per 100,000'].tolist())
-    # Store the incidence of rtis average per year in this sim
-    incidences_of_rti_yearly_average.append(
-        log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti per 100,000'].tolist())
-    # Store the incidence of rtis in children per year in this sim
-    incidences_of_rti_in_children.append(
-        log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000 in children'].tolist())
-    # Store the incidence of injuries per 100,000 in this sim
-    incidences_of_injuries.append(log_df['tlo.methods.rti']['Inj_category_incidence']['tot_inc_injuries'].to_list())
-    # Get information on the deaths that occurred in the sim
-    deaths_df = log_df['tlo.methods.demography']['death']
-    # Create list of RTI specific deaths
-    rti_death_causes = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
-    # Filter the deaths information to only show RTI related deaths
-    rti_deaths = len(deaths_df.loc[deaths_df['cause'].isin(rti_death_causes)])
-    # Get the number of deaths in 2010
-    first_year_deaths = deaths_df.loc[deaths_df['date'] < pd.datetime(2011, 1, 1)]
-    first_year_rti_deaths = len(first_year_deaths.loc[first_year_deaths['cause'].isin(rti_death_causes)])
-    # Store the number of deaths in 2010 in this sim
-    deaths_2010.append(first_year_rti_deaths)
-    # Create information on the percentage of deaths caused by road traffic injuries, use try statement to stop
-    # ZeroDivisionError from occuring when no one died due to RTI in this sim
-    try:
-        # Get the breakdown of road traffic injuries deaths by context by percentage
-        ps_of_imm_death.append(len(deaths_df.loc[deaths_df['cause'] == 'RTI_imm_death']) / rti_deaths)
-        ps_of_death_post_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_with_med']) / rti_deaths)
-        ps_of_death_without_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_without_med']) / rti_deaths)
-        ps_of_death_unavailable_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_unavailable_med']) / rti_deaths)
-    except ZeroDivisionError:
-        ps_of_imm_death.append(0)
-        ps_of_death_post_med.append(0)
-        ps_of_death_without_med.append(0)
-        ps_of_death_unavailable_med.append(0)
-    # Get a rough estimate for the percentage road traffic injury deaths for those involved in RTI
-    # Get the number of people with RTIs
-    number_of_crashes = sum(log_df['tlo.methods.rti']['summary_1m']['number involved in a rti'])
-    # Store the number of RTI deaths divided by the number of RTIs
-    percent_of_fatal_crashes.append(rti_deaths / number_of_crashes)
-    # Get qualitative description of RTI injuries, stored in Injury_information
-    injury_info = log_df['tlo.methods.rti']['Injury_information']
-    # Get information on injury severity
-    mild_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in sublist if
-                'mild' in item]
-    severe_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in
-                  sublist if 'severe' in item]
-    # Store the percentage of injuries that are mild
-    perc_mild.append(sum(mild_inj) / (sum(mild_inj) + sum(severe_inj)))
-    # Store the percentage of injuries that are severe
-    perc_severe.append(sum(severe_inj) / (sum(mild_inj) + sum(severe_inj)))
-    # Get information on the distribution of ISS scores in the simulation
-    severity_distibution = injury_info['Per_person_injury_severity'].tolist()
-    for score in severity_distibution:
-        iss_scores.append(score)
-    # Get information on the number of injuries each person was given
-    ninj_list = injury_info['Number_of_injuries'].tolist()
-    # flatten the information
-    ninj_list = [int(item) for sublist in ninj_list for item in sublist]
-    # Count the number of people with i injuries for i in ...
-    ninj_list_sorted = [ninj_list.count(i) for i in [1, 2, 3, 4, 5, 6, 7, 8]]
-    # Store the number of injured body locations
-    number_of_injured_body_locations.append(ninj_list_sorted)
-    # Create a dataframe with the date of injuries and the total number of injuries given out in this sim
-    ninj_data = {'date': injury_info['date'],
-                 'ninj': [sum(list) for list in injury_info['Number_of_injuries'].tolist()]}
-    ninj_df = pd.DataFrame(data=ninj_data)
-    # Log the total number of injuries that occured this sim
-    number_of_injuries_per_sim.append(ninj_df['ninj'].sum())
-    # Create a column showing which year each log happened in
-    ninj_df['year'] = pd.DatetimeIndex(ninj_df['date']).year
-    # Store the number of injuries that occured in 2010
-    injuries_in_2010.append(ninj_df.loc[ninj_df['year'] == 2010]['ninj'].sum())
-    # Store the number of injuries that occurred each year
-    injuries_per_year.append(ninj_df.groupby('year').sum()['ninj'].tolist())
-    # Store the per injury fatality ratio
-    diedfromrticond = log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med',
-                                                                               'RTI_death_with_med',
-                                                                               'RTI_unavailable_med'])
-    # Following calculation in simpler terms is the number of RTI deaths divided by the total number of RTIs
-    per_injury_fatal.append(
-        len(log_df['tlo.methods.demography']['death'].loc[diedfromrticond]) / np.multiply(ninj_list_sorted,
-                                                                                          [1, 2, 3, 4, 5, 6, 7, 8]
-                                                                                          ).sum())
-    # Get information on where these injuries occured on each person
-    injury_loc_list = injury_info['Location_of_injuries'].tolist()
-    # Flatted the injury location informaiton
-    injury_loc_list = [int(item) for sublist in injury_loc_list for item in sublist]
-    # Create empty list to store the information
-    binned_loc_dist = []
-    # Iterate over the injury locations and store the number of times each injury location appears
-    for loc in [1, 2, 3, 4, 5, 6, 7, 8]:
-        binned_loc_dist.append(injury_loc_list.count(loc))
-    # Store the injury location data in this sim
-    inj_loc_data.append(binned_loc_dist)
-    # Get information on the injury category distribution this run
-    inj_cat_list = injury_info['Injury_category'].tolist()
-    # Flatten the injury category list
-    inj_cat_list = [int(item) for sublist in inj_cat_list for item in sublist]
-    # Create empty list to store the information
-    binned_cat_dist = []
-    # Iterate over the injury categories and store the number of times each injury category appears
-    for cat in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
-        binned_cat_dist.append(inj_cat_list.count(cat))
-    # Store the injury category information
-    inj_cat_data.append(binned_cat_dist)
-    # Get information on the total incidence of injuries and the breakdown of injury by type
-    injury_category_incidence = log_df['tlo.methods.rti']['Inj_category_incidence']
-    inc_amputations.append(injury_category_incidence['inc_amputations'].tolist())
-    inc_burns.append(injury_category_incidence['inc_burns'].tolist())
-    inc_fractures.append(injury_category_incidence['inc_fractures'].tolist())
-    inc_tbi.append(injury_category_incidence['inc_tbi'].tolist())
-    inc_sci.append(injury_category_incidence['inc_sci'].tolist())
-    inc_minor.append(injury_category_incidence['inc_minor'].tolist())
-    inc_other.append(injury_category_incidence['inc_other'].tolist())
-    tot_inc_injuries.append(injury_category_incidence['tot_inc_injuries'].tolist())
-    # Get the inpatient days usage. I take the overall inpatient day usage from all the simulations and the per-sim
-    # inpatient day info
-    # Create empty list to store inpatient day information in
-    this_sim_inpatient_days = []
-    # Create a dataframe containing all instances of the RTI_MedicalIntervention event
-    inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
-        log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
-    # iterate over the people in inpatient_day_df
-    for person in inpatient_day_df.index:
-        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
-        # means that this patient didn't require any so append (0)
-        try:
-            all_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
-            this_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
-        except KeyError:
-            all_sim_inpatient_days.append(0)
-            this_sim_inpatient_days.append(0)
-    # Store the inpatient days used in this sim
-    per_sim_inpatient_days.append(this_sim_inpatient_days)
-    # get the consumables used in each simulation
-    consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
-    # Create empty list to store the consumables used in the simulation
-    consumables_list_to_dict = []
-    for string in consumables_list:
-        consumables_list_to_dict.append(ast.literal_eval(string))
-    # Begin counting the number of consumables used in the simulation starting at 0
-    number_of_consumables_in_sim = 0
-    for dictionary in consumables_list_to_dict:
-        number_of_consumables_in_sim += sum(dictionary.values())
-    # Store the number of consumables used in the sim
-    list_consumables_dict.append(number_of_consumables_in_sim)
-    # get the overall health system time used
-    health_system_time_usage.append(np.mean(log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']))
-    # get the number of rti-hsi interaction events by type
-    # get the dataframe of the health system events
-    appointments = log_df['tlo.methods.healthsystem']['HSI_Event']
-    # isolate appointments than ran
-    appointments = appointments.loc[appointments['did_run']]
-    # isolate appointments by type
-    per_sim_burn_treated.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Burn_Management']))
-    per_sim_frac_cast.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Fracture_Cast']))
-    per_sim_laceration.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Suture']))
-    per_sim_major_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Major_Surgeries']))
-    per_sim_minor_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries']))
-    per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
-    per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
-    per_sim_open_frac.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment']))
-    # todo: create plots of urban vs rural injury severity
-    # store the relating to the percentage of injury severity in both rural and urban settings
-    per_sim_rural_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist())
-    per_sim_urban_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist())
-    log_df['tlo.methods.rti']['Open_fracture_information']
-    # Store the proportion of lower extremity fractures that are open in this sim
-    proportions_of_open_lx_fractures_in_sim = \
-        [i for i in log_df['tlo.methods.rti']['Open_fracture_information']['Proportion_lx_fracture_open'].values
-         if i != 'no_lx_fractures']
-    per_sim_average_percentage_lx_open.append(np.mean(proportions_of_open_lx_fractures_in_sim))
-    # Using print(i) to show the number of simulations that have ran so far
-    print(i)
+    # log_df = parse_log_file(logfile)
+    # # Get the relevant information from the rti_demography logging
+    # demog = log_df['tlo.methods.rti']['rti_demography']
+    # # get total number of males and females with RTI in this sim
+    # males.append(sum(demog['males_in_rti']))
+    # females.append(sum(demog['females_in_rti']))
+    # # Get the total number of injured persons
+    # list_number_of_crashes.append(sum(demog['males_in_rti']) + sum(demog['females_in_rti']))
+    # # Get the total age demographics of those with RTI in the sim
+    # this_sim_ages = demog['age'].tolist()
+    # # Get the male and female age demographics of those with RTI in the sim
+    # this_sim_male_ages = demog['male_age'].tolist()
+    # this_sim_female_ages = demog['female_age'].tolist()
+    # # Store the ages of those involved in RTI in this sim
+    # for elem in this_sim_ages:
+    #     for item in elem:
+    #         sim_age_range.append(item)
+    # # Store the ages of the males involved in RTI in this sim
+    # for elem in this_sim_male_ages:
+    #     for item in elem:
+    #         sim_male_age_range.append(item)
+    # # Store the ages of the females involved in RTI in this sim
+    # for elem in this_sim_female_ages:
+    #     for item in elem:
+    #         sim_female_age_range.append(item)
+    # # Store the percent of crashes attributable to alcohol
+    # percents_attributable_to_alcohol.append(demog['percent_related_to_alcohol'].tolist())
+    # # Store the total number of people disabled after RTIs
+    # list_number_of_disabilities.append(log_df['tlo.methods.rti']['summary_1m']
+    #                                    ['number permanently disabled'].iloc[-1])
+    # # Store the number of deaths in the sim by each cause in their respective lists
+    # number_of_deaths_pre_hospital.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['number immediate deaths'].sum())
+    # number_of_deaths_in_hospital.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum())
+    # number_of_deaths_no_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['number deaths without med'].sum())
+    # number_of_deaths_unavailable_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['number deaths unavailable med'].sum())
+    # # Store the number of prehospital deaths in 2010
+    # # Create and extra column in log_df['tlo.methods.rti']['summary_1m'] which stores the year information
+    # log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
+    # # group log_df['tlo.methods.rti']['summary_1m'] by simulated year
+    # grouped_by_year = log_df['tlo.methods.rti']['summary_1m'].groupby('year')
+    # # store the number of prehospital deaths in 2010
+    # number_of_prehospital_deaths_2010.append(grouped_by_year.get_group(2010)['number immediate deaths'].sum())
+    #
+    # # Store the percentage of those who sought health care. I made the logging output 'none_injured' if no one
+    # # was injured that month, so need to filter out those instances
+    # percent_sought_healthcare.append(
+    #     [i for i in log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
+    #      'none_injured']
+    # )
+    # # Store the percentage of patients admitted to ICU or HDU
+    # percent_admitted_to_icu_or_hdu.append(
+    #     [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
+    #      'none_injured']
+    # )
+    # # Create a dataframe which handles the information on ICU patients to create a picture of which injuries the
+    # # model is predicting will need a stay in ICU
+    # icu_df = log_df['tlo.methods.rti']['ICU_patients']
+    # # Drop the date of the logging
+    # icu_df = icu_df.drop('date', axis=1)
+    # road_traffic_injuries = sim.modules['RTI']
+    # # Find all the fracture injuries in ICU patients
+    # frac_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
+    #               '811', '812', '813', '813a', '813b', '813c', '813bo', '813co', '813do', '813eo']
+    # idx, frac_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, frac_codes)
+    # # Find the percentage of ICU patients with fractures
+    # perc_frac = (len(idx) / len(icu_df)) * 100
+    # # Find all the dislocation injuries in ICU patients
+    # dislocationcodes = ['322', '323', '722', '822', '822a', '822b']
+    # idx, dis_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, dislocationcodes)
+    # # Find the percentage of ICU patients with dislocations
+    # perc_dis = (len(idx) / len(icu_df)) * 100
+    # # Find all the traumatic brain injuries in ICU patients
+    # tbi_codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
+    # idx, tbi_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, tbi_codes)
+    # # Find the percentage of ICU patients with TBI
+    # perc_tbi = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with soft tissue injuries
+    # softtissueinjcodes = ['241', '342', '343', '441', '442', '443']
+    # idx, soft_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, softtissueinjcodes)
+    # # Find the percentage of ICU patients with soft tissue injury
+    # perc_soft = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with internal organ injuries
+    # organinjurycodes = ['453', '453a', '453b', '552', '553', '554']
+    # idx, int_o_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, organinjurycodes)
+    # # Find the percentage of ICU patients with internal organ injury
+    # perc_int_o = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with internal bleeding
+    # internalbleedingcodes = ['361', '363', '461', '463']
+    # idx, int_b_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, internalbleedingcodes)
+    # # Find the percentage of ICU patients with internal bleeding
+    # perc_int_b = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with spinal cord injuries
+    # spinalcordinjurycodes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
+    # idx, sci_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, spinalcordinjurycodes)
+    # # Find the percentage of ICU patients with spinal cord injuries
+    # perc_sci = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with amputations
+    # amputationcodes = ['782', '782a', '782b', '783', '882', '883', '884']
+    # idx, amp_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, amputationcodes)
+    # # Find the percentage of ICU patients with amputations
+    # perc_amp = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with eye injuries
+    # eyecodes = ['291']
+    # idx, eyecounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, eyecodes)
+    # # Find the percentage of ICU patients with eye injuries
+    # perc_eye = (len(idx) / len(icu_df)) * 100
+    # # Find all the ICU patients with laterations
+    # externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
+    # idx, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df,
+    #                                                                                   externallacerationcodes)
+    # # Find the percentage of ICU patients with lacerations
+    # perc_lac = (len(idx) / len(icu_df)) * 100
+    # # Find all the  ICU patients with burns
+    # burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+    # idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, burncodes)
+    # # Find the percentage of ICU patients with burns
+    # perc_burn = (len(idx) / len(icu_df)) * 100
+    # # check if anyone was admitted to ICU in this sim
+    # if len(icu_df) > 0:
+    #     # Store injury information
+    #     ICU_frac.append(perc_frac)
+    #     ICU_dis.append(perc_dis)
+    #     ICU_tbi.append(perc_tbi)
+    #     ICU_soft.append(perc_soft)
+    #     ICU_int_o.append(perc_int_o)
+    #     ICU_int_b.append(perc_int_b)
+    #     ICU_sci.append(perc_sci)
+    #     ICU_amp.append(perc_amp)
+    #     ICU_eye.append(perc_eye)
+    #     ICU_lac.append(perc_lac)
+    #     ICU_burn.append(perc_burn)
+    # # Store the percentage of people who died after seeking healthcare in this sim
+    # percent_died_after_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() /
+    #     log_df['tlo.methods.rti']['model_progression']['total_sought_medical_care'].iloc[-1]
+    # )
+    # # Store the incidence of RTI per 100,000 person years in this sim
+    # incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
+    # # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
+    # incidences_of_death.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti death per 100,000'].tolist())
+    # incidences_of_death_pre_hospital.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
+    # )
+    # incidences_of_death_post_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['incidence of death post med per 100,000'].tolist()
+    # )
+    # incidences_of_death_no_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['incidence of death without med per 100,000'].tolist()
+    # )
+    # incidences_of_death_unavailable_med.append(
+    #     log_df['tlo.methods.rti']['summary_1m']
+    #     ['incidence of death due to unavailable med per 100,000'].tolist()
+    # )
+    # # Store incidences of death average per year in this sim
+    # log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
+    # incidences_of_death_yearly_average.append(
+    #     log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti death per 100,000'].tolist())
+    # # Store the incidence of rtis average per year in this sim
+    # incidences_of_rti_yearly_average.append(
+    #     log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti per 100,000'].tolist())
+    # # Store the incidence of rtis in children per year in this sim
+    # incidences_of_rti_in_children.append(
+    #     log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000 in children'].tolist())
+    # # Store the incidence of injuries per 100,000 in this sim
+    # incidences_of_injuries.append(log_df['tlo.methods.rti']['Inj_category_incidence']['tot_inc_injuries'].to_list())
+    # # Get information on the deaths that occurred in the sim
+    # deaths_df = log_df['tlo.methods.demography']['death']
+    # # Create list of RTI specific deaths
+    # rti_death_causes = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+    # # Filter the deaths information to only show RTI related deaths
+    # rti_deaths = len(deaths_df.loc[deaths_df['cause'].isin(rti_death_causes)])
+    # # Get the number of deaths in 2010
+    # first_year_deaths = deaths_df.loc[deaths_df['date'] < pd.datetime(2011, 1, 1)]
+    # first_year_rti_deaths = len(first_year_deaths.loc[first_year_deaths['cause'].isin(rti_death_causes)])
+    # # Store the number of deaths in 2010 in this sim
+    # deaths_2010.append(first_year_rti_deaths)
+    # # Create information on the percentage of deaths caused by road traffic injuries, use try statement to stop
+    # # ZeroDivisionError from occuring when no one died due to RTI in this sim
+    # try:
+    #     # Get the breakdown of road traffic injuries deaths by context by percentage
+    #     ps_of_imm_death.append(len(deaths_df.loc[deaths_df['cause'] == 'RTI_imm_death']) / rti_deaths)
+    #     ps_of_death_post_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_with_med']) / rti_deaths)
+    #     ps_of_death_without_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_without_med']) / rti_deaths)
+    #     ps_of_death_unavailable_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_unavailable_med']) / rti_deaths)
+    # except ZeroDivisionError:
+    #     ps_of_imm_death.append(0)
+    #     ps_of_death_post_med.append(0)
+    #     ps_of_death_without_med.append(0)
+    #     ps_of_death_unavailable_med.append(0)
+    # # Get a rough estimate for the percentage road traffic injury deaths for those involved in RTI
+    # # Get the number of people with RTIs
+    # number_of_crashes = sum(log_df['tlo.methods.rti']['summary_1m']['number involved in a rti'])
+    # # Store the number of RTI deaths divided by the number of RTIs
+    # percent_of_fatal_crashes.append(rti_deaths / number_of_crashes)
+    # # Get qualitative description of RTI injuries, stored in Injury_information
+    # injury_info = log_df['tlo.methods.rti']['Injury_information']
+    # # Get information on injury severity
+    # mild_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in sublist if
+    #             'mild' in item]
+    # severe_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in
+    #               sublist if 'severe' in item]
+    # # Store the percentage of injuries that are mild
+    # perc_mild.append(sum(mild_inj) / (sum(mild_inj) + sum(severe_inj)))
+    # # Store the percentage of injuries that are severe
+    # perc_severe.append(sum(severe_inj) / (sum(mild_inj) + sum(severe_inj)))
+    # # Get information on the distribution of ISS scores in the simulation
+    # severity_distibution = injury_info['Per_person_injury_severity'].tolist()
+    # for score in severity_distibution:
+    #     iss_scores.append(score)
+    # # Get information on the number of injuries each person was given
+    # ninj_list = injury_info['Number_of_injuries'].tolist()
+    # # flatten the information
+    # ninj_list = [int(item) for sublist in ninj_list for item in sublist]
+    # # Count the number of people with i injuries for i in ...
+    # ninj_list_sorted = [ninj_list.count(i) for i in [1, 2, 3, 4, 5, 6, 7, 8]]
+    # # Store the number of injured body locations
+    # number_of_injured_body_locations.append(ninj_list_sorted)
+    # # Create a dataframe with the date of injuries and the total number of injuries given out in this sim
+    # ninj_data = {'date': injury_info['date'],
+    #              'ninj': [sum(list) for list in injury_info['Number_of_injuries'].tolist()]}
+    # ninj_df = pd.DataFrame(data=ninj_data)
+    # # Log the total number of injuries that occured this sim
+    # number_of_injuries_per_sim.append(ninj_df['ninj'].sum())
+    # # Create a column showing which year each log happened in
+    # ninj_df['year'] = pd.DatetimeIndex(ninj_df['date']).year
+    # # Store the number of injuries that occured in 2010
+    # injuries_in_2010.append(ninj_df.loc[ninj_df['year'] == 2010]['ninj'].sum())
+    # # Store the number of injuries that occurred each year
+    # injuries_per_year.append(ninj_df.groupby('year').sum()['ninj'].tolist())
+    # # Store the per injury fatality ratio
+    # diedfromrticond = log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med',
+    #                                                                            'RTI_death_with_med',
+    #                                                                            'RTI_unavailable_med'])
+    # # Following calculation in simpler terms is the number of RTI deaths divided by the total number of RTIs
+    # per_injury_fatal.append(
+    #     len(log_df['tlo.methods.demography']['death'].loc[diedfromrticond]) / np.multiply(ninj_list_sorted,
+    #                                                                                       [1, 2, 3, 4, 5, 6, 7, 8]
+    #                                                                                       ).sum())
+    # # Get information on where these injuries occured on each person
+    # injury_loc_list = injury_info['Location_of_injuries'].tolist()
+    # # Flatted the injury location informaiton
+    # injury_loc_list = [int(item) for sublist in injury_loc_list for item in sublist]
+    # # Create empty list to store the information
+    # binned_loc_dist = []
+    # # Iterate over the injury locations and store the number of times each injury location appears
+    # for loc in [1, 2, 3, 4, 5, 6, 7, 8]:
+    #     binned_loc_dist.append(injury_loc_list.count(loc))
+    # # Store the injury location data in this sim
+    # inj_loc_data.append(binned_loc_dist)
+    # # Get information on the injury category distribution this run
+    # inj_cat_list = injury_info['Injury_category'].tolist()
+    # # Flatten the injury category list
+    # inj_cat_list = [int(item) for sublist in inj_cat_list for item in sublist]
+    # # Create empty list to store the information
+    # binned_cat_dist = []
+    # # Iterate over the injury categories and store the number of times each injury category appears
+    # for cat in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+    #     binned_cat_dist.append(inj_cat_list.count(cat))
+    # # Store the injury category information
+    # inj_cat_data.append(binned_cat_dist)
+    # # Get information on the total incidence of injuries and the breakdown of injury by type
+    # injury_category_incidence = log_df['tlo.methods.rti']['Inj_category_incidence']
+    # inc_amputations.append(injury_category_incidence['inc_amputations'].tolist())
+    # inc_burns.append(injury_category_incidence['inc_burns'].tolist())
+    # inc_fractures.append(injury_category_incidence['inc_fractures'].tolist())
+    # inc_tbi.append(injury_category_incidence['inc_tbi'].tolist())
+    # inc_sci.append(injury_category_incidence['inc_sci'].tolist())
+    # inc_minor.append(injury_category_incidence['inc_minor'].tolist())
+    # inc_other.append(injury_category_incidence['inc_other'].tolist())
+    # tot_inc_injuries.append(injury_category_incidence['tot_inc_injuries'].tolist())
+    # # Get the inpatient days usage. I take the overall inpatient day usage from all the simulations and the per-sim
+    # # inpatient day info
+    # # Create empty list to store inpatient day information in
+    # this_sim_inpatient_days = []
+    # # Create a dataframe containing all instances of the RTI_MedicalIntervention event
+    # inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+    #     log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+    # # iterate over the people in inpatient_day_df
+    # for person in inpatient_day_df.index:
+    #     # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+    #     # means that this patient didn't require any so append (0)
+    #     try:
+    #         all_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+    #         this_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+    #     except KeyError:
+    #         all_sim_inpatient_days.append(0)
+    #         this_sim_inpatient_days.append(0)
+    # # Store the inpatient days used in this sim
+    # per_sim_inpatient_days.append(this_sim_inpatient_days)
+    # # get the consumables used in each simulation
+    # consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+    # # Create empty list to store the consumables used in the simulation
+    # consumables_list_to_dict = []
+    # for string in consumables_list:
+    #     consumables_list_to_dict.append(ast.literal_eval(string))
+    # # Begin counting the number of consumables used in the simulation starting at 0
+    # number_of_consumables_in_sim = 0
+    # for dictionary in consumables_list_to_dict:
+    #     number_of_consumables_in_sim += sum(dictionary.values())
+    # # Store the number of consumables used in the sim
+    # list_consumables_dict.append(number_of_consumables_in_sim)
+    # # get the overall health system time used
+    # health_system_time_usage.append(np.mean(log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']))
+    # # get the number of rti-hsi interaction events by type
+    # # get the dataframe of the health system events
+    # appointments = log_df['tlo.methods.healthsystem']['HSI_Event']
+    # # isolate appointments than ran
+    # appointments = appointments.loc[appointments['did_run']]
+    # # isolate appointments by type
+    # per_sim_burn_treated.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Burn_Management']))
+    # per_sim_frac_cast.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Fracture_Cast']))
+    # per_sim_laceration.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Suture']))
+    # per_sim_major_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Major_Surgeries']))
+    # per_sim_minor_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries']))
+    # per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
+    # per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
+    # per_sim_open_frac.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment']))
+    # # todo: create plots of urban vs rural injury severity
+    # # store the relating to the percentage of injury severity in both rural and urban settings
+    # per_sim_rural_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist())
+    # per_sim_urban_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist())
+    # log_df['tlo.methods.rti']['Open_fracture_information']
+    # # Store the proportion of lower extremity fractures that are open in this sim
+    # proportions_of_open_lx_fractures_in_sim = \
+    #     [i for i in log_df['tlo.methods.rti']['Open_fracture_information']['Proportion_lx_fracture_open'].values
+    #      if i != 'no_lx_fractures']
+    # per_sim_average_percentage_lx_open.append(np.mean(proportions_of_open_lx_fractures_in_sim))
+    # # Using print(i) to show the number of simulations that have ran so far
+    # print(i)
 
 
 def age_breakdown(age_array):
