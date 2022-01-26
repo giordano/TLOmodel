@@ -17,7 +17,7 @@ intervention_scenario_filename = 'increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'anc_analysis_dummy_baseline_anc_scenario-2022-01-24T115204Z'
+graph_location = 'output_graphs_increased_anc_scenario-2022-01-25T092014Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -213,7 +213,7 @@ def get_crude_death_graphs_graphs(b_deaths, i_deaths, group):
     plt.title(f'Yearly Baseline {group} Deaths Compared to Intervention')
     plt.xticks(ind + width / 2, intervention_years)
     plt.legend(loc='best')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/crude_deaths_comparison.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_crude_deaths_comparison.png')
     plt.show()
 
 
