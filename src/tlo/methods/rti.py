@@ -2100,7 +2100,9 @@ class RTI(Module):
             days_until_treatment_end = draw_days(p["mean_los_ISS_more_than_25"], p["sd_los_ISS_more_that_25"])
         else:
             days_until_treatment_end = 0
-
+        # Make sure inpatient days is less that max available
+        if days_until_treatment_end > 150:
+            days_until_treatment_end = 150
         # Return the LOS
         return max(days_until_treatment_end, 0)
 
