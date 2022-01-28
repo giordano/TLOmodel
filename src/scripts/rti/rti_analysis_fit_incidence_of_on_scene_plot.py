@@ -31,7 +31,7 @@ params = extract_params(results_folder)
 extracted_incidence_of_death_on_scene = extract_results(results_folder,
                                                         module="tlo.methods.rti",
                                                         key="summary_1m",
-                                                        column="incidence of death on scene per 100,000",
+                                                        column="incidence of prehospital death per 100,000",
                                                         index="date"
                                                         )
 on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene, only_mean=True).mean()
