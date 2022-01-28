@@ -23,16 +23,16 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 789
+        self.seed = 246
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2026, 1, 1)
-        self.pop_size = 15000
+        self.pop_size = 30000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_15k', 'directory': './outputs',
+            'filename': 'baseline_scenario_30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -55,7 +55,7 @@ class TestScenario(BaseScenario):
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
-                                      cons_availability='all'),
+                                      cons_availability='default'),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
