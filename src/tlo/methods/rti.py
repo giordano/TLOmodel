@@ -2954,6 +2954,15 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         road_traffic_injuries = self.module
         df = population.props
         now = self.sim.date
+        those_with_health_burden_idx = df.loc[df.is_alive & df['rt_disability'] > 0].index
+        rt_daly_weights = df.loc[those_with_health_burden_idx, 'rt_disability']
+        rt_debugging_daly_weights = df.loc[those_with_health_burden_idx, 'rt_debugging_DALY_wt']
+        dict_to_output = {'person_ids': those_with_health_burden_idx.to_list(),
+                          'daly_weights': rt_daly_weights.to_list(),
+                          'debugging_daly_weights': rt_debugging_daly_weights.to_list()}
+        logger.info(key='rti_health_burden_per_day',
+                    data=dict_to_output,
+                    description='The daly weight of all injured persons each day')
         # # Isolate the relevant population
         any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
         relevant_population = any_not_null.index[any_not_null]
