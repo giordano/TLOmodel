@@ -34,7 +34,15 @@ extracted_incidence_of_death_on_scene = extract_results(results_folder,
                                                         column="incidence of prehospital death per 100,000",
                                                         index="date"
                                                         )
-on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene, only_mean=True).mean()
+incidence_of_rti = extract_results(results_folder,
+                                   module="tlo.methods.rti",
+                                   key="summary_1m",
+                                   column="incidence of rti per 100,000",
+                                   index="date"
+                                   )
+inc_rti = summarize(incidence_of_rti, only_mean=True).mean()
+scale_to_gbd = np.divide(954.2, inc_rti)
+on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene, only_mean=True).mean() * scale_to_gbd
 target_on_scene_inc_death = 6
 closest_est_found = min(on_scene_inc_death, key=lambda x: abs(x - target_on_scene_inc_death))
 best_fit_idx = np.where(on_scene_inc_death == closest_est_found)[0][0]
