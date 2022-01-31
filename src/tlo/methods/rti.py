@@ -2960,6 +2960,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # Isolate the relevant information
         recovery_dates = df.loc[relevant_population]['rt_date_to_remove_daly']
         default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
+        # log the health burden
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
             # Iterate over all the dates in 'rt_date_to_remove_daly'
@@ -2973,6 +2974,21 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     dateindex = df.loc[person, 'rt_date_to_remove_daly'].index(date)
                     # find the injury code associated with the healed injury
                     code_to_remove = [df.loc[person, f'rt_injury_{dateindex + 1}']]
+                    # calculate the current health burden
+                    current_daly_weight = df.loc[person, 'rt_disability']
+                    days_with_current_daly_weight = (now - df.loc[person, 'rt_date_inj']).days
+                    date_of_injury = df.loc[person, 'rt_date_inj']
+                    dict_to_output = {
+                        'person_id': person,
+                        'daly_weight': current_daly_weight,
+                        'days_with_daly_weight': days_with_current_daly_weight,
+                        'date_of_injury': date_of_injury,
+                        'context': 'change'
+
+                    }
+                    logger.info(key='rti_exact_yld_on_change',
+                                data=dict_to_output,
+                                description='The daly weight of an injured person and the time spent with that weight')
                     # Set the healed injury recovery data back to the default state
                     df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
                     # Remove the daly weight associated with the healed injury code

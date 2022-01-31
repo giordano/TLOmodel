@@ -79,7 +79,8 @@ def extract_yll_yld(results_folder):
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = Path('outputs/rmjlra2@ucl.ac.uk/rti_analysis_full_calibrated-2021-12-09T140232Z')
+# results_folder = Path('outputs/rmjlra2@ucl.ac.uk/rti_analysis_full_calibrated-2021-12-09T140232Z')
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[-2]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
