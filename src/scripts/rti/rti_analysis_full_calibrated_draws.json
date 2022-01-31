@@ -36,7 +36,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007344603469783004,
+          "base_rate_injrti": 0.00749274728395446,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -74,7 +74,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007417781396934902,
+          "base_rate_injrti": 0.007239838799812575,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -112,7 +112,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007305326771431749,
+          "base_rate_injrti": 0.007273828204062228,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -150,7 +150,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007150598600291369,
+          "base_rate_injrti": 0.007068007785963749,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -188,7 +188,7 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007026934139838284,
+          "base_rate_injrti": 0.007077925915819002,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -226,12 +226,12 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007016574400466975,
+          "base_rate_injrti": 0.007190693796075944,
           "imm_death_proportion_rti": 0.007
         }
       }
     }
   ],
-  "commit": "82dba6d6a4d7a5f8014d6d9b5d66b3eba7043dc9",
-  "github": "https://github.com/UCL/TLOmodel/blob/82dba6d6a4d7a5f8014d6d9b5d66b3eba7043dc9/src/scripts/rti/rti_analysis_full_calibrated.py"
+  "commit": "a579d8384e8d646712139a07948e48d61023d187",
+  "github": "https://github.com/UCL/TLOmodel/blob/a579d8384e8d646712139a07948e48d61023d187/src/scripts/rti/rti_analysis_full_calibrated.py"
 }
