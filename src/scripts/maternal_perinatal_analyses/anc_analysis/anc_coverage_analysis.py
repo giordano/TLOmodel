@@ -17,12 +17,15 @@ intervention_scenario_filename = 'increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_increased_anc_scenario-2022-01-28T151918Z'
+graph_location = 'output_graphs_60k_increased_anc_scenario-2022-01-31T134117Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 baseline_results_folder = get_scenario_outputs(baseline_scenario_filename, outputspath)[-1]
 intervention_results_folder = get_scenario_outputs(intervention_scenario_filename, outputspath)[-1]
+
+# create_pickles_locally(baseline_results_folder)  # if not created via batch
+# create_pickles_locally(intervention_results_folder)  # if not created via batch
 
 sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027,
              2028, 2029, 2030]

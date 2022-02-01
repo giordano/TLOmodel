@@ -13,7 +13,7 @@ baseline_scenario_filename = 'baseline_anc_scenario.py'
 intervention_scenario_filename = 'increased_anc_scenario.py'
 
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_increased_anc_scenario-2022-01-28T151918Z/comp_rates'
+graph_location = 'output_graphs_60k_increased_anc_scenario-2022-01-31T134117Z/comp_rates'
 rfp = Path('./resources')
 
 baseline_results_folder = get_scenario_outputs(baseline_scenario_filename, outputspath)[-1]
@@ -890,7 +890,7 @@ line_graph_with_ci_and_target_rate(b_rds, i_rds, 'Year', 'Rate per 1000 preterm 
                                    'Rate of Preterm Respiratory Distress Syndrome per year', 'neo_rds_rate')
 
 
-# COMPARING COMPLICATION LEVEL MMR
+# ===================================== COMPARING COMPLICATION LEVEL MMR =============================================
 b_death_results = extract_results(
     baseline_results_folder,
     module="tlo.methods.demography",
@@ -967,7 +967,47 @@ for cause in simplified_causes:
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr/mmr_{cause}.png')
     plt.show()
 
+# ===================================== COMPARING COMPLICATION LEVEL NMR =============================================
+simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
 
+
+for cause in simplified_causes_neo:
+    if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
+        b_deaths = get_mean_and_quants_from_str_df(b_death_results, cause)[0]
+        i_deaths = get_mean_and_quants_from_str_df(i_death_results, cause)[0]
+
+    elif cause == 'neonatal_sepsis':
+        def get_neo_sep_deaths(death_results):
+            early1 = get_mean_and_quants_from_str_df(death_results, 'early_onset_neonatal_sepsis')[0]
+            early2 = get_mean_and_quants_from_str_df(death_results, 'early_onset_sepsis')[0]
+            late = get_mean_and_quants_from_str_df(death_results, 'late_onset_sepsis')[0]
+            deaths = [x + y + z for x, y, z in zip(early1, early2, late)]
+            return deaths
+
+        b_deaths = get_neo_sep_deaths(b_death_results)
+        i_deaths = get_neo_sep_deaths(i_death_results)
+
+    elif cause == 'prematurity':
+        def get_pt_deaths(death_results):
+            rds_deaths = get_mean_and_quants_from_str_df(death_results, 'respiratory_distress_syndrome')[0]
+            other_deaths = get_mean_and_quants_from_str_df(death_results, 'preterm_other')[0]
+            deaths = [x + y for x, y in zip(rds_deaths, other_deaths)]
+            return deaths
+
+        b_deaths = get_pt_deaths(b_death_results)
+        i_deaths = get_pt_deaths(i_death_results)
+
+    b_nmr = [(x / y) * 1000 for x, y in zip(b_deaths, b_births[0])]
+    i_nmr = [(x / y) * 1000 for x, y in zip(i_deaths, i_births[0])]
+
+    plt.plot(sim_years, b_nmr, 'o-g', label="Baseline", color='deepskyblue')
+    plt.plot(sim_years, i_nmr, 'o-g', label="Intervention", color='darkseagreen')
+    plt.xlabel('Year')
+    plt.ylabel('Deaths per 1000 births')
+    plt.title(f'Neonatal Mortality Ratio per Year for {cause} by Scenario')
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/nmr/nmr_{cause}.png')
+    plt.show()
 
 
 
