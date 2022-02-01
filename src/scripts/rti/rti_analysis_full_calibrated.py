@@ -72,11 +72,8 @@ class TestScenario(BaseScenario):
              ]
 
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
-        parameter_df['scale_factor'] = [0.937790697, 0.937790697, 0.937790697, 0.937790697, 0.687790698, 0.887790698]
-        scale_for_inc = np.multiply([1.0270861999667444, 1.0373195691920685, 1.0215936563566232, 0.999956113910908,
-                                     0.9826625920372962, 0.9812138623152221],
-                                    [1.0201704305454944, 0.9760113452256959, 0.9956882740012807, 0.9884498041430748,
-                                     1.0072566178885365, 1.0248154420763187])
+        parameter_df['scale_factor'] = [1.27210261, 0.97760263, 0.91028567, 0.96303679, 0.82095107, 0.71205461]
+        scale_for_inc = [1.02456099, 1.02166648, 1.02467306, 1.00992407, 0.99241982, 0.99833061]
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         parameter_df['imm_death_proportion_rti'] = [0.007] * len(scale_for_inc)
