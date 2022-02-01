@@ -521,7 +521,7 @@ print('stop')
 
 results_df['injury_incidence'] = results_df['inc'] * average_n_inj_per_draws
 min(results_df.loc[hsb_in_accepted_range[0], 'injury_incidence'])
-no_hs_results = get_scenario_outputs('rti_analysis_full_calibrated_no_hs.py.py', outputspath)[- 1]
+no_hs_results = get_scenario_outputs('rti_analysis_full_calibrated_no_hs.py', outputspath)[- 1]
 no_hs_extracted_incidence_of_death = extract_results(no_hs_results,
                                                      module="tlo.methods.rti",
                                                      key="summary_1m",

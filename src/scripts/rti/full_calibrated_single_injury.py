@@ -23,7 +23,8 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 20000
-        self.number_of_draws = 3
+        self.upper_iss_value = 6
+        self.number_of_draws = 6
         self.runs_per_draw = 4
 
     def log_configuration(self):
@@ -49,22 +50,16 @@ class TestScenario(BaseScenario):
 
 
     def draw_parameters(self, draw_number, rng):
-        hsb_cutoff_max = 4 + 1
-        hsb_cutoff_min = 2
+        hsb_cutoff_max = self.upper_iss_value + 1
+        hsb_cutoff_min = 1
         iss_cut_off_scores = range(hsb_cutoff_min, hsb_cutoff_max)
         parameter_df = pd.DataFrame()
         parameter_df['rt_emergency_care_ISS_score_cut_off'] = iss_cut_off_scores
         ninj = [1, 2, 3, 4, 5, 6, 7, 8]
-        injury_distributions = \
-            [[ninj, [1, 0, 0, 0, 0, 0, 0, 0]],
-             [ninj, [1, 0, 0, 0, 0, 0, 0, 0]],
-             [ninj, [1, 0, 0, 0, 0, 0, 0, 0]]
-             ]
-
+        injury_distributions = [[ninj, [1, 0, 0, 0, 0, 0, 0, 0]]] * len(parameter_df)
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
-        parameter_df['scale_factor'] = [1.875581395 * 1.07843, 1.875581395 * 1.1589978526983375,
-                                        1.775581395 * 1.1213015334257184]
-        scale_for_inc = [1.0188702169351476, 1.0139143639819888, 1.0220591438527946]
+        parameter_df['scale_factor'] = [1.27210261, 0.97760263, 0.91028567, 0.96303679, 0.82095107, 0.71205461]
+        scale_for_inc = [1.02456099, 1.02166648, 1.02467306, 1.00992407, 0.99241982, 0.99833061]
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         return {
