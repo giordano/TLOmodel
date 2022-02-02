@@ -80,7 +80,7 @@ def extract_yll_yld(results_folder):
 
 # 0) Find results_folder associated with a given batch_file and get most recent
 # results_folder = Path('outputs/rmjlra2@ucl.ac.uk/rti_analysis_full_calibrated-2021-12-09T140232Z')
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[-2]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
@@ -413,8 +413,8 @@ sing_scaled_inc_death = list(sing_scaled_inc_death)
 sing_dalys = sing_yld.mean() + sing_yll.mean()
 sing_dalys = list(sing_dalys)
 sing_scaled_dalys = np.multiply(sing_dalys, sing_scale_for_inc)
-mult_inc_death = mean_incidence_of_death[hsb_in_accepted_range[0]]
-mult_dalys = results_df.loc[hsb_in_accepted_range[0], 'DALYs']
+mult_inc_death = mean_incidence_of_death
+mult_dalys = results_df['DALYs']
 plt.clf()
 plt.bar(np.arange(len(mult_dalys)), mult_dalys, label='Multiple injury', color='lightsteelblue', width=0.4)
 plt.bar(np.arange(len(sing_dalys)) + 0.4, sing_scaled_dalys, label='Single injury', color='lightsalmon', width=0.4)
@@ -477,11 +477,15 @@ for draw in range(info['number_of_draws']):
 for index, value in enumerate(hsb_in_accepted_range[0]):
     fig, ax1 = plt.subplots()
     sing_inc_death = sing_mean_incidence_of_death[index]
-    mult_scaled_inc_death = results_df['inc_death'][value]
+    sing_inc_rti = sing_mean_incidence_of_RTI[index]
+    scale_for_sing = 954.2 / sing_inc_rti
+    sing_scaled_inc_death = scale_for_sing * sing_inc_death
+    mult_unscaled_inc_death = results_df['inc_death'][value]
+    mult_scaled_inc_death = results_df['scaled_inc_death'][value]
     dalys = [gbd_data['dalys'].sum(), sing_dalys[index], mult_dalys[value]]
     gbd_results = [954.2, 12.1, 954.2]
     single_results = [sing_mean_incidence_of_RTI[index], sing_inc_death, sing_mean_incidence_of_RTI[index]]
-    mult_results = [results_df['inc'][value], mult_scaled_inc_death,
+    mult_results = [results_df['inc'][value], mult_unscaled_inc_death,
                     results_df['inc'][value] * average_n_inj_per_draws[value]]
     ax1.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
     ax1.bar(np.arange(3) + 0.25, single_results, width=0.25, color='lightsteelblue', label='Single')
@@ -517,6 +521,48 @@ for index, value in enumerate(hsb_in_accepted_range[0]):
     plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
                 f"IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
     plt.clf()
+    # scaled results
+    fig, ax1 = plt.subplots()
+    scaled_dalys = [gbd_data['dalys'].sum(), sing_dalys[index] * sing_scale_for_inc[index],
+                    results_df.loc[int(index), 'scaled_DALYs']]
+    single_results = [sing_scaled_incidences[index], sing_scaled_inc_death, sing_scaled_incidences[index]]
+    mult_results = [results_df['scaled_inc'][value], results_df['scaled_inc_death'][value],
+                    results_df['scaled_inc'][value] * average_n_inj_per_draws[value]]
+    ax1.bar(np.arange(3), gbd_results, width=0.25, color='gold', label='GBD')
+    ax1.bar(np.arange(3) + 0.25, single_results, width=0.25, color='lightsteelblue', label='Single')
+    ax1.bar(np.arange(3) + 0.5, mult_results, width=0.25,
+            color='lightsalmon', label='Multiple')
+    ax1.set_xticks(np.arange(4) + 0.25)
+    ax1.set_xticklabels(['Incidence\nof\nRTI', 'Incidence\nof\ndeath', 'Incidence\nof\ninjuries', 'DALYs'])
+    for idx, val in enumerate(gbd_results):
+        ax1.text(np.arange(3)[idx] - 0.125, gbd_results[idx] + 10, f"{np.round(val, 2)}", fontdict={'fontsize': 9},
+                 rotation=45)
+    for idx, val in enumerate(single_results):
+        ax1.text(np.arange(3)[idx] + 0.25 - 0.125, single_results[idx] + 10, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9}, rotation=45)
+    for idx, val in enumerate(mult_results):
+        ax1.text(np.arange(3)[idx] + 0.5 - 0.125, mult_results[idx] + 10, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9},
+                 rotation=45)
+    ax1.set_ylim([0, 1800])
+    ax1.legend(loc='upper left')
+    ax1.set_title('Comparing the incidence of RTI, RTI death and injuries\nfor the GBD study, single injury model and\n'
+                  'multiple injury model')
+    ax1.set_ylabel('Incidence per \n 100,000 person years')
+    ax1.axvline(2.75, color='black', linestyle='solid')
+    ax2 = ax1.twinx()
+    ax2.bar([3, 3.25, 3.5], scaled_dalys, width=0.25, color=['gold', 'lightsteelblue', 'lightsalmon'])
+    dalys_x_loc = [3, 3.25, 3.5]
+    for idx, val in enumerate(scaled_dalys):
+        ax2.text(dalys_x_loc[idx] - 0.05, scaled_dalys[idx] + 100000, f"{np.round(val, 2)}",
+                 fontdict={'fontsize': 9},
+                 rotation=90)
+    ax2.set_ylabel('Total DALYs 2010-2019')
+    ax2.set_ylim([0, 4500000])
+    plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
+                f"SCALED_IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
+    plt.clf()
+
 print('stop')
 
 results_df['injury_incidence'] = results_df['inc'] * average_n_inj_per_draws
