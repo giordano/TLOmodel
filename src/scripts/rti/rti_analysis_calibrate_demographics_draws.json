@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_calibrate_demographics.py",
+  "scenario_script_path": "src/scripts/rti/rti_analysis_calibrate_demographics.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -111,5 +111,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "8ac44cbf678364d02a2b7573a6f0ed6ed0736e0e",
+  "github": "https://github.com/UCL/TLOmodel/blob/8ac44cbf678364d02a2b7573a6f0ed6ed0736e0e/src/scripts/rti/rti_analysis_calibrate_demographics.py"
 }
