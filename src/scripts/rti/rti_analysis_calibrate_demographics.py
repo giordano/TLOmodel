@@ -53,7 +53,7 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         # 'rr_injrti_male'
-        rr_male_lower = 1.1
+        rr_male_lower = 2.1
         rr_male_upper = 3.1
         rr_range = np.linspace(rr_male_lower, rr_male_upper, num=self.number_of_draws)
         scale_to_age_dist = [0.2910658429014334, 0.7884210773764305, 1.0082309864810863, 1.1406954983602067,
