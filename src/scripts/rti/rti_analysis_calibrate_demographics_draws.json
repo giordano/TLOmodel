@@ -1,0 +1,115 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_calibrate_demographics.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.1
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.1800000000000002
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.26
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.34
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.42
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "rr_injrti_age04": 0.1455329214507167,
+          "rr_injrti_age59": 0.5518947541635013,
+          "rr_injrti_age1017": 0.9670169181785818,
+          "rr_injrti_age1829": 1.184183792507849,
+          "rr_injrti_age3039": 1.0528433113303743,
+          "rr_injrti_age4049": 1.0743760250554448,
+          "rr_injrti_age5059": 1.3364489055745299,
+          "rr_injrti_age6069": 2.3085141890767,
+          "rr_injrti_age7079": 4.031226002834754,
+          "rr_injrti_male": 1.5
+        }
+      }
+    }
+  ]
+}

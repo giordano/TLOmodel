@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/rti/rti_analysis_full_calibrated_no_hs.py",
   "scenario_seed": 12,
-  "runs_per_draw": 3,
+  "runs_per_draw": 4,
   "draws": [
     {
       "draw_number": 0,
@@ -226,6 +226,6 @@
       }
     }
   ],
-  "commit": "9bb2c3a7d6176b3c6da77eefc807030a0f7472b4",
-  "github": "https://github.com/UCL/TLOmodel/blob/9bb2c3a7d6176b3c6da77eefc807030a0f7472b4/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
+  "commit": "6ded877e0ffa2ffd667412a29a967db183b9b3fd",
+  "github": "https://github.com/UCL/TLOmodel/blob/6ded877e0ffa2ffd667412a29a967db183b9b3fd/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
 }
