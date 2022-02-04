@@ -44,9 +44,9 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaper
             bbox_inches='tight')
 # Figure 3, the calibration of the model
 plt.clf()
-fig = plt.figure(constrained_layout=True)
+fig = plt.figure(constrained_layout=True, figsize=[6.4 * 2.5, 4.8 * 2.5])
 # Use GridSpec for customising layout
-gs = fig.add_gridspec(nrows=3, ncols=2)
+gs = fig.add_gridspec(nrows=4, ncols=2)
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
 results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
@@ -84,8 +84,120 @@ ax1.set_xticklabels(['GBD', 'Model'])
 ax1.set_ylabel('Inc. of RTI per\n100,000 p.y.')
 # TODO: calibration of age and gender demographics
 ax2 = fig.add_subplot(gs[0, 1])
+
+results_folder = get_scenario_outputs('rti_analysis_calibrate_demographics.py', outputspath)[- 1]
+
+extracted_n_male = extract_results(results_folder,
+                                   module="tlo.methods.rti",
+                                   key="rti_demography",
+                                   column="males_in_rti",
+                                   index="date"
+                                   )
+extracted_n_female = extract_results(results_folder,
+                                     module="tlo.methods.rti",
+                                     key="rti_demography",
+                                     column="females_in_rti",
+                                     index="date"
+                                     )
+params = extract_params(results_folder)
+
+av_total_n_male = summarize(extracted_n_male, only_mean=True).sum()
+av_total_n_female = summarize(extracted_n_female, only_mean=True).sum()
+perc_male = np.divide(av_total_n_male.tolist(), np.add(av_total_n_male.tolist(), av_total_n_female.tolist()))
+
 gbd_proportion_male = sum(male_rtis) / (sum(male_rtis) + sum(female_rtis))
-model_proportion_male = 0.6
+
+rr_male_params = params.loc[params['module_param'] == 'RTI:rr_injrti_male', 'value'].values
+ax2.bar(np.arange(len(perc_male)), perc_male, color='lightsteelblue',
+        label='Model')
+ax2.axhline(gbd_proportion_male, color='steelblue', label='GBD', linestyle='dashed')
+ax2.set_xticks(np.arange(len(perc_male)))
+ax2.set_xticklabels([np.round(val, 3) for val in rr_male_params])
+ax2.set_ylabel('Proportion male')
+ax2.legend(prop={'size': 6})
+ax2.set_xlabel('rr_injrti_male')
+# plot age distribution
+gbd_age_gender_data = \
+    pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/age_and_gender_data.csv")
+# incidence data
+gbd_age_gender_data = gbd_age_gender_data.loc[gbd_age_gender_data['measure'] == 'Incidence']
+gender_info = gbd_age_gender_data.groupby('sex').sum()
+prop_male = \
+    gender_info.loc['Male', 'val'] / (gender_info.loc['Male', 'val'] + gender_info.loc['Female', 'val'])
+age_info = gbd_age_gender_data.groupby('age').sum()
+age_info = age_info.reindex(index=['1 to 4', '5 to 9', '10 to 14', '15 to 19', '20 to 24', '25 to 29', '30 to 34',
+                                   '35 to 39', '40 to 44', '45 to 49', '50 to 54', '55 to 59', '60 to 64', '65 to 69',
+                                   '70 to 74', '75 to 79', '80 to 84', '85 to 89', '90 to 94', '95 plus'])
+age_info['proportion'] = age_info['val'] / sum(age_info['val'])
+ages_in_sim = []
+info = get_scenario_info(results_folder)
+
+for draw in range(info['number_of_draws']):
+    age_this_draw = []
+    for run in range(info['runs_per_draw']):
+        try:
+            df: pd.DataFrame = \
+                load_pickled_dataframes(results_folder, draw, run, "tlo.methods.rti")["tlo.methods.rti"]
+            df = df['rti_demography']
+            age_of_injured_this_sim = df['age'].values.tolist()
+            age_of_injured_this_sim = [age for age_list in age_of_injured_this_sim for age in age_list]
+            age_this_draw.append(age_of_injured_this_sim)
+        except KeyError:
+            pass
+    ages_in_sim.append(age_this_draw)
+
+
+def age_breakdown(age_array):
+    """
+    A function which breaks down an array of ages into specific age ranges
+    :param age_array:
+    :return:
+    """
+    # Breakdown the age data into boundaries 0-5, 6-10, 11-15, 16-20 etc...
+    zero_to_five = len([i for i in age_array if i < 6])
+    six_to_ten = len([i for i in age_array if 6 <= i < 11])
+    eleven_to_fifteen = len([i for i in age_array if 11 <= i < 16])
+    sixteen_to_twenty = len([i for i in age_array if 16 <= i < 21])
+    twenty1_to_twenty5 = len([i for i in age_array if 21 <= i < 26])
+    twenty6_to_thirty = len([i for i in age_array if 26 <= i < 31])
+    thirty1_to_thirty5 = len([i for i in age_array if 31 <= i < 36])
+    thirty6_to_forty = len([i for i in age_array if 36 <= i < 41])
+    forty1_to_forty5 = len([i for i in age_array if 41 <= i < 46])
+    forty6_to_fifty = len([i for i in age_array if 46 <= i < 51])
+    fifty1_to_fifty5 = len([i for i in age_array if 51 <= i < 56])
+    fifty6_to_sixty = len([i for i in age_array if 56 <= i < 61])
+    sixty1_to_sixty5 = len([i for i in age_array if 61 <= i < 66])
+    sixty6_to_seventy = len([i for i in age_array if 66 <= i < 71])
+    seventy1_to_seventy5 = len([i for i in age_array if 71 <= i < 76])
+    seventy6_to_eighty = len([i for i in age_array if 76 <= i < 81])
+    eighty1_to_eighty5 = len([i for i in age_array if 81 <= i < 86])
+    eighty6_to_ninety = len([i for i in age_array if 86 <= i < 91])
+    ninety_to_ninety5 = len([i for i in age_array if 90 <= i < 95])
+    ninety5_plus = len([i for i in age_array if i >= 95])
+    return [zero_to_five, six_to_ten, eleven_to_fifteen, sixteen_to_twenty, twenty1_to_twenty5, twenty6_to_thirty,
+            thirty1_to_thirty5, thirty6_to_forty, forty1_to_forty5, forty6_to_fifty, fifty1_to_fifty5, fifty6_to_sixty,
+            sixty1_to_sixty5, sixty6_to_seventy, seventy1_to_seventy5, seventy6_to_eighty, eighty1_to_eighty5,
+            eighty6_to_ninety, ninety_to_ninety5, ninety5_plus]
+
+
+counts_in_sim = []
+for age_list in ages_in_sim:
+    for sim_list in age_list:
+        age_counts = age_breakdown(sim_list)
+        counts_in_sim.append(age_counts)
+ave_age_distribution = [float(sum(col)) / len(col) for col in zip(*counts_in_sim)]
+ave_age_distribution = list(np.divide(ave_age_distribution, sum(ave_age_distribution)))
+ax3 = fig.add_subplot(gs[1, 0])
+
+ax3.bar(np.arange(len(age_info.index)), age_info.proportion, width=0.4, color='lightsteelblue', label='GBD')
+ax3.bar(np.arange(len(age_info.index)) + 0.4, ave_age_distribution, width=0.4, color='lightsalmon', label='Model')
+ax3.set_xticks(np.arange(len(age_info.index)) + 0.2)
+ax3.set_xticklabels(age_info.index, rotation=45)
+ax3.legend(prop={'size': 6})
+ax3.set_ylabel("Proportion")
+ax3.set_xlabel("Age groups")
+# plot alcohol demographics
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
 extracted_perc_related_to_alc = extract_results(results_folder,
                                                 module="tlo.methods.rti",
                                                 key="rti_demography",
@@ -94,15 +206,10 @@ extracted_perc_related_to_alc = extract_results(results_folder,
                                                 )
 mean_perc_alc = summarize(extracted_perc_related_to_alc, only_mean=True).mean().mean()
 kch_alc_perc = 0.25
-data_based_ests = [gbd_proportion_male, kch_alc_perc]
-model_outputs = [model_proportion_male, mean_perc_alc]
-ax2.bar(np.arange(len(data_based_ests)), data_based_ests, color='lightsteelblue', width=0.4,
-        label='calibration data')
-ax2.bar(np.arange(len(model_outputs)) + 0.4, model_outputs, color='steelblue', width=0.4, label='model output')
-ax2.set_xticks(np.arange(len(data)) + 0.2)
-ax2.set_xticklabels(['Prop. male', 'Prop. alc'])
-ax2.set_ylabel('Proportion')
-ax2.legend(prop={'size': 6})
+ax4 = fig.add_subplot(gs[1, 1])
+ax4.bar(np.arange(len([kch_alc_perc, mean_perc_alc])), [kch_alc_perc, mean_perc_alc], color=['teal', 'lightseagreen'])
+ax4.set_xticks(np.arange(len([kch_alc_perc, mean_perc_alc])))
+ax4.set_xticklabels(['KCH', 'Model'])
 # Calibration of on-scene mortality
 results_folder = get_scenario_outputs('rti_analysis_fit_incidence_of_on_scene.py', outputspath)[-1]
 # look at one log (so can decide what to extract)
@@ -131,15 +238,15 @@ on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene, only_mean=
 target_on_scene_inc_death = 6
 closest_est_found = min(on_scene_inc_death, key=lambda x: abs(x - target_on_scene_inc_death))
 best_fit_idx = np.where(on_scene_inc_death == closest_est_found)[0][0]
-ax3 = fig.add_subplot(gs[1, 0])
-ax3.bar(np.arange(len(on_scene_inc_death)), on_scene_inc_death, label='Model estimates', color='plum')
-ax3.bar(best_fit_idx, on_scene_inc_death[best_fit_idx], color='violet', label='best fit found')
-ax3.axhline(target_on_scene_inc_death, color='fuchsia', label='NRSC estimate')
-ax3.set_xticks(np.arange(len(on_scene_inc_death)))
-ax3.set_xticklabels(params['value'].round(4), rotation=45, fontsize=6)
-ax3.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
-ax3.set_xlabel('% fatal on scene')
-ax3.legend(prop={'size': 6})
+ax5 = fig.add_subplot(gs[2, 0])
+ax5.bar(np.arange(len(on_scene_inc_death)), on_scene_inc_death, label='Model estimates', color='plum')
+ax5.bar(best_fit_idx, on_scene_inc_death[best_fit_idx], color='violet', label='best fit found')
+ax5.axhline(target_on_scene_inc_death, color='fuchsia', label='NRSC estimate', linestyle='dashed')
+ax5.set_xticks(np.arange(len(on_scene_inc_death)))
+ax5.set_xticklabels(params['value'].round(4), rotation=45)
+ax5.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
+ax5.set_xlabel('% fatal on scene')
+ax5.legend(prop={'size': 6})
 
 results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
 info = get_scenario_info(results_folder)
@@ -358,13 +465,13 @@ for n, idx in enumerate(idxs):
     best_fit_found = min(average_ninj_in_hos[idx], key=lambda x: abs(x - average_n_inj_in_kch))
     best_fitting_ave_n.append(best_fit_found)
     best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
-ax4 = fig.add_subplot(gs[1, 1])
-ax4.bar(np.arange(2),
+ax6 = fig.add_subplot(gs[2, 1])
+ax6.bar(np.arange(2),
         [average_ninj_in_hos.values[best_fit_index[0][0]],
          average_n_inj_in_kch], color=['teal', 'lightseagreen'])
-ax4.set_xticks(np.arange(2))
-ax4.set_xticklabels(['Model', 'KCH'])
-ax4.set_ylabel('Ave. number of\n injuries')
+ax6.set_xticks(np.arange(2))
+ax6.set_xticklabels(['Model', 'KCH'])
+ax6.set_ylabel('Ave. number of\n injuries')
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
 def extract_yll_yld(results_folder):
@@ -514,15 +621,15 @@ average_n_inj_in_kch = 7057 / 4776
 expected_in_hos_mort = 144 / 7416
 hsb_in_accepted_range = np.where((results_df['HSB'] > expected_hsb_lower) & (results_df['HSB'] < expected_hsb_upper))
 hsb_colors = ['seagreen' if i not in hsb_in_accepted_range[0] else 'darkseagreen' for i in results_df['HSB'].index]
-ax5 = fig.add_subplot(gs[2, 0])
-ax5.bar(np.arange(len(results_df)), results_df['HSB'], color=hsb_colors, label='proportion sought care')
-ax5.axhline(expected_hsb_upper, color='g', label='Upper HSB bound', linestyle='dashed')
-ax5.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='dashed')
-ax5.set_xticks(results_df.index)
-ax5.set_xticklabels(results_df['ISS cutoff score'])
-ax5.set_ylabel('Proportion')
-ax5.legend(loc='lower left', prop={'size': 6})
-ax5.set_xlabel('ISS cut-off score')
+ax7 = fig.add_subplot(gs[3, 0])
+ax7.bar(np.arange(len(results_df)), results_df['HSB'], color=hsb_colors, label='proportion sought care')
+ax7.axhline(expected_hsb_upper, color='g', label='Upper HSB bound', linestyle='dashed')
+ax7.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='dashed')
+ax7.set_xticks(results_df.index)
+ax7.set_xticklabels(results_df['ISS cutoff score'])
+ax7.set_ylabel('Proportion')
+ax7.legend(loc='lower left', prop={'size': 6})
+ax7.set_xlabel('ISS cut-off score')
 
 results_folder = get_scenario_outputs('rti_in_hospital_mortality_calibration.py', outputspath)[- 1]
 
@@ -588,22 +695,24 @@ scales_in_runs = np.divide(
                                    'value'],
     (102 / 11650)
 )
-ax6 = fig.add_subplot(gs[2, 1])
+ax8 = fig.add_subplot(gs[3, 1])
 
-ax6.bar(np.arange(len(mean_in_hos_mort[idxs[3]])), mean_in_hos_mort[idxs[3]], color='lightcoral', label='model')
-ax6.set_xticks(np.arange(len(scales_in_runs)))
-ax6.set_xticklabels([np.round(val, 3) for val in scales_in_runs], rotation=45, fontsize=6)
-ax6.axhline(expected_in_hospital_mortality, color='indianred', label='Expected in-hospital mortality',
+ax8.bar(np.arange(len(mean_in_hos_mort[idxs[3]])), mean_in_hos_mort[idxs[3]], color='lightcoral', label='model')
+ax8.set_xticks(np.arange(len(scales_in_runs)))
+ax8.set_xticklabels([np.round(val, 3) for val in scales_in_runs], rotation=45)
+ax8.axhline(expected_in_hospital_mortality, color='indianred', label='Expected in-hospital mortality',
             linestyle='dashed')
-ax6.set_xlabel('Scale-factor')
-ax6.set_ylabel('In-hospital mortality')
-ax6.legend(loc='lower right', prop={'size': 6})
+ax8.set_xlabel('Scale-factor')
+ax8.set_ylabel('In-hospital mortality')
+ax8.legend(loc='lower right', prop={'size': 6})
 ax1.set_title('a)', loc='left')
 ax2.set_title('b)', loc='left')
 ax3.set_title('c)', loc='left')
 ax4.set_title('e)', loc='left')
 ax5.set_title('f)', loc='left')
 ax6.set_title('g)', loc='left')
+ax7.set_title('h)', loc='left')
+ax8.set_title('i)', loc='left')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3.png",
             bbox_inches='tight')
 gbd_age_gender_data = \
