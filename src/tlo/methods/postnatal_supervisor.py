@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, postnatal_supervisor_lm
+from tlo.methods import Metadata, postnatal_supervisor_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 
@@ -240,8 +240,7 @@ class PostnatalSupervisor(Module):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
-        for key, value in self.parameters.items():
-            self.current_parameters[key] = self.parameters[key][0]
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
@@ -263,10 +262,6 @@ class PostnatalSupervisor(Module):
         # Schedule the first instance of the PostnatalSupervisorEvent
         sim.schedule_event(PostnatalSupervisorEvent(self),
                            sim.date + DateOffset(days=0))
-
-        # Register logging event
-        sim.schedule_event(PostnatalLoggingEvent(self),
-                           sim.date + DateOffset(years=1))
 
         # Register dx_tests used as assessment for postnatal conditions during PNC visits
         params = self.current_parameters
@@ -300,11 +295,7 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of developing pre-eclampsia in in the postnatal
             # period
-            'pre_eclampsia_pn': LinearModel.custom(postnatal_supervisor_lm.predict_pre_eclampsia_pn, parameters=params),
-
-            # This equation is used to determine a mothers risk of dying due to severe hypertension
-            'death_from_hypertensive_disorder_pn': LinearModel.custom(
-                postnatal_supervisor_lm.predict_death_from_hypertensive_disorder_pn, parameters=params),
+            'pre_eclampsia_pn': LinearModel.custom(postnatal_supervisor_lm.predict_pre_eclampsia_pn, module=self),
 
             # This equation is used to determine a mothers risk of developing anaemia postnatal
             'anaemia_after_pregnancy': LinearModel.custom(postnatal_supervisor_lm.predict_anaemia_after_pregnancy,
@@ -320,24 +311,14 @@ class PostnatalSupervisor(Module):
             'late_onset_neonatal_sepsis': LinearModel.custom(
                 postnatal_supervisor_lm.predict_late_onset_neonatal_sepsis, parameters=params),
 
-            # This equation is used to determine if a mother will seek care for treatment in the instance of an
-            # emergency complication postnatally (sepsis or haemorrhage)
-            'care_seeking_postnatal_complication_mother': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_mother, parameters=params),
-
-            # This equation is used to determine if a mother will seek care for treatment for her newborn in the
-            # instance of them developing an emergency complication postnatally (sepsis)
-            'care_seeking_postnatal_complication_neonate': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_neonate, parameters=params),
-
             # This equation is used to determine if a mother will seek care for treatment for her obstetric fistula
             'care_seeking_for_fistula_repair': LinearModel.custom(
                 postnatal_supervisor_lm.predict_care_seeking_for_fistula_repair, parameters=params),
         }
 
         if 'Hiv' not in self.sim.modules:
-            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
-                                               'testing will not happen in postnatal care')
+            logger.debug(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                             'testing will not happen in postnatal care')
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -364,7 +345,8 @@ class PostnatalSupervisor(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if df.at[mother_id, 'is_alive']:
 
@@ -379,7 +361,7 @@ class PostnatalSupervisor(Module):
                 df.at[mother_id, 'pn_obstetric_fistula'] = fistula_type
 
                 # Store the onset weight for daly calculations
-                store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
+                store_dalys_in_mni(mother_id, mni, f'{fistula_type}_fistula_onset', self.sim.date)
 
                 logger.info(key='maternal_complication', data={'person': mother_id,
                                                                'type': f'{fistula_type}_fistula',
@@ -472,7 +454,7 @@ class PostnatalSupervisor(Module):
          """
         df = self.sim.population.props
         params = self.current_parameters
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         def onset(eq):
@@ -525,7 +507,7 @@ class PostnatalSupervisor(Module):
             df.pn_sepsis_late_postpartum
 
         for person in new_sepsis.loc[new_sepsis].index:
-            store_dalys_in_mni(person, 'sepsis_onset')
+            store_dalys_in_mni(person, mni, 'sepsis_onset', self.sim.date)
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'sepsis',
                                                            'timing': 'postnatal'})
@@ -539,7 +521,8 @@ class PostnatalSupervisor(Module):
         df.loc[onset_pph.loc[onset_pph].index, 'pn_emergency_event_mother'] = True
 
         for person in onset_pph.loc[onset_pph].index:
-            store_dalys_in_mni(person, 'secondary_pph_onset')
+            store_dalys_in_mni(person, mni, 'secondary_pph_onset', self.sim.date)
+
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'secondary_postpartum_haemorrhage',
                                                            'timing': 'postnatal'})
@@ -555,7 +538,9 @@ class PostnatalSupervisor(Module):
         df.loc[onset_anaemia.loc[onset_anaemia].index, 'pn_anaemia_following_pregnancy'] = random_choice_severity
 
         for person in onset_anaemia.loc[onset_anaemia].index:
-            store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_onset')
+            store_dalys_in_mni(person, mni, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_onset',
+                               self.sim.date)
+
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': f'{df.at[person, "pn_anaemia_following_pregnancy"]}'
                                                                    f'_anaemia',
@@ -575,7 +560,7 @@ class PostnatalSupervisor(Module):
 
         for person in resolvers.loc[resolvers].index:
             if not pd.isnull(mni[person]['hypertension_onset']):
-                store_dalys_in_mni(person, 'hypertension_resolution')
+                store_dalys_in_mni(person, mni, 'hypertension_resolution', self.sim.date)
 
         df.loc[resolvers.loc[resolvers].index, 'pn_htn_disorders'] = 'resolved'
 
@@ -588,7 +573,7 @@ class PostnatalSupervisor(Module):
             disease_states = ['gest_htn', 'severe_gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
             prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
-            risk_ghtn_remains_mild = 1 - (risk_of_gest_htn_progression + params['probs_for_mgh_matrix_pn'][2])
+            risk_ghtn_remains_mild = 1.0 - (risk_of_gest_htn_progression + params['probs_for_mgh_matrix_pn'][2])
 
             # update the probability matrix according to treatment
 
@@ -612,7 +597,9 @@ class PostnatalSupervisor(Module):
                         df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
                     elif disease == 'eclampsia':
                         df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
-                        new_onset_disease.index.to_series().apply(store_dalys_in_mni, mni_variable='eclampsia_onset')
+                        new_onset_disease.index.to_series().apply(
+                            pregnancy_helper_functions.store_dalys_in_mni,
+                            mni=mni, mni_variable='eclampsia_onset', date=self.sim.date)
 
                     for person in new_onset_disease.index:
                         logger.info(key='maternal_complication', data={'person': person,
@@ -679,13 +666,15 @@ class PostnatalSupervisor(Module):
 
         # -------------------------------- RISK OF DEATH SEVERE HYPERTENSION ------------------------------------------
         # Risk of death is applied to women with severe hypertensive disease
-        at_risk_of_death_htn = self.apply_linear_model(
-            self.pn_linear_models['death_from_hypertensive_disorder_pn'],
-            df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                   (df['pn_htn_disorders'] == 'severe_gest_htn')])
+        at_risk_of_death_htn = df.loc[df['is_alive'] & df['la_is_postpartum'] &
+                                      (df['pn_postnatal_period_in_weeks'] == week) &
+                                      (df['pn_htn_disorders'] == 'severe_gest_htn')]
+
+        die_from_htn = pd.Series(self.rng.random_sample(len(at_risk_of_death_htn)) <
+                                 params['weekly_prob_death_severe_gest_htn'], index=at_risk_of_death_htn.index)
 
         # Those women who die the on_death function in demography is applied
-        for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
+        for person in die_from_htn.loc[die_from_htn].index:
             self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                     originating_module=self.sim.modules['PostnatalSupervisor'])
 
@@ -694,16 +683,18 @@ class PostnatalSupervisor(Module):
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
         # We now use the the pn_emergency_event_mother property that has just been set for women who are experiencing
         # severe complications to select a subset of women who may choose to seek care
-        care_seeking = self.apply_linear_model(
-            self.pn_linear_models['care_seeking_postnatal_complication_mother'],
-            df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                   df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']])
+        can_seek_care = df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
+                               df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']]
+
+        care_seekers = pd.Series(
+            self.rng.random_sample(len(can_seek_care)) < params['prob_care_seeking_postnatal_emergency'],
+            index=can_seek_care.index)
 
         # Reset this property to stop repeat care seeking
-        df.loc[care_seeking.index, 'pn_emergency_event_mother'] = False
+        df.loc[can_seek_care.index, 'pn_emergency_event_mother'] = False
 
         # Schedule the HSI event
-        for person in care_seeking.loc[care_seeking].index:
+        for person in care_seekers.loc[care_seekers].index:
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
 
             postnatal_check = HSI_Labour_ReceivesPostnatalCheck(
@@ -715,7 +706,7 @@ class PostnatalSupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         # For women who do not seek care we immediately apply risk of death due to complications
-        for person in care_seeking.loc[~care_seeking].index:
+        for person in care_seekers.loc[~care_seekers].index:
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
         if week == 6:
@@ -724,7 +715,7 @@ class PostnatalSupervisor(Module):
             week_6_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 6)
 
             self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
-                ind_or_df='individual', id_or_index=week_6_women.loc[week_6_women].index)
+                id_or_index=week_6_women.loc[week_6_women].index)
 
     def apply_risk_of_neonatal_complications_in_week_one(self, child_id, mother_id):
         """
@@ -772,6 +763,7 @@ class PostnatalSupervisor(Module):
         """
         df = self.sim.population.props
         nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
+        params = self.current_parameters
 
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         onset_sepsis = self.apply_linear_model(
@@ -789,9 +781,10 @@ class PostnatalSupervisor(Module):
                                                           'type': 'late_onset_sepsis'})
 
         # Then we determine if care will be sought for newly septic newborns
-        care_seeking = self.apply_linear_model(
-            self.pn_linear_models['care_seeking_postnatal_complication_neonate'],
-            df.loc[onset_sepsis.loc[onset_sepsis].index])
+        care_seeking = pd.Series(
+            self.rng.random_sample(
+                len(onset_sepsis.loc[onset_sepsis])) < params['prob_care_seeking_postnatal_emergency_neonate'],
+            index=onset_sepsis.loc[onset_sepsis].index)
 
         # We schedule the HSI according
         for person in care_seeking.loc[care_seeking].index:
@@ -832,46 +825,17 @@ class PostnatalSupervisor(Module):
         # ================================== MATERNAL DEATH EQUATIONS ==============================================
         # Create a list of all the causes that may cause death in the individual (matched to GBD labels)
         if mother_or_child == 'mother':
-            causes = list()
-            if mother.pn_postpartum_haem_secondary:
-                causes.append('secondary_postpartum_haemorrhage')
-            if mother.pn_sepsis_late_postpartum:
-                causes.append('postpartum_sepsis')
-            if mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']:
-                causes.append('severe_pre_eclampsia')
-            if mother.pn_htn_disorders == 'eclampsia':
-                causes.append('eclampsia')
+            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+            # (either from one or multiple causes) and if death occurs returns the cause
+            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
+                self, target='mother', individual_id=individual_id)
 
-            # Create a dictionary storing risk of death associated with each complication present in the individual
-            risks = dict()
-            for cause in causes:
-                risk = {f'{cause}': params[f'cfr_{cause}']}
-                if (cause == 'secondary_postpartum_haemorrhage') and (mother.pn_anaemia_following_pregnancy != 'none'):
-                    risk[cause] = risk[cause] * params['rr_death_from_pph_with_anaemia']
-                risks.update(risk)
-
-            # Calculate overall risk of death
-            result = 1
-            for cause in risks:
-                result *= (1 - risks[cause])
-
-            # If random draw is less that the total risk of death, she will die and the primary cause is then
-            # determined
-            if self.rng.random_sample() < (1 - result):
-                probs = list()
-
-                # Cycle over each cause in the dictionary and divide by the sum of the probabilities
-                denominator = sum(risks.values())
-                for cause in risks:
-                    risks[cause] = risks[cause] / denominator
-                    probs.append(risks[cause])
-
-                cause_of_death = self.rng.choice(causes, p=probs)
-
-                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
+            # If a cause is returned death is scheduled
+            if potential_cause_of_death:
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                         originating_module=self.sim.modules['PostnatalSupervisor'])
 
-                del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
+                del mni[individual_id]
 
             else:
                 # Reset variables for women who survive
@@ -901,10 +865,8 @@ class PostnatalSupervisor(Module):
 
                 # If this neonate will die then we make the appropriate changes
                 if self.rng.random_sample() < risk_of_death:
-                    logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
-                                                     f'date {self.sim.date}')
 
-                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause}',
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=cause,
                                                             originating_module=self.sim.modules['PostnatalSupervisor'])
 
                 # Otherwise we reset the variables in the data frame
@@ -925,7 +887,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # ================================ UPDATING LENGTH OF POSTPARTUM PERIOD  IN WEEKS  ============================
@@ -939,7 +901,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug(key='message', data=f'updating postnatal periods on date {self.sim.date}')
 
         # Check that all women are week 1 or above
-        assert (df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] > 0).all().all()
+        if not (df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] > 0).all().all():
+            logger.debug(key='error', data='Postnatal weeks incorrectly calculated')
 
         # ================================= COMPLICATIONS/CARE SEEKING FOR WOMEN ======================================
         # This function is called to apply risk of complications to women in weeks 2, 3, 4, 5 and 6 of the postnatal
@@ -966,7 +929,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Schedule date of resolution for any women with hypertension
         for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
             if not pd.isnull(mni[person]['hypertension_onset']):
-                store_dalys_in_mni(person, 'hypertension_resolution')
+                store_dalys_in_mni(person, mni, 'hypertension_resolution', self.sim.date)
 
         week_8_postnatal_women_anaemia = \
             df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
@@ -974,7 +937,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Schedule date of resolution for any women with anaemia
         for person in week_8_postnatal_women_anaemia.loc[week_8_postnatal_women_anaemia].index:
-            store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution')
+            store_dalys_in_mni(person, mni, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia'
+                                            f'_pp_resolution', self.sim.date)
 
         week_8_postnatal_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8)
 
@@ -1023,16 +987,18 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mother = df.loc[individual_id]
 
         if not mother.is_alive:
             return
 
         # Run some checks on the mothers arriving to this event after delivery
-        assert df.at[individual_id, 'la_is_postpartum']
-        assert (self.sim.date - mother.la_date_most_recent_delivery) < pd.to_timedelta(7, unit='d')
-        assert not mni[individual_id]['passed_through_week_one']
+        if (not mother.la_is_postpartum or
+            not (self.sim.date - mother.la_date_most_recent_delivery) < pd.to_timedelta(7, unit='d') or
+           mni[individual_id]['passed_through_week_one']):
+            logger.debug(key='error', data='Mother incorrectly scheduled to arrive at PostnatalWeekOneMaternalEvent')
+            return
 
         # Signify this woman has reached week one of the postnatal period (this variable is used in the labour module)
         mni[individual_id]['passed_through_week_one'] = True
@@ -1063,7 +1029,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         # If the individual develops sepsis, update key variables and log the case
         if endo_result or ut_result or ssti_result:
             df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
-            store_dalys_in_mni(individual_id, 'sepsis_onset')
+            store_dalys_in_mni(individual_id, mni, 'sepsis_onset', self.sim.date)
 
             logger.info(key='maternal_complication', data={'person': individual_id, 'type': 'sepsis',
                                                            'timing': 'postnatal'})
@@ -1081,7 +1047,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
         if risk_secondary_pph > self.module.rng.random_sample():
             df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
-            store_dalys_in_mni(individual_id, 'secondary_pph_onset')
+            store_dalys_in_mni(individual_id, mni, 'secondary_pph_onset', self.sim.date)
 
             logger.info(key='maternal_complication', data={'person': individual_id,
                                                            'type': 'secondary_postpartum_haemorrhage',
@@ -1099,8 +1065,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
                 df.at[individual_id, 'pn_anaemia_following_pregnancy'] = random_choice_severity
 
-                store_dalys_in_mni(individual_id, f'{df.at[individual_id, "pn_anaemia_following_pregnancy"]}_'
-                                                  f'anaemia_pp_onset')
+                store_dalys_in_mni(individual_id, mni, f'{df.at[individual_id, "pn_anaemia_following_pregnancy"]}_'
+                                                       f'anaemia_pp_onset', self.sim.date)
 
                 logger.info(key='maternal_complication',
                             data={'person': individual_id,
@@ -1118,7 +1084,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 if not pd.isnull(mni[individual_id]['hypertension_onset']):
                     # Store date of resolution for women who were aware of their hypertension (in keeping with daly
                     # weight definition)
-                    store_dalys_in_mni(individual_id, 'hypertension_resolution')
+                    store_dalys_in_mni(individual_id, mni, 'hypertension_resolution', self.sim.date)
                     df.at[individual_id, 'pn_htn_disorders'] = 'resolved'
 
             else:
@@ -1138,8 +1104,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                     treatment_reduced_risk = prob_matrix['gest_htn']['severe_gest_htn'] * \
                                              params['treatment_effect_anti_htns_progression_pn']
                     prob_matrix['gest_htn']['severe_gest_htn'] = treatment_reduced_risk
-                    prob_matrix['gest_htn']['gest_htn'] = 1 - (treatment_reduced_risk +
-                                                               prob_matrix['gest_htn']['mild_pre_eclamp'])
+                    prob_matrix['gest_htn']['gest_htn'] = 1.0 - (treatment_reduced_risk +
+                                                                 prob_matrix['gest_htn']['mild_pre_eclamp'])
 
                 current_status = df.loc[[individual_id], 'pn_htn_disorders']
                 new_status = util.transition_states(current_status, prob_matrix, self.module.rng)
@@ -1158,8 +1124,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                 mni[person]['new_onset_spe'] = True
 
                         if disease == 'eclampsia':
-                            new_onset_disease.index.to_series().apply(store_dalys_in_mni,
-                                                                      mni_variable='eclampsia_onset')
+                            new_onset_disease.index.to_series().apply(
+                                store_dalys_in_mni, mni=mni, mni_variable='eclampsia_onset', date=self.sim.date)
 
                 for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                     log_new_progressed_cases(disease)
@@ -1245,8 +1211,9 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
             return
 
         # Run checks to ensure only the right newborns have arrived here
-        assert child.age_days < 7
-        assert not nci[individual_id]['passed_through_week_one']
+        if not child.age_days < 7 or nci[individual_id]['passed_through_week_one']:
+            logger.debug(key='error', data='Child incorrectly scheduled for PostnatalWeekOneNeonatalEvent')
+            return
 
         nci[individual_id]['passed_through_week_one'] = True
 
@@ -1309,35 +1276,8 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         if not mother.is_alive:
             return
 
-        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
-            person_id, f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution')
+        pregnancy_helper_functions.store_dalys_in_mni(
+            person_id, self.sim.modules['PregnancySupervisor'].mother_and_newborn_info,
+            f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution', self.sim.date)
 
         df.at[person_id, 'pn_obstetric_fistula'] = 'none'
-        logger.debug(key='msg', data=f'Mother {person_id} has undergone surgical correction of her obstetric fistula')
-
-
-class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This is the PostnatalLoggingEvent. It runs every year and uses the dataframe and postnatal_tracker to generate
-    summary statistics used in analysis files. This is not a finalised event and is liable to change
-    """
-    def __init__(self, module):
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        # Previous Year...
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-
-        # Denominators...
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
-        if total_births_last_year == 0:
-            total_births_last_year = 1
-
-        # ra_lower_limit = 14
-        # ra_upper_limit = 50
-        # women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
-        #                                   (df.age_years < ra_upper_limit))]
-        # total_women_reproductive_age = len(women_reproductive_age)

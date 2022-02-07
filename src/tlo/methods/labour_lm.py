@@ -24,13 +24,14 @@ import pandas as pd
 
 
 def predict_parity(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model (additive) which returns a df containing the predicted parity (previous number of
+    births) for all women aged >15 at initialisation of the simulation. The result is returned as a rounded integer.
+    """
     params = self.parameters
     result = pd.Series(data=params['intercept_parity_lr2010'], index=df.index)
 
-    # todo: unsure which of these is correct currently
-    result += (df.age_years * 0.21)
-    # result += (df.age_years - 14) * 0.21
+    result += (df.age_years * params['effect_age_parity_lr2010'])
 
     result[df.li_mar_stat == 2] += params['effect_mar_stat_2_parity_lr2010']
     result[df.li_mar_stat == 3] += params['effect_mar_stat_3_parity_lr2010']
@@ -44,6 +45,7 @@ def predict_parity(self, df, rng=None, **externals):
 
     result[~df.li_urban] += params['effect_rural_parity_lr2010']
 
+    # Return the result as a rounded integer (values are originally floats and can be negative)
     rounded_result = result.round()
     minus_women = rounded_result.loc[rounded_result.values < 0]
     rounded_result.loc[minus_women.index] = 0
@@ -53,15 +55,20 @@ def predict_parity(self, df, rng=None, **externals):
 
 
 def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
-    """individual level"""
-    # person = df.iloc[0]
-    params = self.parameters
+    """
+    Individual level linear model which predicts an individuals probability of developing obstructed labour
+    secondary to cephalopelvic disproportion. Risk is increased in women who were extremely stunted as children and in
+     women whose foetus is macrosomic (>4kg)
+    """
+    person = df.iloc[0]
+    params = self.module.current_parameters
     result = params['prob_obstruction_cpd']
 
-    # TODO: update with stunting properties
+    # Effect of stunting only applied if the module is registered
+    if 'Stunting' in self.module.sim.modules:
+        if person['un_HAZ_category'] == 'HAZ>=-2':
+            result *= params['rr_obstruction_cpd_stunted_mother']
 
-    # if person['stunting_property']:
-    #    result *= params['rr_obstruction_cpd_stunted_mother']
     if externals['macrosomia']:
         result *= params['rr_obstruction_foetal_macrosomia']
 
@@ -69,7 +76,11 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
 
 
 def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing sepsis secondary
+    to chorioamnionitis during labour. Risk is increased in women with premature rupture of membranes (PROM) but is
+    decreased for women who have received antibiotics for PROM and in those who experienced clean delivery practices
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['prob_sepsis_chorioamnionitis']
@@ -85,7 +96,11 @@ def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
 
 
 def predict_sepsis_endometritis_pp(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing sepsis secondary
+    to endometritis during the postnatal period. Risk is increased in women who delivered via caesarean section and
+    decreased in those who experienced clean delivery practices
+    """
     params = self.parameters
     result = params['prob_sepsis_endometritis']
 
@@ -98,7 +113,11 @@ def predict_sepsis_endometritis_pp(self, df, rng=None, **externals):
 
 
 def predict_sepsis_skin_soft_tissue_pp(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing sepsis secondary
+    to skin/soft tissue infection during the postnatal period.Risk is increased in women who delivered via caesarean
+    section and decreased in those who experienced clean delivery practices
+    """
     params = self.parameters
     result = params['prob_sepsis_skin_soft_tissue']
 
@@ -111,7 +130,11 @@ def predict_sepsis_skin_soft_tissue_pp(self, df, rng=None, **externals):
 
 
 def predict_sepsis_urinary_tract_pp(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing sepsis secondary
+    to urinary tract infection during the postnatal period. Risk is decreased in those who experienced clean
+    delivery practices
+    """
     params = self.parameters
     result = params['prob_sepsis_urinary_tract']
 
@@ -122,7 +145,10 @@ def predict_sepsis_urinary_tract_pp(self, df, rng=None, **externals):
 
 
 def predict_sepsis_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to postpartum sepsis.
+    Probability of death is reduced in the presence of treatment.
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_pp_sepsis']
@@ -134,7 +160,11 @@ def predict_sepsis_death(self, df, rng=None, **externals):
 
 
 def predict_eclampsia_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    This is an individual level linear model which predicts an individuals probability of death due to eclampsia.
+    Probability of death is reduced in the presence of treatment. Separate treatment effects are present for
+    magnesium sulphate and IV antihypertensives
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_eclampsia']
@@ -149,7 +179,10 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
 
 
 def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to severe
+    pre-eclampsia. Probability of death is reduced in the presence of treatment.
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_severe_pre_eclamp']
@@ -162,7 +195,11 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
 
 
 def predict_placental_abruption_ip(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing placental
+    abruption during labour. Risk is increased in women who have previously delivered
+    via caesarean section and in women with gestational hypertension
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['prob_placental_abruption_during_labour']
@@ -177,7 +214,12 @@ def predict_placental_abruption_ip(self, df, rng=None, **externals):
 
 
 def predict_antepartum_haem_ip(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing an antepartum
+    haemorrhage during labour. We assume no risk of bleeding in the absence of
+    predictors included in the model. We therefore use an additive approach to determine risk of bleeding in the
+    presence of either placental abruption or placenta praevia
+    """
     person = df.iloc[0]
     params = self.parameters
     result = 0.0
@@ -191,7 +233,11 @@ def predict_antepartum_haem_ip(self, df, rng=None, **externals):
 
 
 def predict_antepartum_haem_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to antepartum
+    haemorrhage. Probability of death is reduced in the presence of treatment. Separate treatment effects are present
+    for blood transfusion and caesarean delivery
+    """
     params = self.parameters
     result = params['cfr_aph']
 
@@ -205,15 +251,25 @@ def predict_antepartum_haem_death(self, df, rng=None, **externals):
 
 
 def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing a postpartum haemorrhage due
+    to an atonic uterus following birth. Risk is increased due to hypertension and decreased in the presence of
+     prophylactic treatment
+    """
     person = df.iloc[0]
-    params = self.parameters
+    params = self.module.current_parameters
     result = params['prob_pph_uterine_atony']
 
     if externals['amtsl_given']:
         result *= params['treatment_effect_amtsl']
-    if (person['pn_htn_disorders'] != 'none') or person['nc_hypertension']:
+
+    if person['pn_htn_disorders'] != 'none':
         result *= params['rr_pph_ua_hypertension']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        if (person['pn_htn_disorders'] == 'none') and (person['nc_hypertension']):
+            result *= params['rr_pph_ua_hypertension']
+
     if person['ps_multiple_pregnancy']:
         result *= params['rr_pph_ua_multiple_pregnancy']
     if person['la_placental_abruption'] or person['ps_placental_abruption']:
@@ -225,7 +281,11 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
 
 
 def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing a postpartum
+    haemorrhage due to an retained placenta following birth. Risk reduced by the presence of
+    prophylactic treatment
+    """
     params = self.parameters
     result = params['prob_pph_retained_placenta']
 
@@ -236,7 +296,11 @@ def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
 
 
 def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death following a postpartum
+    haemorrhage. Probability of death is reduced in the presence of treatment and increased in women with anaemia.
+    Seperate treatment effects are present for surgical management or blood transfusion
+    """
     person = df.iloc[0]
     params = self.module.current_parameters
     treatment = self.module.pph_treatment.to_strings(person.la_postpartum_haem_treatment)
@@ -253,7 +317,11 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
 
 
 def predict_uterine_rupture_ip(self, df, rng=None, **externals):
-    """population level - to allow scaling"""
+    """
+    Population level linear model to allow for the model to be scaled at initialisation of the simulation. The model
+    returns a df containing the probability of developing a uterine rupture during labour/delivery. Risk is increased
+    for women of greater parity, those who've delivered previously via caesarean section and women in obstructed labour
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_uterine_rupture'], index=df.index)
 
@@ -268,7 +336,11 @@ def predict_uterine_rupture_ip(self, df, rng=None, **externals):
 
 
 def predict_uterine_rupture_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death following a uterine
+    rupture. Probability of death is reduced in the presence of treatment. Separate treatment effects represent surgical
+    interventions and blood transfusion
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_uterine_rupture']
@@ -282,7 +354,12 @@ def predict_uterine_rupture_death(self, df, rng=None, **externals):
 
 
 def predict_intrapartum_still_birth(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of experiencing an intrapartum
+    stillbirth during labour/delivery. Risk is increased due to maternal death, uterine rupture, obstructed labour,
+    haemorrhage, hypertension, infection, twin pregnancy and is decreased in women delivering via caesarean section or
+    assisted vaginal delivery
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['prob_ip_still_birth']
@@ -315,7 +392,13 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
 
 
 def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
-    """population level - to allow scaling"""
+    """
+    Population level to allow for scaling at the initialisation of the simulation. This model predicts an
+    individuals probability of seeking delivery care in a health centre instead of a hospital. This model is logistic
+    as the parameters are odds and odds ratios and the result is returned as a probability. Odds of delivering in a
+    health centre are decreased as women get older, decreased as women get richer, increased at higher parity,
+    increased in married women and rural women
+    """
     params = self.parameters
     result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
 
@@ -343,7 +426,13 @@ def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
 
 
 def predict_probability_delivery_at_home(self, df, rng=None, **externals):
-    """population level - to allow scaling"""
+    """
+    Population level to allow for scaling at the initialisation of the simulation. This model predicts an
+    individuals probability of undergoing a home birth  instead of a hospital. This model is logistic
+    as the parameters are odds and odds ratios and the result is returned as a probability. Odds of homebirth are
+     increased in younger women and decreased in older women, are higher in rural women, decreased in women with primary
+     or secondary education, decreased in higher wealth and increased in higher parity
+    """
     params = self.parameters
     result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
 
@@ -374,7 +463,13 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
 
 
 def predict_postnatal_check(self, df, rng=None, **externals):
-    """population level - to allow scaling"""
+    """
+    Population level to allow for scaling at the initialisation of the simulation. This model predicts an
+    individuals probability of receiving postnatal care following their delivery. This model is logistic
+    as the parameters are odds and odds ratios and the result is returned as a probability. Odds of PNC are higher in
+    older women, lower in rural women, lower in the poorest women, higher in women with ANC4+, higher in those
+    delivering in a facility and via caeasrean section and lower in women with higher parity
+    """
     params = self.parameters
     result = pd.Series(data=params['odds_will_attend_pnc'], index=df.index)
 

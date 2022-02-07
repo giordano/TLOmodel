@@ -3,28 +3,28 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,
-    cardio_metabolic_disorders,
     contraception,
     demography,
-    depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     labour,
-    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
+    pregnancy_helper_functions,
     symptommanager,
 )
 
 seed = 1896
+start_date = Date(2010, 1, 1)
 
 # The resource files
 try:
@@ -67,50 +67,54 @@ def set_pregnancy_characteristics(sim, mother_id):
     df.at[mother_id, 'la_due_date_current_pregnancy'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=38)
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 40
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
 
 
-def register_modules(cons_availability):
-    """Register all modules that are required for labour to run"""
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+def register_modules(sim):
+    """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
+    modules"""
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           cons_availability=cons_availability),
+                                           cons_availability='all'),  # went set disable=true, cant check HSI queue
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-                 )
 
-    return sim
+                 hiv.DummyHivModule(),
+                 )
 
 
 @pytest.mark.slow
-def test_run_no_constraints():
+def test_run_no_constraints(tmpdir):
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+
+    register_modules(sim)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
+
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    assert 'error' not in output['tlo.methods.labour']
 
 
 def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if she chooses not to seek care following a complication"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     params = sim.modules['Labour'].current_parameters
@@ -120,11 +124,11 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     mni[mother_id]['test_run'] = True
 
     params['test_care_seeking_probs'] = [1, 0, 0]
-    params['odds_will_attend_pnc'] = 0
-    params['cfr_pp_sepsis'] = 0
-    params['cfr_pp_eclampsia'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_pp_pph'] = 0
+    params['odds_will_attend_pnc'] = 0.0
+    params['cfr_pp_sepsis'] = 0.0
+    params['cfr_pp_eclampsia'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_pp_pph'] = 0.0
 
     # define and run labour onset event
     labour_onset = labour.LabourOnsetEvent(individual_id=mother_id, module=sim.modules['Labour'])
@@ -150,7 +154,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     sim.event_queue.queue.clear()
 
     # Set care seeking odds to 0 (as changes event sequence if women seek care- tested later)
-    params['prob_careseeking_for_complication'] = 0
+    params['prob_careseeking_for_complication'] = 0.0
 
     # Stop possibility of care seeking if she has developed a complication
     mni[mother_id]['squeeze_to_high_for_hsi_pp'] = True
@@ -170,7 +174,9 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
 def test_event_scheduling_for_care_seeking_during_home_birth():
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if shes chooses to seek care following a complication"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     set_pregnancy_characteristics(sim, mother_id)
 
@@ -188,8 +194,8 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     # Force the woman to experience some complications and force that she will seek care
     mni[mother_id]['delivery_setting'] = 'home_birth'
 
-    params['prob_obstruction_cpd'] = 1
-    params['prob_careseeking_for_complication'] = 1
+    params['prob_obstruction_cpd'] = 1.0
+    params['prob_careseeking_for_complication'] = 1.0
 
     # Run the intrapartum home birth event
     home_birth = labour.LabourAtHomeEvent(individual_id=mother_id, module=sim.modules['Labour'])
@@ -224,7 +230,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     sim.date = sim.date + pd.DateOffset(days=5)
 
     # force a complication
-    params['prob_pph_uterine_atony'] = 1
+    params['prob_pph_uterine_atony'] = 1.0
 
     # run postpartum home event
     home_birth_pp = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
@@ -237,7 +243,9 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
 def test_event_scheduling_for_labour_onset_and_facility_delivery():
     """This test checks that women who choose to give birth at a facility will correctly seek care and the scheduling
     of the events is correct"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     params = sim.modules['Labour'].current_parameters
@@ -272,7 +280,9 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
 def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section():
     """This test checks that women who have been admitted from antenatal care to delivery via caesarean have the correct
      care and event scheduled"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -328,22 +338,24 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases():
     """This test checks that risk of complication in the intrapartum and postpartum phase are applied to women as
     expected """
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     set_pregnancy_characteristics(sim, mother_id)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # Force all complications and preceding complications to occur
     params = sim.modules['Labour'].current_parameters
-    params['prob_obstruction_cpd'] = 1
-    params['prob_obstruction_malpos_malpres'] = 1
-    params['prob_placental_abruption_during_labour'] = 1
-    params['prob_aph_placental_abruption_labour'] = 1
-    params['prob_sepsis_chorioamnionitis'] = 1
-    params['prob_uterine_rupture'] = 1
+    params['prob_obstruction_cpd'] = 1.0
+    params['prob_obstruction_malpos_malpres'] = 1.0
+    params['prob_placental_abruption_during_labour'] = 1.0
+    params['prob_aph_placental_abruption_labour'] = 1.0
+    params['prob_sepsis_chorioamnionitis'] = 1.0
+    params['prob_uterine_rupture'] = 1.0
 
     # Call the function responsible to applying risk of complications
     for complication in ['obstruction_cpd', 'obstruction_malpos_malpres',
@@ -360,13 +372,13 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
     assert sim.population.props.at[mother_id, 'la_uterine_rupture']
 
     # Now repeat this process checking the application of risk of complications in the immediate postpartum period
-    params['prob_sepsis_endometritis'] = 1
-    params['prob_sepsis_urinary_tract'] = 1
-    params['prob_sepsis_skin_soft_tissue'] = 1
-    params['prob_sepsis_other_maternal_infection_pp'] = 1
-    params['prob_pph_uterine_atony'] = 1
-    params['prob_pph_retained_placenta'] = 1
-    params['prob_pph_other_causes'] = 1
+    params['prob_sepsis_endometritis'] = 1.0
+    params['prob_sepsis_urinary_tract'] = 1.0
+    params['prob_sepsis_skin_soft_tissue'] = 1.0
+    params['prob_sepsis_other_maternal_infection_pp'] = 1.0
+    params['prob_pph_uterine_atony'] = 1.0
+    params['prob_pph_retained_placenta'] = 1.0
+    params['prob_pph_other_causes'] = 1.0
 
     for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
                          'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
@@ -383,24 +395,26 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
 
 def test_logic_within_death_and_still_birth_events():
     """This test checks that risk of death and stillbirth during labour are applied as expected"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     df = sim.population.props
 
     # set the intercept values for the death LMs to 1 to force death to occur
     params = sim.modules['Labour'].current_parameters
-    params['cfr_sepsis'] = 1
-    params['cfr_eclampsia'] = 1
-    params['cfr_severe_pre_eclamp'] = 1
-    params['cfr_aph'] = 1
-    params['cfr_uterine_rupture'] = 1
-    params['cfr_severe_pre_eclamp'] = 1
-    params['cfr_pp_pph'] = 1
+    params['cfr_sepsis'] = 1.0
+    params['cfr_eclampsia'] = 1.0
+    params['cfr_severe_pre_eclamp'] = 1.0
+    params['cfr_aph'] = 1.0
+    params['cfr_uterine_rupture'] = 1.0
+    params['cfr_severe_pre_eclamp'] = 1.0
+    params['cfr_pp_pph'] = 1.0
 
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # set some complications to cause death
     df.at[mother_id, 'la_sepsis'] = True
@@ -408,17 +422,10 @@ def test_logic_within_death_and_still_birth_events():
     df.at[mother_id, 'la_uterine_rupture'] = True
     df.at[mother_id, 'ps_htn_disorders'] = 'eclampsia'
 
-    causes = sim.modules['Labour'].get_potential_causes_of_death(mother_id, 'intrapartum')
+    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause(sim.modules['Labour'], 'mother', mother_id)
 
     # ensure they are correctly captured in the death event
-    assert 'intrapartum_sepsis' in causes
-    assert 'antepartum_haemorrhage' in causes
-    assert 'eclampsia' in causes
-    assert 'uterine_rupture' in causes
-
-    # And that death is correctly determined by the function in the labour module
-    result_from_death_calc = sim.modules['Labour'].apply_risk_of_death(mother_id, causes)
-    assert result_from_death_calc
+    assert causes
 
     # Rest variables to now test the postpartum application of risk
     df.at[mother_id, 'is_pregnant'] = False
@@ -427,21 +434,16 @@ def test_logic_within_death_and_still_birth_events():
     df.at[mother_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['new_onset_spe'] = True
 
-    causes_pp = sim.modules['Labour'].get_potential_causes_of_death(mother_id, 'postpartum')
+    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause(sim.modules['Labour'], 'mother', mother_id)
 
-    assert 'postpartum_sepsis' in causes_pp
-    assert 'postpartum_haemorrhage' in causes_pp
-    assert 'severe_pre_eclampsia' in causes_pp
-
-    result_from_death_calc_pp = sim.modules['Labour'].apply_risk_of_death(mother_id, causes)
-
-    assert result_from_death_calc_pp
+    assert causes
 
     # Now we test the event as a whole...
     # set variables that allow the event to run
     set_pregnancy_characteristics(sim, mother_id)
     sim.modules['Labour'].women_in_labour.append(mother_id)
     df.at[mother_id, 'la_currently_in_labour'] = True
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     sim.date = sim.date + pd.DateOffset(days=4)
 
@@ -454,20 +456,22 @@ def test_logic_within_death_and_still_birth_events():
 
     # clear the event queue and reset is_alive
     df.at[mother_id, 'is_alive'] = True
+    df.at[mother_id, 'is_pregnant'] = True
+
     sim.event_queue.queue.clear()
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # set risk of death to 0 but set risk of stillbirth to 1
-    params['cfr_sepsis'] = 0
-    params['cfr_eclampsia'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_aph'] = 0
-    params['cfr_uterine_rupture'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_pp_pph'] = 0
-    params['prob_ip_still_birth'] = 1
+    params['cfr_sepsis'] = 0.0
+    params['cfr_eclampsia'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_aph'] = 0.0
+    params['cfr_uterine_rupture'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_pp_pph'] = 0.0
+    params['prob_ip_still_birth'] = 1.0
 
     # run the event again and check the correct variables have been updated to signify stillbirth
     death_event.apply(mother_id)
@@ -481,7 +485,9 @@ def test_logic_within_death_and_still_birth_events():
 def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions():
     """This test checks that interventions delivered during the primary delivery HSI are correctly administered and
     effect death/outcome in the way that is expected """
-    sim = register_modules(cons_availability='all')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     sim.make_initial_population(n=100)
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -492,8 +498,8 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = int(women_repro.index[0])
     df.at[mother_id, 'is_pregnant'] = True
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = sim.population.props
@@ -545,7 +551,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     # Remove CPD as a cause and set probability of AVD being successful to 1, call the function and check she has
     # undergone instrumental delivery
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = False
-    params['prob_successful_assisted_vaginal_delivery'] = 1
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
     sim.modules['Labour'].assessment_and_treatment_of_obstructed_labour_via_avd(hsi_event=hsi_event)
     assert (mni[mother_id]['mode_of_delivery'] == 'instrumental')
 
@@ -580,7 +586,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     # Finally check treatment for postpartum haem. Set probablity that uterotonics will stop bleeding to 1
     df.at[mother_id, 'la_postpartum_haem'] = True
     mni[mother_id]['uterine_atony'] = True
-    params['prob_haemostatis_uterotonics'] = 1
+    params['prob_haemostatis_uterotonics'] = 1.0
 
     # Run the event and check that the woman is referred for blood but not surgery. And that treatment is stored in
     # bitset property
@@ -589,7 +595,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert not mni[mother_id]['referred_for_surgery']
 
     # Reset those properties and set the probability of successful medical management to 0
-    params['prob_haemostatis_uterotonics'] = 0
+    params['prob_haemostatis_uterotonics'] = 0.0
     df.at[mother_id, 'la_postpartum_haem'] = True
 
     # Call treatment function and check she has correctly been referred for surgical management and blood
@@ -605,12 +611,12 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     mni[mother_id]['retained_placenta'] = True
 
     # Now assume the bleed is due to retained placenta, set probablity of bedside removal to 1 and call function
-    params['prob_successful_manual_removal_placenta'] = 1
+    params['prob_successful_manual_removal_placenta'] = 1.0
     sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
     assert not mni[mother_id]['referred_for_blood']
     assert not mni[mother_id]['referred_for_surgery']
 
-    params['prob_successful_manual_removal_placenta'] = 0
+    params['prob_successful_manual_removal_placenta'] = 0.0
     mni[mother_id]['retained_placenta'] = True
     df.at[mother_id, 'la_postpartum_haem'] = True
 
@@ -623,7 +629,9 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints():
     """This test checks that interventions delivered during the CEmONC HSI are correctly administered and
     effect death/outcome in the way that is expected """
-    sim = register_modules(cons_availability='all')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_id = int(mother_id)
     set_pregnancy_characteristics(sim, mother_id)
@@ -648,7 +656,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_uterine_rupture'] = True
 
     # Force success rate of surgery to 1
-    params['success_rate_uterine_repair'] = 1
+    params['success_rate_uterine_repair'] = 1.0
 
     # Run the surgery and check the treatment has been delivered
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
@@ -657,7 +665,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # Now set the success rate of repair to 0 and run the event again, check this time the woman has undergone
     # hysterectomy
-    params['success_rate_uterine_repair'] = 0
+    params['success_rate_uterine_repair'] = 0.0
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
     assert df.at[mother_id, 'la_has_had_hysterectomy']
 
@@ -685,7 +693,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date + pd.DateOffset(days=4)
 
     # force surgery to be successful
-    params['success_rate_pph_surgery'] = 1
+    params['success_rate_pph_surgery'] = 1.0
 
     # run event, check the women underwent successful surgery and didnt have a hysterectomy
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
@@ -704,7 +712,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_postpartum_haem'] = True
 
     # now set surgery success to 0 and check that hysterectomy occurred
-    params['success_rate_pph_surgery'] = 0
+    params['success_rate_pph_surgery'] = 0.0
     sim.modules['Labour'].pph_treatment.unset(mother_id, 'surgery')
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
 

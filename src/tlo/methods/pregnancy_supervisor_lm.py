@@ -2,8 +2,13 @@ import pandas as pd
 
 
 def preterm_labour(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
+    """
+    Population level linear model which returns a df containing the probability of preterm labour onset for a subset of
+    the population. In this model the 'intercept' value varies dependent on a womans gestational age to generate the
+    correct distribution of early/late preterm births. Premature rupture of membranes, maternal anaemia, twin pregnancy
+    and malaria all increase risk of preterm labour.
+    """
+    params = self.module.current_parameters
     result = pd.Series(data=1, index=df.index)
 
     result[df.ps_gestational_age_in_weeks == 22] *= params['baseline_prob_early_labour_onset'][0]
@@ -13,14 +18,21 @@ def preterm_labour(self, df, rng=None, **externals):
 
     result[df.ps_premature_rupture_of_membranes] *= params['rr_preterm_labour_post_prom']
     result[df.ps_anaemia_in_pregnancy != 'none'] *= params['rr_preterm_labour_anaemia']
-    result[df.ma_is_infected] *= params['rr_preterm_labour_malaria']
     result[df.ps_multiple_pregnancy] *= params['rr_preterm_labour_multiple_pregnancy']
+
+    # Only include effect of malaria infection if the correct module is scheduled
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_preterm_labour_malaria']
 
     return result
 
 
 def placenta_praevia(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of placenta praevia for a subset of
+    the population at initiation of pregnancy. Previous delivery via caesarean section increases risk of praevia at
+    conception
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_placenta_praevia'], index=df.index)
 
@@ -30,7 +42,12 @@ def placenta_praevia(self, df, rng=None, **externals):
 
 
 def antepartum_haem(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of antepartum haemorrhage for a subset
+    of the population at different time points of pregnancy. We assume no risk of bleeding in the absence of
+    predictors included in the model. We therefore use an additive approach to determine risk of bleeding in the
+    presence of either placental abruption or placenta praevia
+    """
     params = self.parameters
     result = pd.Series(data=0, index=df.index)
 
@@ -41,7 +58,11 @@ def antepartum_haem(self, df, rng=None, **externals):
 
 
 def ectopic_pregnancy_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following ectopic pregnancy
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_ectopic_pregnancy_death'], index=df.index)
 
@@ -51,7 +72,11 @@ def ectopic_pregnancy_death(self, df, rng=None, **externals):
 
 
 def induced_abortion_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following induced abortion
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_induced_abortion_death'], index=df.index)
 
@@ -61,7 +86,12 @@ def induced_abortion_death(self, df, rng=None, **externals):
 
 
 def spontaneous_abortion(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of spontaneous abortion for a subset
+    of the population at different time points of pregnancy. In this model the 'intercept' value varies dependent on a
+    womans gestational age to generate the correct distribution of miscarriage by gestational age. Previous miscarriage
+     and older maternal age increase risk of spontaneous abortion
+    """
     params = self.parameters
     result = pd.Series(data=1, index=df.index)
 
@@ -80,7 +110,11 @@ def spontaneous_abortion(self, df, rng=None, **externals):
 
 
 def spontaneous_abortion_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following spontaneous abortion
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_spontaneous_abortion_death'], index=df.index)
 
@@ -90,19 +124,30 @@ def spontaneous_abortion_death(self, df, rng=None, **externals):
 
 
 def maternal_anaemia(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
+    """
+    Population level linear model which returns a df containing the probability anaemia onset for a subset of the
+    population during each month of pregnancy. Risk of onset is reduced for women receiving daily iron supplementation
+    and increased in the presence of malaria infection and untreated HIV infection
+    """
+    params = self.module.current_parameters
     result = pd.Series(data=params['baseline_prob_anaemia_per_month'], index=df.index)
 
-    result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
-    result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
     result[df.ac_receiving_iron_folic_acid] *= params['treatment_effect_iron_folic_acid_anaemia']
+
+    # Effect of malaria or HIV infection only applied if the correct modules are registered
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
+    if 'Hiv' in self.module.sim.modules:
+        result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
 
     return result
 
 
 def gest_diab(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability gestational diabetes onset for a subset
+    of the population during set months of pregnancy. Obesity increases risk of gestational diabetes
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_gest_diab_per_month'], index=df.index)
 
@@ -112,32 +157,47 @@ def gest_diab(self, df, rng=None, **externals):
 
 
 def gest_htn(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability gestational hypertension onset for a
+    subset of the population during set months of pregnancy. Risk is decreased for women receiving calcium
+    supplementation in pregnancy but increased in obese women
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_gest_htn_per_month'], index=df.index)
 
-    result[df.li_bmi > 3] *= params['rr_gest_htn_obesity']
     result[df.ac_receiving_calcium_supplements] *= params['treatment_effect_gest_htn_calcium']
+    result[df.li_bmi > 3] *= params['rr_gest_htn_obesity']
 
     return result
 
 
 def pre_eclampsia(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
+    """
+    Population level linear model which returns a df containing the probability mild pre-eclampsia onset for a
+    subset of the population during set months of pregnancy. Risk is reduced in women receiving calcium supplementation
+    and increased in presence of obesity, twin pregnancy, hypertension and diabetes mellitus
+    """
+    params = self.module.current_parameters
     result = pd.Series(data=params['prob_pre_eclampsia_per_month'], index=df.index)
 
+    result[df.ac_receiving_calcium_supplements] *= params['treatment_effect_calcium_pre_eclamp']
     result[df.li_bmi > 3] *= params['rr_pre_eclampsia_obesity']
     result[df.ps_multiple_pregnancy] *= params['rr_pre_eclampsia_multiple_pregnancy']
-    result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
-    result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
-    result[df.ac_receiving_calcium_supplements] *= params['treatment_effect_calcium_pre_eclamp']
+
+    # Effect of NCDs on risk only applied if module is registered
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
+        result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
 
     return result
 
 
 def placental_abruption(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of placental abruption onset for a
+    subset of the population during set months of pregnancy. Risk is increased in women who have previously delivered
+    via caesarean section and in women with gestational hypertension
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_placental_abruption_per_month'], index=df.index)
 
@@ -148,8 +208,13 @@ def placental_abruption(self, df, rng=None, **externals):
 
 
 def antenatal_stillbirth(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
+    """
+    Population level linear model which returns a df containing the probability of antenatal stillbirth for a
+    subset of the population during set months of pregnancy. Risk of stillbirth increases with later gestational
+    age (41+), all hypertensive disorders of pregnancy, antepartum haemorrhage, chorioamnionitis, gestational diabetes,
+    syphilis, malaria, non-gestational hypertension and diabetes mellitus
+    """
+    params = self.module.current_parameters
     result = pd.Series(data=params['prob_still_birth_per_month'], index=df.index)
 
     result[df.ps_gestational_age_in_weeks == 41] *= params['rr_still_birth_ga_41']
@@ -163,19 +228,29 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
 
     result[df.ps_antepartum_haemorrhage != 'none'] *= params['rr_still_birth_aph']
     result[df.ps_chorioamnionitis] *= params['rr_still_birth_chorio']
-    result[df.nc_hypertension] *= params['rr_still_birth_chronic_htn']
     result[(df.ps_gest_diab == 'controlled') & (df.ac_gest_diab_on_treatment != 'none')] *=\
         (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])
-
-    result[df.ma_is_infected] *= params['rr_still_birth_maternal_malaria']
-    result[df.nc_diabetes] *= params['rr_still_birth_diab_mellitus']
     result[df.ps_syphilis] *= params['rr_still_birth_maternal_syphilis']
+
+    # Effect of malaria and NCDs only applied in the modules are registered
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_still_birth_maternal_malaria']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        result[df.nc_hypertension] *= params['rr_still_birth_chronic_htn']
+        result[df.nc_diabetes] *= params['rr_still_birth_diab_mellitus']
 
     return result
 
 
 def early_initiation_anc4(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of attending at least four antenatal
+    care visits, with the first visit prior to 5 months, during pregnancy to subset of the population. This is a
+    logistic model and the parameters are odds/odds ratios therefore the result is converted to a probability.
+    Odds of attending early ANC are reduced in women with parity >=2 and is increased as women get older, become more
+    educated, become richer, are married or were previously married
+    """
     params = self.parameters
     result = pd.Series(data=params['odds_early_init_anc4'], index=df.index)
 
