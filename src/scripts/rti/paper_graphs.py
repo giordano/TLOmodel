@@ -82,7 +82,6 @@ ax1.bar(np.arange(len(data)), data, color=['lightsalmon', 'darksalmon'], yerr=ye
 ax1.set_xticks(np.arange(len(data)))
 ax1.set_xticklabels(['GBD', 'Model'])
 ax1.set_ylabel('Inc. of RTI per\n100,000 p.y.')
-# TODO: calibration of age and gender demographics
 ax2 = fig.add_subplot(gs[0, 1])
 
 results_folder = get_scenario_outputs('rti_analysis_calibrate_demographics.py', outputspath)[- 1]
@@ -114,7 +113,7 @@ ax2.axhline(gbd_proportion_male, color='steelblue', label='GBD', linestyle='dash
 ax2.set_xticks(np.arange(len(perc_male)))
 ax2.set_xticklabels([np.round(val, 3) for val in rr_male_params])
 ax2.set_ylabel('Proportion male')
-ax2.legend(prop={'size': 6})
+ax2.legend()
 ax2.set_xlabel('rr_injrti_male')
 # plot age distribution
 gbd_age_gender_data = \
@@ -193,7 +192,7 @@ ax3.bar(np.arange(len(age_info.index)), age_info.proportion, width=0.4, color='l
 ax3.bar(np.arange(len(age_info.index)) + 0.4, ave_age_distribution, width=0.4, color='lightsalmon', label='Model')
 ax3.set_xticks(np.arange(len(age_info.index)) + 0.2)
 ax3.set_xticklabels(age_info.index, rotation=45)
-ax3.legend(prop={'size': 6})
+ax3.legend()
 ax3.set_ylabel("Proportion")
 ax3.set_xlabel("Age groups")
 # plot alcohol demographics
@@ -205,11 +204,13 @@ extracted_perc_related_to_alc = extract_results(results_folder,
                                                 index="date"
                                                 )
 mean_perc_alc = summarize(extracted_perc_related_to_alc, only_mean=True).mean().mean()
-kch_alc_perc = 0.25
+kch_alc_perc = 0.249
 ax4 = fig.add_subplot(gs[1, 1])
-ax4.bar(np.arange(len([kch_alc_perc, mean_perc_alc])), [kch_alc_perc, mean_perc_alc], color=['teal', 'lightseagreen'])
+ax4.bar(np.arange(len([kch_alc_perc, mean_perc_alc])), [kch_alc_perc, mean_perc_alc],
+        color=['royalblue', 'midnightblue'])
 ax4.set_xticks(np.arange(len([kch_alc_perc, mean_perc_alc])))
 ax4.set_xticklabels(['KCH', 'Model'])
+ax4.set_ylabel('Proportion of crashes involving alcohol')
 # Calibration of on-scene mortality
 results_folder = get_scenario_outputs('rti_analysis_fit_incidence_of_on_scene.py', outputspath)[-1]
 # look at one log (so can decide what to extract)
@@ -246,7 +247,7 @@ ax5.set_xticks(np.arange(len(on_scene_inc_death)))
 ax5.set_xticklabels(params['value'].round(4), rotation=45)
 ax5.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
 ax5.set_xlabel('% fatal on scene')
-ax5.legend(prop={'size': 6})
+ax5.legend()
 
 results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
 info = get_scenario_info(results_folder)
@@ -628,7 +629,7 @@ ax7.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='d
 ax7.set_xticks(results_df.index)
 ax7.set_xticklabels(results_df['ISS cutoff score'])
 ax7.set_ylabel('Proportion')
-ax7.legend(loc='lower left', prop={'size': 6})
+ax7.legend(loc='lower left')
 ax7.set_xlabel('ISS cut-off score')
 
 results_folder = get_scenario_outputs('rti_in_hospital_mortality_calibration.py', outputspath)[- 1]
@@ -704,15 +705,15 @@ ax8.axhline(expected_in_hospital_mortality, color='indianred', label='Expected i
             linestyle='dashed')
 ax8.set_xlabel('Scale-factor')
 ax8.set_ylabel('In-hospital mortality')
-ax8.legend(loc='lower right', prop={'size': 6})
-ax1.set_title('a)', loc='left')
-ax2.set_title('b)', loc='left')
-ax3.set_title('c)', loc='left')
-ax4.set_title('e)', loc='left')
-ax5.set_title('f)', loc='left')
-ax6.set_title('g)', loc='left')
-ax7.set_title('h)', loc='left')
-ax8.set_title('i)', loc='left')
+ax8.legend(loc='lower right')
+ax1.set_title('a)       Incidence of RTI', loc='left')
+ax2.set_title('b)       Proportion of RTIs involving males', loc='left')
+ax3.set_title('c)       Age distribution of RTIs', loc='left')
+ax4.set_title('d)       Proportion of RTIs involving alcohol', loc='left')
+ax5.set_title('e)       Proportion of crashes that result in on scene mortality', loc='left')
+ax6.set_title('f)       Average number of injuries of those with RTIs in hospital', loc='left')
+ax7.set_title('g)       Proportion of those with RTIs who seek care', loc='left')
+ax8.set_title('h)       Proportion of in-hospital mortality', loc='left')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3.png",
             bbox_inches='tight')
 gbd_age_gender_data = \

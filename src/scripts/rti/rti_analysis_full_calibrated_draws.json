@@ -36,7 +36,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.0073265459144538775,
+          "base_rate_injrti": 0.004490680771769893,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -74,7 +74,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007305847526928069,
+          "base_rate_injrti": 0.004477994049820138,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -112,7 +112,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007327347317209445,
+          "base_rate_injrti": 0.004491171977856212,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -150,7 +150,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007221878581349396,
+          "base_rate_injrti": 0.0044265267235058334,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -188,7 +188,7 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007096707222518839,
+          "base_rate_injrti": 0.004349805084026612,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -226,7 +226,7 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555,
+          "base_rate_injrti": 0.004375712249396016,
           "imm_death_proportion_rti": 0.007
         }
       }
