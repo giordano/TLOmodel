@@ -74,10 +74,9 @@ class TestScenario(BaseScenario):
         parameter_df['number_of_injured_body_regions_distribution'] = injury_distributions
         parameter_df['scale_factor'] = [1.875581395, 1.875581395 * 1.07843, 1.875581395 * 1.1589978526983375,
                                         1.775581395 * 1.1213015334257184, 1.775581395, 1.475581395]
-        scale_for_inc = [1.0270861999667444, 1.0373195691920685, 1.0215936563566232, 0.999956113910908,
-                         0.9826625920372962, 0.9812138623152221]
-        current_inc = 0.00715091242587118
-        parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
+        new_inc = [0.004364235370981745, 0.004334746692121514, 0.004366273338474707, 0.004268219608865612,
+                   0.0040991908466201646, 0.004070670102910139]
+        parameter_df['base_rate_injrti'] = new_inc
         return {
             'RTI': {'prob_death_iss_less_than_9': parameter_df['scale_factor'][draw_number] * (102 / 11650),
                     'prob_death_iss_10_15': parameter_df['scale_factor'][draw_number] * (7 / 528),
