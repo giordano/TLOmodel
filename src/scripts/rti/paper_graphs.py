@@ -799,7 +799,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaper
 # Figure 4
 plt.clf()
 fig, ax1 = plt.subplots()
-ax1.set_xlabel('Model runs')
+ax1.set_xlabel('rt_emergency_care_ISS_score_cut_off')
 ax1.set_ylabel('Incidence of death\nper 100,000 p.y.')
 ax1.bar(results_df.index, results_df['inc_death'], width=0.4, color='lightsalmon',
         label='Incidence of death')
@@ -826,7 +826,7 @@ plt.clf()
 # Figure 5
 plt.clf()
 fig, ax1 = plt.subplots()
-ax1.set_xlabel('Model runs')
+ax1.set_xlabel('rt_emergency_care_ISS_score_cut_off')
 ax1.set_ylabel('DALYs')
 ax1.bar(results_df.index, results_df['DALYs'], width=0.4, color='lightsalmon',
         label='DALYs')
