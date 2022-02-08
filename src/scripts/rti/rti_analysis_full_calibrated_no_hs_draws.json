@@ -36,7 +36,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007344603469783004
+          "base_rate_injrti": 0.004364235370981745
         }
       }
     },
@@ -73,7 +73,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007417781396934902
+          "base_rate_injrti": 0.004334746692121514
         }
       }
     },
@@ -110,7 +110,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007305326771431749
+          "base_rate_injrti": 0.004366273338474707
         }
       }
     },
@@ -147,7 +147,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.007150598600291369
+          "base_rate_injrti": 0.004268219608865612
         }
       }
     },
@@ -184,7 +184,7 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007026934139838284
+          "base_rate_injrti": 0.0040991908466201646
         }
       }
     },
@@ -221,11 +221,11 @@
               3.364686174939126e-05
             ]
           ],
-          "base_rate_injrti": 0.007016574400466975
+          "base_rate_injrti": 0.004070670102910139
         }
       }
     }
   ],
-  "commit": "6ded877e0ffa2ffd667412a29a967db183b9b3fd",
-  "github": "https://github.com/UCL/TLOmodel/blob/6ded877e0ffa2ffd667412a29a967db183b9b3fd/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
+  "commit": "98b1caa4900dc98a780faafe8d86de32f70ad6a2",
+  "github": "https://github.com/UCL/TLOmodel/blob/98b1caa4900dc98a780faafe8d86de32f70ad6a2/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
 }
