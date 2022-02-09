@@ -346,6 +346,11 @@ class PregnancySupervisor(Module):
         'target_anc_coverage_for_analysis': Parameter(
             Types.REAL, 'contains a target level of coverage for analysis so that a linear model of choice can be '
                         'scaled to force set level of intervention coverage'),
+        'set_pop_as_women': Parameter(
+            Types.BOOL, ''),
+
+
+
 
     }
 
@@ -474,6 +479,9 @@ class PregnancySupervisor(Module):
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+        params = self.current_parameters
+        if params['set_pop_as_women']:
+            sim.schedule_event(SetPopAllWomen(self),sim.date)
 
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
@@ -2105,6 +2113,23 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
             mean = mean / (1.0 - mean)
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
             params['odds_early_init_anc4'] = scaled_intercept
+
+
+class SetPopAllWomen(Event, PopulationScopeEventMixin):
+    """
+    """
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        all = df.loc[df.is_alive]
+        df.loc[all.index, 'sex'] = 'F'
+
+        male_birth_fraction_param = self.sim.modules['Demography'].parameters['fraction_of_births_male']
+        self.sim.modules['Demography'].parameters['fraction_of_births_male'] = pd.Series(
+            data=0.0, index=male_birth_fraction_param.index)
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
