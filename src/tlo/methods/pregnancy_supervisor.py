@@ -2123,13 +2123,28 @@ class SetPopAllWomen(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+        dem_params = self.sim.modules['Demography'].parameters
+        cons_proc_params = self.sim.modules['Contraception'].processed_params
 
+        # set whole pop female, only allow female births
         all = df.loc[df.is_alive]
         df.loc[all.index, 'sex'] = 'F'
+        male_birth_fraction_param = dem_params['fraction_of_births_male']
+        dem_params['fraction_of_births_male'] = pd.Series(data=0.0, index=male_birth_fraction_param.index)
 
-        male_birth_fraction_param = self.sim.modules['Demography'].parameters['fraction_of_births_male']
-        self.sim.modules['Demography'].parameters['fraction_of_births_male'] = pd.Series(
-            data=0.0, index=male_birth_fraction_param.index)
+        # Turn off contraception
+        df.loc[all.index, 'co_contraception'] = 'not_using'
+
+        # Ensure no one starts contraception
+        cons_start_df = cons_proc_params['p_start_per_month']
+        for year in cons_start_df:
+            for column in cons_start_df[year]:
+                cons_start_df[year][column] = 0.0
+
+        # Set all non-pregnant women to become pregnant during pregnancy poll
+        prob_preg_no_cons = cons_proc_params['p_pregnancy_no_contraception_per_month']
+        for column in prob_preg_no_cons:
+            prob_preg_no_cons[column] = 1.0
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
