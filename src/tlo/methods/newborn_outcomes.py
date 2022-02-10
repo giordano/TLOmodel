@@ -724,8 +724,8 @@ class NewbornOutcomes(Module):
 
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
-            self, target='neonate', individual_id=individual_id)
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_neonatal(
+            self, individual_id=individual_id)
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
