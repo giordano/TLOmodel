@@ -111,6 +111,13 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
 
 
 def calculate_risk_of_death_from_causes(self, risks, causes):
+    """
+    This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
+    newborn. In addition it determines if the complication(s) will cause death or not. If death occurs the function
+    returns the primary cause of death (or False)
+    return: cause of death or False
+    """
+
     result = 1.0
     for cause in risks:
         result *= (1.0 - risks[cause])
@@ -131,8 +138,10 @@ def calculate_risk_of_death_from_causes(self, risks, causes):
         # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
         cause_of_death = self.rng.choice(causes, p=probs)
 
+        # Return the primary cause of death so that it can be passed to the demography function
         return cause_of_death
     else:
+        # Return false if death will not occur
         return False
 
 
