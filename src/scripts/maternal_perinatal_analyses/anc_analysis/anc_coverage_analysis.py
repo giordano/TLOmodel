@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    get_scenario_outputs, create_pickles_locally
+    get_scenario_outputs, create_pickles_locally, load_pickled_dataframes
 )
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 # from tlo.methods.demography import get_scaling_factor
@@ -411,14 +411,11 @@ capacity = extract_results(
 # #plt.savefig(make_file_name('HSI_per_module'))
 # plt.show()
 
-
+"""
 
 
 # =================================================== CONSUMABLE COST =================================================
-
-
-
-draws = [0, 1, 2, 3, 4]
+draws = [0, 1, 2, 3]
 resourcefilepath = Path("./resources/healthsystem/consumables/")
 consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
 
@@ -476,23 +473,39 @@ def get_cons_cost_per_year(results_folder):
     return final_cost_data
 
 
-#baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
-#intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
+baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
+intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
 
-#fig, ax = plt.subplots()
-#ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
-#ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
-#ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
-#ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
-#plt.xlabel('Year')
-#plt.ylabel("Total Cost (USD)")
-#plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
-#plt.legend()
-# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
-#plt.show()
+fig, ax = plt.subplots()
+ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
+ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
+ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
+ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
+plt.xlabel('Year')
+plt.ylabel("Total Cost (USD)")
+plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
+plt.show()
 
+# ======================================== COST EFFECTIVENESS RATIO =================================================
+
+# Cost (i) - Cost(b) / DALYs (i) - DALYs (b)
+
+cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
+daly_difference = [(x - y) for x, y in zip(intervention_maternal_dalys[0], baseline_maternal_dalys[0])]
+ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
+print(f'ICR is {ICR} ')
 # (DALYS)
 
+fig, ax = plt.subplots()
+ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
+plt.xlabel('Year')
+plt.ylabel("ICR")
+plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/icr_maternal.png')
+plt.show()
 
 
 # ======================================================= ANC 4 ======================================================
@@ -555,4 +568,4 @@ def get_cons_cost_per_year(results_folder):
 # HEALTH CARE WORKER TIME
 # CONSUMABLES
 # (DALYS)
-"""
+
