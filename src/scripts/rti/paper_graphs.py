@@ -49,7 +49,7 @@ fig = plt.figure(constrained_layout=True, figsize=[6.4 * 2.5, 4.8 * 2.5])
 gs = fig.add_gridspec(nrows=4, ncols=2)
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 gbd_inc_data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/all_countries_inc_data.csv")
 gbd_inc_data = gbd_inc_data.loc[gbd_inc_data['location'] == 'Malawi']
 gbd_inc_data = gbd_inc_data.loc[gbd_inc_data['measure'] == 'Incidence']
@@ -196,7 +196,7 @@ ax3.legend()
 ax3.set_ylabel("Proportion")
 ax3.set_xlabel("Age groups")
 # plot alcohol demographics
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 extracted_perc_related_to_alc = extract_results(results_folder,
                                                 module="tlo.methods.rti",
                                                 key="rti_demography",
@@ -249,7 +249,7 @@ ax5.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
 ax5.set_xlabel('% fatal on scene')
 ax5.legend()
 
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 info = get_scenario_info(results_folder)
 def extract_results_for_irregular_logs(results_folder: Path,
                                        module: str,
@@ -536,7 +536,7 @@ def extract_yll_yld(results_folder):
 
 # 0) Find results_folder associated with a given batch_file and get most recent
 # results_folder = Path('outputs/rmjlra2@ucl.ac.uk/rti_analysis_full_calibrated-2021-12-09T140232Z')
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
@@ -730,7 +730,7 @@ age_info = age_info.reindex(index=['1 to 4', '5 to 9', '10 to 14', '15 to 19', '
 age_info['proportion'] = age_info['val'] / sum(age_info['val'])
 
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
-results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 3]
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 info = get_scenario_info(results_folder)
 ages_in_sim = []
 for draw in range(info['number_of_draws']):
