@@ -187,7 +187,7 @@ ax.set_ylim(0, 10)
 ax.set_title('Population Size 2018')
 ax.legend()
 fig.tight_layout()
-plt.savefig(make_graph_file_name("Pop_Over_Time"))
+plt.savefig(make_graph_file_name("Pop_2018"))
 plt.show()
 
 # %% Population Pyramid
