@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
@@ -45,3 +46,18 @@ def get_mean_and_quants(df, sim_years):
             lower_quantiles.append(0)
 
     return [year_means, lower_quantiles, upper_quantiles]
+
+
+def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, graph_location, save_name):
+    fig, ax = plt.subplots()
+    ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
+    ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1)
+    ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
+    ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1)
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{save_name}.png')
+    plt.show()
+

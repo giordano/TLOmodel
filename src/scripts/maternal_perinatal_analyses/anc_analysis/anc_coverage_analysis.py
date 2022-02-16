@@ -32,41 +32,6 @@ sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2
 intervention_years = [2020, 2021, 2022, 2023, 2024, 2025]
 
 
-def get_mean_and_quants_from_str_df(df, complication):
-    yearly_mean_number = list()
-    yearly_lq = list()
-    yearly_uq = list()
-    for year in intervention_years:
-        if complication in df.loc[year].index:
-            yearly_mean_number.append(df.loc[year, complication].mean())
-            yearly_lq.append(df.loc[year, complication].quantile(0.025))
-            yearly_uq.append(df.loc[year, complication].quantile(0.925))
-        else:
-            yearly_mean_number.append(0)
-            yearly_lq.append(0)
-            yearly_uq.append(0)
-
-    return [yearly_mean_number, yearly_lq, yearly_uq]
-
-
-def get_mean_and_quants(df, sim_years):
-    year_means = list()
-    lower_quantiles = list()
-    upper_quantiles = list()
-
-    for year in sim_years:
-        if year in df.index:
-            year_means.append(df.loc[year].mean(axis=1).iloc[0])
-            lower_quantiles.append(df.loc[year].iloc[0].quantile(0.025))
-            upper_quantiles.append(df.loc[year].iloc[0].quantile(0.925))
-        else:
-            year_means.append(0)
-            lower_quantiles.append(0)
-            lower_quantiles.append(0)
-
-    return [year_means, lower_quantiles, upper_quantiles]
-
-
 # GET BIRTHS...
 def get_total_births_per_year(folder):
     births_results = extract_results(
@@ -168,8 +133,12 @@ def get_yearly_death_data(folder, births):
                                                             intervention_years)
     nmr = analysis_utility_functions.get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels, 1000,
                                                             intervention_years)
-    crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders')
-    crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders')
+    crude_m_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results_labels,
+                                                                                'Maternal Disorders',
+                                                                                intervention_years)
+    crude_n_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results_labels,
+                                                                                'Neonatal Disorders',
+                                                                                intervention_years)
 
     return {'mmr': mmr,
             'nmr': nmr,
@@ -180,27 +149,17 @@ def get_yearly_death_data(folder, births):
 baseline_death_data = get_yearly_death_data(baseline_results_folder, baseline_births)
 intervention_death_data = get_yearly_death_data(intervention_results_folder, intervention_births)
 
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_death_data['mmr'], intervention_death_data['mmr'],
+    'Total Deaths per 100,000 live births',
+    'Maternal Mortality Ratio per Year at Baseline and Under Intervention',
+    graph_location, 'maternal_mr_int')
 
-def get_mmr_nmr_graphs(bdata, idata, group):
-    fig, ax = plt.subplots()
-    ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
-    ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1)
-    ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
-    ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1)
-    # ax.set(ylim=(0, 800))
-    plt.xlabel('Year')
-    if group == 'Neonatal':
-        plt.ylabel("Deaths per 1000 live births")
-    else:
-        plt.ylabel("Deaths per 100,000 live births")
-    plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
-    plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
-    plt.show()
-
-
-get_mmr_nmr_graphs(baseline_death_data['mmr'], intervention_death_data['mmr'], 'Maternal')
-get_mmr_nmr_graphs(baseline_death_data['nmr'], intervention_death_data['nmr'], 'Neonatal')
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_death_data['nmr'], intervention_death_data['nmr'],
+    'Total Deaths per 1000 live births',
+    'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
+    graph_location, 'neonatal_mr_int')
 
 
 def get_crude_death_graphs_graphs(b_deaths, i_deaths, group):
@@ -262,17 +221,11 @@ def get_yearly_sbr_data(folder, births):
 baseline_sb_data = get_yearly_sbr_data(baseline_results_folder, baseline_births)
 intervention_sb_data = get_yearly_sbr_data(intervention_results_folder, intervention_births)
 
-fig, ax = plt.subplots()
-ax.plot(intervention_years, baseline_sb_data['sbr'][0], label="Baseline (mean)", color='deepskyblue')
-ax.fill_between(intervention_years, baseline_sb_data['sbr'][1], baseline_sb_data['sbr'][2], color='b', alpha=.1)
-ax.plot(intervention_years, intervention_sb_data['sbr'][0], label="Intervention (mean)", color='olivedrab')
-ax.fill_between(intervention_years, intervention_sb_data['sbr'][1], intervention_sb_data['sbr'][2], color='g', alpha=.1)
-plt.xlabel('Year')
-plt.ylabel("Stillbirths per 1000 live births")
-plt.title('Stillbirth Rate per Year at Baseline and Under Intervention')
-plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
-plt.show()
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_death_data['sbr'], intervention_death_data['sbr'],
+    'Stillbirths per 1000 births',
+    'Stillbirth Rate per Year at Baseline and Under Intervention',
+    graph_location, 'sbr_int')
 
 b_sb_ci = [(x - y) / 2 for x, y in zip(baseline_sb_data['crude_sb'][2], baseline_sb_data['crude_sb'][1])]
 i_sb_ci = [(x - y) / 2 for x, y in zip(intervention_sb_data['crude_sb'][2], intervention_sb_data['crude_sb'][1])]
@@ -329,24 +282,17 @@ intervention_dalys = get_dalys_from_scenario(intervention_results_folder)
 intervention_maternal_dalys = intervention_dalys[0]
 intervention_neonatal_dalys = intervention_dalys[1]
 
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_maternal_dalys, intervention_maternal_dalys,
+    'Disability Adjusted Life Years (stacked)',
+    'Total DALYs per Year Attributable to Maternal disorders',
+    graph_location, 'maternal_dalys_stacked')
 
-def get_daly_graphs(group, bl_dalys, int_dalys):
-    fig, ax = plt.subplots()
-    ax.plot(intervention_years, bl_dalys[0], label=f"{group} Baseline DALYs", color='deepskyblue')
-    ax.fill_between(intervention_years, bl_dalys[1], bl_dalys[2], color='b', alpha=.1)
-
-    ax.plot(intervention_years, int_dalys[0], label=f"{group} Intervention DALYs", color='olivedrab')
-    ax.fill_between(intervention_years, int_dalys[1], int_dalys[2], color='g', alpha=.1)
-    plt.xlabel('Year')
-    plt.ylabel("Disability Adjusted Life Years (stacked)")
-    plt.title(f'Total DALYs per Year Attributable to {group} disorders')
-    plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_dalys_stacked.png')
-    plt.show()
-
-get_daly_graphs('Maternal', baseline_maternal_dalys, intervention_maternal_dalys)
-get_daly_graphs('Neonatal', baseline_neonatal_dalys, intervention_neonatal_dalys)
-
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_neonatal_dalys, intervention_neonatal_dalys,
+    'Disability Adjusted Life Years (stacked)',
+    'Total DALYs per Year Attributable to Neonatal disorders',
+    graph_location, 'neonatal_dalys_stacked')
 
 # =============================================  COSTS/HEALTH SYSTEM =================================================
 # 1.) Healthcare worker time cost
@@ -356,62 +302,49 @@ get_daly_graphs('Neonatal', baseline_neonatal_dalys, intervention_neonatal_dalys
 # Cost per daly averted?
 
 
-"""
-# HEALTH CARE WORKER TIME
-# todo: not sure if we can extract this yet from master....
-capacity = extract_results(
-        baseline_results_folder,
-        module="tlo.methods.healthsystem",
-        key="Capacity",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
-        ),
-    )
+# =============================================  HCW TIME ==============================================================
+draws = [0, 1, 2, 3]
+def get_hcw_time_per_year(results_folder):
+    # Create df that replicates the 'extracted' df
+    total_time_per_draw_per_year = pd.DataFrame(columns=[draws], index=[intervention_years])
 
-# cap = output['tlo.methods.healthsystem']['Capacity'].copy()
-# cap["date"] = pd.to_datetime(cap["date"])
-# cap = cap.set_index('date')
-#
-# frac_time_used = cap['Frac_Time_Used_Overall']
-# cap = cap.drop(columns=['Frac_Time_Used_Overall'])
-#
-# # Plot Fraction of total time of health-care-workers being used
-# frac_time_used.plot()
-# plt.title("Fraction of total health-care worker time being used")
-# plt.xlabel("Date")
-# #plt.savefig(make_file_name('HSI_Frac_time_used'))
-# plt.show()
-#
-# # %% Breakdowns by HSI:
-# hsi = output['tlo.methods.healthsystem']['HSI_Event'].copy()
-# hsi["date"] = pd.to_datetime(hsi["date"])
-# hsi["month"] = hsi["date"].dt.month
-# # Reduce TREATMENT_ID to the originating module
-# hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
-#
-# # Plot the HSI that are taking place, by month, in a a particular year
-# year = 2012
-# evs = hsi.loc[hsi.date.dt.year == year]\
-#     .groupby(by=['month', 'Module'])\
-#     .size().reset_index().rename(columns={0: 'count'})\
-#     .pivot_table(index='month', columns='Module', values='count', fill_value=0)
-# evs *= scaling_factor
-#
-# evs.plot.bar(stacked=True)
-# plt.title(f"HSI by Module, per Month (year {year})")
-# plt.ylabel('Total per month')
-# #plt.savefig(make_file_name('HSI_per_module_per_month'))
-# plt.show()
-#
-# # Plot the breakdown of all HSI, over all the years
-# evs = hsi.groupby(by=['Module'])\
-#     .size().rename(columns={0: 'count'}) * scaling_factor
-# evs.plot.pie()
-# plt.title(f"HSI by Module")
-# #plt.savefig(make_file_name('HSI_per_module'))
-# plt.show()
+    # Loop over each draw
+    for draw in draws:
+        # Load df, add year column and select only ANC interventions
+        draw_df = load_pickled_dataframes(results_folder, draw=draw)
+        hsi = draw_df['tlo.methods.healthsystem']['HSI_Event']
+        hsi['year'] = hsi['date'].dt.year
+        anc_hsi = hsi.loc[hsi.TREATMENT_ID.str.contains('AntenatalCare')]
 
-"""
+        for year in intervention_years:
+            total_anc_1_visits = len(anc_hsi.loc[(anc_hsi.year == year) & (anc_hsi.TREATMENT_ID.str.contains('First'))])
+            total_anc_other_visits = len(anc_hsi.loc[(anc_hsi.year == year)]) - total_anc_1_visits
+            assert total_anc_other_visits + total_anc_1_visits == len(anc_hsi.loc[(anc_hsi.year == year)])
+
+            yearly_midwife_time = (total_anc_1_visits * 20) + (total_anc_other_visits * 10)
+            total_time_per_draw_per_year.loc[year, draw] = yearly_midwife_time
+
+            # todo: read in from consumable sheet
+            # todo: we dont know facility levels for sure but can assume its 1a for now?
+            # todo: only count did_run
+            # todo: add clinician time
+
+    return analysis_utility_functions.get_mean_and_quants(total_time_per_draw_per_year, intervention_years)
+
+b_hcw_time = get_hcw_time_per_year(baseline_results_folder)
+i_hcw_time = get_hcw_time_per_year(intervention_results_folder)
+
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, b_hcw_time, i_hcw_time,
+    'Total Time (mins)', 'Total Nurse/Midwife Time Spent Delivering Antenatal Care Per Year (unscaled)',
+    graph_location, 'hcw_time')
+
+# =============================================  HCW COSTS ============================================================
+# todo: use time (generated above) and salary of health care workers to determine salaried time-cost associated with
+#  each scenario
+
+# ==========================================  HCW CAPABILITY =========================================================
+# todo: what fraction of total capabiltiies are taken up by scenario (split up by cadre? - will need new logging)
 
 
 # =================================================== CONSUMABLE COST =================================================
@@ -419,10 +352,9 @@ draws = [0, 1, 2, 3]
 resourcefilepath = Path("./resources/healthsystem/consumables/")
 consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
 
+
 # TODO: this should be scaled to the correct population size?
 # todo: also so slow...
-
-
 def get_cons_cost_per_year(results_folder):
     # Create df that replicates the 'extracted' df
     total_cost_per_draw_per_year = pd.DataFrame(columns=[draws], index=[intervention_years])
@@ -469,24 +401,17 @@ def get_cons_cost_per_year(results_folder):
         for index in total_cost_per_draw_per_year.index:
             total_cost_per_draw_per_year.at[index, draw] = cons_df_for_this_draw.loc[index].sum()
 
-    final_cost_data = get_mean_and_quants(total_cost_per_draw_per_year, intervention_years)
+    final_cost_data = analysis_utility_functions.get_mean_and_quants(total_cost_per_draw_per_year, intervention_years)
     return final_cost_data
 
 
 baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
 intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
 
-fig, ax = plt.subplots()
-ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
-ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
-ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
-ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
-plt.xlabel('Year')
-plt.ylabel("Total Cost (USD)")
-plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
-plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
-plt.show()
+analysis_utility_functions.basic_comparison_graph(
+    intervention_years, baseline_cost_data, intervention_cost_data,
+    'Total Cost (USD)', 'Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)',
+    graph_location, 'cost')
 
 # ======================================== COST EFFECTIVENESS RATIO =================================================
 
