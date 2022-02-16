@@ -493,10 +493,12 @@ plt.show()
 # Cost (i) - Cost(b) / DALYs (i) - DALYs (b)
 
 cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
+# todo include healthcare worker cost
 daly_difference = [(x - y) for x, y in zip(intervention_maternal_dalys[0], baseline_maternal_dalys[0])]
 ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
 print(f'ICR is {ICR} ')
 # (DALYS)
+# todo: this calculation is rong
 
 fig, ax = plt.subplots()
 ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
