@@ -38,7 +38,7 @@ from tlo.analysis.utils import (
 scenario_filename = 'long_run_no_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
-outputspath = Path('./outputs/tbh03@ic.ac.uk')
+outputspath = Path('./outputs/sejjtec@ucl.ac.uk')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)

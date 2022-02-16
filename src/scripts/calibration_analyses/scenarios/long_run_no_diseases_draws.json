@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py",
   "scenario_seed": 0,
-  "runs_per_draw": 1,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
@@ -9,6 +9,6 @@
       "parameters": null
     }
   ],
-  "commit": "f8c0cfe56dd2449f6edd054fda6b74a059a66395",
-  "github": "https://github.com/UCL/TLOmodel/blob/f8c0cfe56dd2449f6edd054fda6b74a059a66395/src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py"
+  "commit": "1d068b56152e221cd7a38df95dec22213ff7af06",
+  "github": "https://github.com/UCL/TLOmodel/blob/1d068b56152e221cd7a38df95dec22213ff7af06/src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py"
 }

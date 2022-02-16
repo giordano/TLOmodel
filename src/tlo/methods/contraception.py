@@ -53,7 +53,7 @@ class Contraception(Module):
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
         'Initiation_AfterBirth': Parameter(Types.DATA_FRAME,
-                                           'The probability of a woman starting a contraceptive immidiately after birth'
+                                           'The probability of a woman starting a contraceptive immediately after birth'
                                            ', by method.'),
         'Discontinuation_ByMethod': Parameter(Types.DATA_FRAME,
                                               'The probability per month of discontinuing use of a method, by method.'),
