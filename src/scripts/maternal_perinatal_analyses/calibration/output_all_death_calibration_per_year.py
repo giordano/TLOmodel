@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results
+scenario_filename = 'increased_anc_scenario.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'ouput_graphs_10k_standard_mph_calibration-2022-01-18T142306Z/death'
+graph_location = './output_graphs_60k_increased_anc_scenario-2022-01-31T134117Z/calib_check_baseline/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -232,8 +232,7 @@ death_results_labels = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()
-    ),
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
 )
 mm = get_comp_mean_and_rate('Maternal Disorders', total_births_per_year, death_results_labels, 100000)
 
@@ -261,7 +260,41 @@ plt.legend()
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
 plt.show()
 
+# --------------------------------------------- TOTAL MMR  ------------------------------------------------------
+other_preg_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label', 'pregnancy'])['year'].count()),
+)
+
+indirect_causes = ['AIDS', 'Malaria', 'TB']  # todo check
+indirect_deaths = list()
+for year in sim_years:
+    id_deaths_per_year = 0
+    for cause in indirect_causes:
+        if cause in other_preg_deaths.loc[year, :, True].index:
+            id_deaths_per_year += other_preg_deaths.loc[year, cause, True].mean()
+
+    indirect_deaths.append(id_deaths_per_year)
+
+indirect_mmr = [(x / y) * 100000 for x, y in zip(indirect_deaths, total_births_per_year)]
+
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+ax.bar(labels, mm[0], width, label='Direct', color='brown')
+ax.bar(labels, indirect_mmr, width, bottom=mm[0], label='Indirect', color='lightsalmon')
+ax.set_ylabel('Maternal Deaths per 100,000 live births')
+ax.set_title('Mean MMR per Year (Direct and Indirect)')
+ax.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/total_mmr.png')
+plt.show()
+
+
 # ==============================================  DEATHS... ======================================================
+# --------------------------------------------- DIRECT MMR  ------------------------------------------------------
 scaled_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -316,7 +349,6 @@ plt.legend(loc='best')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
 plt.show()
 
-# do WHO estiamte also
 
 # =================================== COMPLICATION LEVEL MMR ==========================================================
 death_results = extract_results(
