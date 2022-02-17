@@ -69,7 +69,9 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'PregnancySupervisor': {'switch_anc_coverage': True,
-                                    'target_anc_coverage_for_analysis': 9.0},
+                                    'target_anc_coverage_for_analysis': 9.0,
+                                    'set_cons_to_avail': True,
+                                    'set_qual_to_max': True},
         }
 
 

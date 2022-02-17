@@ -346,6 +346,10 @@ class PregnancySupervisor(Module):
         'target_anc_coverage_for_analysis': Parameter(
             Types.REAL, 'contains a target level of coverage for analysis so that a linear model of choice can be '
                         'scaled to force set level of intervention coverage'),
+        'set_cons_to_avail': Parameter(
+            Types.BOOL, 'If True, subset of consumables set to always being available'),
+        'set_qual_to_max': Parameter(
+            Types.BOOL, 'If True, subset or parameters determining quality of care set to 1'),
 
     }
 
@@ -2106,16 +2110,28 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
             params['odds_early_init_anc4'] = scaled_intercept
 
-            params['prob_intervention_delivered_urine_ds'] = 1
-            params['prob_intervention_delivered_bp'] = 1
-            params['prob_intervention_delivered_ifa'] = 1
-            params['prob_adherent_ifa'] = 1
-            params['prob_intervention_delivered_llitn'] = 1
-            params['prob_intervention_delivered_tt'] = 1
-            params['prob_intervention_delivered_poct'] = 1
-            params['prob_intervention_delivered_syph_test'] = 1
-            params['prob_intervention_delivered_iptp'] = 1
-            params['prob_intervention_delivered_gdm_test'] = 1
+            # todo: store parameter set as a dataframe? read in from sheet and then override
+
+            if params['set_cons_to_avail']:
+                # Get item codes from pregnancy supervisor as a list
+                item_codes = self.sim.modules['CareOfWomenDuringPregnancy'].item_codes_preg_consumables
+                ic_list = list(item_codes.values())
+                flat_list = [item for sublist in ic_list for item in sublist]
+
+                for item in flat_list:
+                    self.sim.modules['HealthSystem'].prob_item_codes_available.loc[item] = 1.0
+
+            if params['set_qual_to_max']:
+                params['prob_intervention_delivered_urine_ds'] = 1
+                params['prob_intervention_delivered_bp'] = 1
+                params['prob_intervention_delivered_ifa'] = 1
+                params['prob_adherent_ifa'] = 1
+                params['prob_intervention_delivered_llitn'] = 1
+                params['prob_intervention_delivered_tt'] = 1
+                params['prob_intervention_delivered_poct'] = 1
+                params['prob_intervention_delivered_syph_test'] = 1
+                params['prob_intervention_delivered_iptp'] = 1
+                params['prob_intervention_delivered_gdm_test'] = 1
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
