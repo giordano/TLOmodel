@@ -222,7 +222,7 @@ baseline_sb_data = get_yearly_sbr_data(baseline_results_folder, baseline_births)
 intervention_sb_data = get_yearly_sbr_data(intervention_results_folder, intervention_births)
 
 analysis_utility_functions.basic_comparison_graph(
-    intervention_years, baseline_death_data['sbr'], intervention_death_data['sbr'],
+    intervention_years, baseline_sb_data['sbr'], intervention_sb_data['sbr'],
     'Stillbirths per 1000 births',
     'Stillbirth Rate per Year at Baseline and Under Intervention',
     graph_location, 'sbr_int')
@@ -294,16 +294,11 @@ analysis_utility_functions.basic_comparison_graph(
     'Total DALYs per Year Attributable to Neonatal disorders',
     graph_location, 'neonatal_dalys_stacked')
 
-# =============================================  COSTS/HEALTH SYSTEM =================================================
-# 1.) Healthcare worker time cost
-# 2.) Consumables cost
-# 3.) Approximated total cost
-# 4.) Approximated total cost per pregnancy
-# Cost per daly averted?
-
-
-# =============================================  HCW TIME ==============================================================
+# =============================================  COSTS/HEALTH SYSTEM ==================================================
+# =============================================  HCW TIME =============================================================
 draws = [0, 1, 2, 3]
+
+
 def get_hcw_time_per_year(results_folder):
     # Create df that replicates the 'extracted' df
     total_time_per_draw_per_year = pd.DataFrame(columns=[draws], index=[intervention_years])
@@ -322,7 +317,7 @@ def get_hcw_time_per_year(results_folder):
             assert total_anc_other_visits + total_anc_1_visits == len(anc_hsi.loc[(anc_hsi.year == year)])
 
             yearly_midwife_time = (total_anc_1_visits * 20) + (total_anc_other_visits * 10)
-            total_time_per_draw_per_year.loc[year, draw] = yearly_midwife_time
+            total_time_per_draw_per_year.loc[year, draw] = yearly_midwife_time / 60 # returns time in hours
 
             # todo: read in from consumable sheet
             # todo: we dont know facility levels for sure but can assume its 1a for now?
@@ -342,6 +337,16 @@ analysis_utility_functions.basic_comparison_graph(
 # =============================================  HCW COSTS ============================================================
 # todo: use time (generated above) and salary of health care workers to determine salaried time-cost associated with
 #  each scenario
+
+salary = 20000
+working_days = 249
+cost_per_hour = (salary/working_days) / 7.5
+
+b_cost = [item * cost_per_hour for item in b_hcw_time]
+i_cost = [item * cost_per_hour for item in i_hcw_time]
+cost_difference = [x-y for x, y in zip(i_cost, b_cost)]
+
+# todo: plot...
 
 # ==========================================  HCW CAPABILITY =========================================================
 # todo: what fraction of total capabiltiies are taken up by scenario (split up by cadre? - will need new logging)
@@ -433,66 +438,4 @@ plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
 plt.legend()
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/icr_maternal.png')
 plt.show()
-
-
-# ======================================================= ANC 4 ======================================================
-
-# SCENARIO ONE: BASELINE ANC 4 COVERAGE VERSES 90% (UHC) EPMM COVERAGE (CONSUMABLES CONSTRAINED, SQUEEZE CONSTRAINED)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
-
-# SCENARIO TWO: BASELINE ANC 4 COVERAGE VERSES 90% (UHC) EPMM COVERAGE (NO CONSUMABLES, QUALITY OR SQUEEZE CONTRAINTS
-# IN THE COMPARATOR)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
-
-# ======================================================= ANC 8 ======================================================
-
-# SCENARIO ONE: BASELINE ANC 8 COVERAGE VERSES 50% COVERAGE (CONSUMABLES CONSTRAINED, SQUEEZE CONSTRAINED)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
-
-# SCENARIO TWO: BASELINE ANC 8 COVERAGE VERSES 50% COVERAGE (NO CONSUMABLES, QUALITY OR SQUEEZE CONTRAINTS
-# IN THE COMPARATOR)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
-
-# SCENARIO THREE: BASELINE ANC 8 COVERAGE VERSES 90% (UHC) EPMM COVERAGE( CONSUMABLES CONSTRAINED, SQUEEZE CONSTRAINED)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
-
-# SCENARIO FOUR: BASELINE ANC 8 COVERAGE VERSES 90% (UHC) EPMM COVERAGE (NO CONSUMABLES, QUALITY OR SQUEEZE CONTRAINTS
-# IN THE COMPARATOR)
-
-# MATERNAL DEATH
-# STILLBIRTH
-# NEONATAL DEATH
-# HEALTH CARE WORKER TIME
-# CONSUMABLES
-# (DALYS)
 
