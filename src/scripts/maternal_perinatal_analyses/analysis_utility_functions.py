@@ -58,6 +58,6 @@ def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, gra
     plt.xlabel('Year')
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{save_name}.png')
+    plt.savefig(f'{graph_location}/{save_name}.png')
     plt.show()
 

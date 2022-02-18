@@ -10,10 +10,10 @@ from tlo.analysis.utils import (
 )
 
 baseline_scenario_filename = 'baseline_anc_scenario.py'
-intervention_scenario_filename = 'increased_anc_scenario.py'
+intervention_scenario_filename = 'and_qual.py'
 
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_60k_increased_anc_scenario-2022-01-31T134117Z/comp_rates'
+graph_location = 'analysis_output_graphs_and_qual-2022-02-17T150358Z/comp_rates'
 rfp = Path('./resources')
 
 baseline_results_folder = get_scenario_outputs(baseline_scenario_filename, outputspath)[-1]
