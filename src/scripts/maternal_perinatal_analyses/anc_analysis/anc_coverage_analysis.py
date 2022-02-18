@@ -343,6 +343,7 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
         plt.show()
 
     # =================================================== DALYS =======================================================
+    # todo: express DALYs as a rate
     def get_dalys_from_scenario(results_folder):
         """
         Extracted stacked DALYs from logger for maternal and neonatal disorders
