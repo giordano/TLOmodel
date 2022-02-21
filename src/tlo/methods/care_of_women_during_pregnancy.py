@@ -2016,7 +2016,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             (date_difference > pd.to_timedelta(7, unit='D')) or
             (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] >= 4) or
             (df.at[person_id, 'ps_gestational_age_in_weeks'] < 7) or
-            self.visit_number > 4
+            self.visit_number > 4 or
+            (self.visit_number > df.at[person_id, 'ac_total_anc_visits_current_pregnancy'])
+
         ):
             return
 
@@ -2054,6 +2056,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
         self.module.iron_and_folic_acid_supplementation(hsi_event=self)
         self.module.iptp_administration(hsi_event=self)
+
+        if 'anc_ints' not in self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]:
+            x='y'
 
         if self.visit_number == 1:
             self.module.tb_screening(hsi_event=self)
