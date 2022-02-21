@@ -2069,9 +2069,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         elif self.visit_number == 3 or ((mother.ps_gestational_age_in_weeks > 30) and (self.visit_number == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
 
-        # update the visit number for the event scheduling
-        self.visit_number = self.visit_number + 1
-
         # Following this the womans next visit is scheduled (if she hasn't already attended 4 visits)
         if self.visit_number < 4:
 
