@@ -1981,8 +1981,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         self.visit_number = visit_number
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FocusedANCVisit'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({('AntenatalFirst' if self.visit_number == 1 else
-                                                                  'AntenatalSubsequent'): 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({('AntenatalFirst' if (self.visit_number == 1)
+                                                                  else 'ANCSubsequent'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
