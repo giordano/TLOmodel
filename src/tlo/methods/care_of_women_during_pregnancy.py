@@ -2017,7 +2017,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] >= 4) or
             (df.at[person_id, 'ps_gestational_age_in_weeks'] < 7) or
             self.visit_number > 4 or
-            (self.visit_number > df.at[person_id, 'ac_total_anc_visits_current_pregnancy'])
+            (self.visit_number < df.at[person_id, 'ac_total_anc_visits_current_pregnancy'])
 
         ):
             return
