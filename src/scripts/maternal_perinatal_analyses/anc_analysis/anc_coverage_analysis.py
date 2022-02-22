@@ -478,9 +478,72 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
     # todo: plot...
 
     # ==========================================  HCW CAPABILITY ===================================================
-    # todo: what fraction of total capabiltiies are taken up by scenario (split up by cadre? - will need new logging)
+    # todo: output proportion of total ANC HSIs in which the squeeze factor exceeds 1 per year?
+    # todo: could also output average squeeze factor for ANC HSIs per year?
 
-    # =================================================== CONSUMABLE COST ===========================================
+    # todo: example code
+    def get_mean_squeeze_factor_per_year_across_anc_hsi(folder):
+        hsi = extract_results(
+            folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=(
+                lambda df: df.loc[df['TREATMENT_ID'].str.contains('AntenatalCare') & df['did_run']].assign(
+                    year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
+
+        mean_squeeze_per_year = [hsi.loc[year].to_numpy().mean() for year in intervention_years]
+        lq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 2.5) for year in intervention_years]
+        uq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 92.5) for year in intervention_years]
+
+        hsi_count = extract_results(
+            folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=(
+                lambda df: df.loc[df['TREATMENT_ID'].str.contains('AntenatalCare') & df['did_run']].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()))
+
+        # todo: this isnt working for some reason!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        hsi_squeeze = extract_results(
+            folder,
+            module="tlo.methods.healthsystem",
+            key="HSI_Event",
+            custom_generate_series=(
+                lambda df:
+                df.loc[(df['TREATMENT_ID'].str.contains('AntenatalCare')) & df['did_run'] & (df['Squeeze_Factor'] > 1)
+                       ].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
+
+        prop_squeeze_year = [(hsi_squeeze.loc[year].to_numpy().mean()/hsi_count.loc[year].to_numpy().mean()) * 100
+                             for year in intervention_years]
+        prop_squeeze_lq = [
+            (np.percentile(hsi_squeeze.loc[year].to_numpy(), 2.5) /
+             np.percentile(hsi_count.loc[year].to_numpy(), 2.5)) * 100 for year in intervention_years]
+
+        prop_squeeze_uq = [
+            (np.percentile(hsi_squeeze.loc[year].to_numpy(), 92.5) /
+             np.percentile(hsi_count.loc[year].to_numpy(), 92.5)) * 100 for year in intervention_years]
+
+        return {'mean': [mean_squeeze_per_year, lq_squeeze_per_year, uq_squeeze_per_year]}
+                #'proportion': [prop_squeeze_year, prop_squeeze_lq, prop_squeeze_uq]}
+
+    b_squeeze = get_mean_squeeze_factor_per_year_across_anc_hsi(baseline_results_folder)
+    i_squeeze = get_mean_squeeze_factor_per_year_across_anc_hsi(intervention_results_folder)
+
+    # Output data
+    if show_and_store_graphs:
+        analysis_utility_functions.basic_comparison_graph(
+            intervention_years, b_squeeze['mean'], i_squeeze['mean'],
+            'Squeeze Factor', 'Average Squeeze Factor Associated with Antenatal Care per Year',
+            plot_destination_folder, 'squeeze')
+
+        analysis_utility_functions.basic_comparison_graph(
+            intervention_years, b_squeeze['proportion'], i_squeeze['proportion'],
+            'Proportion of ANC visits', 'Yearly % of ANC visits in which squeeze exceeds 1.0',
+            plot_destination_folder, 'squeeze_prop')
+
+
+
+    # =================================================== CONSUMABLE COST =============================================
     if do_cons_calculation:  # only output if specified due to very long run tine
         resourcefilepath = Path("./resources/healthsystem/consumables/")
         consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
@@ -514,7 +577,7 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
 
                     # For each row (hsi) in that year we unpack the dictionary
                     for row in year_df.index:
-                        for k, v in year_df.at[row, 'Item_Available'].items():
+                        for k, v in year_df.at[row, 'Item_Available']:
                             if k in cons_df_for_this_draw.columns:
                                 cons_df_for_this_draw.at[year, k] += v
                             elif k not in cons_df_for_this_draw.columns:

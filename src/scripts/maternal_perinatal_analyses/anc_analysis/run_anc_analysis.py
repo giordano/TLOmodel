@@ -8,5 +8,5 @@ for intervention_file in ['increased_anc_scenario']:
                          show_and_store_graphs=True,
                          anc_scenario=4,
                          intervention_years=list(range(2020, 2026)),
-                         do_cons_calculation=True)
+                         do_cons_calculation=False)
 

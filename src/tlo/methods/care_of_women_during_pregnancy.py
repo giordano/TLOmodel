@@ -942,6 +942,8 @@ class CareOfWomenDuringPregnancy(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If this woman has already had deworming the intervention is not delivered again
+        if 'anc_ints' not in mni[person_id]:
+            x='y'
         if 'albend' in mni[person_id]['anc_ints']:
             return
         else:
@@ -2017,9 +2019,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] >= 4) or
             (df.at[person_id, 'ps_gestational_age_in_weeks'] < 7) or
             self.visit_number > 4 or
-            (self.visit_number < df.at[person_id, 'ac_total_anc_visits_current_pregnancy'])
-
-        ):
+            not self.visit_number == (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] + 1)
+            ):
             return
 
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
