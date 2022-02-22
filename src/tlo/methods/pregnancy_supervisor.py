@@ -479,9 +479,6 @@ class PregnancySupervisor(Module):
 
     def initialise_simulation(self, sim):
 
-        # todo: remove!!!!!
-        self.current_parameters['anc_service_structure'] = 4
-
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
                            sim.date + DateOffset(days=0))
