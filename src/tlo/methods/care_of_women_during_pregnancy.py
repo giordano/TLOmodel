@@ -55,7 +55,7 @@ class CareOfWomenDuringPregnancy(Module):
         # and then define a dictionary which will hold the required consumables for each intervention
         self.item_codes_preg_consumables = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
 
     ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
 
@@ -942,8 +942,6 @@ class CareOfWomenDuringPregnancy(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If this woman has already had deworming the intervention is not delivered again
-        if 'anc_ints' not in mni[person_id]:
-            x='y'
         if 'albend' in mni[person_id]['anc_ints']:
             return
         else:
@@ -2019,8 +2017,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] >= 4) or
             (df.at[person_id, 'ps_gestational_age_in_weeks'] < 7) or
             self.visit_number > 4 or
-            not self.visit_number == (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] + 1)
-            ):
+            self.visit_number != (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] + 1)
+        ):
             return
 
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
@@ -2057,9 +2055,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
         self.module.iron_and_folic_acid_supplementation(hsi_event=self)
         self.module.iptp_administration(hsi_event=self)
-
-        if 'anc_ints' not in self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]:
-            x='y'
 
         if self.visit_number == 1:
             self.module.tb_screening(hsi_event=self)
