@@ -51,7 +51,7 @@ class TestScenario(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      service_availability=['1'],
+                                      mode_appt_constraints=1,
                                       cons_availability='all'),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
