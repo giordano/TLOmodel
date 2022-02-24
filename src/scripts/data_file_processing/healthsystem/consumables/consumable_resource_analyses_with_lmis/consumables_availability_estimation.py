@@ -102,12 +102,14 @@ cond_level2 = (lmis_df['fac_type'] == 'District Health Office') | (lmis_df['fac_
 cond_level3 = (lmis_df['fac_type'] == 'Central Hospital') | \
               (lmis_df['fac_name'].str.contains('Central Hospital'))
 cond_level4 = (lmis_df['fac_name'] == 'Zomba Mental Hospital')
+cond_stpeters = lmis_df['fac_name'] == 'St Peters Hospital' # incorrectly identified as level 2
 lmis_df.loc[cond_level0, 'fac_type_tlo'] = 'Facility_level_0'
 lmis_df.loc[cond_level1a, 'fac_type_tlo'] = 'Facility_level_1a'
 lmis_df.loc[cond_level1b, 'fac_type_tlo'] = 'Facility_level_1b'
 lmis_df.loc[cond_level2, 'fac_type_tlo'] = 'Facility_level_2'
 lmis_df.loc[cond_level3, 'fac_type_tlo'] = 'Facility_level_3'
 lmis_df.loc[cond_level4, 'fac_type_tlo'] = 'Facility_level_4'
+lmis_df.loc[cond_stpeters, 'fac_type_tlo'] = 'Facility_level_1b'
 
 print('Data import complete and ready for analysis')
 
