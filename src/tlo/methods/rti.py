@@ -60,6 +60,13 @@ class RTI(Module):
                       'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884', '813bo', '813co', '813do',
                       '813eo']
 
+    INJURIES_REQ_IMAGING = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c', '811', '812',
+                            '813a', '813b', '813c', '822a', '822b', '813bo', '813co', '813do', '813eo', '673', '674',
+                            '675', '676', '322', '323', '722', '342', '343', '441', '443', '453', '133', '134', '135',
+                            '552', '553', '554', '342', '343', '441', '443', '453', '361', '363', '461', '463']
+
+    FRACTURE_CODES = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+
     NO_TREATMENT_RECOVERY_TIMES_IN_DAYS = {
         '112': 49,
         '113': 49,
@@ -3354,7 +3361,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             # update the property showing if a person is in ICU
             df.loc[person_id, 'rt_in_icu_or_hdu'] = True
             # update the bed days footprint
-            self.BEDDAYS_FOOTPRINT.update({'high_dependency_bed': self.icu_days})
+            self.BEDDAYS_FOOTPRINT.update({'general_bed': self.icu_days})
             # store the injury information of patients in ICU
             logger.info(key='ICU_patients',
                         data=person_injuries,
