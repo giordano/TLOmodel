@@ -29,7 +29,7 @@ from tlo.methods import (
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/BlockedInterventions/"
 # Establish the simulation object
-yearsrun = 3
+yearsrun = 5
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
