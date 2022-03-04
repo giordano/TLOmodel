@@ -8,13 +8,14 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
 )
+from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results
+scenario_filename = 'run_core_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'ouput_graphs_10k_standard_mph_calibration-2022-01-18T142306Z'
+graph_location = 'outputs_v1.2_run_core_modules-2022-03-04T082704Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -1464,3 +1465,12 @@ plt.show()
 
 # Breastfeeding
 # todo
+
+# SQUEEZE
+for hsi_string in ['SkilledBirthAttendance', 'PostnatalCheck', 'ComprehensiveEmergency', 'AntenatalWardInpatient',
+                   'AntenatalCare']:
+    analysis_utility_functions.return_squeeze_plots_for_hsi(results_folder, hsi_string, sim_years,
+                                                            graph_location)
+
+
+

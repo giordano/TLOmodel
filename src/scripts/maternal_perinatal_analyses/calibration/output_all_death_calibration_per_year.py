@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'increased_anc_scenario.py'  # <-- update this to look at other results
+scenario_filename = 'run_core_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = './output_graphs_60k_increased_anc_scenario-2022-01-31T134117Z/calib_check_baseline/death'
+graph_location = './outputs_v1.2_run_core_modules-2022-03-04T082704Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -252,7 +252,7 @@ ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [242, 235, 229, 
 ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                 [168, 165, 158, 151, 150, 146, 141, 141, 134],
                 [324, 313, 310, 307, 304, 307, 304, 300, 294], color='grey', alpha=.1)
-ax.set(ylim=(0, 1000))
+ax.set(ylim=(0, 2000))
 plt.xlabel('Year')
 plt.ylabel("Deaths per 100,000 live births")
 plt.title('Maternal Mortality Ratio per Year')

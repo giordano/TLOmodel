@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+from tlo.analysis.utils import extract_results
 
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
@@ -105,7 +106,7 @@ def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, gra
     plt.xlabel('Year')
     plt.title(title)
     plt.legend()
-    plt.savefig(f'{graph_location}/{save_name}.png')
+    plt.savefig(f'./{graph_location}/{save_name}.png')
     plt.show()
 
 
@@ -115,19 +116,19 @@ def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_lo
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
-def simple_comparison_line_chart(sim_years, baseline_rate, intervention_rate, y_title, title, file_name,
-                                 graph_location):
-    plt.plot(sim_years, baseline_rate, 'o-g', label="Baseline", color='deepskyblue')
-    plt.plot(sim_years, intervention_rate, 'o-g', label="Intervention", color='green')
+def simple_line_chart_with_ci(sim_years, data, y_label, title, file_name, graph_location):
+    fig, ax = plt.subplots()
+    ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
+    ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
+    plt.ylabel(y_label)
     plt.xlabel('Year')
-    plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -140,21 +141,67 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
-def line_graph_with_ci_and_target_rate(b_data, i_data, x_label, y_label, title, file_name, sim_years, graph_location):
-    fig, ax = plt.subplots()
-    ax.plot(sim_years, b_data[0], 'o-g', label="Baseline", color='deepskyblue')
-    ax.fill_between(sim_years, b_data[1], b_data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
+def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
 
-    ax.plot(sim_years, i_data[0], 'o-g', label="Intervention", color='forestgreen')
-    ax.fill_between(sim_years, i_data[1], i_data[2], color='g', alpha=.1, label="UI (2.5-92.5)")
+    hsi = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
 
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    mean_squeeze_per_year = [hsi.loc[year].to_numpy().mean() for year in sim_years]
+    lq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 2.5) for year in sim_years]
+    uq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 92.5) for year in sim_years]
+    mean_data = [mean_squeeze_per_year, lq_squeeze_per_year, uq_squeeze_per_year]
+
+    hsi_med = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].median()))
+
+    median = [hsi_med.loc[year].median() for year in sim_years]
+
+    hsi_count = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['year'].count()))
+
+    hsi_squeeze = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df:
+            df.loc[(df['TREATMENT_ID'].str.contains(hsi_string)) & df['did_run'] & (df['Squeeze_Factor'] > 0)
+                   ].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
+
+    prop_squeeze_year = [(hsi_squeeze.loc[year].to_numpy().mean() / hsi_count.loc[year].to_numpy().mean()) * 100
+                         for year in sim_years]
+    prop_squeeze_lq = [
+        (np.percentile(hsi_squeeze.loc[year].to_numpy(), 2.5) /
+         np.percentile(hsi_count.loc[year].to_numpy(), 2.5)) * 100 for year in sim_years]
+
+    prop_squeeze_uq = [
+        (np.percentile(hsi_squeeze.loc[year].to_numpy(), 92.5) /
+         np.percentile(hsi_count.loc[year].to_numpy(), 92.5)) * 100 for year in sim_years]
+
+    prop_data = [prop_squeeze_year, prop_squeeze_lq, prop_squeeze_uq]
+
+    simple_line_chart_with_ci(sim_years, mean_data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
+                              f'mean_sf_{hsi_string}', graph_location)
+    simple_line_chart(sim_years, median, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
+                      f'med_sf_{hsi_string}', graph_location)
+    simple_line_chart_with_ci(sim_years, prop_data, '% HSIs', f'Proportion of HSI {hsi_string} where squeeze > 0',
+                              f'prop_sf_{hsi_string}', graph_location)

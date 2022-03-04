@@ -550,7 +550,7 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
             'Proportion of ANC visits', 'Yearly % of ANC visits in which squeeze exceeds 0.0',
             plot_destination_folder, 'squeeze_prop')
 
-        analysis_utility_functions.simple_comparison_line_chart(
+        analysis_utility_functions.basic_comparison_graph(
             intervention_years, b_squeeze['median'], i_squeeze['median'], 'Median Squeeze Factor',
             'Yearly Median Squeeze Factor across ANC visits', plot_destination_folder, 'squeeze_med')
 
