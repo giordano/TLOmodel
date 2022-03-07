@@ -209,7 +209,7 @@ plt.show()
 """
 If has the simulation has been with Contraception module using the HealthSystem and the HealthSystem not disabled, then
  use ...
-
+"""
 cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
 
 # Load consumables log and put the date as the index and provide
@@ -230,7 +230,7 @@ def unpack(in_dict_as_string):
     return l
 
 pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
-"""
+
 
 # What follows is TimC's original code for this section:
 # ...
