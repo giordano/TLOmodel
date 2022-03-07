@@ -21,6 +21,11 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
+from tlo.methods.consumables import (
+    Consumables,
+    get_item_code_from_item_name,
+    get_item_codes_from_package_name,
+)
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
@@ -118,15 +123,19 @@ class HealthSystem(Module):
                               'to permit each appointment type that should be run at facility level to do so in every '
                               'district.'),
 
-        # Availability of Consumables
-        'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
-                                           'List of consumables used in each intervention and their costs.'),
+        # Consumables
+        'item_and_package_code_lookups': Parameter(
+            Types.DATA_FRAME, 'Data imported from the OneHealth Tool on consumable items, packages and costs.'),
+        'availability_estimates': Parameter(
+            Types.DATA_FRAME, 'Estimated availability of consumables in the LMIS dataset.'),
 
         # Infrastructure and Equipment
-        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+        'BedCapacity': Parameter(
+            Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
 
         # Service Availability
-        'Service_Availability': Parameter(Types.LIST, 'List of services to be available.')
+        'Service_Availability': Parameter(
+            Types.LIST, 'List of services to be available.')
     }
 
     PROPERTIES = {
@@ -181,9 +190,6 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        assert cons_availability in ['none', 'default', 'all']
-        self.cons_availability = cons_availability
-
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
         assert not (disable and disable_and_reject_all), (
@@ -233,11 +239,18 @@ class HealthSystem(Module):
         if record_hsi_event_details:
             self.hsi_event_details = set()
 
+        # Determine what the the `availability` parameter in the Consumables class should be: it should be `all`
+        # if the HealthSystem is disabled.
+        self._cons_availability = 'all' if self.disable else cons_availability
+
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
 
         # Create the instance of BedDays to record usage of in-patient bed days
         self.bed_days = BedDays(self)
+
+        # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
+        self.consumables = None
 
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
@@ -270,9 +283,11 @@ class HealthSystem(Module):
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
                 'ResourceFile_Daily_Capabilities.csv')
 
-        # Read in ResourceFile_Consumables and then process it to create the data structures needed
-        self.parameters['Consumables_OneHealth'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables.csv')
+        # Read in ResourceFile_Consumables
+        self.parameters['item_and_package_code_lookups'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
+        self.parameters['availability_estimates'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
@@ -282,10 +297,12 @@ class HealthSystem(Module):
         self.parameters['Service_Availability'] = ['*']
 
     def pre_initialise_population(self):
-        """Do processing following `read_parameters` prior to generating the population."""
+        """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
         self.process_human_resources_files()
-        self.process_consumables_file()
         self.bed_days.pre_initialise_population()
+        self.consumables = Consumables(data=self.parameters['availability_estimates'],
+                                       rng=self.rng,
+                                       availability=self._cons_availability)
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -297,6 +314,9 @@ class HealthSystem(Module):
 
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
+
+        # Set the consumables modules in preparation for the simulation
+        self.consumables.processing_at_start_of_new_day(sim.date)
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
@@ -319,9 +339,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
-        # Update consumables available today:
-        self.determine_availability_of_consumables_today()
 
         # Determine service_availability
         self.set_service_availability()
@@ -436,38 +453,6 @@ class HealthSystem(Module):
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
-
-    def process_consumables_file(self):
-        """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
-        * Creates ```parameters['Consumables']```
-        * Creates ```df_mapping_pkg_code_to_intv_code```
-        * Creates ```prob_item_code_available```
-        """
-        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
-        raw = self.parameters['Consumables_OneHealth']
-        # -------------------------------------------------------------------------------------------------
-        # Create a pd.DataFrame that maps pkg code (as index) to item code:
-        # This is used to quickly look-up which items are required in each package
-        df = raw[['Intervention_Pkg_Code', 'Item_Code', 'Expected_Units_Per_Case']]
-        df = df.set_index('Intervention_Pkg_Code')
-        self.df_mapping_pkg_code_to_intv_code = df
-
-        # -------------------------------------------------------------------------------------------------
-        # Make ```prob_item_codes_available```
-        # This is a data-frame that organise the probabilities of individual consumables items being available
-        # (by the item codes)
-        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(raw['Item_Code'])})
-
-        # merge in probabilities of being available
-        filter_col = [col for col in raw if col.startswith('Available_Facility_Level_')]
-        filter_col.append('Item_Code')
-        prob_item_codes_available = unique_item_codes.merge(
-            raw.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
-        )
-        assert len(prob_item_codes_available) == len(unique_item_codes)
-
-        # set the index as the Item_Code and save
-        self.prob_item_codes_available = prob_item_codes_available.set_index('Item_Code', drop=True)
 
     def format_daily_capabilities(self) -> pd.Series:
         """
@@ -646,7 +631,7 @@ class HealthSystem(Module):
                 ]
                 assert facility_appt_types.issuperset(appt_type_to_check_list), (
                     f"An appointment type has been requested at a facility level for "
-                    f"which it is not possible: {hsi_event.TREATMENT_ID}"
+                    f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
                 )
 
         # Check that event (if individual level) is able to run with this configuration
@@ -698,6 +683,10 @@ class HealthSystem(Module):
 
         # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
+
+            if not isinstance(hsi_event.target, tlo.population.Population):
+                # Write the facility_id at which this HSI will occur:
+                hsi_event._facility_id = self.get_facility_info(hsi_event).id
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -967,69 +956,6 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-    def _request_consumables(self, hsi_event, item_codes: dict, to_log: bool) -> dict:
-        """
-        This is a private function called by the 'get_consumables` in the `HSI_Event` base class. It queries whether
-        item_codes are currently available for a particular `hsi_event` and logs the request.
-
-        :param hsi_event: The hsi_event from which the request for consumables originates
-        :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
-        :param to_log: whether the request is logged.
-        :return:
-        """
-
-        # If HealthSystem is 'disabled' return that all items are available (with no logging).
-        if self.disable:
-            return {k: True for k in item_codes}
-
-        # Determine availability of consumables:
-        if self.cons_availability == 'all':
-            # All item_codes available available if all consumables should be considered available by default.
-            available = {k: True for k in item_codes}
-        elif self.cons_availability == 'none':
-            # All item_codes not available if consumables should be considered not available by default.
-            available = {k: False for k in item_codes.keys()}
-        else:
-            # Determine availability of each item and package:
-            select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
-            available = self.cons_available_today['Item_Code'].loc[item_codes.keys(), select_col].to_dict()
-
-        # Log the request and the outcome:
-        if to_log:
-            logger.info(key='Consumables',
-                        data={
-                            'TREATMENT_ID': hsi_event.TREATMENT_ID,
-                            'Item_Available': str({k: v for k, v in item_codes.items() if v}),
-                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not v}),
-                        },
-                        # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-                        description="Record of each consumable item that is requested."
-                        )
-
-        # Return the result of the check on availability
-        return available
-
-    def determine_availability_of_consumables_today(self):
-        """Helper function to determine availability of all items and packages"""
-
-        # Determine the availability of the consumables *items* today
-
-        # Random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.rng.rand(
-            len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
-        )
-        items = self.prob_item_codes_available > random_draws
-
-        # Determine the availability of packages today
-        # (packages are made-up of the individual items: if one item is not available, the package is not available)
-        pkgs = self.df_mapping_pkg_code_to_intv_code.merge(items, left_on='Item_Code', right_index=True)
-        pkgs = pkgs.groupby(level=0)[pkgs.columns[pkgs.columns.str.startswith('Available_Facility_Level')]].all()
-
-        self.cons_available_today = {
-            "Item_Code": items,
-            "Intervention_Package_Code": pkgs
-        }
-
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         This will write to the log with a record that this HSI event has occured.
@@ -1157,15 +1083,11 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        consumables = self.parameters['Consumables_OneHealth']
-        return consumables.loc[
-            consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
+        return get_item_codes_from_package_name(self.parameters['item_and_package_code_lookups'], package)
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        consumables = self.parameters['Consumables_OneHealth']
-        return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
+        return get_item_code_from_item_name(self.parameters['item_and_package_code_lookups'], item)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1195,11 +1117,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         # 0) Refresh information ready for new day:
-        # - Update Bed Days trackers:
         self.module.bed_days.processing_at_start_of_new_day()
-
-        # - Determine the availability of consumables today based on their probabilities
-        self.module.determine_availability_of_consumables_today()
+        self.module.consumables.processing_at_start_of_new_day(self.sim.date)
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1431,6 +1350,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
+        self._facility_id = None
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1532,12 +1452,19 @@ class HSI_Event:
             else:
                 raise ValueError("The item_codes are given in an unrecognised format")
 
+        hs_module = self.sim.modules['HealthSystem']
+
         _item_codes = _return_item_codes_in_dict(item_codes)
         _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
 
+        # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
+        _to_log = to_log if not hs_module.disable else False
+
         # Checking the availability and logging:
-        rtn = self.sim.modules['HealthSystem']._request_consumables(
-            hsi_event=self, item_codes={**_item_codes, **_optional_item_codes}, to_log=to_log)
+        rtn = hs_module.consumables._request_consumables(item_codes={**_item_codes, **_optional_item_codes},
+                                                         to_log=_to_log,
+                                                         facility_id=self._facility_id,
+                                                         treatment_id=self.TREATMENT_ID)
 
         # Return result in expected format:
         if not return_individual_results:
