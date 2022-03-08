@@ -220,16 +220,30 @@ cons = cons.set_index('year')
 # Drop any entry that is not related to Contraception
 cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
 
-# Make counts of every type of package that is actually used (i.e. was available when requested) each year.
-def unpack(in_dict_as_string):
-    in_dict = eval(in_dict_as_string)
-    l = list()
-    for k, v in in_dict.items():
-        for _v in range(v):
-            l.append(k)
-    return l
+# Make counts of item that is actually used (i.e. was available when requested) each year.
+import collections, functools, operator
+sum_dicts = lambda list_of_dicts: dict(functools.reduce(operator.add, map(collections.Counter, [eval(_x) for _x in list_of_dicts])))
+items_used = cons['Item_Available'].groupby(by=cons.index).apply(sum_dicts).unstack().fillna(0.0)
 
-pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+# Get the cost (in local currency, 2016) of each item_code
+cons_costs_db = pd.read_csv(resources / 'healthsystem'/ 'consumables' / 'ResourceFile_Consumables.csv')[
+    ['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
+cons_costs_db = cons_costs_db.loc[cons_costs_db.index.isin(items_used.columns.astype(int))]
+
+# Get total cost
+total_cost_per_item = cons_costs_db * items_used
+total_cost = total_cost_per_item.sum(axis=1)
+
+total_cost.plot()
+plt.show()
+
+
+
+
+
+
+
+
 
 
 # What follows is TimC's original code for this section:
