@@ -235,8 +235,14 @@ total_cost_per_item = cons_costs_db * items_used
 total_cost = total_cost_per_item.sum(axis=1)
 
 total_cost.plot()
+plt.title("Total Contraception Consumables Cost Per Year")
+plt.xlabel("Year")
+plt.ylabel("Cost")
+plt.gca().set_ylim(0, 1.6e6)
+plt.savefig(outputpath / ('Contraception Consumables Costs' + datestamp + '.png'), format='png')
 plt.show()
 
+# ToDo: Need to group by items within packages for each contraceptive method to plot Costs for each method over time..
 
 
 
@@ -245,8 +251,7 @@ plt.show()
 
 
 
-
-# What follows is TimC's original code for this section:
+# %%  What follows is TimC's original code for this section:
 years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
