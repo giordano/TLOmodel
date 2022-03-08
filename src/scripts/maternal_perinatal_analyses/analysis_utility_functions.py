@@ -105,6 +105,7 @@ def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, gra
     plt.ylabel(y_label)
     plt.xlabel('Year')
     plt.title(title)
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'./{graph_location}/{save_name}.png')
     plt.show()
