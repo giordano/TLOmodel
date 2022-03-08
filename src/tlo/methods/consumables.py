@@ -39,6 +39,7 @@ class Consumables:
         self._cons_available_today = None  # Index for the item_codes available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
+        self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
         self._process_consumables_df(data)
 
@@ -101,9 +102,7 @@ class Consumables:
 
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
-            for _i in item_codes.keys():
-                if _i not in self.item_codes:
-                    warnings.warn(UserWarning(f"Item_Code {_i} is not recognised."))
+            self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
 
         # Determine availability of consumables:
         if self.cons_availability == 'all':
@@ -140,6 +139,17 @@ class Consumables:
             else:
                 avail.update({_i: self._is_unknown_item_available[facility_id]})
         return avail
+
+    def on_simulation_end(self):
+        """Do tasks at the end of the simulation: Raise warnings and enter to log about item_codes not recognised."""
+        if self._not_recognised_item_codes:
+            warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
+                                      f"{self._not_recognised_item_codes}"))
+            for _treatment_id, _item_codes in self._not_recognised_item_codes:
+                logger.info(
+                    key="item_codes_not_recognised",
+                    data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
+                )
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
@@ -184,3 +194,24 @@ def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dic
                     'available_prop': _avail
                 })
     return pd.DataFrame(data=list_of_items)
+
+
+def check_format_of_consumables_file(df, fac_ids):
+    """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
+    months = set(range(1, 13))
+    item_codes = set(df.item_code.unique())
+
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
+
+    # Check that all permutations of Facility_ID, month and item_code are present
+    pd.testing.assert_index_equal(
+        df.set_index(['Facility_ID', 'month', 'item_code']).index,
+        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
+        check_order=False
+    )
+
+    # Check that every entry for a probability is a float on [0,1]
+    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
+    assert not pd.isnull(df.available_prop).any()
+
+    print("Checks on consumables file passed.")

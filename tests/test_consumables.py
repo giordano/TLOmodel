@@ -13,6 +13,7 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.consumables import (
     Consumables,
+    check_format_of_consumables_file,
     create_dummy_data_for_cons_availability,
     get_item_code_from_item_name,
     get_item_codes_from_package_name,
@@ -53,19 +54,18 @@ def test_using_recognised_item_codes():
     cons.processing_at_start_of_new_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
-    with pytest.warns(None) as recorded_warnings:
-        rtn = cons._request_consumables(
-            item_codes={0: 1, 1: 1},
-            facility_id=0
-        )
+    rtn = cons._request_consumables(
+        item_codes={0: 1, 1: 1},
+        facility_id=0
+    )
 
     assert {0: False, 1: True} == rtn
-    assert not any_warnings_about_item_code(recorded_warnings)
+    assert not cons._not_recognised_item_codes  # No item_codes recorded as not recognised.
 
 
-def test_unrecognised_item_code_leads_to_warning():
-    """Check that when using an item_code that is not recognised, a working result is returned but a warning is
-    issued."""
+def test_unrecognised_item_code_is_recorded():
+    """Check that when using an item_code that is not recognised, a working result is returned but the fact that
+    an unrecognised item_code was requested is logged and a warning issued."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
     data = create_dummy_data_for_cons_availability(
         intrinsic_availability={0: 0.0, 1: 1.0},
@@ -81,13 +81,18 @@ def test_unrecognised_item_code_leads_to_warning():
     cons.processing_at_start_of_new_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
-    with pytest.warns(None) as recorded_warnings:
-        rtn = cons._request_consumables(
-            item_codes={99: 1},
-            facility_id=0
-        )
+    rtn = cons._request_consumables(
+        item_codes={99: 1},
+        facility_id=0
+    )
 
     assert isinstance(rtn[99], bool)
+    assert cons._not_recognised_item_codes  # Some item_codes recorded as not recognised.
+
+    # Check warning is issued at end of simulation
+    with pytest.warns(None) as recorded_warnings:
+        cons.on_simulation_end()
+
     assert any_warnings_about_item_code(recorded_warnings)
 
 
@@ -354,30 +359,14 @@ def test_outputs_to_log(tmpdir):
 # Checks involving the actual ResourceFile used by default in the simulations
 # ----------------------------------------------------------------------------
 
-def check_format_of_consumables_file(df):
-    """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
-    months = set(range(1, 13))
-    item_codes = set(df.item_code.unique())
-
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
-
-    # Check that all permutations of Facility_ID, month and item_code are present
-    pd.testing.assert_index_equal(
-        df.set_index(['Facility_ID', 'month', 'item_code']).index,
-        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
-        check_order=False
-    )
-
-    # Check that every entry for a probability is a float on [0,1]
-    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
-    assert not pd.isnull(df.available_prop).any()
-
 
 def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
-    check_format_of_consumables_file(pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'
-    ))
+    check_format_of_consumables_file(
+        pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
+        fac_ids=fac_ids
+    )
 
 
 @pytest.mark.slow
@@ -405,6 +394,10 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
                     for _item_code in item_codes:
                         hsi_event.get_consumables(item_codes=_item_code)
 
+        sim.modules['HealthSystem'].on_simulation_end()
+
+    # Check that no warnings raised or item_codes recorded as being not recogised.
+    assert not sim.modules['HealthSystem'].consumables._not_recognised_item_codes
     assert not any_warnings_about_item_code(recorded_warnings)
 
 
