@@ -832,7 +832,7 @@ class Labour(Module):
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_lab_consumables['iron_folic_acid'] = \
-            get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
+            get_item_code_from_pkg('Daily iron and folic acid supplementation (pregnant women)')
 
     def initialise_simulation(self, sim):
 
