@@ -113,7 +113,14 @@ class Contraception(Module):
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
-        # if False: initiation and switching do not occur through an HSI
+        # if False: initiation and switching do not occur through an H
+        #
+        #     def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
+        #         super().__init__(name)
+        #         self.resourcefilepath = resourcefilepath
+        #
+        #         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
+        #         # if False: initiation and switching do not occur through an HSI
 
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
@@ -329,7 +336,7 @@ class Contraception(Module):
                 "age_years")
             year_effect = time_age_trend_in_stopping()
 
-            # Probability of initiation by age for each method
+            # Probability of stopping by age for each method
             p_stop = dict()
             for year in year_effect.index:
                 p_stop_this_year = dict()
@@ -350,12 +357,14 @@ class Contraception(Module):
             """The age-specific effect of calendar year on the probability of starting use of contraceptive
             (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
              the WPP estimates."""
+            """intervention effects added as 20% increase in initiation on top of secular trend from 2023 onwards
+            via adding   * np.maximum(1.0, 1.2 * np.floor(_years/2023))  to init_over_time"""
 
             _years = np.arange(2010, 2101)
             _ages = np.arange(15, 50)
 
             _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
-                +0.01 * (_years - 2020)))
+                +0.01 * (_years - 2020))) * np.maximum(1.0, 1.2 * np.floor(_years/2023))
             _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
             _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
 
