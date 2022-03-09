@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results
+scenario_filename = 'run_core_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'ouput_graphs_10k_standard_mph_calibration-2022-01-18T142306Z'
+graph_location = 'dummy_no_added_births'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -194,6 +194,13 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_data_
 
 # ============================================  DENOMINATORS... ======================================================
 # ---------------------------------------------Total_pregnancies...---------------------------------------------------
+#added_2010_pregs = extract_results(
+#            results_folder,
+#            module="tlo.methods.demography",
+#            key="on_birth",
+#            custom_generate_series=(
+#                lambda df:
+#                df.loc[(df['mother'] == -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
 
 pregnancy_poll_results = extract_results(
@@ -204,6 +211,7 @@ pregnancy_poll_results = extract_results(
         lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
     ))
 
+#mean_added_pregs = get_mean_and_quants(added_2010_pregs)[0]
 mean_pp_pregs = get_mean_and_quants(pregnancy_poll_results)[0]
 # mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
 # total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
@@ -227,14 +235,22 @@ plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
+#births_results = extract_results(
+#    results_folder,
+#    module="tlo.methods.demography",
+#    key="on_birth",
+#    custom_generate_series=(
+#        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+#    ),
+#)
+
 births_results = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="on_birth",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-    ),
-)
+            results_folder,
+            module="tlo.methods.demography",
+            key="on_birth",
+            custom_generate_series=(
+                lambda df:
+                df.loc[(df['mother'] != -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
 total_births_per_year = get_mean_and_quants(births_results)[0]
 lq_bi = get_mean_and_quants(births_results)[1]
