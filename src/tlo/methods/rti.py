@@ -1697,6 +1697,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
@@ -1708,13 +1709,20 @@ class RTI(Module):
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
             assert counts > 0, "This person has asked for stiches, but doens't have a laceration"
             # request suture
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Suture(module=self,
-                                         person_id=person_id),
-                priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + DateOffset(days=15)
-            )
+            if 'Suture' not in p['blocked_interventions']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Suture(module=self,
+                                             person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + DateOffset(days=15)
+                )
+            else:
+                df.at[person_id, 'rt_injuries_left_untreated'] = \
+                    list(np.intersect1d(laceration_codes, person_injuries.values))
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+
 
     def rti_ask_for_shock_treatment(self, person_id):
         """
@@ -1758,7 +1766,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-
+        p = self.parameters
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
@@ -1770,14 +1778,19 @@ class RTI(Module):
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
             assert counts > 0, "This person has asked for burn treatment, but doens't have any burns"
 
-            # if this person is alive ask for the hsi event
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Burn_Management(module=self,
-                                                  person_id=person_id),
-                priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + DateOffset(days=15)
-            )
+            if 'Burn' not in p['blocked_interventions']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Burn_Management(module=self,
+                                                      person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + DateOffset(days=15)
+                )
+            else:
+                df.at[person_id, 'rt_injuries_left_untreated'] = \
+                    list(np.intersect1d(burn_codes, person_injuries.values))
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_ask_for_fracture_casts(self, person_id):
         """
@@ -1828,6 +1841,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1838,14 +1852,20 @@ class RTI(Module):
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
             assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
             # if the person is alive request the hsi
-            for i in range(0, counts):
-                # schedule the treatments, say the treatments occur a day apart for now
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
-                    priority=0,
-                    topen=self.sim.date + DateOffset(days=0 + i),
-                    tclose=self.sim.date + DateOffset(days=15 + i)
-                )
+            if 'Open fracture' not in p['blocked_interventions']:
+                for i in range(0, counts):
+                    # schedule the treatments, say the treatments occur a day apart for now
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
+                        priority=0,
+                        topen=self.sim.date + DateOffset(days=0 + i),
+                        tclose=self.sim.date + DateOffset(days=15 + i)
+                    )
+            else:
+                df.at[person_id, 'rt_injuries_left_untreated'] = \
+                    list(np.intersect1d(open_fracture_codes, person_injuries.values))
+                # reset the time to check whether the person has died from their injuries
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
 
     def rti_ask_for_tetanus(self, person_id):
         """
