@@ -1,0 +1,34 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/temp_rti_fix_assert.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 209652396,
+      "parameters": {
+        "HealthSystem": {
+          "cons_availability": "default"
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 398764591,
+      "parameters": {
+        "HealthSystem": {
+          "cons_availability": "none"
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 924231285,
+      "parameters": {
+        "HealthSystem": {
+          "cons_availability": "all"
+        }
+      }
+    }
+  ]
+}
