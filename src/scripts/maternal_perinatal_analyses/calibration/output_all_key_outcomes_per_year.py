@@ -51,14 +51,6 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ============================================  DENOMINATORS... ===================================================
     # ---------------------------------------------Total_pregnancies...------------------------------------------------
-    # added_2010_pregs = extract_results(
-    #            results_folder,
-    #            module="tlo.methods.demography",
-    #            key="on_birth",
-    #            custom_generate_series=(
-    #                lambda df:
-    #                df.loc[(df['mother'] == -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
-
     pregnancy_poll_results = extract_results(
         results_folder,
         module="tlo.methods.contraception",
@@ -69,8 +61,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     preg_data = analysis_utility_functions.get_mean_and_quants(pregnancy_poll_results, sim_years)
 
-    analysis_utility_functions.simple_line_chart_with_ci(sim_years, preg_data, 'Pregnancies (mean)',
-                                                         'Mean number of pregnancies', 'pregnancies', graph_location)
+    analysis_utility_functions.simple_line_chart_with_ci(
+        sim_years, preg_data, 'Pregnancies (mean)', 'Mean number of pregnancies', 'pregnancies', graph_location)
 
     # -----------------------------------------------------Total births...---------------------------------------------
     births_results = extract_results(
@@ -92,16 +84,18 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
 
-    analysis_utility_functions.simple_line_chart_with_ci(sim_years, birth_data, 'Births (mean)',
-                                                         'Mean number of Births per Year', 'births', graph_location)
+    analysis_utility_functions.simple_line_chart_with_ci(
+        sim_years, birth_data, 'Births (mean)', 'Mean number of Births per Year', 'births', graph_location)
 
     # todo: some testing looking at live births vs total births...
 
     # -------------------------------------------------Completed pregnancies...----------------------------------------
     ectopic_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
         an_comps, 'ectopic_unruptured', sim_years)[0]
+
     ia_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
         an_comps, 'induced_abortion', sim_years)[0]
+
     sa_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
         an_comps, 'spontaneous_abortion', sim_years)[0]
 
@@ -321,6 +315,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             target_rate_eanc4.append(24.5)
         else:
             target_rate_eanc4.append(36.7)
+
     analysis_utility_functions.simple_line_chart_with_target(
         sim_years, early_anc_4_list, target_rate_eanc4, '% total deliveries',
         'Proportion of women attending attending ANC4+ with first visit early', 'anc_prop_early_anc4', graph_location)
@@ -358,18 +353,21 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             do_scaling=False
         )
 
-    hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'home_birth',
-                                                                         sim_years)
+    hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+        deliver_setting_results, 'home_birth', sim_years)
+
+    hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+        deliver_setting_results, 'hospital', sim_years)
+
+    hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+        deliver_setting_results, 'health_centre', sim_years)
+
     home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], birth_data_ex2010[0])]
 
-    hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'hospital',
-                                                                         sim_years)
     health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], birth_data_ex2010[0])]
     health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], birth_data_ex2010[0])]
     health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], birth_data_ex2010[0])]
 
-    hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'health_centre',
-                                                                         sim_years)
     hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], birth_data_ex2010[0])]
     hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], birth_data_ex2010[0])]
     hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], birth_data_ex2010[0])]
@@ -407,42 +405,27 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         module="tlo.methods.postnatal_supervisor",
         key="total_mat_pnc_visits",
         custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['mother'].count()),
+            lambda df: df.loc[df['visits'] > 0].assign(year=df['date'].dt.year).groupby(['year'])['mother'].count()),
         do_scaling=False
     )
-
     pnc_results_newborn = extract_results(
         results_folder,
         module="tlo.methods.postnatal_supervisor",
         key="total_neo_pnc_visits",
         custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['child'].count()),
+            lambda df: df.loc[df['visits'] > 0].assign(year=df['date'].dt.year).groupby(['year'])['child'].count()),
         do_scaling=False
     )
+    pn_mat_data = analysis_utility_functions.get_mean_and_quants(pnc_results_maternal, sim_years)
+    pn_neo_data = analysis_utility_functions.get_mean_and_quants(pnc_results_newborn, sim_years)
 
-    pnc_0_means = list()
-    pnc_0_lqs = list()
-    pnc_0_uqs = list()
-    pnc_0_means_neo = list()
-    pnc_0_lqs_neo = list()
-    pnc_0_uqs_neo = list()
+    pnc_1_plus_rate_mat = [(x / y) * 100 for x, y in zip(pn_mat_data[0], birth_data_ex2010[0])]
+    pnc_mat_lqs = [(x / y) * 100 for x, y in zip(pn_mat_data[1], birth_data_ex2010[0])]
+    pnc_mat_uqs = [(x / y) * 100 for x, y in zip(pn_mat_data[2], birth_data_ex2010[0])]
 
-    for year in sim_years:
-        pnc_0_means.append(pnc_results_maternal.loc[year, 0].mean())
-        pnc_0_lqs.append(pnc_results_maternal.loc[year, 0].quantile(0.025))
-        pnc_0_uqs.append(pnc_results_maternal.loc[year, 0].quantile(0.925))
-
-        pnc_0_means_neo.append(pnc_results_newborn.loc[year, 0].mean())
-        pnc_0_lqs_neo.append(pnc_results_newborn.loc[year, 0].quantile(0.025))
-        pnc_0_uqs_neo.append(pnc_results_newborn.loc[year, 0].quantile(0.925))
-
-    pnc_1_plus_rate_mat = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means, birth_data[0])]
-    pnc_mat_lqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_lqs, birth_data[0])]
-    pnc_mat_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs, birth_data[0])]
-
-    pnc1_plus_rate_neo = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means_neo, birth_data[0])]
-    pnc_neo_lqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_lqs_neo, birth_data[0])]
-    pnc_neo_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs_neo, birth_data[0])]
+    pnc1_plus_rate_neo = [(x / y) * 100 for x, y in zip(pn_neo_data[0], birth_data_ex2010[0])]
+    pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data_ex2010[0])]
+    pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data_ex2010[0])]
 
     target_mpnc_dict = {'double': True,
                         'first': {'year': 2010, 'value': 50, 'label': 'DHS 2010', 'ci': 0},
@@ -505,15 +488,13 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         ),
     )
 
-    mean_twin_births = analysis_utility_functions.get_mean_and_quants(twins_results, sim_years)[0]
-    total_deliveries = [x - y for x, y in zip(birth_data[0], mean_twin_births)]
+    twin_data = analysis_utility_functions.get_mean_and_quants(twins_results, sim_years)
 
-    final_twining_rate = [(x / y) * 100 for x, y in zip(mean_twin_births, total_deliveries)]
+    total_deliveries = [x - y for x, y in zip(birth_data_ex2010[0], twin_data[0])]
 
-    lq_rate = [(x / y) * 100 for x, y in zip(analysis_utility_functions.get_mean_and_quants(
-        twins_results, sim_years)[1], total_deliveries)]
-    uq_rate = [(x / y) * 100 for x, y in zip(analysis_utility_functions.get_mean_and_quants(
-        twins_results, sim_years)[2], total_deliveries)]
+    final_twining_rate = [(x / y) * 100 for x, y in zip(twin_data[0], total_deliveries)]
+    lq_rate = [(x / y) * 100 for x, y in zip(twin_data[1], total_deliveries)]
+    uq_rate = [(x / y) * 100 for x, y in zip(twin_data[2], total_deliveries)]
 
     target_twin_dict = {'double': False,
                         'first': {'year': 2010, 'value': 3.9, 'label': 'DHS 2010', 'ci': 0}}
@@ -521,13 +502,12 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # todo: ADD additional HIV report data?
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, final_twining_rate, lq_rate, uq_rate, target_twin_dict, 'Rate per 100 pregnancies',
-        'Yearly trends for Twin Births', graph_location,'twin_rate')
+        'Yearly trends for Twin Births', graph_location, 'twin_rate')
 
     # ---------------------------------------- Early Pregnancy Loss... ------------------------------------------------
-    total_pregnancies_per_year = analysis_utility_functions.get_mean_and_quants(pregnancy_poll_results, sim_years)[0]
     # Ectopic pregnancies/Total pregnancies
     ectopic_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'ectopic_unruptured', total_pregnancies_per_year, an_comps, 1000, sim_years)
+        'ectopic_unruptured', preg_data[0], an_comps, 1000, sim_years)
 
     target_ect_dict = {'double': True,
                        'first': {'year': 2010, 'value': 4.9, 'label': 'GBD 2010', 'ci': 0},
@@ -614,7 +594,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, syphilis_data[0], syphilis_data[1],  syphilis_data[2], target_syph_dict,
-        'Rate per 1000 completed pregnancies', 'Yearly rate of Syphilis', graph_location,'syphilis_rate', )
+        'Rate per 1000 completed pregnancies', 'Yearly rate of Syphilis', graph_location, 'syphilis_rate')
 
     # ------------------------------------------------ Gestational Diabetes... ----------------------------------------
     gdm_data = analysis_utility_functions.get_comp_mean_and_rate(
@@ -625,17 +605,18 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, gdm_data[0], gdm_data[1], gdm_data[2], target_gdm_dict,'Rate per 1000 completed pregnancies',
-        'Yearly rate of Gestational Diabetes',graph_location, 'gest_diab_rate', )
+        'Yearly rate of Gestational Diabetes', graph_location, 'gest_diab_rate', )
 
     # ------------------------------------------------ PROM... --------------------------------------------------------
-    prom_data = analysis_utility_functions.get_comp_mean_and_rate('PROM', birth_data[0], an_comps, 1000, sim_years)
+    prom_data = analysis_utility_functions.get_comp_mean_and_rate('PROM', birth_data_ex2010[0], an_comps, 1000,
+                                                                  sim_years)
 
     target_prm_dict = {'double': False,
                        'first': {'year': 2020, 'value': 27, 'label': 'Onwughara et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, prom_data[0], prom_data[1], prom_data[2], target_prm_dict, 'Rate per 1000 births',
-        'Yearly rate of PROM',graph_location, 'prom_rate', )
+        'Yearly rate of PROM', graph_location, 'prom_rate')
 
     # ---------------------------------------------- Anaemia... -------------------------------------------------------
     # Total prevalence of Anaemia at birth (total cases of anaemia at birth/ total births per year) and by severity
@@ -644,11 +625,27 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         module="tlo.methods.pregnancy_supervisor",
         key="anaemia_on_birth",
         custom_generate_series=(
+            lambda df: df.loc[df['anaemia_status'] != 'none'].assign(year=df['date'].dt.year).groupby(['year'])[
+                'year'].count()))
+
+    pnc_anaemia = extract_results(
+        results_folder,
+        module="tlo.methods.postnatal_supervisor",
+        key="total_mat_pnc_visits",
+        custom_generate_series=(
+            lambda df: df.loc[df['anaemia'] != 'none'].assign(year=df['date'].dt.year).groupby(['year'])[
+                'year'].count()))
+
+    preg_an_severity = extract_results(
+        results_folder,
+        module="tlo.methods.pregnancy_supervisor",
+        key="anaemia_on_birth",
+        custom_generate_series=(
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'anaemia_status'])['year'].count()
         ),
     )
 
-    pnc_anaemia = extract_results(
+    pn_pn_severity = extract_results(
         results_folder,
         module="tlo.methods.postnatal_supervisor",
         key="total_mat_pnc_visits",
@@ -657,36 +654,39 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         do_scaling=False
     )
 
-    def get_anaemia_graphs(df, timing):
-        no_anaemia_data = analysis_utility_functions.get_mean_and_quants_from_str_df(df, 'none', sim_years)
-        prevalence_of_anaemia_per_year = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[0], birth_data[0])]
-        no_anaemia_lqs = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[1], birth_data[0])]
-        no_anaemia_uqs = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[2], birth_data[0])]
+    an_data = analysis_utility_functions.get_mean_and_quants(anaemia_results, sim_years)
+    pn_data = analysis_utility_functions.get_mean_and_quants(pnc_anaemia, sim_years)
 
+    def get_anaemia_graphs(data, timing, severity_df):
         target_an_dict = {'double': True,
                           'first': {'year': 2010, 'value': 37.5, 'label': 'DHS 2010', 'ci': 0},
                           'second': {'year': 2015, 'value': 45.1, 'label': 'DHS 2015', 'ci': 0},
                           }
 
+        prev = [(x / y) * 100 for x, y in zip(data[0], birth_data_ex2010[0])]
+        lq = [(x / y) * 100 for x, y in zip(data[1], birth_data_ex2010[0])]
+        uq = [(x / y) * 100 for x, y in zip(data[2], birth_data_ex2010[0])]
+
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
-            sim_years, prevalence_of_anaemia_per_year, no_anaemia_lqs, no_anaemia_uqs, target_an_dict,
+            sim_years, prev, lq, uq, target_an_dict,
             'Prevalence at birth', f'Yearly prevalence of Anaemia (all severity) at {timing}', graph_location,
             f'anaemia_prev_{timing}')
 
         # todo: should maybe be total postnatal women still alive as opposed to births as will inflate
-        mild_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(anaemia_results, 'mild',
-                                                                                           sim_years)[0]
 
-        prevalence_of_mild_anaemia_per_year = [(x/y) * 100 for x, y in zip(mild_anaemia_at_birth, birth_data[0])]
+        mild_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            severity_df, 'mild', sim_years)[0]
+        moderate_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            severity_df, 'moderate', sim_years)[0]
+        severe_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            severity_df, 'severe', sim_years)[0]
 
-        moderate_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(anaemia_results,
-                                                                                               'moderate', sim_years)[0]
-        prevalence_of_mod_anaemia_per_year = [(x/y) * 100 for x, y in zip(moderate_anaemia_at_birth, birth_data[0])]
-
-        severe_anaemia_at_birth = analysis_utility_functions.get_mean_and_quants_from_str_df(anaemia_results, 'severe',
-                                                                                             sim_years)[0]
-
-        prevalence_of_sev_anaemia_per_year = [(x/y) * 100 for x, y in zip(severe_anaemia_at_birth, birth_data[0])]
+        prevalence_of_mild_anaemia_per_year = [(x/y) * 100 for x, y in zip(
+            mild_anaemia_at_birth, birth_data_ex2010[0])]
+        prevalence_of_mod_anaemia_per_year = [(x/y) * 100 for x, y in zip(
+            moderate_anaemia_at_birth, birth_data_ex2010[0])]
+        prevalence_of_sev_anaemia_per_year = [(x/y) * 100 for x, y in zip(
+            severe_anaemia_at_birth, birth_data_ex2010[0])]
 
         plt.plot(sim_years, prevalence_of_mild_anaemia_per_year, label="mild")
         plt.plot(sim_years, prevalence_of_mod_anaemia_per_year, label="moderate")
@@ -698,8 +698,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         plt.savefig(f'{graph_location}/anaemia_by_severity_{timing}.png')
         plt.show()
 
-    get_anaemia_graphs(anaemia_results, 'delivery')
-    get_anaemia_graphs(pnc_anaemia, 'postnatal')
+    get_anaemia_graphs(an_data, 'delivery', preg_an_severity)
+    get_anaemia_graphs(pn_data, 'postnatal', pn_pn_severity)
 
     # ------------------------------------------- Hypertensive disorders -----------------------------------------------
     gh_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
@@ -754,7 +754,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     #  ---------------------------------------------Placenta praevia... ----------------------------------------------
     pp_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'placenta_praevia', total_pregnancies_per_year, an_comps, 1000, sim_years)
+        'placenta_praevia', preg_data[0], an_comps, 1000, sim_years)
 
     target_pp_dict = {'double': False,
                       'first': {'year': 2017, 'value': 5.67, 'label': 'Senkoro et al.', 'ci': 0},
