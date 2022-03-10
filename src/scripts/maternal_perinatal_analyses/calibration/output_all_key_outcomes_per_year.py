@@ -73,16 +73,16 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                                                          'Mean number of pregnancies', 'pregnancies', graph_location)
 
     # -----------------------------------------------------Total births...---------------------------------------------
-    # births_results = extract_results(
-    #    results_folder,
-    #    module="tlo.methods.demography",
-    #    key="on_birth",
-    #    custom_generate_series=(
-    #        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-    #    ),
-    # )
-
     births_results = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="on_birth",
+        custom_generate_series=(
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+        ),
+     )
+
+    births_results_exc_2010 = extract_results(
                 results_folder,
                 module="tlo.methods.demography",
                 key="on_birth",
@@ -345,6 +345,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # 2.) Facility delivery
     # Total FDR per year (denominator - total births)
+
+    # WE EXCLUDE 2010 ADDED BIRTHS HERE TODO: ADD DOCUMENTATION
+    birth_data_ex2010 = analysis_utility_functions.get_mean_and_quants(births_results_exc_2010, sim_years)
+
     deliver_setting_results = extract_results(
             results_folder,
             module="tlo.methods.labour",
@@ -356,19 +360,19 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'home_birth',
                                                                          sim_years)
-    home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], birth_data[0])]
+    home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], birth_data_ex2010[0])]
 
     hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'hospital',
                                                                          sim_years)
-    health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], birth_data[0])]
-    health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], birth_data[0])]
-    health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], birth_data[0])]
+    health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], birth_data_ex2010[0])]
+    health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], birth_data_ex2010[0])]
+    health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], birth_data_ex2010[0])]
 
     hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(deliver_setting_results, 'health_centre',
                                                                          sim_years)
-    hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], birth_data[0])]
-    hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], birth_data[0])]
-    hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], birth_data[0])]
+    hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], birth_data_ex2010[0])]
+    hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], birth_data_ex2010[0])]
+    hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], birth_data_ex2010[0])]
 
     total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
     fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
