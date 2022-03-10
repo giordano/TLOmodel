@@ -120,19 +120,20 @@ def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, t
     plt.xlabel(x_label)
     plt.ylabel('Year')
     plt.title(title)
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
 
-def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, graph_location, save_name):
+def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
     ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
     ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1, label="UI (2.5-92.5)")
     ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
     ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel(y_label)
-    plt.xlabel('Year')
+    plt.ylabel('Year')
+    plt.xlabel(x_label)
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
@@ -140,35 +141,39 @@ def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, gra
     plt.show()
 
 
-def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_location):
+def simple_line_chart(sim_years, model_rate, x_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-    plt.xlabel('Year')
-    plt.ylabel(y_title)
+    plt.xlabel(x_title)
+    plt.ylabel('Year')
     plt.title(title)
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
 
-def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
+def simple_line_chart_with_target(sim_years, model_rate, target_rate, x_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
     plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
-    plt.xlabel('Year')
-    plt.ylabel(y_title)
+    plt.xlabel(x_title)
+    plt.ylabel('Year')
     plt.title(title)
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
 
-def simple_line_chart_with_ci(sim_years, data, y_label, title, file_name, graph_location):
+def simple_line_chart_with_ci(sim_years, data, x_title, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel(y_label)
-    plt.xlabel('Year')
+    plt.xlabel(x_title)
+    plt.ylabel('Year')
     plt.title(title)
     plt.legend()
+    plt.gca().set_ylim(bottom=0)
+    plt.grid(True)
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
@@ -184,6 +189,24 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
+
+
+def return_median_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
+    hsi_med = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].median()))
+
+    median = [hsi_med.loc[year].median() for year in sim_years]
+    lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
+    uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
+    data = [median, lq, uq]
+
+    simple_line_chart_with_ci(sim_years, data, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
+                              f'median_sf_{hsi_string}', graph_location)
 
 
 def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):

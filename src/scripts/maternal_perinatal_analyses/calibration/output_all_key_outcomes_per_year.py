@@ -362,15 +362,17 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
         deliver_setting_results, 'health_centre', sim_years)
 
-    home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], birth_data_ex2010[0])]
+    all_deliveries = [x + y + z for x, y, z in zip(hb_data[0], hc_data[0], hp_data[0])]
 
-    health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], birth_data_ex2010[0])]
-    health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], birth_data_ex2010[0])]
+    home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], all_deliveries)]
+
+    health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], all_deliveries)]
+    health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], all_deliveries)]
     health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], birth_data_ex2010[0])]
 
-    hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], birth_data_ex2010[0])]
-    hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], birth_data_ex2010[0])]
-    hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], birth_data_ex2010[0])]
+    hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], all_deliveries)]
+    hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], all_deliveries)]
+    hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], all_deliveries)]
 
     total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
     fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
@@ -703,15 +705,15 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ------------------------------------------- Hypertensive disorders -----------------------------------------------
     gh_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'mild_gest_htn', birth_data[0], 1000, [an_comps, pn_comps], sim_years)
+        'mild_gest_htn', birth_data_ex2010[0], 1000, [an_comps, pn_comps], sim_years)
     sgh_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'severe_gest_htn', birth_data[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
+        'severe_gest_htn', birth_data_ex2010[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
     mpe_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'mild_pre_eclamp', birth_data[0], 1000, [an_comps, pn_comps], sim_years)
+        'mild_pre_eclamp', birth_data_ex2010[0], 1000, [an_comps, pn_comps], sim_years)
     spe_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'severe_pre_eclamp', birth_data[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
+        'severe_pre_eclamp', birth_data_ex2010[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
     ec_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'eclampsia', birth_data[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
+        'eclampsia', birth_data_ex2010[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
 
     target_gh_dict = {'double': False,
                       'first': {'year': 2019, 'value': 36.8, 'label': 'Noubiap et al.', 'ci': 0},
@@ -765,7 +767,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     #  ---------------------------------------------Placental abruption... --------------------------------------------
     pa_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'placental_abruption', birth_data[0], 1000, [an_comps, la_comps], sim_years)
+        'placental_abruption', birth_data_ex2010[0], 1000, [an_comps, la_comps], sim_years)
 
     target_pa_dict = {'double': False,
                       'first': {'year': 2015, 'value': 3, 'label': 'Macheku et al.', 'ci': 0},
@@ -778,10 +780,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # --------------------------------------------- Antepartum Haemorrhage... -----------------------------------------
     # Rate of APH/total births (antenatal and labour)
     mm_aph_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'mild_mod_antepartum_haemorrhage', birth_data[0], 1000, [an_comps, la_comps], sim_years)
+        'mild_mod_antepartum_haemorrhage', birth_data_ex2010[0], 1000, [an_comps, la_comps], sim_years)
 
     s_aph_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'severe_antepartum_haemorrhage', birth_data[0], 1000, [an_comps, la_comps], sim_years)
+        'severe_antepartum_haemorrhage', birth_data_ex2010[0], 1000, [an_comps, la_comps], sim_years)
 
     total_aph_rates = [x + y for x, y in zip(mm_aph_data[0], s_aph_data[0])]
     aph_lqs = [x + y for x, y in zip(mm_aph_data[1], s_aph_data[1])]
@@ -797,9 +799,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
     early_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'early_preterm_labour', birth_data[0], la_comps, 100, sim_years)
+        'early_preterm_labour', birth_data_ex2010[0], la_comps, 100, sim_years)
     late_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'late_preterm_labour', birth_data[0], la_comps, 100, sim_years)
+        'late_preterm_labour', birth_data_ex2010[0], la_comps, 100, sim_years)
 
     target_ptl_dict = {'double': True,
                        'first': {'year': 2012, 'value': 19.8, 'label': 'Antony et al.', 'ci': 0},
@@ -834,7 +836,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # --------------------------------------------- Post term birth ... -----------------------------------------------
     potl_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'post_term_labour', birth_data[0], la_comps, 100, sim_years)
+        'post_term_labour', birth_data_ex2010[0], la_comps, 100, sim_years)
 
     target_potl_dict = {'double': False,
                         'first': {'year': 2014, 'value': 3.2, 'label': 'van den Broek et al.', 'ci': 0},
@@ -845,9 +847,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         'Post term birth rate', graph_location, 'potl_rate')
 
     # ------------------------------------------- Antenatal Stillbirth ... -------------------------------------------
-    an_sbr_per_year = [(x/y) * 1000 for x, y in zip(an_still_birth_data[0], birth_data[0])]
-    an_sbr_lqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[1], birth_data[0])]
-    an_sbr_uqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[2], birth_data[0])]
+    an_sbr_per_year = [(x/y) * 1000 for x, y in zip(an_still_birth_data[0], birth_data_ex2010[0])]
+    an_sbr_lqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[1], birth_data_ex2010[0])]
+    an_sbr_uqs = [(x/y) * 1000 for x, y in zip(an_still_birth_data[2], birth_data_ex2010[0])]
 
     target_ansbr_dict = {'double': True,
                          'first': {'year': 2010, 'value': 10, 'label': 'UN est.', 'ci': 0},
@@ -878,13 +880,13 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         )
 
     lbw_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'low_birth_weight', birth_data[0], nb_outcomes_df, 100, sim_years)
+        'low_birth_weight', birth_data_ex2010[0], nb_outcomes_df, 100, sim_years)
 
     macro_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'macrosomia', birth_data[0], nb_outcomes_df, 100, sim_years)
+        'macrosomia', birth_data_ex2010[0], nb_outcomes_df, 100, sim_years)
 
     sga_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'small_for_gestational_age', birth_data[0], nb_outcomes_df, 100, sim_years)
+        'small_for_gestational_age', birth_data_ex2010[0], nb_outcomes_df, 100, sim_years)
 
     target_lbw_dict = {'double': True,
                        'first': {'year': 2010, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
@@ -913,7 +915,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # --------------------------------------------- Obstructed Labour... ----------------------------------------------
     ol_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'obstructed_labour', birth_data[0], la_comps, 1000, sim_years)
+        'obstructed_labour', birth_data_ex2010[0], la_comps, 1000, sim_years)
 
     target_rate_ol = list()
     for year in sim_years:
@@ -932,7 +934,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # --------------------------------------------- Uterine rupture... -----------------------------------------------
     ur_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'uterine_rupture', birth_data[0], la_comps, 1000, sim_years)
+        'uterine_rupture', birth_data_ex2010[0], la_comps, 1000, sim_years)
 
     target_ur_dict = {'double': True,
                       'first': {'year': 2010, 'value': 1.2, 'label': 'BEmONC 2010', 'ci': 0},
@@ -962,10 +964,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         )
 
     cs_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'caesarean_section', birth_data[0], delivery_mode, 100, sim_years)
+        'caesarean_section', birth_data_ex2010[0], delivery_mode, 100, sim_years)
 
     avd_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'instrumental', birth_data[0], delivery_mode, 100, sim_years)
+        'instrumental', birth_data_ex2010[0], delivery_mode, 100, sim_years)
 
     target_cs_dict = {'double': True,
                       'first': {'year': 2010, 'value': 4.6, 'label': 'DHS 2010', 'ci': 0},
@@ -1031,16 +1033,16 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ------------------------------------------ Maternal Sepsis Rate... ----------------------------------------------
     an_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'clinical_chorioamnionitis', birth_data[0], an_comps, 1000, sim_years)
+        'clinical_chorioamnionitis', birth_data_ex2010[0], an_comps, 1000, sim_years)
 
     la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
         'sepsis', birth_data[0], la_comps, 1000, sim_years)
 
     pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'sepsis_postnatal', birth_data[0], la_comps, 1000, sim_years)
+        'sepsis_postnatal', birth_data_ex2010[0], la_comps, 1000, sim_years)
 
     pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'sepsis', birth_data[0], pn_comps, 1000, sim_years)
+        'sepsis', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     complete_pn_sep_data = [x + y for x, y in zip(pn_la_sep_data[0], pn_sep_data[0])]
     complete_pn_sep_lq = [x + y for x, y in zip(pn_la_sep_data[1], pn_sep_data[1])]
@@ -1049,7 +1051,6 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     total_sep_rates = [x + y + z for x, y, z in zip(an_sep_data[0], la_sep_data[0], complete_pn_sep_data)]
     sep_lq = [x + y + z for x, y, z in zip(an_sep_data[1], la_sep_data[1], complete_pn_sep_lq)]
     sep_uq = [x + y + z for x, y, z in zip(an_sep_data[2], la_sep_data[2], complete_pn_sep_up)]
-
 
     # todo: note, we would expect our rate to be higher than this
     target_sep_dict = {'double': True,
@@ -1062,10 +1063,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
     la_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'primary_postpartum_haemorrhage', birth_data[0], la_comps, 1000, sim_years)
+        'primary_postpartum_haemorrhage', birth_data_ex2010[0], la_comps, 1000, sim_years)
 
     pn_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'secondary_postpartum_haemorrhage', birth_data[0], pn_comps, 1000, sim_years)
+        'secondary_postpartum_haemorrhage', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     total_pph_rates = [x + y for x, y in zip(la_pph_data[0], pn_pph_data[0])]
     pph_lq = [x + y for x, y in zip(la_pph_data[1], pn_pph_data[1])]
@@ -1090,9 +1091,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     )
 
     ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
-    ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[0], birth_data[0])]
-    ip_sbr_lqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[1], birth_data[0])]
-    ip_sbr_uqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[2], birth_data[0])]
+    ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[0], birth_data_ex2010[0])]
+    ip_sbr_lqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[1], birth_data_ex2010[0])]
+    ip_sbr_uqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[2], birth_data_ex2010[0])]
 
     target_ipsbr_dict = {'double': True,
                          'first': {'year': 2010, 'value': 10, 'label': 'UN est.', 'ci': 0},
@@ -1129,10 +1130,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ----------------------------------------- Fistula... -------------------------------------------------
     vv_fis_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'vesicovaginal_fistula', birth_data[0], pn_comps, 1000, sim_years)
+        'vesicovaginal_fistula', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     rv_fis_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'rectovaginal_fistula', birth_data[0], pn_comps, 1000, sim_years)
+        'rectovaginal_fistula', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     total_fistula_rates = [x + y for x, y in zip(vv_fis_data[0], rv_fis_data[0])]
     fis_lqs = [x + y for x, y in zip(vv_fis_data[1], rv_fis_data[1])]
@@ -1148,13 +1149,13 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # ==================================================== NEWBORN OUTCOMES ==========================================
     #  ------------------------------------------- Neonatal sepsis (labour & postnatal) ------------------------------
     early_ns_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'early_onset_sepsis', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'early_onset_sepsis', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     early_ns_pn = analysis_utility_functions.get_comp_mean_and_rate(
-        'early_onset_sepsis', birth_data[0], nb_outcomes_pn_df, 1000, sim_years)
+        'early_onset_sepsis', birth_data_ex2010[0], nb_outcomes_pn_df, 1000, sim_years)
 
     late_ns_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'late_onset_sepsis', birth_data[0], nb_outcomes_pn_df, 1000, sim_years)
+        'late_onset_sepsis', birth_data_ex2010[0], nb_outcomes_pn_df, 1000, sim_years)
 
     target_nsep_dict = {'double': False,
                         'first': {'year': 2020, 'value': 39.3, 'label': 'Fleischmann et al.', 'ci': 0},
@@ -1172,13 +1173,13 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     #  ------------------------------------------- Neonatal encephalopathy ------------------------------------------
     mild_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'mild_enceph', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'mild_enceph', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     mod_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'moderate_enceph', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'moderate_enceph', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     sev_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'severe_enceph', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'severe_enceph', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     total_enceph_rates = [x + y + z for x, y, z in zip(mild_data[0], mod_data[0], sev_data[0])]
     enceph_lq = [x + y + z for x, y, z in zip(mild_data[1], mod_data[1], sev_data[1])]
@@ -1198,7 +1199,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ----------------------------------------- Respiratory Depression ------------------------------------------------
     rd_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'not_breathing_at_birth', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'not_breathing_at_birth', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     dummy_dict = {'double': False,
                   'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
@@ -1225,7 +1226,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # - TOTAL NOT BREATHING NEWBORNS-
     rds_data_over_births = analysis_utility_functions.get_comp_mean_and_rate(
-        'respiratory_distress_syndrome', birth_data[0], nb_outcomes_df, 1000, sim_years)
+        'respiratory_distress_syndrome', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)
 
     rate = [x + y + z for x, y, z in zip(rds_data_over_births[0], total_enceph_rates, rd_data[0])]
 
@@ -1235,19 +1236,19 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ----------------------------------------- Congenital Anomalies -------------------------------------------------
     rate_of_ca = analysis_utility_functions.get_comp_mean_and_rate(
-        'congenital_heart_anomaly', birth_data[0], nb_outcomes_df, 1000, sim_years)[0]
+        'congenital_heart_anomaly', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)[0]
 
     rate_of_laa = analysis_utility_functions.get_comp_mean_and_rate(
-        'limb_or_musculoskeletal_anomaly', birth_data[0], nb_outcomes_df, 1000, sim_years)[0]
+        'limb_or_musculoskeletal_anomaly', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)[0]
 
     rate_of_ua = analysis_utility_functions.get_comp_mean_and_rate(
-        'urogenital_anomaly', birth_data[0], nb_outcomes_df, 1000, sim_years)[0]
+        'urogenital_anomaly', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)[0]
 
     rate_of_da = analysis_utility_functions.get_comp_mean_and_rate(
-        'digestive_anomaly', birth_data[0], nb_outcomes_df, 1000, sim_years)[0]
+        'digestive_anomaly', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)[0]
 
     rate_of_oa = analysis_utility_functions.get_comp_mean_and_rate(
-        'other_anomaly', birth_data[0], nb_outcomes_df, 1000, sim_years)[0]
+        'other_anomaly', birth_data_ex2010[0], nb_outcomes_df, 1000, sim_years)[0]
 
     plt.plot(sim_years, rate_of_ca, label="heart")
     plt.plot(sim_years, rate_of_laa, label="limb/musc.")
@@ -1264,3 +1265,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # Breastfeeding
     # todo
+
+    # GET MEDIAN SQUEEZE
+    for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
+                'Labour_ReceivesPostnatalCheck', 'NewbornOutcomes_ReceivesPostnatalCheck',
+                'ReceivesComprehensiveEmergencyObstetricCare']:
+        analysis_utility_functions.return_median_squeeze_factor_for_hsi(results_folder, hsi, sim_years, graph_location)
