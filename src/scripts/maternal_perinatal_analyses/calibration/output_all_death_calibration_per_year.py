@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import os
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -10,30 +10,21 @@ from tlo.analysis.utils import (
 )
 
 
-
-def output_all_death_calibration_per_year():
-    # %% Declare the name of the file that specified the scenarios used in this run.
-    scenario_filename = 'run_core_modules.py'  # <-- update this to look at other results
-
-    # %% Declare usual paths:
-    outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-    graph_location = 'calibration_output_graphs_30k_run_core_modules-2022-03-10T154044Z/death'
-    rfp = Path('./resources')
-
-    # Find results folder (most recent run generated using that scenario_filename)
+def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_size, sim_years, daly_years):
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-    # create_pickles_locally(results_folder)  # if not created via batch
 
-    # Enter the years the simulation has ran for here?
-    sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
-    daly_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
-    # todo: replace with something more clever at some point
+    # Create folder to store graphs (if it hasnt already been created when ran previously)
+    path = f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}/death'
+    if not os.path.isdir(path):
+        os.makedirs(f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}/death')
+
+    graph_location = path
 
     # read in daly data
     dalys_data = pd.read_csv(Path('./resources/gbd') / 'ResourceFile_Deaths_and_DALYS_GBD2019.CSV')
 
 
-    # ============================================HELPER FUNCTIONS... =====================================================
+    # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
         complications_df = extract_results(
             results_folder,
@@ -154,7 +145,7 @@ def output_all_death_calibration_per_year():
         plt.ylabel(y_title)
         plt.title(title)
         plt.legend()
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+        plt.savefig(f'{graph_location}/{file_name}.png')
         plt.show()
 
 
@@ -166,7 +157,7 @@ def output_all_death_calibration_per_year():
         plt.ylabel(y_title)
         plt.title(title)
         plt.legend()
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+        plt.savefig(f'{graph_location}/{file_name}.png')
         plt.show()
 
 
@@ -179,7 +170,7 @@ def output_all_death_calibration_per_year():
         plt.ylabel(y_title)
         plt.title(title)
         plt.legend()
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+        plt.savefig(f'{graph_location}/{file_name}.png')
         plt.show()
 
 
@@ -192,7 +183,7 @@ def output_all_death_calibration_per_year():
         plt.ylabel(y_label)
         plt.title(title)
         plt.legend()
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+        plt.savefig(f'{graph_location}/{file_name}.png')
         plt.show()
 
 
@@ -261,7 +252,7 @@ def output_all_death_calibration_per_year():
     plt.ylabel("Deaths per 100,000 live births")
     plt.title('Maternal Mortality Ratio per Year')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
+    plt.savefig(f'{graph_location}/mmr.png')
     plt.show()
 
     # ==============================================  DEATHS... ======================================================
@@ -316,7 +307,7 @@ def output_all_death_calibration_per_year():
     plt.title('Yearly Modelled Maternal Deaths Compared to GBD')
     plt.xticks(ind + width / 2, years)
     plt.legend(loc='best')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
+    plt.savefig(f'{graph_location}/deaths_gbd_comparison.png')
     plt.show()
 
     # do WHO estiamte also
@@ -413,7 +404,7 @@ def output_all_death_calibration_per_year():
         plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
         # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
+        plt.savefig(f'{graph_location}/mat_death_by_cause_{title}_{years}.png',
                     bbox_inches="tight")
         plt.show()
 
@@ -624,7 +615,7 @@ def output_all_death_calibration_per_year():
     plt.ylabel("Rate per 1000 births")
     plt.title('Neonatal Mortality Rate per Year')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/nmr.png')
+    plt.savefig(f'{graph_location}/nmr.png')
     plt.show()
 
     # TOTAL DEATHS
@@ -662,7 +653,7 @@ def output_all_death_calibration_per_year():
     plt.title('Yearly Modelled Neonatal Deaths Compared to GBD')
     plt.xticks(ind + width / 2, years)
     plt.legend(loc='best')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison_neo.png')
+    plt.savefig(f'{graph_location}/deaths_gbd_comparison_neo.png')
     plt.show()
 
     # todo: force colours for each complication in each year to be the same
@@ -680,7 +671,7 @@ def output_all_death_calibration_per_year():
         ax.set_position([box.x0, box.y0, box.width * 0.5, box.height])
         plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
         plt.title(f'Proportion of total neonatal deaths by cause in {year}')
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png', bbox_inches="tight")
+        plt.savefig(f'{graph_location}/neo_death_by_cause_{year}.png', bbox_inches="tight")
         plt.show()
 
     # CASE FATALITY PER COMPLICATION
@@ -879,9 +870,8 @@ def output_all_death_calibration_per_year():
         plt.ylabel("Disability Adjusted Life Years (stacked)")
         plt.title(f'Total DALYs per Year Attributable to {group} disorders')
         plt.legend()
-        plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_dalys_stacked.png')
+        plt.savefig(f'{graph_location}/{group}_dalys_stacked.png')
         plt.show()
-
 
     get_daly_graphs('Maternal', maternal_dalys, maternal_gbd_dalys)
     get_daly_graphs('Neonatal', neonatal_dalys, neonatal_gbd_dalys)
@@ -889,3 +879,4 @@ def output_all_death_calibration_per_year():
 
     # todo: move to scenrio files
     # 1.) define HSIs of interest
+

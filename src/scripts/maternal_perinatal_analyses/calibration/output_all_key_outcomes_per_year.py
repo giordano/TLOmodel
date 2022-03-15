@@ -356,10 +356,10 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
         deliver_setting_results, 'home_birth', sim_years)
 
-    hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+    hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
         deliver_setting_results, 'hospital', sim_years)
 
-    hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+    hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
         deliver_setting_results, 'health_centre', sim_years)
 
     all_deliveries = [x + y + z for x, y, z in zip(hb_data[0], hc_data[0], hp_data[0])]
@@ -368,7 +368,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], all_deliveries)]
     health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], all_deliveries)]
-    health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], birth_data_ex2010[0])]
+    health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], all_deliveries)]
 
     hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], all_deliveries)]
     hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], all_deliveries)]
@@ -903,15 +903,14 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         sim_years, macro_data[0], macro_data[1], macro_data[2], target_mac_dict, 'Proportion of total births',
         'Yearly Prevalence of Macrosomia', graph_location, 'neo_macrosomia_prev')
 
-    dummy_dict = {'double': False,
-                  'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
+    target_sga_dict = {'double': False,
+                       'first': {'year': 2010, 'value': 23.2, 'label': 'Lee et al.', 'ci': (27-19.1)/2}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, sga_data[0], sga_data[1], sga_data[2], dummy_dict, 'Proportion of total births',
+        sim_years, sga_data[0], sga_data[1], sga_data[2], target_sga_dict, 'Proportion of total births',
         'Yearly Prevalence of Small for Gestational Age', graph_location, 'neo_sga_prev')
 
     # todo: check with Ines r.e. SGA and the impact on her modules
-    # todo: check rates/denominators
 
     # --------------------------------------------- Obstructed Labour... ----------------------------------------------
     ol_data = analysis_utility_functions.get_comp_mean_and_rate(
@@ -992,7 +991,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         yearly_mean_number = list()
         causes = dict()
 
-        for indication in ['an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other', 'none']:
+        for indication in ['twins', 'an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other',
+                           'none']:
             if indication in cs_results.loc[year].index:
                 mean = cs_results.loc[year, indication].mean()
                 yearly_mean_number.append(mean)
@@ -1003,7 +1003,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         total_cs_this_year = sum(yearly_mean_number)
         total_cs_per_year.append(total_cs_this_year)
 
-        for indication in ['an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other', 'none']:
+        for indication in ['twins','an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other',
+                           'none']:
             if indication in cs_results.loc[year].index:
                 causes[indication] = (causes[indication] / total_cs_this_year) * 100
             else:
@@ -1233,6 +1234,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     analysis_utility_functions.simple_bar_chart(
         rate, 'Year', 'Rate per 1000 births', 'Rate of Not Breathing Newborns per year', 'neo_total_not_breathing',
         sim_years, graph_location)
+
+    # TODO: add calibration target for 'apnea' which should be approx 5.7% total births
 
     # ----------------------------------------- Congenital Anomalies -------------------------------------------------
     rate_of_ca = analysis_utility_functions.get_comp_mean_and_rate(
