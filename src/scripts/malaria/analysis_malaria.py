@@ -82,7 +82,7 @@ output = parse_log_file(sim.log_filepath)
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
-# mort = output["tlo.methods.malaria"]["ma_mortality"]
+mort = output["tlo.methods.malaria"]["ma_mortality"]
 # symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output["tlo.methods.malaria"]["prev_district"]
@@ -207,30 +207,30 @@ plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
 # # Malaria mortality rate - all ages with MAP model estimates
-# ax4 = plt.subplot(224)  # numrows, numcols, fignum
-# plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
-# plt.fill_between(
-#     mortMAP_data.Year,
-#     mortMAP_data.mortality_rate_LCI,
-#     mortMAP_data.mortality_rate_UCI,
-#     alpha=0.5,
-# )
-# plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
-# plt.fill_between(
-#     WHO_data.Year,
-#     WHO_data.MortRatePerPersonLower,
-#     WHO_data.MortRatePerPersonUpper,
-#     alpha=0.5,
-# )
-# plt.plot(model_years, mort.mort_rate, color="mediumseagreen")  # model
-# plt.title("Malaria Mortality Rate")
-# plt.xlabel("Year")
-# plt.xticks(rotation=90)
-# plt.ylabel("Mortality rate")
-# plt.gca().set_xlim(start_date, end_date)
-# plt.gca().set_ylim(0.0, 0.0015)
-# plt.legend(["MAP", "WHO", "Model"])
-# plt.tight_layout()
+ax4 = plt.subplot(224)  # numrows, numcols, fignum
+plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
+plt.fill_between(
+    mortMAP_data.Year,
+    mortMAP_data.mortality_rate_LCI,
+    mortMAP_data.mortality_rate_UCI,
+    alpha=0.5,
+)
+plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
+plt.fill_between(
+    WHO_data.Year,
+    WHO_data.MortRatePerPersonLower,
+    WHO_data.MortRatePerPersonUpper,
+    alpha=0.5,
+)
+plt.plot(model_years, mort.mort_rate, color="mediumseagreen")  # model
+plt.title("Malaria Mortality Rate")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Mortality rate")
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0.0, 0.0015)
+plt.legend(["MAP", "WHO", "Model"])
+plt.tight_layout()
 
 # out_path = "//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/ITN_projections_28Jan2010/"
 # figpath = out_path + "Baseline_averages29Jan2010" + datestamp + ".png"

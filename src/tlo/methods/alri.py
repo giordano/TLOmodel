@@ -691,6 +691,9 @@ class Alri(Module):
                      categories=['3day_oral_amoxicillin', '5day_oral_amoxicillin',
                                  '1st_line_IV_antibiotics', '2nd_line_IV_antibiotics']
                      ),
+        'ri_sought_care_for_current_illness':
+            Property(Types.BOOL, 'care seeking for the current illness'
+                     ),
 
     }
 
@@ -789,6 +792,7 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_end_of_current_episode'] = pd.NaT
         df.loc[df.is_alive, 'ri_on_treatment'] = False
         df.loc[df.is_alive, 'ri_ALRI_tx_start_date'] = pd.NaT
+        df.loc[df.is_alive, 'ri_sough_care_for_current_illness'] = False
 
     def initialise_simulation(self, sim):
         """
@@ -804,10 +808,13 @@ class Alri(Module):
 
         # Schedule the main logging event (to first occur in one year)
         self.logging_event = AlriLoggingEvent(self)
-        sim.schedule_event(self.logging_event, sim.date + DateOffset(years=1))
+        sim.schedule_event(self.logging_event, sim.date + DateOffset(days=364))
 
         # self.logging_df_per_episode = AlriAllCasesLoggingEvent(self)
         # sim.schedule_event(self.logging_df_per_episode, sim.date + DateOffset(years=1))
+
+        # store information in a dictionary for logging
+        self.logging_df_per_episode = dict()
 
         if self.log_individual is not None:
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
@@ -1056,6 +1063,7 @@ class Alri(Module):
             'ri_symptom_based_pneumonia_classification': np.nan,
             'ri_tx_oxygen_therapy': False,
             'ri_tx_antibiotic_therapy': np.nan,
+            'ri_sough_care_for_current_illness': False
         }
         df.loc[person_id, new_properties.keys()] = new_properties.values()
 
@@ -1572,7 +1580,6 @@ class Alri(Module):
                               f'check their symptoms {symptoms} ,  {self.sim.modules["SymptomManager"].has_what(person_id)} '
                               f'and properties '
                               f'{self.sim.population.props.loc[person_id, self.PROPERTIES.keys()].to_dict()}')
-            assert facility_level != '2'
 
         do_mapping = {
             'fast_breathing_pneumonia': do_if_fast_breathing_pneumonia,
@@ -1584,6 +1591,14 @@ class Alri(Module):
         }
 
         do_mapping[classification](facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+    def sought_care(self, person_id, hsi_event):
+        """ Register those that sought care"""
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # update the property
+        df.at[person_id, 'ri_sought_care_for_current_illness'] = True
 
     def assess_and_classify_cough_or_difficult_breathing_level(self, person_id, hsi_event):
         """This routine is called when cough or difficulty breathing is a symptom for a child attending
@@ -1634,17 +1649,26 @@ class Alri(Module):
             oxygen_saturation=person.ri_SpO2_level,
             hsi_event=hsi_event)
 
-        # log the event for this person
-        logger.info(
-            key='classification_and_treatment',
-            data={'person': person_id,
-                  'symptom_classification': symptom_based_classification,
-                  'pulse_ox_classification': SpO2_based_classification,
-                  'hw_classification': hw_assigned_classification,
-                  'final_classification': classification,
-                  'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
-                  'treatment': None}
-        )
+        # # log the event for this person
+        # logger.info(
+        #     key='classification',
+        #     data={'person': person_id,
+        #           'symptom_classification': symptom_based_classification,
+        #           'pulse_ox_classification': SpO2_based_classification,
+        #           'hw_classification': hw_assigned_classification,
+        #           'final_classification': classification,
+        #           'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
+        #           'treatment': None}
+        # )
+
+        # store information in a dictionary for logging
+        self.logging_df_per_episode = {'person': person_id,
+                                       'symptom_classification': symptom_based_classification,
+                                       'pulse_ox_classification': SpO2_based_classification,
+                                       'hw_classification': hw_assigned_classification,
+                                       'final_classification': classification,
+                                       'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
+                                       'treatment': None}
 
     def do_effects_of_alri_treatment(self, person_id, hsi_event, treatment):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
@@ -1666,12 +1690,14 @@ class Alri(Module):
         if not person['ri_current_infection_status']:
             return
 
-        # log the event for this person
-        logger.info(
-            key='classification_and_treatment',
-            data={'person': person_id,
-                  'treatment': treatment}
-        )
+        # # log the event for this person
+        # logger.info(
+        #     key='treatment',
+        #     data={'person': person_id,
+        #           'treatment': treatment}
+        # )
+
+        self.logging_df_per_episode = {'treatment': treatment}
 
         # Record that the person is now on treatment:
         df.loc[person_id, ('ri_on_treatment', 'ri_ALRI_tx_start_date')] = (True, self.sim.date)
@@ -2533,56 +2559,50 @@ class Tracker:
             total += sum(self.tracker[_a].values())
         return total
 
-#
-# class AlriAllCasesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-#     """This is the AlriAllCasesLoggingEvent.
-#     This collects all new cases' information.
-#     """
-#
-#     def __init__(self, module):
-#         self.repeat = 1
-#         super().__init__(module, frequency=DateOffset(years=self.repeat))
-#
-#         self.track_new_case_info = dict()
-#         self.store_dataframe = pd.DataFrame([
-#             'age_years',
-#             [f'ri_complication_{complication}' for complication in self.module.complications],
-#             'ri_SpO2_level',
-#             'ri_start_of_current_episode',
-#             'ri_scheduled_recovery_date',
-#             'ri_scheduled_death_date',
-#             'ri_ALRI_tx_start_date',
-#             'ri_symptom_based_pneumonia_classification',
-#             'ri_tx_oxygen_therapy',
-#             'ri_tx_antibiotic_therapy'])
-#
-#     def log_new_case_df(self, person_df):
-#         self.store_dataframe.append(person_df)
-#
-#     def apply(self, population):
-#         df = self.sim.population.props
-#
-#         # Previous Year...
-#         previous_year = self.sim.date - np.timedelta64(1, 'Y')
-#
-#         # all cases started within the past year
-#         # past_year_cases = df.loc[df.ri_start_of_current_episode] < self.sim.date
-#
-#         dataframe = self.store_dataframe
-#
-#         print(self.store_dataframe)
-#         print(dataframe)
-#
-#         logger.info(
-#             key='new_case_event_info',
-#             data={self.store_dataframe.items()},
-#             description='Dataframe for new cases'
-#         )
-#
-#         # 3) Reset the trackers
-#         for tracker in self.track_new_case_info:
-#             self.track_new_case_info[tracker] = 0
-#
+
+class AlriAllCasesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """This is the AlriAllCasesLoggingEvent.
+    This collects all new cases' information.
+    """
+
+    def __init__(self, module):
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(years=self.repeat))
+
+    #     self.track_new_case_info = dict()
+    #     self.store_dataframe = pd.DataFrame([
+    #         'age_years',
+    #         [f'ri_complication_{complication}' for complication in self.module.complications],
+    #         'ri_SpO2_level',
+    #         'ri_start_of_current_episode',
+    #         'ri_scheduled_recovery_date',
+    #         'ri_scheduled_death_date',
+    #         'ri_ALRI_tx_start_date',
+    #         'ri_symptom_based_pneumonia_classification',
+    #         'ri_tx_oxygen_therapy',
+    #         'ri_tx_antibiotic_therapy'])
+    #
+    # def log_new_case_df(self, person_df):
+    #     self.store_dataframe.append(person_df)
+
+    def apply(self, population):
+        # df = self.sim.population.props
+        #
+        # # Previous Year...
+        # previous_year = self.sim.date - np.timedelta64(1, 'Y')
+        #
+        dataframe = self.module.logging_df_per_episode
+
+        logger.info(
+            key='new_case_event_info',
+            data=self.module.logging_df_per_episode,
+            description='Dataframe for new cases'
+        )
+
+        # # 3) Reset the trackers
+        # for tracker in self.track_new_case_info:
+        #     self.track_new_case_info[tracker] = 0
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DEBUGGING / TESTING EVENTS
