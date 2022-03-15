@@ -141,10 +141,10 @@ def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, gra
     plt.show()
 
 
-def simple_line_chart(sim_years, model_rate, x_title, title, file_name, graph_location):
+def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-    plt.xlabel(x_title)
-    plt.ylabel('Year')
+    plt.ylabel(y_title)
+    plt.xlabel('Year')
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
@@ -152,11 +152,11 @@ def simple_line_chart(sim_years, model_rate, x_title, title, file_name, graph_lo
     plt.show()
 
 
-def simple_line_chart_with_target(sim_years, model_rate, target_rate, x_title, title, file_name, graph_location):
+def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
     plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
-    plt.xlabel(x_title)
-    plt.ylabel('Year')
+    plt.ylabel(y_title)
+    plt.xlabel('Year')
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
@@ -164,12 +164,12 @@ def simple_line_chart_with_target(sim_years, model_rate, target_rate, x_title, t
     plt.show()
 
 
-def simple_line_chart_with_ci(sim_years, data, x_title, title, file_name, graph_location):
+def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
-    plt.xlabel(x_title)
-    plt.ylabel('Year')
+    plt.ylabel(y_title)
+    plt.xlabel('Year')
     plt.title(title)
     plt.legend()
     plt.gca().set_ylim(bottom=0)
