@@ -1585,8 +1585,11 @@ class RTI(Module):
             for code in person.rt_injuries_for_major_surgery:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
-                if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
-                    df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
+                if not pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
+                    logger.debug(key='rti_general_message',
+                                 data=f"person {person_id} was assigned for a minor surgery but had already received "
+                                      f"treatment")
+                    return
             # schedule major surgeries
             if 'Major Surgery' not in p['blocked_interventions']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
