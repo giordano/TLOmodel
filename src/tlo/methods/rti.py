@@ -2025,8 +2025,10 @@ class RTI(Module):
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
-        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
+        if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
+            logger.debug(key='rti_general_message',
+                         data=f"person {person_id} has had too many daly weights removed")
+            df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # the reported disability should satisfy 0<=disability<=1, check that they do
         assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
         assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
