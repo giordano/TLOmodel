@@ -19,7 +19,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs/tbh03@ic.ac.uk')
+outputspath = Path('./outputs/rmjlra2@ucl.ac.uk')
 
 
 # %% Gathering basic information
@@ -64,6 +64,17 @@ deaths_extracted = extract_results(
     do_scaling=True
 )
 
+rti_inc = extract_results(
+    results_folder,
+    module="tlo.methods.rti",
+    key="summary_1m",
+    column='incidence of rti per 100,000',
+)
+extracted = extract_results(results_folder,
+                            module="tlo.methods.mockitis",
+                            key="summary",  # <-- the key used for the logging entry
+                            column="PropInf",  # <-- the column in the dataframe
+                            index="date")  # <-- optional index
 deaths_summarized = summarize(deaths_extracted, only_mean=True)
 deaths_summarized = deaths_summarized.loc[deaths_summarized.index.isin(('2010-2014', '2015-2019'))]
 
