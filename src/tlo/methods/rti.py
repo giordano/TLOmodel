@@ -2073,8 +2073,10 @@ class RTI(Module):
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][2] for code in relevant_codes])
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
-        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
+        if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
+            logger.debug(key='rti_general_message',
+                         data=f"person {person_id} has had too many daly weights removed")
+            df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
