@@ -1633,7 +1633,12 @@ class RTI(Module):
             for code in df.at[person_id, 'rt_injuries_for_minor_surgery']:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
-                assert pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
+                if not pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
+                    logger.debug(key='rti_general_message',
+                                 data=f"person {person_id} was assigned for a minor surgery but had already received "
+                                      f"treatment")
+                    return
+
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
             if count == 0:

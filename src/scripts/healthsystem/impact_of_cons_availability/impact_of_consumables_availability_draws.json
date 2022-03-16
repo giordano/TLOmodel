@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumables_availability.py",
+  "scenario_script_path": "src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumables_availability.py",
   "scenario_seed": 0,
   "runs_per_draw": 3,
   "draws": [
@@ -30,5 +30,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "58b6ec6c8392e12e077548697e52f1697def1ecd",
+  "github": "https://github.com/UCL/TLOmodel/blob/58b6ec6c8392e12e077548697e52f1697def1ecd/src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumables_availability.py"
 }

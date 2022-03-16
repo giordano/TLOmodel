@@ -1066,7 +1066,8 @@ class Models:
     def compute_risk_of_acquisition(self, pathogen, df):
         """Compute the risk of a pathogen, using the linear model created and the df provided"""
         p = self.p
-
+        predictor_columns = ['age_years', 'li_wood_burn_stove', 'va_measles_all_doses', 'hv_inf', 'hv_art',
+                             'un_clinical_acute_malnutrition', 'nb_breastfeeding_status']
         # Run linear model to get baseline risk
         baseline = self.incidence_equations_by_pathogen[pathogen].predict(df)
 
