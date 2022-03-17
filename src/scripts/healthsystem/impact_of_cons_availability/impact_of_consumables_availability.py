@@ -37,6 +37,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
+    rti,
     stunting,
     symptommanager,
     wasting,
@@ -110,7 +111,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
 
             # -- Injuries
-            # rti.RTI(resourcefilepath=self.resources),
+            rti.RTI(resourcefilepath=self.resources),
             # todo - add RTI when it works reliably
 
             # -- Other Non-Communicable Conditions

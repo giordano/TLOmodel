@@ -70,14 +70,15 @@ rti_inc = extract_results(
     key="summary_1m",
     column='incidence of rti per 100,000',
 )
-extracted = extract_results(results_folder,
-                            module="tlo.methods.mockitis",
-                            key="summary",  # <-- the key used for the logging entry
-                            column="PropInf",  # <-- the column in the dataframe
-                            index="date")  # <-- optional index
+
 deaths_summarized = summarize(deaths_extracted, only_mean=True)
 deaths_summarized = deaths_summarized.loc[deaths_summarized.index.isin(('2010-2014', '2015-2019'))]
-
+yld = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="yld_by_causes_of_disability",
+    do_scaling=True
+)
 # %% Creating some plots:
 
 fig, ax = plt.subplots()
