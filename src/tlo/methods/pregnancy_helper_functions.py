@@ -110,7 +110,65 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     mni[individual_id][mni_variable] = date
 
 
-def calculate_risk_of_death_from_causes(self, risks, causes):
+def check_if_delayed_careseeking(self, individual_id):
+    """
+    This function checks if a woman who is seeking care for treatment of a pregnancy/postnatal related emergency will
+    experience either a type 1 or type 2 delay
+    :param self: module
+    :param individual_id: individual_id
+    """
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    if individual_id not in mni:
+        return
+
+    if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
+        mni[individual_id]['delay_one_two'] = False
+
+
+def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type):
+    """
+    This function checks if a woman who is receiving care during a HSI will experience a type three delay to her care
+    due to high squeeze
+    :param self: module
+    :param squeeze_factor: squeeze factor of HSI event
+    :param individual_id: individual_id
+    :param hsi_type: STR (bemonc, cemonc, an, pn)
+    :return:
+    """
+
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
+        mni[individual_id]['delay_three'] = False
+
+
+def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
+    """
+    Returns a requested treatment effect which may be modified if care was delayed
+    :param delay_one_two: BOOL, if delay 1/2 has occurred
+    :param delay_three: BOOL, if a delay 3 has occurred
+    :param treatment_effect: STR, parameter housing the treatment effect
+    :param params: module parameters
+    :return: Treatment effect to be used in the linear model
+    """
+
+    # If they have experienced all delays, treatment effectiveness is reduced by greater amount
+    if delay_one_two and delay_three:
+        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
+
+    # Otherwise, if only one type of delay is experience the treatment effect is reduced by a lesser amount
+    elif delay_one_two or delay_three:
+        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
+
+    # If no delays occurred, maximum treatment effectiveness is applied
+    else:
+        treatment_effect = params[treatment_effect]
+
+    return treatment_effect
+
+
+def calculate_risk_of_death_from_causes(self, risks):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
     newborn. In addition it determines if the complication(s) will cause death or not. If death occurs the function
@@ -136,7 +194,7 @@ def calculate_risk_of_death_from_causes(self, risks, causes):
             probs.append(risks[cause])
 
         # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
-        cause_of_death = self.rng.choice(causes, p=probs)
+        cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
         # Return the primary cause of death so that it can be passed to the demography function
         return cause_of_death
@@ -206,13 +264,18 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                 if cause == 'secondary_postpartum_haemorrhage':
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
-                        received_blood_transfusion=mni[individual_id]['received_blood_transfusion'], )[individual_id]}
+                        received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
+                        delay_one_two=mni[individual_id]['delay_one_two'],
+                        delay_three=mni[individual_id]['delay_three']
+                    )[individual_id]}
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
                         df.loc[[individual_id]],
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
                         mode_of_delivery=mni[individual_id]['mode_of_delivery'],
-                        chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
+                        chorio_in_preg=mni[individual_id]['chorio_in_preg'],
+                        delay_one_two=mni[individual_id]['delay_one_two'],
+                        delay_three=mni[individual_id]['delay_three'])[individual_id]}
                 risks.update(risk)
 
             elif self == self.sim.modules['PostnatalSupervisor']:
@@ -224,7 +287,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function
-        return calculate_risk_of_death_from_causes(self, risks, causes)
+        return calculate_risk_of_death_from_causes(self, risks)
 
     else:
         # if she is not at risk of death as she has no complications we return false to the module
@@ -288,14 +351,14 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         for cause in causes:
             if f'{cause}_death' in self.nb_linear_models.keys():
                 risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
-                    df.loc[[individual_id]])[individual_id]}
+                    df.loc[[individual_id]], delay=nci[individual_id]['third_delay'])[individual_id]}
             else:
                 risk = {cause: params[f'cfr_{cause}']}
 
             risks.update(risk)
 
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
-        return calculate_risk_of_death_from_causes(self, risks, causes)
+        return calculate_risk_of_death_from_causes(self, risks)
 
     else:
         # if they is not at risk of death as they has no complications we return False to the module
@@ -306,11 +369,11 @@ def update_mni_dictionary(self, individual_id):
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = self.sim.population.props
 
-    assert df.at[individual_id, 'is_pregnant']
-
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
+        mni[individual_id] = {'delay_one_two': False,
+                              'delay_three': False,
+                              'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'abortion_onset': pd.NaT,
                               'abortion_haem_onset': pd.NaT,
                               'abortion_sep_onset': pd.NaT,

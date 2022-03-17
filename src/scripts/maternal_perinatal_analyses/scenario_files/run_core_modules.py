@@ -20,16 +20,16 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 876
+        self.seed = 3122
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 15000
+        self.pop_size = 30000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': '15k_pop_core_modules',
+            'filename': 'baseline_scenario_30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -51,8 +51,8 @@ class TestScenario(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      service_availability=['*'],
-                                      cons_availability='all'),
+                                      mode_appt_constraints=1,
+                                      cons_availability='default'),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
