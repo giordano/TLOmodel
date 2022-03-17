@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from tlo.analysis.utils import extract_results
+plt.style.use('seaborn-darkgrid')
 
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
@@ -206,3 +207,39 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
                       f'med_sf_{hsi_string}', graph_location)
     simple_line_chart_with_ci(sim_years, prop_data, '% HSIs', f'Proportion of HSI {hsi_string} where squeeze > 0',
                               f'prop_sf_{hsi_string}', graph_location)
+
+
+def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, title, graph_location, save_name):
+    fig, ax = plt.subplots()
+
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+        ax.plot(intervention_years, data_dict[k][0], label=k, color=colour)
+        ax.fill_between(intervention_years, data_dict[k][1], data_dict[k][2], color=colour, alpha=.1)
+
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    #plt.style.use('seaborn-darkgrid')
+    plt.legend()
+    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.show()
+
+
+def comparison_graph_multiple_scenarios_multi_level_dict(
+    # todo combine with above
+    intervention_years, data_dict, key, y_label, title, graph_location, save_name):
+    fig, ax = plt.subplots()
+
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+        ax.plot(intervention_years, data_dict[k][key][0], label=k, color=colour)
+        ax.fill_between(intervention_years, data_dict[k][key][1], data_dict[k][key][2], color=colour, alpha=.1)
+
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    #plt.style.use('seaborn-darkgrid')
+    plt.legend()
+    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.show()
