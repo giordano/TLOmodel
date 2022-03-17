@@ -412,9 +412,6 @@ class PregnancySupervisor(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
-        # self.current_parameters is used to store the module level parameters for this time period
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
-
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
         if 'HealthBurden' in self.sim.modules.keys():
@@ -486,6 +483,9 @@ class PregnancySupervisor(Module):
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+
+        # self.current_parameters is used to store the module level parameters for this time period
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),

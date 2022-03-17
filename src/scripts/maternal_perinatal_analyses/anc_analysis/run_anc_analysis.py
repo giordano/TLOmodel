@@ -9,12 +9,12 @@ run_multiple_scenario_analysis(scenario_file_dict={'Status Quo': 'baseline_anc_s
                                                    'Intervention 2': 'plus_cons',
                                                    'Intervention 3': 'and_qual'},
                                outputspath='./outputs/sejjj49@ucl.ac.uk/',
-                               show_and_store_graphs=False,
+                               show_and_store_graphs=True,
                                intervention_years=list(range(2020, 2026)),
                                anc_scenario=4,
                                do_cons_calculation=False)
 
-
+"""
 for intervention_file in ['increased_anc_scenario']:
     run_primary_analysis(baseline_scenario_filename='baseline_anc_scenario.py',
                          intervention_scenario_filename=f'{intervention_file}.py',
@@ -29,3 +29,4 @@ for intervention_file in ['increased_anc_scenario']:
                                             outputspath='./outputs/sejjj49@ucl.ac.uk/',
                                             show_and_store_graphs=True,
                                             sim_years=list(range(2020, 2026)))
+"""

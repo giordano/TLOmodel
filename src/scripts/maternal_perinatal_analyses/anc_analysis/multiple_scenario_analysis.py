@@ -412,7 +412,10 @@ def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_sto
                 time = time_by_appt.loc[
                     (time_by_appt.Appt_Type_Code == v) & (time_by_appt.Officer_Category == k) &
                     (time_by_appt.Facility_Level == '1a'), 'Time_Taken_Mins']
-                cadre_time[k][v] += time.values
+                if time.empty:
+                    cadre_time[k][v] += 0.0
+                else:
+                    cadre_time[k][v] += float(time.values)
 
         # Loop over each draw
         for run in runs:
@@ -453,9 +456,8 @@ def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_sto
     if show_and_store_graphs:
         analysis_utility_functions.comparison_graph_multiple_scenarios(
             intervention_years, hcw_data, 'Total Time (hours)',
-            'Total Nurse/Midwife Time Spent Delivering Antenatal Care Per Year (unscaled)',
+            'Total Healthcare Worker Time Spent Delivering Antenatal Care Per Year (unscaled)',
             plot_destination_folder, 'hcw_time')
-
 
     # =============================================  HCW COSTS =======================================================
     # todo: use time (generated above) and salary of health care workers to determine salaried time-cost associated with
@@ -539,12 +541,10 @@ def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_sto
             'Yearly Median Squeeze Factor across ANC visits',
             plot_destination_folder, 'squeeze_med')
 
-    x='u'
-
     # =================================================== CONSUMABLE COST =============================================
     if do_cons_calculation:  # only output if specified due to very long run tine
         resourcefilepath = Path("./resources/healthsystem/consumables/")
-        consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
+        consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables_Items_and_Packages.csv')
 
         # TODO: this should be scaled to the correct population size?
         # todo: also so slow...
@@ -562,30 +562,30 @@ def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_sto
                 anc_cons = cons.loc[(cons.TREATMENT_ID.str.contains('AntenatalCare')) &
                                     (cons.year >= intervention_years[0])]
 
-                anc_cons_eval = anc_cons['Item_Available'].apply(lambda x: eval(x))
+                # anc_cons_eval = anc_cons['Item_Available'].apply(lambda x: eval(x))
                 cons_df_for_this_draw = pd.DataFrame(index=[intervention_years])
 
                 # Loop over each year
                 for year in intervention_years:
                     # Select the year of interest
                     year_df = anc_cons.loc[anc_cons.year == year]
-                   # anc_cons_eval.apply(
-                    #    lambda x: ((cons_df_for_this_draw[k] = v) for k, v in x if k not in
-                     #              cons_df_for_this_draw.columns))
 
                     # For each row (hsi) in that year we unpack the dictionary
                     for row in year_df.index:
-                        for k, v in year_df.at[row, 'Item_Available']:
+                        cons_dict = eval(year_df.at[row, 'Item_Available'])
+                        for k in cons_dict:
                             if k in cons_df_for_this_draw.columns:
-                                cons_df_for_this_draw.at[year, k] += v
+                                cons_df_for_this_draw.at[year, k] += cons_dict[k]
                             elif k not in cons_df_for_this_draw.columns:
-                                cons_df_for_this_draw[k] = v
+                                cons_df_for_this_draw[k] = 0
+                                cons_df_for_this_draw.at[year, k] += cons_dict[k]
+                                # todo error: adds value  to entire column (all years)
 
                 for row in cons_df_for_this_draw.index:
                     for column in cons_df_for_this_draw.columns:
                         cons_df_for_this_draw.at[row, column] =\
                             (cons_df_for_this_draw.at[row, column] *
-                             (consumables_df[consumables_df.Item_Code == 0]['Unit_Cost'].iloc[0]))
+                             (consumables_df[consumables_df.Item_Code == column]['Unit_Cost'].iloc[0]))
                         cons_df_for_this_draw.at[row, column] = cons_df_for_this_draw.at[row, column] * 0.0014
                         # todo: this is usd conversion
                         # todo: account for inflation, and use 2010 rate
@@ -604,28 +604,27 @@ def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_sto
 
             return [mean_cost, lq_cost, uq_cost]
 
-        baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
-        intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
+        cost_data = {k: get_cons_cost_per_year(results_folders[k]) for k in results_folders}
 
         if show_and_store_graphs:
-            analysis_utility_functions.basic_comparison_graph(
-                intervention_years, baseline_cost_data, intervention_cost_data,
-                'Total Cost (USD)', 'Total Consumable Cost Attributable To ANC Per Year (in USD) (unscaled)',
+            analysis_utility_functions.comparison_graph_multiple_scenarios(
+                intervention_years, cost_data, 'Total Cost (USD)',
+                'Total Consumable Cost Attributable To ANC Per Year (in USD) (unscaled)',
                 plot_destination_folder, 'cost')
 
         # ======================================== COST EFFECTIVENESS RATIO ===========================================
         # Cost (i) - Cost(b) / DALYs (i) - DALYs (b)
         # todo include healthcare worker cost
 
-        cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
-        daly_difference = [(x - y) for x, y in zip(baseline_maternal_dalys[0], intervention_maternal_dalys[0])]
-        ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
+        #cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
+        #daly_difference = [(x - y) for x, y in zip(baseline_maternal_dalys[0], intervention_maternal_dalys[0])]
+        #ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
 
-        fig, ax = plt.subplots()
-        ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
-        plt.xlabel('Year')
-        plt.ylabel("ICR")
-        plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
-        plt.legend()
-        plt.savefig(f'{plot_destination_folder}/icr_maternal.png')
-        plt.show()
+        #fig, ax = plt.subplots()
+        #ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
+        #plt.xlabel('Year')
+        #plt.ylabel("ICR")
+        #plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
+        #plt.legend()
+        #plt.savefig(f'{plot_destination_folder}/icr_maternal.png')
+        #plt.show()
