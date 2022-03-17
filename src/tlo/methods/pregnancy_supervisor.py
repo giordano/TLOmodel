@@ -2136,7 +2136,9 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
                 flat_list = [item for sublist in ic_list for item in sublist]
 
                 for item in flat_list:
-                    self.sim.modules['HealthSystem'].prob_item_codes_available.loc[item] = 1.0
+                    cons = self.sim.modules['HealthSystem'].parameters['availability_estimates']
+                    if item in cons['item_code']:
+                        cons.loc[cons.item_code == item, 'available_prop'] = 1.0
 
             if params['set_qual_to_max']:
                 params['prob_intervention_delivered_urine_ds'] = 1
