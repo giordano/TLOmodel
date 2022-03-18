@@ -3,8 +3,9 @@
  postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption
  is that every pregnancy results in a birth."""
 
+import json
+
 import pandas as pd
-import ast
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -87,7 +88,7 @@ class SimplifiedBirths(Module):
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
         rf = pd.read_excel(self.resourcefilepath / 'ResourceFile_NewbornOutcomes.xlsx')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
-        parameter = ast.literal_eval(param_as_string)[0]
+        parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
 
     def initialise_population(self, population):

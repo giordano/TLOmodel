@@ -10,9 +10,8 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_hel
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.util import BitsetHandler
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
-
+from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -519,10 +518,7 @@ class NewbornOutcomes(Module):
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
 
-        if nci[person_id]['maternal_chorio']:
-            chorio = True
-        else:
-            chorio = False
+        chorio = nci[person_id]['maternal_chorio']
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
@@ -1128,12 +1124,8 @@ class NewbornOutcomes(Module):
             return
 
         self.sim.modules['Labour'].further_on_birth_labour(mother_id)
-
-        # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
-        if (df.at[mother_id, 'is_alive'] and not df.at[mother_id, 'la_intrapartum_still_birth']) or \
-           (not df.at[mother_id, 'is_alive'] and not df.at[mother_id, 'la_intrapartum_still_birth']):
-            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-            m = mni[mother_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        m = mni[mother_id]
 
         # For twins, each baby has the 'twin_count' variable updated to ensure certain processes are/are not repeated
         # for each birth
@@ -1248,7 +1240,7 @@ class NewbornOutcomes(Module):
 
                     # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
                     # retinopathy to map to DALY weights
-                    random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
+                    random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
                                                   p=params['prob_retinopathy_severity'])
 
                     df.at[child_id, 'nb_retinopathy_prem'] = random_draw

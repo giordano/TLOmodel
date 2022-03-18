@@ -23,16 +23,16 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 456
+        self.seed = 666
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2026, 1, 2)
-        self.pop_size = 10000
+        self.end_date = Date(2030, 1, 2)
+        self.pop_size = 30000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'increased_scenario_15k', 'directory': './outputs',
+            'filename': 'normal_30k_pop',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -71,7 +71,6 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'switch_anc_coverage': True}
         }
 
 

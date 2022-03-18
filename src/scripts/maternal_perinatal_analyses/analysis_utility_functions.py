@@ -1,7 +1,7 @@
-from matplotlib import pyplot as plt
+
 import numpy as np
 from tlo.analysis.utils import extract_results
-
+from matplotlib import pyplot as plt
 
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
