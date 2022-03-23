@@ -7,7 +7,7 @@ import datetime
 from pathlib import Path
 import numpy as np
 
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file, create_pickles_locally
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -29,15 +29,20 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("../alri_azure_run_scenarios/baseline_alri_scenario.py", outputspath)[-1]
+results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
 # or specify which folder to use
-results_folder = (outputspath/'baseline_alri_scenario-2022-03-18T142355Z')
+# results_folder = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z')
+
+# get the pickled files if not generated at the batch run
+create_pickles_locally(results_folder)
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
+
+create_pickles_locally(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
@@ -268,28 +273,40 @@ plt.show()
 # # # # # # # # # # ALRI DALYs # # # # # # # # # #
 # ------------------------------------------------------------------
 # Get the total DALYs from the output of health burden
+dalys = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+    ),
+    do_scaling=do_scaling
+)
 
-# plt.style.use("ggplot")
-# plt.figure(1, figsize=(10, 10))
-# fig4, ax4 = plt.subplots()
-#
-# # GBD estimates
-# plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
-# plt.fill_between(
-#     GBD_data.Year,
-#     GBD_data.DALYs_lower,
-#     GBD_data.DALYs_upper,
-#     alpha=0.5,
-# )
-# # model output
-# plt.plot(dalys, color="mediumseagreen")  # model
-# plt.title("ALRI DALYs")
-# plt.xlabel("Year")
-# plt.xticks(rotation=90)
-# plt.ylabel("DALYs")
-# plt.gca().set_xlim(start_date, end_date)
-# plt.legend(["GBD", "Model"])
-# plt.tight_layout()
-# # plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
-#
-# plt.show()
+# store the output numbers of births in each run of each draw
+birth_count.to_csv(outputspath / ("batch_run_birth_results" + ".csv"))
+
+plt.style.use("ggplot")
+plt.figure(1, figsize=(10, 10))
+fig4, ax4 = plt.subplots()
+
+# GBD estimates
+plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
+plt.fill_between(
+    GBD_data.Year,
+    GBD_data.DALYs_lower,
+    GBD_data.DALYs_upper,
+    alpha=0.5,
+)
+# model output
+plt.plot(dalys, color="mediumseagreen")  # model
+plt.title("ALRI DALYs")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("DALYs")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["GBD", "Model"])
+plt.tight_layout()
+# plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
+
+plt.show()
