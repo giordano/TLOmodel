@@ -45,8 +45,8 @@ from tlo.scenario import BaseScenario
 
 number_of_draws = 1
 runs_per_draw = 10
-pop_size = 760000  # 1:25 representative sample
-
+# pop_size = 760000  # 1:25 representative sample
+pop_size = 50000
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
@@ -67,6 +67,8 @@ class TestScenario(BaseScenario):
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.alri": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
             }
         }
 
@@ -79,11 +81,12 @@ class TestScenario(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=["*"],  # all treatment allowed
                                       mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                                      cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
+                                      cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
                                       ignore_priority=True,  # do not use the priority information in HSI event to schedule
                                       capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-                                      disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                                      disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
                                       disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+                                      store_hsi_events_that_have_run=False,
                                       ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),

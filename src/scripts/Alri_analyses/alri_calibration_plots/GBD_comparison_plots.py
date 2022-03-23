@@ -212,7 +212,7 @@ plt.plot(counts.index, mort_rate, color="mediumseagreen")  # model
 plt.title("ALRI Mortality per 100,000 children")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
-plt.ylabel("Mortality (/100k)")
+plt.ylabel("Mortality (/100,000)")
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["GBD", "Model"])
 plt.tight_layout()
@@ -235,7 +235,7 @@ plt.plot(counts.index, mort_per_livebirth, color="mediumseagreen")  # model
 plt.title("ALRI Mortality per 1,000 livebirths")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
-plt.ylabel("Mortality (/100k)")
+plt.ylabel("Mortality (/1,000 livebirths)")
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["McAllister 2019", "Model"])
 plt.tight_layout()
@@ -325,12 +325,20 @@ CFR_in_percentage = (number_of_deaths / number_of_cases) * 100
 
 fig5, ax5 = plt.subplots()
 
+years = [2000, 2015]
+clinical_pneum = [0.96, 0.65]
+severe_pneum = [6.1, 4.2]
+
+# McAllister estimates
+plt.plot(years, clinical_pneum, label='McAllister - clinical pneumonia')  # GBD data
+plt.plot(years, severe_pneum, label='McAllister - severe pneumonia')
+
 # model output
-plt.plot(CFR_in_percentage, color="mediumseagreen")  # model
+plt.plot(CFR_in_percentage, color="mediumseagreen", label='Model')  # model
 plt.title("ALRI CFR")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("CRF (%)")
-plt.legend(["Model"])
+plt.legend()
 plt.tight_layout()
 plt.show()
