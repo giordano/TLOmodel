@@ -67,8 +67,18 @@ class CareOfWomenDuringPregnancy(Module):
         # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
 
         # CARE SEEKING...
-        'prob_anc_continues': Parameter(
-            Types.LIST, 'probability a woman will return for a subsequent ANC appointment'),
+        'prob_seek_anc2': Parameter(
+            Types.LIST, ''),
+        'prob_seek_anc3': Parameter(
+            Types.LIST, ''),
+        'prob_seek_anc5': Parameter(
+            Types.LIST, ''),
+        'prob_seek_anc6': Parameter(
+            Types.LIST, ''),
+        'prob_seek_anc7': Parameter(
+            Types.LIST, ''),
+        'prob_seek_anc8': Parameter(
+            Types.LIST, ''),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
