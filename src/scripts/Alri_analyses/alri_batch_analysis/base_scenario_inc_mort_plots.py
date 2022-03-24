@@ -29,20 +29,20 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
 # or specify which folder to use
-# results_folder = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z')
-
-# get the pickled files if not generated at the batch run
-create_pickles_locally(results_folder)
+results_folder = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z')
+#
+# folder9 = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z/0/9')
+#
+# # get the pickled files if not generated at the batch run
+# create_pickles_locally(folder9)
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
-
-create_pickles_locally(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
@@ -127,7 +127,7 @@ mortality_summary_per_draw.to_csv(outputspath / ("batch_run_mortality_100000pop_
 # ----------------------------------- CREATE PLOTS - SINGLE RUN FIGURES -----------------------------------
 # INCIDENCE & MORTALITY RATE - OUTPUT OVERTIME
 start_date = 2010
-end_date = 2031
+end_date = 2032
 draw = 0
 
 # import GBD data for Malawi's ALRI burden estimates
@@ -149,7 +149,7 @@ plt.style.use("ggplot")
 fig = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, label='GBD')
+plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, color='#E24A33', label='GBD')
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Incidence_per100_lower,
@@ -158,7 +158,7 @@ plt.fill_between(
 )
 # McAllister et al 2019 estimates
 years_with_data = McAllister_data.dropna(axis=0)
-plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, label='McAllister')
+plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, color='#348ABD', label='McAllister')
 plt.fill_between(
     years_with_data.Year,
     years_with_data.Incidence_per100_lower,
@@ -170,8 +170,8 @@ plt.plot(incidence_summary_per_draw.index, incidence_summary_per_draw.loc[:, (dr
          color='teal', label='Model')
 plt.fill_between(
     incidence_summary_per_draw.index,
-    incidence_summary_per_draw.loc[:, (draw, 'mean')].values,
-    incidence_summary_per_draw.loc[:, (draw, 'mean')].values,
+    incidence_summary_per_draw.loc[:, (draw, 'lower')].values,
+    incidence_summary_per_draw.loc[:, (draw, 'upper')].values,
     color='teal',
     alpha=0.5,
 )
@@ -193,7 +193,7 @@ plt.show()
 fig1 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, label='GBD')  # GBD data
+plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, color='#E24A33', label='GBD')  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Death_per100k_lower,
@@ -247,7 +247,7 @@ mortality_per_livebirths_summary = summarize(deaths_per_livebirth)
 fig2 = plt.figure()
 
 # McAllister et al. 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, label='McAllister')  # no upper/lower
+plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, color='#348ABD', label='McAllister')  # no upper/lower
 
 # model output
 plt.plot(mortality_per_livebirths_summary.index, mortality_per_livebirths_summary.loc[:, (draw, 'mean')].values,
@@ -273,25 +273,39 @@ plt.show()
 # # # # # # # # # # ALRI DALYs # # # # # # # # # #
 # ------------------------------------------------------------------
 # Get the total DALYs from the output of health burden
-dalys = extract_results(
+def get_lri_dalys(df_):
+    # get dalys of ALRI in under-5
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+        tot_dalys = (
+            df_.drop(columns='date').groupby(['year', 'age_range']).sum().apply(pd.Series))
+        dalys[year] = tot_dalys.loc[(year, '0-4'), 'Lower respiratory infections']
+    dalys.sort_index()
+
+    return dalys
+
+
+# extract dalys from model and scale
+alri_dalys_count = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
     key="dalys",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-    ),
+    custom_generate_series=get_lri_dalys,
     do_scaling=do_scaling
 )
 
-# store the output numbers of births in each run of each draw
-birth_count.to_csv(outputspath / ("batch_run_birth_results" + ".csv"))
+# get mean / upper/ lower statistics
+dalys_summary = summarize(alri_dalys_count).sort_index()
 
-plt.style.use("ggplot")
-plt.figure(1, figsize=(10, 10))
-fig4, ax4 = plt.subplots()
+# store the output numbers of births in each run of each draw
+dalys_summary.to_csv(outputspath / ("batch_run_dalys_results" + ".csv"))
+
+# ---------------- PLOT FIGURE -------------------
+fig3 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
+plt.plot(GBD_data.Year, GBD_data.DALYs, color='#E24A33', label='GBD')  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.DALYs_lower,
@@ -299,14 +313,21 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(dalys, color="mediumseagreen")  # model
+plt.plot(dalys_summary.index, dalys_summary.loc[:, (draw, 'mean')].values,
+         color='teal', label='Model')  # model
+plt.fill_between(
+    dalys_summary.index,
+    dalys_summary.loc[:, (draw, 'lower')].values,
+    dalys_summary.loc[:, (draw, 'upper')].values,
+    color='teal',
+    alpha=0.5)
+
 plt.title("ALRI DALYs")
 plt.xlabel("Year")
-plt.xticks(rotation=90)
+plt.xticks(ticks=np.arange(start_date, end_date), rotation=90)
 plt.ylabel("DALYs")
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["GBD", "Model"])
+plt.legend()
 plt.tight_layout()
-# plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
 
 plt.show()
