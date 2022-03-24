@@ -477,7 +477,7 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
      or secondary education, decreased in higher wealth and increased in higher parity
     """
     params = self.parameters
-    result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
+    result = pd.Series(data=params['odds_deliver_at_home'], index=df.index)
 
     result[(df.age_years > 19) & (df.age_years < 25)] *= params['rrr_hb_delivery_age_20_24']
     result[(df.age_years > 24) & (df.age_years < 30)] *= params['rrr_hb_delivery_age_25_29']
