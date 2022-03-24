@@ -28,10 +28,10 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 111
+        self.seed = 213
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 30000
+        self.pop_size = 15000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
