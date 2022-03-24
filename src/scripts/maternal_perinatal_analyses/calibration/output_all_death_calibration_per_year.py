@@ -11,7 +11,7 @@ from tlo.analysis.utils import (
 )
 
 from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
-
+plt.style.use('seaborn')
 
 def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_size, sim_years, daly_years):
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]

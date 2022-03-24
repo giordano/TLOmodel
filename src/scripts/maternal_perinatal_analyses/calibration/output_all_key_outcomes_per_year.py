@@ -9,7 +9,7 @@ from tlo.analysis.utils import (
 )
 
 from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
-
+plt.style.use('seaborn')
 
 def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputspath, sim_years, show_and_store_graphs):
     """
