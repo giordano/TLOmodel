@@ -31,13 +31,13 @@ class TestScenario(BaseScenario):
         self.seed = 668
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 15000
+        self.pop_size = 100000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'all_modules_15k',
+            'filename': 'all_modules_100k',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
