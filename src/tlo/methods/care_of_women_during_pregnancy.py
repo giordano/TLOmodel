@@ -617,20 +617,11 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
         # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
         # scheduled
-        if visit_to_be_scheduled <= 4:
-            if df.at[individual_id, 'ps_anc4']:
-                calculate_visit_date_and_schedule_visit(visit)
-            else:
-                # If she is not predicted to attend 4 or more visits, we use a probability to determine if she will
-                # seek care for her next contact
-                # If so, the HSI is scheduled in the same way
-                if self.rng.random_sample() < params['prob_anc_continues']:
-                    calculate_visit_date_and_schedule_visit(visit)
+        if (visit_to_be_scheduled <= 4) and df.at[individual_id, 'ps_anc4']:
+            calculate_visit_date_and_schedule_visit(visit)
 
-        elif visit_to_be_scheduled > 4:
-            # After 4 or more visits we use this probability to determine if the woman will seek care for
-            # her next contact
-            if self.rng.random_sample() < params['prob_anc_continues']:
+        elif ((visit_to_be_scheduled < 4) and not df.at[individual_id, 'ps_anc4']) or (visit_to_be_scheduled > 4):
+            if self.rng.random_sample() < params[f'prob_seek_anc{visit_to_be_scheduled}']:
                 calculate_visit_date_and_schedule_visit(visit)
 
     def schedule_admission(self, individual_id):
