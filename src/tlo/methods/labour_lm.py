@@ -67,7 +67,7 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
 
     # Effect of stunting only applied if the module is registered
     if 'Stunting' in self.module.sim.modules:
-        if person['un_HAZ_category'] == 'HAZ>=-2':
+        if person['un_HAZ_category'] != 'HAZ>=-2':
             result *= params['rr_obstruction_cpd_stunted_mother']
 
     if externals['macrosomia']:
