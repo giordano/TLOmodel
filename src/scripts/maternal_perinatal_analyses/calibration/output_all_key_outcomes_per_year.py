@@ -29,6 +29,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     if not os.path.isdir(path):
         os.makedirs(f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}')
 
+    graph_location = path
+
     # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
         complications_df = extract_results(
