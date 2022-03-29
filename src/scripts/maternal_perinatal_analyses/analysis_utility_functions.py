@@ -192,7 +192,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.show()
 
 
-def return_median_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
+def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
     hsi_med = extract_results(
         folder,
         module="tlo.methods.healthsystem",
@@ -201,6 +201,15 @@ def return_median_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_lo
             lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
                 year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].median()))
 
+    hsi_mean = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
+
+
     median = [hsi_med.loc[year].median() for year in sim_years]
     lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
     uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
@@ -208,6 +217,17 @@ def return_median_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_lo
 
     simple_line_chart_with_ci(sim_years, data, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
                               f'median_sf_{hsi_string}', graph_location)
+
+    mean = [hsi_mean.loc[year].mean() for year in sim_years]
+    lq = [hsi_mean.loc[year].quantile(0.025) for year in sim_years]
+    uq = [hsi_mean.loc[year].quantile(0.925) for year in sim_years]
+    data = [mean, lq, uq]
+
+    simple_line_chart_with_ci(sim_years, data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
+                              f'mean_sf_{hsi_string}', graph_location)
+
+
+
 
 
 def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):

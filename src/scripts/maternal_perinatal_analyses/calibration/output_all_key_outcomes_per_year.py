@@ -29,8 +29,6 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     if not os.path.isdir(path):
         os.makedirs(f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}')
 
-    graph_location = path
-
     # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
         complications_df = extract_results(
@@ -1269,8 +1267,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # Breastfeeding
     # todo
 
-    # GET MEDIAN SQUEEZE
+    # GET MEAN/MEDIAN SQUEEZE
     for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
                 'Labour_ReceivesPostnatalCheck', 'NewbornOutcomes_ReceivesPostnatalCheck',
                 'ReceivesComprehensiveEmergencyObstetricCare']:
-        analysis_utility_functions.return_median_squeeze_factor_for_hsi(results_folder, hsi, sim_years, graph_location)
+        analysis_utility_functions.return_median_and_mean_squeeze_factor_for_hsi(results_folder, hsi, sim_years,
+                                                                                 graph_location)

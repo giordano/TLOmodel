@@ -228,8 +228,7 @@ class CareOfWomenDuringPregnancy(Module):
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
             get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
-                                     'Scalpel blade size 22 (individually wrapped)_100_CMST',
-                                     'Chlorhexidine 1.5% solution_5_CMST'])
+                                     'Scalpel blade size 22 (individually wrapped)_100_CMST'])
 
         self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
@@ -253,9 +252,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
-            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
-                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
+            get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
+                                     #'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',

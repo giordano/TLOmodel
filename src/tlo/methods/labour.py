@@ -753,7 +753,7 @@ class Labour(Module):
         # -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------
         self.item_codes_lab_consumables['obstructed_labour'] = \
             get_list_of_items(self, ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
-                                     'Ampicillin, powder for injection, 500 mg, vial',
+                                     'Benzylpenicillin 3g (5MU), PFR_each_CMST',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Cannula iv  (winged with injection pot) 18_each_CMST',
@@ -773,9 +773,9 @@ class Labour(Module):
         # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
         # todo: helen allott recommended clindamycin but not available as IV
         self.item_codes_lab_consumables['maternal_sepsis_core'] =\
-            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
-                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
+            get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
+                                     # 'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
@@ -794,11 +794,11 @@ class Labour(Module):
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
         # TODO: helen allott recommended tranexamic acid - not availble
         self.item_codes_lab_consumables['pph_core'] = \
-            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule',
-                                     'Misoprostol, tablet, 200 mcg'])
+            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule'])
 
         self.item_codes_lab_consumables['pph_optional'] = \
-            get_list_of_items(self, ['Pethidine, 50 mg/ml, 2 ml ampoule',
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Bag, urine, collecting, 2000 ml',
