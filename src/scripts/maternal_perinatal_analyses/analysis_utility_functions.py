@@ -99,7 +99,7 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
     return [total_rates, total_lq, total_uq]
 
 
-def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, x_label, title,
+def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
                                        graph_location, file_name):
     fig, ax = plt.subplots()
     ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
@@ -118,8 +118,8 @@ def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, t
                      label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
                      fmt='o', color='red', ecolor='pink', elinewidth=3, capsize=0)
 
-    plt.xlabel(x_label)
-    plt.ylabel('Year')
+    plt.xlabel('Year')
+    plt.ylabel(y_label)
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()

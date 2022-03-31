@@ -97,6 +97,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                      'secondary_postpartum_haemorrhage', 'antepartum_haemorrhage']
 
     # ==============================================  YEARLY MMR... ==================================================
+    # Output direct deaths...
     death_results_labels = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -108,31 +109,8 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     mm = analysis_utility_functions.get_comp_mean_and_rate('Maternal Disorders', total_births_per_year_ex2010,
                                                            death_results_labels, 100000, sim_years)
 
-    # mmr_rates = get_target_rate(675, 439)
-
-    fig, ax = plt.subplots()
-    ax.plot(sim_years, mm[0], label="Model (mean)", color='deepskyblue')
-    ax.fill_between(sim_years, mm[1], mm[2], color='b', alpha=.1)
-    plt.errorbar(2010, 675, yerr=(780-570)/2, label='DHS 2010', fmt='o', color='green', ecolor='mediumseagreen',
-                 elinewidth=3, capsize=0)
-    plt.errorbar(2015, 439, yerr=(531-348)/2, label='DHS 2015', fmt='o', color='green', ecolor='mediumseagreen',
-                 elinewidth=3, capsize=0)
-    ax.plot([2011, 2015, 2017], [444, 370, 349], label="WHO MMEIG", color='red')
-    ax.fill_between([2011, 2015, 2017], [347, 269, 244], [569, 517, 507], color='pink', alpha=.1)
-    ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [242, 235, 229, 223, 219, 219, 217, 214, 209],
-            label="GBD (2019)", color='black')
-    ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                    [168, 165, 158, 151, 150, 146, 141, 141, 134],
-                    [324, 313, 310, 307, 304, 307, 304, 300, 294], color='grey', alpha=.1)
-    ax.set(ylim=(0, 3000))
-    plt.xlabel('Year')
-    plt.ylabel("Deaths per 100,000 live births")
-    plt.title('Maternal Mortality Ratio per Year')
-    plt.legend()
-    plt.savefig(f'{graph_location}/direct_mmr.png')
-    plt.show()
-
-    # --------------------------------------------- TOTAL MMR  ------------------------------------------------------
+    # Output indirect deaths...
+    # TODO: postnatal
     other_preg_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -141,27 +119,145 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label', 'pregnancy'])['year'].count()),
     )
 
-    indirect_causes = ['AIDS', 'Malaria', 'TB']  # todo check
+    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Stroke', 'Heart Disease', 'Diabetes', 'Kidney Disease',
+                       'Depression / Self-harm']
     indirect_deaths = list()
+    indirect_lq = list()
+    indirect_uq = list()
+
     for year in sim_years:
         id_deaths_per_year = 0
+        id_lqs_year = 0
+        id_uqs_year = 0
+
         for cause in indirect_causes:
             if cause in other_preg_deaths.loc[year, :, True].index:
                 id_deaths_per_year += other_preg_deaths.loc[year, cause, True].mean()
+                id_lqs_year += other_preg_deaths.loc[year, cause, True].quantile(0.025)
+                id_uqs_year += other_preg_deaths.loc[year, cause, True].quantile(0.925)
 
         indirect_deaths.append(id_deaths_per_year)
+        indirect_lq.append(id_lqs_year)
+        indirect_uq.append(id_uqs_year)
 
-    indirect_mmr = [(x / y) * 100000 for x, y in zip(indirect_deaths, total_births_per_year_ex2010)]
+    id_mmr_data = [[(x / y) * 100000 for x, y in zip(indirect_deaths, total_births_per_year_ex2010)],
+                   [(x / y) * 100000 for x, y in zip(indirect_lq, total_births_per_year_ex2010)],
+                   [(x / y) * 100000 for x, y in zip(indirect_uq, total_births_per_year_ex2010)]]
+
+    total_mmr_data = [[x + y for x, y in zip(id_mmr_data[0], mm[0])],
+                      [x + y for x, y in zip(id_mmr_data[1], mm[1])],
+                      [x + y for x, y in zip(id_mmr_data[2], mm[2])]]
+
+    for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data], ['Direct', 'Indirect', 'Total'],
+                                   ['deepskyblue', 'mediumpurple', 'coral'], ['b', 'mediumslateblue', 'lightcoral']):
+
+        fig, ax = plt.subplots()
+        ax.plot(sim_years, data[0], label="Model (mean)", color=l_colour)
+        ax.fill_between(sim_years, data[1], data[2], color=f_colour, alpha=.1)
+        plt.errorbar(2010, 675, yerr=(780-570)/2, label='DHS 2010', fmt='o', color='green', ecolor='mediumseagreen',
+                     elinewidth=3, capsize=0)
+        plt.errorbar(2015, 439, yerr=(531-348)/2, label='DHS 2015', fmt='o', color='green', ecolor='mediumseagreen',
+                     elinewidth=3, capsize=0)
+        ax.plot([2011, 2015, 2017], [444, 370, 349], label="WHO MMEIG", color='red')
+        ax.fill_between([2011, 2015, 2017], [347, 269, 244], [569, 517, 507], color='pink', alpha=.1)
+        ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [242, 235, 229, 223, 219, 219, 217, 214, 209],
+                label="GBD (2019)", color='black')
+        ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+                        [168, 165, 158, 151, 150, 146, 141, 141, 134],
+                        [324, 313, 310, 307, 304, 307, 304, 300, 294], color='grey', alpha=.1)
+        if title == 'Direct':
+            ax.set(ylim=(0, 1750))
+        else:
+            ax.set(ylim=(0, 3500))
+        plt.xlabel('Year')
+        plt.ylabel("Deaths per 100,000 live births")
+        plt.title(f'{title} Maternal Mortality Ratio per Year')
+        plt.legend()
+        plt.savefig(f'{graph_location}/{title}_mmr.png')
+        plt.show()
+
+    target_indirect_mmr_dict = {
+        'double': True,
+        'first': {'year': 2010, 'value': 675*0.3, 'label': 'DHS 2010', 'ci': ((780*0.3)-(570*0.3))/2},
+        'second': {'year': 2015, 'value': 439*0.3, 'label': 'DHS 2015', 'ci': ((531*0.3)-(348*0.3))/2}}
+
+    analysis_utility_functions.line_graph_with_ci_and_target_rate(
+        sim_years, id_mmr_data[0], id_mmr_data[1], id_mmr_data[2], target_indirect_mmr_dict, '% of total births',
+        'Indirect Maternal Mortality Ratio per Year (w/v Target)', graph_location, 'indirect_mmr_w_target')
 
     labels = sim_years
     width = 0.35  # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
     ax.bar(labels, mm[0], width, label='Direct', color='brown')
-    ax.bar(labels, indirect_mmr, width, bottom=mm[0], label='Indirect', color='lightsalmon')
+    ax.bar(labels, id_mmr_data[0], width, bottom=mm[0], label='Indirect', color='lightsalmon')
     ax.set_ylabel('Maternal Deaths per 100,000 live births')
-    ax.set_title('Mean MMR per Year (Direct and Indirect)')
+    ax.set_title('Total Maternal Mortality Ratio per Year')
     ax.legend()
-    plt.savefig(f'{graph_location}/total_mmr.png')
+    plt.savefig(f'{graph_location}/total_mmr_bar.png')
+    plt.show()
+
+    # ---------------------------------------- PROPORTION OF INDIRECT DEATHS BY CAUSE --------------------------------
+
+    indirect_deaths_means = {}
+
+    for complication in indirect_causes:
+        indirect_deaths_means.update({complication: []})
+
+        for year in sim_years:
+            if complication in other_preg_deaths.loc[year, :, True].index:
+                births = births_results_exc_2010.loc[year].mean()
+                deaths = other_preg_deaths.loc[year, complication, True].mean()
+                indirect_deaths_means[complication].append((deaths/births) * 100000)
+            else:
+                indirect_deaths_means[complication].append(0)
+
+    labels = sim_years
+    width = 0.35  # the width of the bars: can also be len(x) sequence
+    fig, ax = plt.subplots()
+    ax.bar(labels, indirect_deaths_means['Depression / Self-harm'], width, label='Self-harm',
+           bottom=[a+b+c+d+e+f+g for a, b, c, d, e, f, g in zip(indirect_deaths_means['AIDS'],
+                                                                indirect_deaths_means['Malaria'],
+                                                                indirect_deaths_means['TB'],
+                                                                indirect_deaths_means['Stroke'],
+                                                                indirect_deaths_means['Heart Disease'],
+                                                                indirect_deaths_means['Diabetes'],
+                                                                indirect_deaths_means['Kidney Disease'])],
+           color='darkred')
+
+    ax.bar(labels, indirect_deaths_means['Kidney Disease'], width, label='Kidney disease',
+           bottom=[a+b+c+d+e+f for a, b, c, d, e,f in zip(indirect_deaths_means['AIDS'],
+                                                          indirect_deaths_means['Malaria'],
+                                                          indirect_deaths_means['TB'],
+                                                          indirect_deaths_means['Stroke'],
+                                                          indirect_deaths_means['Heart Disease'],
+                                                          indirect_deaths_means['Diabetes'])], color='grey')
+
+    ax.bar(labels, indirect_deaths_means['Diabetes'], width, label='Diabetes',
+           bottom=[a+b+c+d+e for a, b, c, d, e in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'],
+                                                      indirect_deaths_means['TB'], indirect_deaths_means['Stroke'],
+                                                      indirect_deaths_means['Heart Disease'])], color='darkorange')
+
+    ax.bar(labels, indirect_deaths_means['Heart Disease'], width, label='CVD',
+           bottom=[a + b + c + d for a, b, c, d in zip(indirect_deaths_means['AIDS'],
+                                                       indirect_deaths_means['Malaria'],
+                                                       indirect_deaths_means['TB'],
+                                                       indirect_deaths_means['Stroke'])], color='yellowgreen')
+    ax.bar(labels, indirect_deaths_means['Stroke'], width, label='Stroke',
+           bottom=[a + b + c for a, b, c in zip(indirect_deaths_means['AIDS'],
+                                                indirect_deaths_means['Malaria'],
+                                                indirect_deaths_means['TB'])], color='cornflowerblue')
+    ax.bar(labels, indirect_deaths_means['TB'], width, label='TB',
+           bottom=[a + b for a, b in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'])],
+           color='darkmagenta')
+    ax.bar(labels, indirect_deaths_means['Malaria'], width, label='Malaria', bottom=indirect_deaths_means['AIDS'],
+           color='slategrey')
+    ax.bar(labels, indirect_deaths_means['AIDS'], width, label='AIDS', color='hotpink')
+    ax.set(ylim=(0, 3000))
+    ax.set_ylabel('Deaths per 100,000 live births')
+    ax.set_ylabel('Year')
+    ax.set_title('Indirect Causes of Maternal Death During Pregnancy')
+    ax.legend()
+    plt.savefig(f'{graph_location}/indirect_death_mmr_cause.png')
     plt.show()
 
     # ==============================================  DEATHS... ======================================================
