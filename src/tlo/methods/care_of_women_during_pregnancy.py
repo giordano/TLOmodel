@@ -268,10 +268,12 @@ class CareOfWomenDuringPregnancy(Module):
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
-                                     'Disposables gloves, powder free, 100 pieces per box',
-                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+
+        self.item_codes_preg_consumables['post_abortion_care_shock_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST'])
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
         self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Urine analysis'])
@@ -2641,14 +2643,16 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             )
 
             cons_for_shock = self.get_consumables(
-                item_codes=cons['post_abortion_care_shock'])
+                item_codes=cons['post_abortion_care_shock'],
+                optional_item_codes=cons['post_abortion_care_shock_optional'])
 
             if cons_for_haemorrhage and cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'injury', first=True):
             cons_for_shock = self.get_consumables(
-                item_codes=cons['post_abortion_care_shock'])
+                item_codes=cons['post_abortion_care_shock'],
+                optional_item_codes=cons['post_abortion_care_shock_optional'])
 
             if cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True

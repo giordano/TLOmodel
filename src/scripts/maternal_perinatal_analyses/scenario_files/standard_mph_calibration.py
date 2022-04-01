@@ -28,7 +28,7 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 5596
+        self.seed = 732
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
         self.pop_size = 30000
@@ -37,7 +37,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'all_modules_15k',
+            'filename': 'all_modules_30k',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
