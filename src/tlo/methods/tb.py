@@ -149,6 +149,11 @@ class Tb(Module):
             Types.DATA_FRAME,
             "national estimates of coverage of IPT in PLHIV and paediatric contacts",
         ),
+        "who_incidence": Parameter(
+            Types.DATA_FRAME,
+            "WHO estimates of incidence, prevalence and mortality",
+        ),
+
         # ------------------ baseline population ------------------ #
         "prop_mdr2010": Parameter(
             Types.REAL,
@@ -438,6 +443,7 @@ class Tb(Module):
         p["rate_testing_active_tb"] = workbook["testing_rates"]
         p["pulm_tb"] = workbook["pulm_tb"]
         p["followup_times"] = workbook["followup"]
+        p["who_incidence"] = workbook["WHO_activeTB2020"]
 
         # if using national-level model, include all districts in IPT coverage
         # p['tb_high_risk_distr'] = workbook['IPTdistricts']
@@ -957,16 +963,16 @@ class Tb(Module):
         df["tb_date_ipt"] = pd.NaT
 
         # ------------------ infection status ------------------ #
-
-        self.baseline_active(
-            population
-        )  # allocate active infections from baseline population
-        self.baseline_latent(
-            population
-        )  # allocate baseline prevalence of latent infections
-        self.send_for_screening(
-            population
-        )  # send some baseline population for screening
+        # todo removed baseline latent/active tb cases
+        # self.baseline_active(
+        #     population
+        # )  # allocate active infections from baseline population
+        # self.baseline_latent(
+        #     population
+        # )  # allocate baseline prevalence of latent infections
+        # self.send_for_screening(
+        #     population
+        # )  # send some baseline population for screening
 
     def initialise_simulation(self, sim):
         """
@@ -978,8 +984,13 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
+
+        # todo remove TbRegularPollingEvent and add TbChildrensPoll
+        # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(years=12))
+
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
+
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
@@ -1486,6 +1497,80 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, "tb_inf"] = "latent"
         df.loc[tb_idx, "tb_date_latent"] = now
         df.loc[tb_idx, "tb_strain"] = strain
+
+
+class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
+    """The Tb Regular Poll Event for assigning active infections to children
+    * selects children and schedules onset of active tb
+    * schedules tb screening / testing
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+
+    def apply(self, population):
+
+        # ds-tb cases
+        # the outcome of this will be an updated df with new tb cases
+        self.assign_active_tb(strain="ds")
+
+        # # schedule some background rates of tb testing (non-symptom driven)
+        self.module.send_for_screening(population)
+
+    def assign_active_tb(self, strain):
+        """
+        select children and assign scheduled date of active tb onset
+        update properties as needed
+        assumes all infections are ds-tb, no mdr-tb
+        symptoms and smear status are assigned in the TbActiveEvent
+        """
+
+        df = self.sim.population.props
+        p = self.module.parameters
+        rng = self.module.rng
+        now = self.sim.date
+        year = now.year if now.year <= 2020 else 2020
+
+        # get estimated incidence of active TB in children from WHO
+        inc_estimates = p["who_incidence"]
+        number_active_tb = inc_estimates.loc[
+            (inc_estimates.year == year), "estimated_inc_number_children"
+        ].values[0]
+
+        # identify eligible children, under 16 and not currently with active tb infection
+        eligible = df.loc[
+            df.is_alive
+        & (df.age_years <= 16)
+        & (df.tb_inf != "active")
+        ].index
+
+        # need to scale the sampling if small population size
+        if len(eligible) < number_active_tb:
+            number_active_tb = int(len(eligible) * 0.05)
+
+        # probability based on risk factors, 25x higher if HIV+
+        risk_of_tb = LinearModel.multiplicative(
+            Predictor("age_years").when(">16", 0.0).otherwise(1.0),
+            Predictor("tb_inf").when("active", 0.0).otherwise(1.0),
+            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
+         )
+        risk_of_progression = risk_of_tb.predict(
+            df.loc[eligible]
+        )
+        # scale risk
+        risk_of_progression = risk_of_progression / sum(risk_of_progression)
+        new_active = rng.choice(df.loc[eligible].index, size=number_active_tb, replace=False, p=risk_of_progression)
+        df.loc[new_active, "tb_strain"] = strain
+
+        # schedule onset of active tb
+        # schedule for time now up to 1 year
+        for person_id in new_active:
+            date_progression = self.sim.date + pd.DateOffset(
+                days=self.rng.randint(0, 365)
+            )
+
+            # set date of active tb - properties will be updated at TbActiveEvent every month
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):

@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 2000
+end_date = Date(2030, 1, 1)
+popsize = 25000
 
 # set up the log config
 log_config = {
@@ -90,3 +90,7 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+# check some children are being infected from 2022 onwards
+# should be around 5% of child population each year (or 4000 if pop big enough)
+tb_children = output["tlo.methods.tb"]["tb_incidence"]["num_new_active_tb_child"]
