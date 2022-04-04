@@ -657,6 +657,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     # TOTAL DEATHS
     deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(scaled_deaths, 'Neonatal Disorders', sim_years)
 
+    # TODO check this
     gbd_deaths_2010_2019_data_neo = [
         [12179.90, 11997.06, 11721.38, 11112.63, 10796.11, 11454.39, 10097.89, 10589.62, 9927.72,
          9837.758],

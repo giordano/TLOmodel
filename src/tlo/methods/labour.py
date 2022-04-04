@@ -2481,9 +2481,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-            if not mni[individual_id]['delay_one_two']:
-                # Determine if the labouring woman will be delayed in attending for facility delivery
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+            # Determine if the labouring woman will be delayed in attending for facility delivery
+            pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
