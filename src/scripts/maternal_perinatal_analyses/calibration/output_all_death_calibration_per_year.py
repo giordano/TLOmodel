@@ -599,6 +599,52 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         'combined_spe_ec_cfr_per_year', graph_location)
 
     # =================================================== Neonatal Death ==============================================
+    # NMR due to neonatal disorders
+    nm = analysis_utility_functions.get_comp_mean_and_rate(
+        'Neonatal Disorders', total_births_per_year_ex2010, death_results_labels, 1000, sim_years)
+
+    fig, ax = plt.subplots()
+    ax.plot(sim_years, nm[0], label="Model (mean)", color='deepskyblue')
+    ax.fill_between(sim_years, nm[1], nm[2], color='b', alpha=.1)
+
+    plt.errorbar(2010, 25, label='DHS 2010 (adj)', yerr=(28 - 22) / 2, fmt='o', color='green', ecolor='mediumseagreen',
+                 elinewidth=3, capsize=0)
+    plt.errorbar(2015, 22, label='DHS 2015 (adj)', yerr=(24 - 18) / 2, fmt='o', color='black', ecolor='grey',
+                 elinewidth=3, capsize=0)
+    plt.errorbar(2017, 18.6, label='Hug 2017 (adj.)', yerr=(24 - 13) / 2, fmt='o', color='purple', ecolor='pink',
+                 elinewidth=3, capsize=0)
+    ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+            [28, 27, 26, 25, 24, 23, 22, 22, 20, 20], label="UN IGCME (unadj.)", color='purple')
+    ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+                    [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
+                    [32, 31, 30, 29, 29, 28, 28, 29, 29, 30], color='grey', alpha=.1)
+    ax.set(ylim=(0, 45))
+    plt.xlabel('Year')
+    plt.ylabel("Rate per 1000 births")
+    plt.title('"Neonatal Disorders" Mortality Rate per Year')
+    plt.legend()
+    plt.savefig(f'{graph_location}/nmr_nd.png')
+    plt.show()
+
+    # Total NMR
+    total_neonatal_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="properties_of_deceased_persons",
+        custom_generate_series=(
+            lambda df: df.loc[df['age_days'] < 28].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+        ),
+    )
+    tnd = analysis_utility_functions.get_mean_and_quants(total_neonatal_deaths, sim_years)
+    tnmr = [x / y * 1000 for x, y in zip(tnd[0], total_births_per_year)]
+
+
+
+
+
+
+
+
 
     direct_neonatal_causes = ['early_onset_neonatal_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
                               'respiratory_distress_syndrome', 'neonatal_respiratory_depression',
@@ -628,41 +674,12 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
         list_of_proportions_dicts_nb.append(causes)
 
-    nm = analysis_utility_functions.get_comp_mean_and_rate(
-        'Neonatal Disorders', total_births_per_year_ex2010, death_results_labels, 1000, sim_years)
 
-    fig, ax = plt.subplots()
-    ax.plot(sim_years, nm[0], label="Model (mean)", color='deepskyblue')
-    ax.fill_between(sim_years, nm[1], nm[2], color='b', alpha=.1)
-
-    plt.errorbar(2010, 25, label='DHS 2010 (adj)', yerr=(28-22)/2,  fmt='o', color='green', ecolor='mediumseagreen',
-                 elinewidth=3, capsize=0)
-    plt.errorbar(2015, 22, label='DHS 2015 (adj)', yerr=(24-18)/2, fmt='o', color='black',  ecolor='grey',
-                 elinewidth=3, capsize=0)
-    plt.errorbar(2017, 18.6, label='Hug 2017 (adj.)', yerr=(24-13)/2, fmt='o', color='purple',  ecolor='pink',
-                 elinewidth=3, capsize=0)
-    ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-            [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],  label="UN IGCME (unadj.)", color='purple')
-    ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                    [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
-                    [32, 31, 30, 29, 29, 28, 28, 29, 29, 30], color='grey', alpha=.1)
-    ax.set(ylim=(0, 45))
-    plt.xlabel('Year')
-    plt.ylabel("Rate per 1000 births")
-    plt.title('Neonatal Mortality Rate per Year')
-    plt.legend()
-    plt.savefig(f'{graph_location}/nmr.png')
-    plt.show()
 
     # TOTAL DEATHS
     deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(scaled_deaths, 'Neonatal Disorders', sim_years)
 
-    # TODO check this
-    gbd_deaths_2010_2019_data_neo = [
-        [12179.90, 11997.06, 11721.38, 11112.63, 10796.11, 11454.39, 10097.89, 10589.62, 9927.72,
-         9837.758],
-        [10192.87, 9966.29, 9653.34, 9071.51, 8732.92, 9408.53, 7857.45, 8413.62, 7661.01, 7523.02],
-        [14459.23, 14243.08, 14022.25, 13431.77, 13402.91, 13801.05, 12797.50, 13162.74, 12858.11, 12876.41]]
+    gbd_deaths_2010_2019_data_neo = extract_deaths_gbd_data('Neonatal')
 
     mean_deaths_n = list()
     death_lq_n = list()
