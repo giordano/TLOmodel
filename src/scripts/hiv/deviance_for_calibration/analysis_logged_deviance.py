@@ -87,10 +87,11 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run.pickle", "wb") as f:
+with open(outputpath / "deviance_calibrated.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # check some children are being infected from 2022 onwards
 # should be around 5% of child population each year (or 4000 if pop big enough)
 tb_children = output["tlo.methods.tb"]["tb_incidence"]["num_new_active_tb_child"]
+

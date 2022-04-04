@@ -1566,7 +1566,7 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
         # schedule for time now up to 1 year
         for person_id in new_active:
             date_progression = self.sim.date + pd.DateOffset(
-                days=self.rng.randint(0, 365)
+                days=rng.randint(0, 365)
             )
 
             # set date of active tb - properties will be updated at TbActiveEvent every month
