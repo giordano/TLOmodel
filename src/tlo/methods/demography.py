@@ -343,9 +343,8 @@ class Demography(Module):
         assert not hasattr(individual_id, '__iter__'), 'do_death must be called for one individual at a time.'
 
         df = self.sim.population.props
-        person = df.loc[individual_id]
 
-        if not person['is_alive']:
+        if not df.at[individual_id, 'is_alive']:
             return
 
         # Check that the cause is declared, and declared for use by the originating module:
@@ -356,6 +355,8 @@ class Demography(Module):
 
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+
+        person = df.loc[individual_id]
 
         # Log the death
         # - log the line-list of summary information about each death
