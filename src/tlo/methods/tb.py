@@ -986,7 +986,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
 
         # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(years=12))
 
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
 
