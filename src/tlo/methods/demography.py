@@ -8,6 +8,7 @@ The core demography module and its associated events.
 import math
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -36,7 +37,7 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, max_age_initial: Optional[int] = None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
@@ -47,14 +48,11 @@ class Demography(Module):
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
 
-        # initialise empty dict with set keys
-        keys = ["date",
-                "age",
-                "sex",
-                "cause"
-                ]
-        # initialise empty dict with set keys
-        self.demog_outputs = {k: [] for k in keys}
+        # Handle argument `max_age_initial`:The oldest age (in whole years) in the initial population.
+        if not isinstance(max_age_initial, (int, float, type(None))) or (max_age_initial == 0):
+            raise ValueError("The value of max_age_initial is not recognised or is 0.")
+        else:
+            self.max_age_initial = int(max_age_initial) if max_age_initial is not None else None
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -203,6 +201,10 @@ class Demography(Module):
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
+        if self.max_age_initial is not None:
+            init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
+                init_pop, max_age=self.max_age_initial)
+
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                              size=len(df),
@@ -310,6 +312,15 @@ class Demography(Module):
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
 
+    def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
+        """Return an edited version of the pd.DataFrame describing the probability of persons in the population being
+        created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`
+        should not be created."""
+
+        _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
+        _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
+        return _df.reset_index(drop=True)
+
     def process_causes_of_death(self):
         """
         1) Register all causes of deaths defined by Module
@@ -384,12 +395,6 @@ class Demography(Module):
 
         logger.info(key='death', data=data_to_log_for_each_death)
 
-        # save outputs to dict for calibration
-        self.demog_outputs["date"] += [self.sim.date.year]
-        self.demog_outputs["age"] += [person['age_years']]
-        self.demog_outputs["sex"] += [person['sex']]
-        self.demog_outputs["cause"] += [cause]
-
         # - log all the properties for the deceased person
         logger.info(key='properties_of_deceased_persons',
                     data=person.to_dict(),
@@ -404,7 +409,8 @@ class Demography(Module):
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
-            self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+            if person.hs_is_inpatient:
+                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
     def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
         """

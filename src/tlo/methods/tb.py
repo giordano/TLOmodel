@@ -985,9 +985,8 @@ class Tb(Module):
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
 
-        # todo remove TbRegularPollingEvent and add TbChildrensPoll
         # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(years=12))
+        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(days=0))
 
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
 
@@ -1506,7 +1505,7 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=1))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
 
@@ -1531,11 +1530,11 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         year = now.year if now.year <= 2020 else 2020
 
-        # get estimated incidence of active TB in children from WHO
+        # WHO estimates of active TB in children
         inc_estimates = p["who_incidence"]
-        number_active_tb = inc_estimates.loc[
+        number_active_tb = int((inc_estimates.loc[
             (inc_estimates.year == year), "estimated_inc_number_children"
-        ].values[0]
+        ].values[0]) / 12)
 
         # identify eligible children, under 16 and not currently with active tb infection
         eligible = df.loc[
@@ -1558,14 +1557,14 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[eligible]
         )
         # scale risk
-        risk_of_progression = risk_of_progression / sum(risk_of_progression)
+        risk_of_progression = risk_of_progression / sum(risk_of_progression)  # must sum to 1
         new_active = rng.choice(df.loc[eligible].index, size=number_active_tb, replace=False, p=risk_of_progression)
         df.loc[new_active, "tb_strain"] = strain
 
         # schedule onset of active tb
         # schedule for time now up to 1 year
         for person_id in new_active:
-            date_progression = self.sim.date + pd.DateOffset(
+            date_progression = now + pd.DateOffset(
                 days=rng.randint(0, 365)
             )
 

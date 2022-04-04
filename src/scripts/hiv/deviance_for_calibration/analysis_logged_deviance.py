@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
-popsize = 25000
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -56,7 +56,7 @@ log_config = {
 seed = 4  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
+    demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=16),
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
