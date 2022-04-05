@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    get_scenario_outputs,
+    get_scenario_outputs,create_pickles_locally
 )
 
 from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
@@ -30,6 +30,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         os.makedirs(f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}')
 
     graph_location = path
+
+    # create_pickles_locally(results_folder)
 
     # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
@@ -1270,8 +1272,8 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # todo
 
     # GET MEAN/MEDIAN SQUEEZE
-    for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
-                'Labour_ReceivesPostnatalCheck', 'NewbornOutcomes_ReceivesPostnatalCheck',
-                'ReceivesComprehensiveEmergencyObstetricCare']:
-        analysis_utility_functions.return_median_and_mean_squeeze_factor_for_hsi(results_folder, hsi, sim_years,
-                                                                                 graph_location)
+    #for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
+    #            'Labour_ReceivesPostnatalCheck', 'NewbornOutcomes_ReceivesPostnatalCheck',
+    #            'ReceivesComprehensiveEmergencyObstetricCare']:
+    #    analysis_utility_functions.return_median_and_mean_squeeze_factor_for_hsi(results_folder, hsi, sim_years,
+    #                                                                             graph_location)
