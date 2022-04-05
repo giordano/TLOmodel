@@ -2339,6 +2339,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
                     delivery_mode, p=params['prob_delivery_modes_spe'])
 
+            # Log the indication for any caesarean deliveries
+            if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_now', 'caesarean_future'):
+                mni[person_id]['cs_indication'] = 'spe_ec'
+
         # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
         # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
         # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
