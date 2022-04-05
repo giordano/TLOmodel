@@ -986,7 +986,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
 
         # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(years=12))
+        sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(years=0))
 
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
 
@@ -2947,7 +2947,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
         )
 
         # ------------------------------------ TREATMENT ------------------------------------
@@ -2956,6 +2957,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years <= 16)
             ]
         )
 
@@ -3033,6 +3035,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="TB treatment coverage",
             data={
                 "tbNewDiagnosis": new_tb_diagnosis,
+                "tbNewTreatment": new_tb_tx,
                 "tbTreatmentCoverage": tx_coverage,
                 "tbIptCoverage": ipt_coverage,
                 "tbChildTreatment": new_tb_tx_child,
