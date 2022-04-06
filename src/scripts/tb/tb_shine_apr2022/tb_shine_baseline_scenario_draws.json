@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_baseline_scenario.py",
-  "scenario_seed": 3215,
-  "runs_per_draw": 5,
+  "scenario_seed": 3027,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 425316021,
+      "draw_seed": 738900068,
       "parameters": {
         "Tb": {
           "scenario": 0

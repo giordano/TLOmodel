@@ -1,10 +1,10 @@
 import datetime
 import pickle
-# import random
+import random
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -20,7 +20,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -32,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 17500
 
 # set up the log config

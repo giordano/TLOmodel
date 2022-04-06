@@ -27,7 +27,7 @@ class TestTbShineBaselineScenario(BaseScenario):
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 250_000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
