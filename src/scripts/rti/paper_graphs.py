@@ -105,16 +105,13 @@ av_total_n_female = summarize(extracted_n_female, only_mean=True).sum()
 perc_male = np.divide(av_total_n_male.tolist(), np.add(av_total_n_male.tolist(), av_total_n_female.tolist()))
 
 gbd_proportion_male = sum(male_rtis) / (sum(male_rtis) + sum(female_rtis))
-
-rr_male_params = params.loc[params['module_param'] == 'RTI:rr_injrti_male', 'value'].values
-ax2.bar(np.arange(len(perc_male)), perc_male, color='lightsteelblue',
-        label='Model')
-ax2.axhline(gbd_proportion_male, color='steelblue', label='GBD', linestyle='dashed')
-ax2.set_xticks(np.arange(len(perc_male)))
-ax2.set_xticklabels([np.round(val, 3) for val in rr_male_params])
+closest_est_found = min(perc_male, key=lambda x: abs(x - gbd_proportion_male))
+best_fit_idx = np.where(perc_male == closest_est_found)[0][0]
+best_fit_found = perc_male[best_fit_idx]
+ax2.bar(np.arange(2), [best_fit_found, gbd_proportion_male], color=['lightsteelblue', 'steelblue'])
+ax2.set_xticks(np.arange(2))
+ax2.set_xticklabels(['Model', 'GBD'])
 ax2.set_ylabel('Proportion male')
-ax2.legend()
-ax2.set_xlabel('rr_injrti_male')
 # plot age distribution
 gbd_age_gender_data = \
     pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/age_and_gender_data.csv")
@@ -240,14 +237,10 @@ target_on_scene_inc_death = 6
 closest_est_found = min(on_scene_inc_death, key=lambda x: abs(x - target_on_scene_inc_death))
 best_fit_idx = np.where(on_scene_inc_death == closest_est_found)[0][0]
 ax5 = fig.add_subplot(gs[2, 0])
-ax5.bar(np.arange(len(on_scene_inc_death)), on_scene_inc_death, label='Model estimates', color='plum')
-ax5.bar(best_fit_idx, on_scene_inc_death[best_fit_idx], color='violet', label='best fit found')
-ax5.axhline(target_on_scene_inc_death, color='fuchsia', label='NRSC estimate', linestyle='dashed')
-ax5.set_xticks(np.arange(len(on_scene_inc_death)))
-ax5.set_xticklabels(params['value'].round(4), rotation=45)
+ax5.bar(np.arange(2), [on_scene_inc_death[best_fit_idx], target_on_scene_inc_death], color=['violet', 'plum'])
+ax5.set_xticks(np.arange(2))
+ax5.set_xticklabels(['Model', 'Police data'])
 ax5.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
-ax5.set_xlabel('% fatal on scene')
-ax5.legend()
 
 results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
 info = get_scenario_info(results_folder)
@@ -621,13 +614,13 @@ expected_hsb_lower = 0.6533
 average_n_inj_in_kch = 7057 / 4776
 expected_in_hos_mort = 144 / 7416
 hsb_in_accepted_range = np.where((results_df['HSB'] > expected_hsb_lower) & (results_df['HSB'] < expected_hsb_upper))
-hsb_colors = ['seagreen' if i not in hsb_in_accepted_range[0] else 'darkseagreen' for i in results_df['HSB'].index]
 ax7 = fig.add_subplot(gs[3, 0])
-ax7.bar(np.arange(len(results_df)), results_df['HSB'], color=hsb_colors, label='proportion sought care')
+ax7.bar(np.arange(len(results_df.iloc[hsb_in_accepted_range])), results_df.iloc[hsb_in_accepted_range]['HSB'],
+        color='darkseagreen', label='proportion sought care')
 ax7.axhline(expected_hsb_upper, color='g', label='Upper HSB bound', linestyle='dashed')
 ax7.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='dashed')
-ax7.set_xticks(results_df.index)
-ax7.set_xticklabels(results_df['ISS cutoff score'])
+ax7.set_xticks(np.arange(len(results_df.iloc[hsb_in_accepted_range])))
+ax7.set_xticklabels(results_df.iloc[hsb_in_accepted_range]['ISS cutoff score'])
 ax7.set_ylabel('Proportion')
 ax7.legend(loc='lower left')
 ax7.set_xlabel('ISS cut-off score')
@@ -696,16 +689,15 @@ scales_in_runs = np.divide(
                                    'value'],
     (102 / 11650)
 )
+closest_est_found = min(mean_in_hos_mort[idxs[3]], key=lambda x: abs(x - expected_in_hospital_mortality))
+best_fit_idx = np.where(mean_in_hos_mort[idxs[3]] == closest_est_found)[0][0]
+best_fit_found = mean_in_hos_mort[idxs[3]].to_list()[best_fit_idx]
 ax8 = fig.add_subplot(gs[3, 1])
 
-ax8.bar(np.arange(len(mean_in_hos_mort[idxs[3]])), mean_in_hos_mort[idxs[3]], color='lightcoral', label='model')
-ax8.set_xticks(np.arange(len(scales_in_runs)))
-ax8.set_xticklabels([np.round(val, 3) for val in scales_in_runs], rotation=45)
-ax8.axhline(expected_in_hospital_mortality, color='indianred', label='Expected in-hospital mortality',
-            linestyle='dashed')
-ax8.set_xlabel('Scale-factor')
+ax8.bar(np.arange(2), [best_fit_found, expected_in_hospital_mortality], color=['lightcoral', 'indianred'])
+ax8.set_xticks(np.arange(2))
+ax8.set_xticklabels(['Model', 'Tanzanian national average'])
 ax8.set_ylabel('In-hospital mortality')
-ax8.legend(loc='lower right')
 ax1.set_title('a)       Incidence of RTI', loc='left')
 ax2.set_title('b)       Proportion of RTIs involving males', loc='left')
 ax3.set_title('c)       Age distribution of RTIs', loc='left')
@@ -799,9 +791,16 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaper
 # Figure 4
 plt.clf()
 fig, ax1 = plt.subplots()
+extracted_incidence_of_death = extract_results(results_folder,
+                                               module="tlo.methods.rti",
+                                               key="summary_1m",
+                                               column="incidence of rti death per 100,000",
+                                               index="date"
+                                               )
+inc_of_death = summarize(extracted_incidence_of_death, only_mean=True).mean()
 ax1.set_xlabel('rt_emergency_care_ISS_score_cut_off')
 ax1.set_ylabel('Incidence of death\nper 100,000 p.y.')
-ax1.bar(results_df.index, results_df['inc_death'], width=0.4, color='lightsalmon',
+ax1.bar(results_df.index, inc_of_death, width=0.4, color='lightsalmon',
         label='Incidence of death')
 ax1.set_xticks(np.add(results_df.index, 0.2))
 ax1.set_xticklabels(results_df['ISS cutoff score'])
@@ -810,7 +809,7 @@ ax1.set_ylim([0, 80])
 
 ax2 = ax1.twinx()
 
-ax2.set_ylabel('Percent sought care')
+ax2.set_ylabel('Proportion sought care')
 ax2.bar(np.add(results_df.index, 0.4), results_df['HSB'], width=0.4, color='lightsteelblue',
         label='HSB')
 ax2.axhline(y=expected_hsb_lower, color='steelblue', linestyle='dashed', label='lower HSB\nboundary')
@@ -837,13 +836,13 @@ ax1.set_ylim([0, 4000000])
 
 ax2 = ax1.twinx()
 
-ax2.set_ylabel('Percent sought care')
+ax2.set_ylabel('Proportion sought care')
 ax2.bar(np.add(results_df.index, 0.4), results_df['HSB'], width=0.4, color='lightsteelblue',
         label='HSB')
 ax2.axhline(y=expected_hsb_lower, color='steelblue', linestyle='dashed', label='lower HSB\nboundary')
 ax2.axhline(y=expected_hsb_upper, color='lightskyblue', linestyle='dashed', label='upper HSB\nboundary')
 ax2.set_ylim([0, 1.1])
-ax1.set_title("The model's predicted incidence of death for \nvarying levels of health seeking behaviour")
+ax1.set_title("The model's predicted DALYs between 2010-2019 for \nvarying levels of health seeking behaviour")
 # Show plot
 ax1.legend(loc='upper left')
 ax2.legend()
@@ -1079,3 +1078,31 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaper
 plt.clf()
 
 
+results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
+# look at one log (so can decide what to extract)
+log = load_pickled_dataframes(results_folder)
+
+# get basic information about the results
+info = get_scenario_info(results_folder)
+
+# 1) Extract the parameters that have varied over the set of simulations
+params = extract_params(results_folder)
+deaths_each_draw = []
+for draw in range(info['number_of_draws']):
+    deaths_this_draw = []
+    for run in range(info['runs_per_draw']):
+
+        df: pd.DataFrame = \
+            load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.demography')['tlo.methods.demography']
+        df = df['death']
+        df = df.drop(df.loc[df['cause'] == 'Other'].index)
+        deaths_this_draw.append(df.cause.values.tolist())
+
+    deaths_each_draw.append(deaths_this_draw)
+death_dist_per_draw = []
+for draw in deaths_each_draw:
+    counts_this_draw = []
+    for run in draw:
+        counts_this_draw.append(np.unique(run, return_counts=True)[1])
+    mean_dist_this_draw = [sum(i) for i in zip(*counts_this_draw)]
+    death_dist_per_draw.append(list(np.divide(mean_dist_this_draw, sum(mean_dist_this_draw))))
