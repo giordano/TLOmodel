@@ -598,42 +598,80 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     # ----------------------------------------------- NEONATAL MORTALITY RATE ----------------------------------------
     # NMR due to neonatal disorders...
-    nm = analysis_utility_functions.get_comp_mean_and_rate(
+    # NEONATAL DISORDERS NMR - ROUGHLY EQUATES TO FIRST WEEK NMR
+    nd_nmr = analysis_utility_functions.get_comp_mean_and_rate(
         'Neonatal Disorders', total_births_per_year_ex2010, death_results_labels, 1000, sim_years)
 
-    # Total NMR...
-    #total_neonatal_deaths = extract_results(
-    #    results_folder,
-    #    module="tlo.methods.demography",
-    #    key="properties_of_deceased_persons",
-    #    custom_generate_series=(
-    #        lambda df: df.loc[(df['age_days'] < 28) &
-    #                          df['cause_of_death'].str.contains('AIDS|ALRI|Diarrhoea|Malaria|anomaly')].assign(
-    #            year=df['date'].dt.year).groupby(['year'])['year'].count()))
+    # Total NMR...(FROM ALL CAUSES UP TO 28 DAYS)
+    total_neonatal_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography.detail",
+        key="properties_of_deceased_persons",
+        custom_generate_series=(
+            lambda df: df.loc[(df['age_days'] < 28) & (df['cause_of_death'] != 'Other')].assign(
+                year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
-    #tnd = analysis_utility_functions.get_mean_and_quants(total_neonatal_deaths, sim_years)
+    t_nm = analysis_utility_functions.get_mean_and_quants(total_neonatal_deaths, sim_years)
+    tnmr = [x / y * 1000 for x, y in zip(t_nm[0], birth_data[0])]
+    tnmr_lq = [x / y * 1000 for x, y in zip(t_nm[1], birth_data[1])]
+    tnmr_uq = [x / y * 1000 for x, y in zip(t_nm[2], birth_data[2])]
 
-    #tnmr = [x / y * 1000 for x, y in zip(tnd[0], birth_data[0])]
-    #tnmr_lq = [x / y * 1000 for x, y in zip(tnd[1], birth_data[1])]
-    #tnmr_uq = [x / y * 1000 for x, y in zip(tnd[2], birth_data[2])]
+    indirect_neonatal_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography.detail",
+        key="properties_of_deceased_persons",
+        custom_generate_series=(
+            lambda df: df.loc[(df['age_days'] < 28) &
+                              df['cause_of_death'].str.contains('AIDS|ALRI|Diarrhoea|Malaria|anomaly')].assign(
+                year=df['date'].dt.year).groupby(['year'])['year'].count()))
+
+    i_nm = analysis_utility_functions.get_mean_and_quants(indirect_neonatal_deaths, sim_years)
+    i_nmr = [x / y * 1000 for x, y in zip(i_nm[0], birth_data[0])]
+    i_tnmr_lq = [x / y * 1000 for x, y in zip(i_nm[1], birth_data[1])]
+    i_tnmr_uq = [x / y * 1000 for x, y in zip(i_nm[2], birth_data[2])]
 
     def get_nmr_graphs(data, colours, title, save_name):
         fig, ax = plt.subplots()
         ax.plot(sim_years, data[0], label="Model (mean)", color=colours[0])
         ax.fill_between(sim_years, data[1], data[2], color=colours[1], alpha=.1)
 
-        plt.errorbar(2010, 25, label='DHS 2010 (adj)', yerr=(28 - 22) / 2, fmt='o', color='green',
+        if save_name != 'neonatal_disorders_nmr':
+            data = {'dhs': {'mean': [31, 27], 'lq':[26, 22], 'uq': [34, 34]},
+                    'hug': {'mean': 22.7, 'lq': 15.6, 'uq': 28.8},
+                    'gbd':{'mean':25, 'lq':21.4, 'uq':26.6},
+                    'un': {'mean': [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],
+                           'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
+                           'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30]}}
+        else:
+            data = {'dhs': {'mean': [25, 22], 'lq': [22, 18], 'uq': [28, 28]},
+                    'hug': {'mean': 18.6, 'lq': 13, 'uq': 24},
+                    'gbd': {'mean': 20, 'lq': 17.12, 'uq': 21.3},
+                    'un': {'mean': [22.4, 21.6, 20.8, 20, 19.2, 18.4, 17.6, 17.6, 16, 16],
+                           'lq': [20, 19.2, 18.4, 17.6, 16, 14.4, 12.8, 12, 11.2, 10.4],
+                           'uq': [25.6, 24.8, 24, 23.2, 23.2, 22.4, 22.4, 23.2, 23.2, 24]}}
+
+        plt.errorbar(2010, data['dhs']['mean'][0], label='DHS 2010',
+                     yerr=(data['dhs']['uq'][0] - data['dhs']['lq'][0]) / 2, fmt='o', color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2015, 22, label='DHS 2015 (adj)', yerr=(24 - 18) / 2, fmt='o', color='black', ecolor='grey',
+
+        plt.errorbar(2015, data['dhs']['mean'][1], label='DHS 2015',
+                     yerr=(data['dhs']['uq'][1] - data['dhs']['lq'][1]) / 2, fmt='o', color='black',
+                     ecolor='grey',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2017, 18.6, label='Hug 2017 (adj.)', yerr=(24 - 13) / 2, fmt='o', color='purple', ecolor='pink',
-                     elinewidth=3, capsize=0)
+
+        plt.errorbar(2017, data['hug']['mean'], label='Hug 2017'
+                     , yerr=(data['hug']['uq'] - data['hug']['lq']) / 2,
+                     fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
+
+        plt.errorbar(2019, data['gbd']['mean'], label='Paulson (GBD) 2019'
+                     , yerr=(data['gbd']['uq'] - data['gbd']['lq']) / 2,
+                     fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
+
         ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                [28, 27, 26, 25, 24, 23, 22, 22, 20, 20], label="UN IGCME (unadj.)", color='purple')
+                data['un']['mean'], label="UN IGCME (unadj.)", color='purple')
         ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                        [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
-                        [32, 31, 30, 29, 29, 28, 28, 29, 29, 30], color='grey', alpha=.1)
+                        data['un']['lq'], data['un']['uq'], color='grey', alpha=.1)
         ax.set(ylim=(0, 45))
         plt.xlabel('Year')
         plt.ylabel("Rate per 1000 births")
@@ -642,8 +680,10 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         plt.savefig(f'{graph_location}/{save_name}.png')
         plt.show()
 
-    get_nmr_graphs(nm, ['deepskyblue', 'b'], 'Yearly NMR due to GBD "Neonatal Disorders"', 'neonatal_disorders_nmr')
-    # get_nmr_graphs([tnmr, tnmr_lq, tnmr_uq], ['coral', 'lightcoral'], 'Yearly Total NMR', 'total_nmr')
+    get_nmr_graphs(nd_nmr, ['deepskyblue', 'b'], 'Yearly NMR due to GBD "Neonatal Disorders"', 'neonatal_disorders_nmr')
+    get_nmr_graphs([tnmr, tnmr_lq, tnmr_uq], ['coral', 'lightcoral'], 'Yearly Total NMR', 'total_nmr')
+    get_nmr_graphs([i_nmr, i_tnmr_lq, i_tnmr_uq], ['seagreen', 'mediumseagreen'],
+                   'Yearly NMR due to causes other than "Neonatal Disorders"', 'other_nmr')
 
     # ------------------------------------------ CRUDE DEATHS PER YEAR ------------------------------------------------
     # Neonatal Disorders...
@@ -679,7 +719,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                   'crude_deaths_cba')
 
     # --------------------------- PROPORTION OF 'NEONATAL DISORDER' DEATHS BY CAUSE -----------------------------------
-    direct_neonatal_causes = ['early_onset_neonatal_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+    direct_neonatal_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
                               'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
 
     list_of_proportions_dicts_nb = list()
@@ -757,8 +797,12 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     total_ens = [x + y for x, y in zip(early_ns, early_ns_pn)]
 
-    late_ns = analysis_utility_functions.get_mean_and_quants_from_str_df(
+    late_ns_nb = analysis_utility_functions.get_mean_and_quants_from_str_df(
+        nb_outcomes_df, 'late_onset_sepsis', sim_years)[0]
+    late_ns_pn = analysis_utility_functions.get_mean_and_quants_from_str_df(
         nb_outcomes_pn_df, 'late_onset_sepsis', sim_years)[0]
+
+    late_ns = [x + y for x, y in zip(late_ns_nb, late_ns_pn)]
 
     mild_en = analysis_utility_functions.get_mean_and_quants_from_str_df(nb_outcomes_df, 'mild_enceph', sim_years)[0]
     mod_en = analysis_utility_functions.get_mean_and_quants_from_str_df(nb_outcomes_df, 'moderate_enceph', sim_years)[0]
@@ -773,12 +817,6 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     rd = analysis_utility_functions.get_mean_and_quants_from_str_df(
         nb_outcomes_df, 'not_breathing_at_birth', sim_years)[0]
-
-    ept = analysis_utility_functions.get_mean_and_quants_from_str_df(
-        la_comps, 'early_preterm_labour', sim_years)[0]  # todo: should be live births
-    lpt = analysis_utility_functions.get_mean_and_quants_from_str_df(
-        la_comps, 'late_preterm_labour', sim_years)[0]
-    total_ptbs = [x + y for x, y in zip(ept, lpt)]
 
     rds_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
         nb_outcomes_df, 'respiratory_distress_syndrome', sim_years)[0]
@@ -804,7 +842,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     for inc_list, complication in \
         zip([total_ens, late_ns, total_encp, total_ptl_rates, rds_data, rd, rate_of_ca, rate_of_laa, rate_of_ua,
              rate_of_da, rate_of_oa],
-            ['early_onset_neonatal_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+            ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
              'respiratory_distress_syndrome', 'neonatal_respiratory_depression',
              'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
              'digestive_anomaly', 'other_anomaly']):
@@ -846,9 +884,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
             deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results, cause, sim_years)[0]
 
-        elif cause == 'neonatal_sepsis':  # TODO: ERROR HERE( also early_onset_sepsis and late_onset_neonatal_sepsis) labels
+        elif cause == 'neonatal_sepsis':
             early = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                death_results, 'early_onset_neonatal_sepsis', sim_years)[0]
+                death_results, 'early_onset_sepsis', sim_years)[0]
             late = analysis_utility_functions.get_mean_and_quants_from_str_df(
                 death_results, 'late_onset_sepsis', sim_years)[0]
             deaths = [x + y for x, y in zip(early, late)]

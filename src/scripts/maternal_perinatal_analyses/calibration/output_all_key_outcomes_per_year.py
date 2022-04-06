@@ -109,13 +109,40 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
         ),
     )
+
+    ip_stillbirth_results = extract_results(
+        results_folder,
+        module="tlo.methods.labour",
+        key="intrapartum_stillbirth",
+        custom_generate_series=(
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+        ),
+    )
+
     an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, sim_years)
+    ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
 
     total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in zip(birth_data[0],
                                                                                        ectopic_mean_numbers_per_year,
                                                                                        ia_mean_numbers_per_year,
                                                                                        sa_mean_numbers_per_year,
                                                                                        an_still_birth_data[0])]
+
+    # ================================== PROPORTION OF PREGNANCIES ENDING IN BIRTH... ================================
+    total_pregnancy_losses = [a + b + c + d + e for a, b, c, d, e in zip(ectopic_mean_numbers_per_year,
+                                                                         ia_mean_numbers_per_year,
+                                                                         sa_mean_numbers_per_year,
+                                                                         an_still_birth_data[0],
+                                                                         ip_still_birth_data[0])]
+
+    prop_lost_pregnancies = [(x/y) * 100 for x, y in zip(total_pregnancy_losses, preg_data[0])]
+
+    analysis_utility_functions.simple_bar_chart(
+        prop_lost_pregnancies, 'Year', '% of Total Pregnancies',
+        'Proportion of total pregnancies ending in pregnancy loss', 'preg_loss_proportion', sim_years,
+        graph_location)
+
+    # todo IP stillbirths need to be added to total births and shouldnt count as a pregnancy loss
 
     # ========================================== INTERVENTION COVERAGE... =============================================
     # 1.) Antenatal Care... # TODO: THIS COULD CERTAINLY BE SIMPLIFIED
@@ -1084,15 +1111,6 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         'Rate of Postpartum Haemorrhage per Year', graph_location, 'pph_rate')
 
     # ------------------------------------------- Intrapartum Stillbirth ... ------------------------------------------
-    ip_stillbirth_results = extract_results(
-        results_folder,
-        module="tlo.methods.labour",
-        key="intrapartum_stillbirth",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-        ),
-    )
-
     ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
     ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[0], birth_data_ex2010[0])]
     ip_sbr_lqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[1], birth_data_ex2010[0])]

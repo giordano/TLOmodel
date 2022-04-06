@@ -763,6 +763,8 @@ class NewbornOutcomes(Module):
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
+            nci[individual_id]['third_delay'] = False
+
             if not nci[individual_id]['passed_through_week_one']:
                 self.scheduled_week_one_postnatal_event(individual_id)
 
@@ -999,12 +1001,16 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
+            # Run HCW check
+            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+                sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             if facility_type == 'hp':
                 avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care'],
                                                   optional_item_codes=cons['iv_drug_equipment'])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
-                if avail:
+                if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
 
             # The same pattern is then followed for health centre care
@@ -1012,7 +1018,7 @@ class NewbornOutcomes(Module):
                 avail = hsi_event.get_consumables(item_codes=cons['sepsis_abx'],
                                                   optional_item_codes=cons['iv_drug_equipment'])
 
-                if avail:
+                if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
 
     def link_twins(self, child_one, child_two, mother_id):
@@ -1458,6 +1464,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
+        params = self.module.current_parameters
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
@@ -1483,6 +1490,11 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                                                  'timing': nci[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'nb_pnc_check'] += 1
+
+        if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
+            nci[person_id]['third_delay'] = True
+
+        # todo: this is only ever happening at level 1a...
 
         # This HSI contains the interventions delivered as part of a full postnatal check of the newborn after birth -
         # this include newborns who delivered at home or in facility
