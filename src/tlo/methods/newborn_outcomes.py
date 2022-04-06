@@ -278,6 +278,8 @@ class NewbornOutcomes(Module):
         'squeeze_threshold_for_delay_three_nb_care': Parameter(
             Types.LIST, 'squeeze factor value over which an individual within a newborn HSI is said to experience '
                         'type 3 delay i.e. delay in receiving appropriate care'),
+        'treatment_effect_modifier_one_delay': Parameter(
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
     }
 

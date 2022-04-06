@@ -28,16 +28,16 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 118
+        self.seed = 345
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 30000
+        self.pop_size = 50000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'all_modules_30k',
+            'filename': 'all_modules_50k',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
