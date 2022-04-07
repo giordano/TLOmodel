@@ -436,12 +436,17 @@ class NewbornOutcomes(Module):
             get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
-        self.item_codes_nb_consumables['sepsis_supportive_care'] = \
+        self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
             get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
                                      'Gentamicin 40mg/ml, 2ml_each_CMST',
-                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
-                                     'Dextrose (glucose) 5%, 1000ml_each_CMST',
-                                     'Tube, feeding CH 8_each_CMST'])
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+
+        self.item_codes_nb_consumables['sepsis_supportive_care_optional'] = \
+            get_list_of_items(self, ['Dextrose (glucose) 5%, 1000ml_each_CMST',
+                                     'Tube, feeding CH 8_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
         self.item_codes_nb_consumables['sepsis_abx'] =\
@@ -1007,16 +1012,16 @@ class NewbornOutcomes(Module):
             sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
                 sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            if facility_type == 'hp':
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care'],
-                                                  optional_item_codes=cons['iv_drug_equipment'])
+            if facility_type != '1a':
+                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care_core'],
+                                                  optional_item_codes=cons['sepsis_supportive_care_optional'])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
 
             # The same pattern is then followed for health centre care
-            elif facility_type == 'hc':
+            else:
                 avail = hsi_event.get_consumables(item_codes=cons['sepsis_abx'],
                                                   optional_item_codes=cons['iv_drug_equipment'])
 
@@ -1457,9 +1462,18 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
+        nci = self.module.newborn_care_info
+
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesEarlyPostnatalCheck'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        # PNC is provided in hospital for newborns delivered in hospital
+        if nci[person_id]['delivery_setting'] == 'hospital':
+            fl = self.module.rng.choice(['1b', '2'])
+        else:
+            fl = '1a'
+
+        self.ACCEPTED_FACILITY_LEVEL = fl
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
@@ -1496,19 +1510,8 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
             nci[person_id]['third_delay'] = True
 
-        # todo: this is only ever happening at level 1a...
-
-        # This HSI contains the interventions delivered as part of a full postnatal check of the newborn after birth -
-        # this include newborns who delivered at home or in facility
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            facility_type_code = 'hc'
-        elif nci[person_id]['delivery_setting'] == 'hospital':
-            facility_type_code = 'hp'
-        elif nci[person_id]['delivery_setting'] == 'home_birth':
-            facility_type_code = self.module.rng.choice(['hc', 'hp'])
-
         # First the newborn is assessed for sepsis and treated if needed
-        self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
+        self.module.assessment_and_treatment_newborn_sepsis(self, self.ACCEPTED_FACILITY_LEVEL)
 
         # Next, interventions pertaining to essential newborn care
         if df.at[person_id, 'nb_pnc_check'] == 1:

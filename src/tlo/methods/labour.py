@@ -2917,6 +2917,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'twins'
 
+            if df.at[person_id, 'la_previous_cs_delivery']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'previous_scar'
+
             elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'other'
@@ -2972,10 +2976,19 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
         self.TREATMENT_ID = 'Labour_ReceivesPostnatalCheck'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        # Early PNC delivered to mothers in hospital if they gave birth in hospital
+        if (mni[person_id]['will_receive_pnc'] == 'early') and (mni[person_id]['delivery_setting'] == 'hospital'):
+            fl = self.module.rng.choice(['1b', '2'])
+        else:
+            fl = '1a'
+
+        self.ACCEPTED_FACILITY_LEVEL = fl
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):

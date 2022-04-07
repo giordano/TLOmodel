@@ -1021,7 +1021,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         causes = dict()
 
         for indication in ['twins', 'an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other',
-                           'none']:
+                           'previous_scar']:
             if indication in cs_results.loc[year].index:
                 mean = cs_results.loc[year, indication].mean()
                 yearly_mean_number.append(mean)
