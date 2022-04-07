@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_baseline_scenario.py",
-  "scenario_seed": 2303,
+  "scenario_seed": 144,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 2105855570,
+      "draw_seed": 400909671,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.9
@@ -14,7 +14,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 967617541,
+      "draw_seed": 1650886076,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.8
@@ -23,7 +23,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 891048776,
+      "draw_seed": 1679087482,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.7
