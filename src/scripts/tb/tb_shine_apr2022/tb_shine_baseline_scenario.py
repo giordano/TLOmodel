@@ -24,9 +24,9 @@ class TestTbShineBaselineScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
-        self.pop_size = 250_000
-        self.number_of_draws = 1
+        self.end_date = Date(2030, 1, 1)
+        self.pop_size = 175_000
+        self.number_of_draws = 3
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -67,7 +67,8 @@ class TestTbShineBaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Tb': {'scenario': 0}
+            'Tb': {'adjusted_active_testing_rate': [0.9, 0.8, 0.7][draw_number]}
+
         }
 
 
