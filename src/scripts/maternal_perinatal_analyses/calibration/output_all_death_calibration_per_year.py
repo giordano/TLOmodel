@@ -90,8 +90,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
     total_births_per_year = birth_data[0]
-    total_births_per_year_ex2010 = analysis_utility_functions.get_mean_and_quants(births_results_exc_2010, sim_years)[0]
-
+    total_births_per_year_ex2010_data = analysis_utility_functions.get_mean_and_quants(births_results_exc_2010,
+                                                                                       sim_years)
+    total_births_per_year_ex2010 = total_births_per_year_ex2010_data[0]
     # =========================================  Direct maternal causes of death... ===================================
     direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                      'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
@@ -612,9 +613,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
     t_nm = analysis_utility_functions.get_mean_and_quants(total_neonatal_deaths, sim_years)
-    tnmr = [x / y * 1000 for x, y in zip(t_nm[0], birth_data[0])]
-    tnmr_lq = [x / y * 1000 for x, y in zip(t_nm[1], birth_data[1])]
-    tnmr_uq = [x / y * 1000 for x, y in zip(t_nm[2], birth_data[2])]
+    tnmr = [x / y * 1000 for x, y in zip(t_nm[0], total_births_per_year_ex2010_data[0])]
+    tnmr_lq = [x / y * 1000 for x, y in zip(t_nm[1], total_births_per_year_ex2010_data[1])]
+    tnmr_uq = [x / y * 1000 for x, y in zip(t_nm[2], total_births_per_year_ex2010_data[2])]
 
     indirect_neonatal_deaths = extract_results(
         results_folder,
@@ -626,9 +627,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
     i_nm = analysis_utility_functions.get_mean_and_quants(indirect_neonatal_deaths, sim_years)
-    i_nmr = [x / y * 1000 for x, y in zip(i_nm[0], birth_data[0])]
-    i_tnmr_lq = [x / y * 1000 for x, y in zip(i_nm[1], birth_data[1])]
-    i_tnmr_uq = [x / y * 1000 for x, y in zip(i_nm[2], birth_data[2])]
+    i_nmr = [x / y * 1000 for x, y in zip(i_nm[0], total_births_per_year_ex2010_data[0])]
+    i_tnmr_lq = [x / y * 1000 for x, y in zip(i_nm[1], total_births_per_year_ex2010_data[1])]
+    i_tnmr_uq = [x / y * 1000 for x, y in zip(i_nm[2], total_births_per_year_ex2010_data[2])]
 
     def get_nmr_graphs(data, colours, title, save_name):
         fig, ax = plt.subplots()
