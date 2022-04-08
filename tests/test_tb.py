@@ -48,7 +48,7 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
 
     # Register the appropriate modules
     if use_simplified_birth:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=16),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
