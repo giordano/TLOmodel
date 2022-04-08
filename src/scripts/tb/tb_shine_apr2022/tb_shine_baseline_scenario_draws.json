@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_baseline_scenario.py",
-  "scenario_seed": 144,
+  "scenario_seed": 1509,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 400909671,
+      "draw_seed": 186443588,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.9
@@ -14,7 +14,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 1650886076,
+      "draw_seed": 1065288734,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.8
@@ -23,12 +23,14 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 1679087482,
+      "draw_seed": 13343154,
       "parameters": {
         "Tb": {
           "adjusted_active_testing_rate": 0.7
         }
       }
     }
-  ]
+  ],
+  "commit": "05c7688eafc21e3a2fc125702787505a7048981d",
+  "github": "https://github.com/UCL/TLOmodel/blob/05c7688eafc21e3a2fc125702787505a7048981d/src/scripts/tb/tb_shine_apr2022/tb_shine_baseline_scenario.py"
 }

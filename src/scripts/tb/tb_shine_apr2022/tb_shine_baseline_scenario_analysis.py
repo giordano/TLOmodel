@@ -3,6 +3,7 @@ from pathlib import Path
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 from tlo.analysis.utils import (
     extract_results,
@@ -105,9 +106,9 @@ new_active_tb_children.index = new_active_tb_children.index.year
 
 make_plot(
     title_str="Number of New Active TB Infections (0-16 years)",
-    model=new_active_tb_children["mean"],
-    model_low=new_active_tb_children["lower"],
-    model_high=new_active_tb_children["upper"],
+    model=new_active_tb_children[0]["mean"],
+    #model_low=new_active_tb_children[0]["lower"],
+    #model_high=new_active_tb_children[0]["upper"],
     data_name="WHO Estimates",
     data_mid=data_who_tb_2020['estimated_inc_number_children'],
     data_low=data_who_tb_2020['estimated_inc_number_children_low'],
@@ -116,6 +117,17 @@ make_plot(
     ylab="Number of New Active TB Infections",
 )
 
+plt.plot(new_active_tb_children[1]["mean"], 'c')
+plt.plot(new_active_tb_children[2]["mean"], 'm')
+blue_line = mlines.Line2D([], [], color='b',
+                          markersize=15, label='WHO Estimates')
+red_line = mlines.Line2D([], [], color='r',
+                         markersize=15, label='TLO: 90%')
+cyan_line = mlines.Line2D([], [], color='c',
+                          markersize=15, label='TLO: 80%')
+magenta_line = mlines.Line2D([], [], color='m',
+                          markersize=15, label='TLO: 70%')
+plt.legend(handles=[blue_line, red_line, cyan_line, magenta_line])
 plt.show()
 
 # (2) Number of Diagnosed TB Cases
@@ -136,17 +148,30 @@ new_diagnosed_tb_children.index = new_diagnosed_tb_children.index.year
 
 make_plot(
     title_str="Number of Diagnosed TB Cases (0-16 years)",
-    model=new_diagnosed_tb_children["mean"],
-    model_low=new_diagnosed_tb_children["lower"],
-    model_high=new_diagnosed_tb_children["upper"],
+    model=new_diagnosed_tb_children[0]["mean"],
+    #model_low=new_diagnosed_tb_children[0]["lower"],
+    #model_high=new_diagnosed_tb_children[0]["upper"],
     data_name="WHO Estimates",
     data_mid=data_who_tb_2020['new_cases_014'],
     xlab="Year",
     ylab="Number of Diagnosed TB Cases",
 )
 
-#plt.plot(new_diagnosed_tb_children.index[6], data_NTP_2019.loc[
-#    data_NTP_2019.index == "total_case_notification_children"].values[6], 'gx')
+plt.plot(data_NTP_2019['total_case_notification_children'], 'gx')
+plt.plot(new_diagnosed_tb_children[1]["mean"], 'c')
+plt.plot(new_diagnosed_tb_children[2]["mean"], 'm')
+blue_line = mlines.Line2D([], [], color='b',
+                          markersize=15, label='WHO Estimates')
+green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
+                          markersize=7, label='NTP Estimates')
+red_line = mlines.Line2D([], [], color='r',
+                         markersize=15, label='TLO: 90%')
+cyan_line = mlines.Line2D([], [], color='c',
+                         markersize=15, label='TLO: 80%')
+magenta_line = mlines.Line2D([], [], color='m',
+                         markersize=15, label='TLO: 70%')
+
+plt.legend(handles=[blue_line, green_cross, red_line, cyan_line, magenta_line])
 plt.show()
 
 # (3) Number of Treated TB Cases
@@ -167,15 +192,53 @@ new_treated_tb_children.index = new_treated_tb_children.index.year
 
 make_plot(
     title_str="Number of Treated TB Cases (0-16 years)",
-    model=new_treated_tb_children["mean"],
-    model_low=new_treated_tb_children["lower"],
-    model_high=new_treated_tb_children["upper"],
-    #data_name="WHO Estimates",
-    #data_mid=data_who_tb_2020['estimated_inc_number_children'],
-    #data_low=data_who_tb_2020['estimated_inc_number_children_low'],
-    #data_high=data_who_tb_2020['estimated_inc_number_children_high'],
+    model=new_treated_tb_children[0]["mean"],
+    #model_low=new_treated_tb_children[0]["lower"],
+    #model_high=new_treated_tb_children[0]["upper"],
     xlab="Year",
     ylab="Number of Treated TB Cases",
 )
 
+plt.plot(new_treated_tb_children[1]["mean"], 'c')
+plt.plot(new_treated_tb_children[2]["mean"], 'm')
+red_line = mlines.Line2D([], [], color='r',
+                         markersize=15, label='TLO: 90%')
+cyan_line = mlines.Line2D([], [], color='c',
+                         markersize=15, label='TLO: 80%')
+magenta_line = mlines.Line2D([], [], color='m',
+                         markersize=15, label='TLO: 70%')
+
+plt.legend(handles=[red_line, cyan_line, magenta_line])
+plt.show()
+
+
+# (4) Proportion of Treated TB Cases
+
+treatment_coverage = (new_treated_tb_children / new_diagnosed_tb_children) * 100
+
+who_estimated_treated_cases = (data_who_tb_2020["new_cases_014"] * (data_who_tb_2020["TB_program_tx_coverage"]/100))
+
+make_plot(
+    title_str="Treatment Coverage (0-16 years)",
+    model=treatment_coverage[0]["mean"],
+    #model_low=treatment_coverage[2]["lower"],
+    #model_high=treatment_coverage[2]["upper"],
+    data_name="NTP",
+    data_mid=data_NTP_2019["treatment_coverage"],
+    xlab="Year",
+    ylab="Treatment Coverage (%)",
+)
+
+plt.plot(treatment_coverage[1]["mean"], 'c')
+plt.plot(treatment_coverage[2]["mean"], 'm')
+blue_line = mlines.Line2D([], [], color='b',
+                          markersize=15, label='NTP Estimates')
+red_line = mlines.Line2D([], [], color='r',
+                         markersize=15, label='TLO: 90%')
+cyan_line = mlines.Line2D([], [], color='c',
+                         markersize=15, label='TLO: 80%')
+magenta_line = mlines.Line2D([], [], color='m',
+                         markersize=15, label='TLO: 70%')
+
+plt.legend(handles=[blue_line, red_line, cyan_line, magenta_line])
 plt.show()
