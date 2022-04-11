@@ -18,19 +18,19 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class TestScenario(BaseScenario):
+class SBAPerfectBEMONCAndCEMONC(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 333
+        self.seed = 123
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
-        self.pop_size = 1000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 50000
         self.number_of_draws = 1
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_20k', 'directory': './outputs',
+            'filename': 'perfect_bemonc_and_cemonc_sba_50k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
