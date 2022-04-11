@@ -838,7 +838,7 @@ class Labour(Module):
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule analysis event
-        sim.schedule_event(LabourAnalysisEvent(self), Date(2010, 12, 30))
+        sim.schedule_event(LabourAnalysisEvent(self), Date(2021, 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
