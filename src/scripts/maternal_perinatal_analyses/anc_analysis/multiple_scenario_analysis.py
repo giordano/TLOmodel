@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from matplotlib import pyplot as plt
+plt.style.use('seaborn-darkgrid')
 
 from tlo.analysis.utils import (
     extract_results,
@@ -10,39 +11,32 @@ from tlo.analysis.utils import (
 )
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
-
-def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filename, outputspath,
-                         show_and_store_graphs, intervention_years,  anc_scenario,
-                         do_cons_calculation):
+def run_multiple_scenario_analysis(scenario_file_dict, outputspath, show_and_store_graphs, intervention_years,
+                                   anc_scenario, do_cons_calculation):
     """
-    This function outputs the primary outcomes for analysis relating to coverage of antenatal care. This includes
-    outputting plots comparing two scenarios for the following outcomes; MMR, NMR, SBR, DALYs, HCW cost,
-    HCW capaniltiies, Consumable cost and Incremental cost effectiveness analysis. Function is called by
-    run_analysis_scripts.py
-    :param baseline_scenario_filename:
-    :param intervention_scenario_filename:
-    :param outputspath:
-    :param plot_destination_folder:
-    :param intervention_years:
-    :param anc_scenario:
-    :param do_cons_calculation:
 
-    :return:
     """
     # Find results folder (most recent run generated using that scenario_filename)
-    baseline_results_folder = get_scenario_outputs(baseline_scenario_filename, outputspath)[-1]
-    intervention_results_folder = get_scenario_outputs(intervention_scenario_filename, outputspath)[-1]
+
+    results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
     # Determine number of draw in this run (used in determining some output)
-    run_path = os.listdir(f'{outputspath}/{baseline_results_folder.name}/0')
+    run_path = os.listdir(f'{outputspath}/{results_folders["Status Quo"].name}/0')
+    # todo: fix so doesnt rely on preset name
     runs = [int(item) for item in run_path]
 
     # Create folder to store graphs (if it hasnt already been created when ran previously)
-    path = f'{outputspath}/analysis_output_graphs_{intervention_results_folder.name}'
+    path = f'{outputspath}/analysis_output_graphs_{results_folders["Status Quo"].name}'
     if not os.path.isdir(path):
-        os.makedirs(f'{outputspath}/analysis_output_graphs_{intervention_results_folder.name}')
+        os.makedirs(f'{outputspath}/analysis_output_graphs_{results_folders["Status Quo"].name}')
 
     plot_destination_folder = path
+
+    # GET SCALING FACTORS FOR SCENARIOS
+    scaling_factors = {k: load_pickled_dataframes(results_folders[k], 0, 0, 'tlo.methods.demography'
+                            )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+                       for k in results_folders}
+    # todo: what leads to variation between scaling factors/runs/draws
 
     # ========================================= BIRTHs PER SCENARIO ==================================================
     # First we extract the total births during each scenario and process this dataframe to provide the mean and lower/
@@ -66,10 +60,8 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
         return total_births_per_year
 
     # Store data for later access
-    baseline_births = get_total_births_per_year(baseline_results_folder)
-    intervention_births = get_total_births_per_year(intervention_results_folder)
 
-    # TODO: subtract intrapartum stillbirths (check being logged as births)
+    births_dict = {k: get_total_births_per_year(results_folders[k]) for k in results_folders}
 
     # ===============================================CHECK INTERVENTION ===============================================
     # Next we extract data relating to ANC coverage from the log and plot coverage of the intervention in both scenarios
@@ -130,15 +122,13 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
         return[yearly_anc_rates, anc_lqs, anc_uqs]
 
     # Extract data for each scenario
-    baseline_anc_target_coverage = get_anc_coverage(baseline_results_folder)
-    intervention_anc_target_coverage = get_anc_coverage(intervention_results_folder)
+    anc_dict = {k: get_anc_coverage(results_folders[k]) for k in results_folders}
 
     # generate plots showing coverage of ANC intervention in the baseline and intervention scenarios
     if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_anc_target_coverage, intervention_anc_target_coverage,
-            f'Coverage of ANC{anc_scenario}',
-            f'ANC{anc_scenario} coverage in baseline and intervention scenarios from 2020',
+        analysis_utility_functions.comparison_graph_multiple_scenarios(
+            intervention_years, anc_dict, f'Coverage of ANC{anc_scenario}+',
+            f'Yearly coverage of ANC{anc_scenario}+ across all evaluated scenrios',
             plot_destination_folder, f'anc{anc_scenario}_intervention_coverage')
 
     #  ================================== MATERNAL AND NEONATAL DEATH ===============================================
@@ -215,61 +205,37 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
         return {'direct_mmr': mmr,
                 'total_mmr': total_mmr,
                 'nmr': nmr,
-                'crude_m_deaths': crude_m_deaths,
+                'crude_m_deaths': crude_m_deaths, # TODO: THIS EXLUDES INDIRECT CRUDE DEATHS....
                 'crude_n_deaths': crude_n_deaths}
 
-    def get_crude_death_graphs_graphs(b_deaths, i_deaths, group):
-        """
-        Generates bar chart with confidence intervals used to output crude number of deaths (maternal/neonatal) per year
-         per scenario
-        :param b_deaths: baseline death data
-        :param i_deaths: intervention death data
-        :param group: str. maternal or neonatal
-        """
-        b_deaths_ci = [(x - y) / 2 for x, y in zip(b_deaths[2], b_deaths[1])]
-        i_deaths_ci = [(x - y) / 2 for x, y in zip(i_deaths[2], i_deaths[1])]
-
-        N = len(b_deaths[0])
-        ind = np.arange(N)
-        width = 0.35
-        plt.bar(ind, b_deaths[0], width, label='Baseline', yerr=b_deaths_ci, color='teal')
-        plt.bar(ind + width, i_deaths[0], width, label='Intervention', yerr=i_deaths_ci, color='olivedrab')
-        plt.ylabel(f'Total {group} Deaths (scaled)')
-        plt.title(f'Yearly Baseline {group} Deaths Compared to Intervention')
-        plt.xticks(ind + width / 2, intervention_years)
-        plt.legend(loc='best')
-        plt.savefig(f'{plot_destination_folder}/{group}_crude_deaths_comparison.png')
-        plt.show()
-
     # Extract data from scenarios
-    baseline_death_data = get_yearly_death_data(baseline_results_folder, baseline_births)
-    intervention_death_data = get_yearly_death_data(intervention_results_folder, intervention_births)
+    death_data = {k: get_yearly_death_data(results_folders[k], births_dict[k]) for k in results_folders}
 
     if show_and_store_graphs:
         # Generate plots of yearly MMR and NMR
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_death_data['direct_mmr'], intervention_death_data['direct_mmr'],
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, death_data, 'direct_mmr',
             'Deaths per 100,000 live births',
-            'MMR per Year at Baseline and Under Intervention (Direct only)',
-            plot_destination_folder, 'maternal_mr_direct')
+            'MMR per Year at Baseline and Under Intervention (Direct only)', plot_destination_folder,
+            'maternal_mr_direct')
 
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_death_data['total_mmr'], intervention_death_data['total_mmr'],
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, death_data, 'total_mmr',
             'Deaths per 100,000 live births',
             'MMR per Year at Baseline and Under Intervention (Total)',
             plot_destination_folder, 'maternal_mr_total')
 
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_death_data['nmr'], intervention_death_data['nmr'],
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, death_data, 'nmr',
             'Total Deaths per 1000 live births',
             'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
             plot_destination_folder, 'neonatal_mr_int')
 
-        # Generate plots for crude deaths
-        get_crude_death_graphs_graphs(baseline_death_data['crude_m_deaths'], intervention_death_data['crude_m_deaths'],
-                                      'Maternal')
-        get_crude_death_graphs_graphs(baseline_death_data['crude_n_deaths'], intervention_death_data['crude_n_deaths'],
-                                      'Neonatal')
+        for group, l in zip(['Maternal', 'Neonatal'], ['m', 'n']):
+            analysis_utility_functions.comparison_bar_chart_multiple_bars(
+                death_data, f'crude_{l}_deaths', intervention_years,
+                f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
+                plot_destination_folder, f'{group}_crude_deaths_comparison.png')
 
     #  ================================== STILLBIRTH  ===============================================
     def get_yearly_sbr_data(folder, births):
@@ -315,34 +281,20 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
                 'crude_sb': crude_sb}
 
     # Get data
-    baseline_sb_data = get_yearly_sbr_data(baseline_results_folder, baseline_births)
-    intervention_sb_data = get_yearly_sbr_data(intervention_results_folder, intervention_births)
+    sbr_data = {k: get_yearly_sbr_data(results_folders[k], births_dict[k]) for k in results_folders}
 
     if show_and_store_graphs:
         # Output SBR per year for scenario vs intervention
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_sb_data['sbr'], intervention_sb_data['sbr'],
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, sbr_data, 'sbr',
             'Stillbirths per 1000 births',
             'Stillbirth Rate per Year at Baseline and Under Intervention',
             plot_destination_folder, 'sbr_int')
 
-        # Create values for yerr to display on bars
-        b_sb_ci = [(x - y) / 2 for x, y in zip(baseline_sb_data['crude_sb'][2], baseline_sb_data['crude_sb'][1])]
-        i_sb_ci = [(x - y) / 2 for x, y in zip(intervention_sb_data['crude_sb'][2], intervention_sb_data['crude_sb'][1])]
-
-        # output barchart
-        N = len(baseline_sb_data['crude_sb'][0])
-        ind = np.arange(N)
-        width = 0.35
-        plt.bar(ind, baseline_sb_data['crude_sb'][0], width, label='Baseline', yerr=b_sb_ci, color='teal')
-        plt.bar(ind + width, intervention_sb_data['crude_sb'][0], width, label='Intervention', yerr=i_sb_ci,
-                color='olivedrab')
-        plt.ylabel('Total Stillbirths (scaled)')
-        plt.title('Yearly Baseline Stillbirths Compared to Intervention')
-        plt.xticks(ind + width / 2, intervention_years)
-        plt.legend(loc='best')
-        plt.savefig(f'{plot_destination_folder}/crude_stillbirths_comparison.png')
-        plt.show()
+        analysis_utility_functions.comparison_bar_chart_multiple_bars(
+                sbr_data, 'crude_sb', intervention_years,
+                'Total Stillbirths (scaled)', 'Yearly Baseline Stillbirths Compared to Intervention',
+                plot_destination_folder, 'crude_stillbirths_comparison.png')
 
     # =================================================== DALYS =======================================================
     def get_dalys_from_scenario(results_folder):
@@ -374,37 +326,32 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
 
             return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
-        return [extract_dalys_tlo_model('Maternal'), extract_dalys_tlo_model('Neonatal')]
+        return {'maternal': extract_dalys_tlo_model('Maternal'),
+                'neonatal': extract_dalys_tlo_model('Neonatal')}
 
     # Store DALYs data for baseline and intervention
-    baseline_dalys = get_dalys_from_scenario(baseline_results_folder)
-    baseline_maternal_dalys = baseline_dalys[0]
-    baseline_neonatal_dalys = baseline_dalys[1]
-
-    intervention_dalys = get_dalys_from_scenario(intervention_results_folder)
-    intervention_maternal_dalys = intervention_dalys[0]
-    intervention_neonatal_dalys = intervention_dalys[1]
+    dalys_data = {k: get_dalys_from_scenario(results_folders[k]) for k in results_folders}
 
     # todo: output DALYS/100 000 population
-
+    # todo: what about DALYs contributed by indirect maternal deaths...
     if show_and_store_graphs:
         # Output graphs
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_maternal_dalys, intervention_maternal_dalys,
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, dalys_data, 'maternal',
             'Disability Adjusted Life Years (stacked)',
             'Total DALYs per Year Attributable to Maternal disorders',
             plot_destination_folder, 'maternal_dalys_stacked')
 
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, baseline_neonatal_dalys, intervention_neonatal_dalys,
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, dalys_data, 'neonatal',
             'Disability Adjusted Life Years (stacked)',
-            'Total DALYs per Year Attributable to Neonatal disorders',
+            'Total DALYs per Year Attributable to Maternal disorders',
             plot_destination_folder, 'neonatal_dalys_stacked')
 
     # =============================================  COSTS/HEALTH SYSTEM ==============================================
     # =============================================  HCW TIME =========================================================
 
-    def get_hcw_time_per_year(results_folder):
+    def get_hcw_time_per_year(results_folder, sf):
         """
         This function simply uses HSI dataframe to determine the amount of time Antenatal Care takes to deliver for
         healthcare workers within a scenario
@@ -429,7 +376,10 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
                 time = time_by_appt.loc[
                     (time_by_appt.Appt_Type_Code == v) & (time_by_appt.Officer_Category == k) &
                     (time_by_appt.Facility_Level == '1a'), 'Time_Taken_Mins']
-                cadre_time[k][v] += time.values
+                if time.empty:
+                    cadre_time[k][v] += 0.0
+                else:
+                    cadre_time[k][v] += float(time.values)
 
         # Loop over each draw
         for run in runs:
@@ -454,7 +404,7 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
                                   (total_anc_other_visits * (cadre_time['Nursing_and_Midwifery']['ANCSubsequent'] +
                                                              cadre_time['Clinical']['ANCSubsequent']))
 
-                total_time_per_draw_per_year.loc[year, run] = yearly_hcw_time / 60  # returns time in hours
+                total_time_per_draw_per_year.loc[year, run] = (yearly_hcw_time / 60) * sf  # returns time in hours
 
         # TODO: not sure on the maths here (percentiles vs quantiles)
         mean_time = [total_time_per_draw_per_year.loc[year].to_numpy().mean() for year in intervention_years]
@@ -464,23 +414,52 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
         return [mean_time, lq_time, uq_time]
 
     # Get the data
-    b_hcw_time = get_hcw_time_per_year(baseline_results_folder)
-    i_hcw_time = get_hcw_time_per_year(intervention_results_folder)
+    hcw_data = {k: get_hcw_time_per_year(results_folders[k], scaling_factors[k]) for k in results_folders}
 
     # Output data
     if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, b_hcw_time, i_hcw_time,
-            'Total Time (hours)', 'Total Nurse/Midwife Time Spent Delivering Antenatal Care Per Year (unscaled)',
+        analysis_utility_functions.comparison_graph_multiple_scenarios(
+            intervention_years, hcw_data, 'Total Time (hours)',
+            'Total Healthcare Worker Time Requested to Deliver ANC Per Year (Scaled)',
             plot_destination_folder, 'hcw_time')
 
     # =============================================  HCW COSTS =======================================================
-    # todo: use time (generated above) and salary of health care workers to determine salaried time-cost associated with
-    #  each scenario
-    # todo: worth considering costs associated with training (if known)
-    # todo: plot...
+    # todo: hrly rate? ((pa salary/working days) / avg working hrs per day)
 
-    # ==========================================  HCW CAPABILITY ===================================================
+    nurs_officer_salary_pa = 2978332
+    assumed_working_days_in_a_year = 247  # todo: should this vary by year?
+    nurse_hrly_rate = ((nurs_officer_salary_pa / assumed_working_days_in_a_year) / 7.5) * 0.0014
+    # (working hrs in 5day working week)
+
+    pay_list = [nurse_hrly_rate for years in intervention_years]
+
+    # todo: this only makes sense because their salry is the same, if theres a difference you need to calculat the
+    #  cost associated to different cadres
+    hcw_cost = dict()
+    for k in hcw_data:
+        hcw_cost.update({k: {'cost': [[x * y for x, y in zip(hcw_data[k][0], pay_list)],
+                                      [x * y for x, y in zip(hcw_data[k][1], pay_list)],
+                                      [x * y for x, y in zip(hcw_data[k][2], pay_list)]]}})
+
+    analysis_utility_functions.comparison_bar_chart_multiple_bars(
+        hcw_cost, 'cost', intervention_years,
+        'Cost USD', 'Yearly Cost of Requested HCW time to deliver ANC per Scenario',
+        plot_destination_folder, 'hcw_time_cost.png')
+
+    pd_dict = {k: {'pd': [[((x - y) / y) * 100 for x, y in zip(hcw_cost[k]['cost'][0],
+                                                               hcw_cost['Status Quo']['cost'][0])],
+                          [((x - y) / y) * 100 for x, y in zip(hcw_cost[k]['cost'][1],
+                                                               hcw_cost['Status Quo']['cost'][1])],
+                          [((x - y) / y) * 100 for x, y in zip(hcw_cost[k]['cost'][2],
+                                                               hcw_cost['Status Quo']['cost'][2])]]}
+                   for k in ['Intervention 1', 'Intervention 2', 'Intervention 3']}
+
+    analysis_utility_functions.comparison_bar_chart_multiple_bars(
+        pd_dict, 'pd', intervention_years,
+        'Percentage Difference', 'Percentage Difference in Cost for Requested HCW time to delivery ANC',
+        plot_destination_folder, 'hcw_time_cost_pd.png')
+
+    # ========================================== SQUEEZE =============================================================
     def get_squeeze_data(folder):
         hsi = extract_results(
             folder,
@@ -535,29 +514,31 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
                 'median': median,
                 'proportion': [prop_squeeze_year, prop_squeeze_lq, prop_squeeze_uq]}
 
-    b_squeeze = get_squeeze_data(baseline_results_folder)
-    i_squeeze = get_squeeze_data(intervention_results_folder)
-
+    squeeze_data = {k: get_squeeze_data(results_folders[k]) for k in results_folders}
     # Output data
     if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, b_squeeze['mean'], i_squeeze['mean'],
-            'Squeeze Factor', 'Mean Squeeze Factor Associated with Antenatal Care per Year',
-            plot_destination_folder, 'squeeze')
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, squeeze_data, 'mean',
+            'Squeeze Factor',
+            'Mean Squeeze Factor Associated with Antenatal Care per Year',
+            plot_destination_folder, 'squeeze_mean')
 
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, b_squeeze['proportion'], i_squeeze['proportion'],
-            'Proportion of ANC visits', 'Yearly % of ANC visits in which squeeze exceeds 0.0',
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, squeeze_data, 'proportion',
+            'Proportion of ANC visits',
+            'Yearly % of ANC visits in which squeeze exceeds 0.0',
             plot_destination_folder, 'squeeze_prop')
 
-        analysis_utility_functions.basic_comparison_graph(
-            intervention_years, b_squeeze['median'], i_squeeze['median'], 'Median Squeeze Factor',
-            'Yearly Median Squeeze Factor across ANC visits', plot_destination_folder, 'squeeze_med')
+        #analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        #    intervention_years, squeeze_data, 'median',
+        #    'Median Squeeze Factor',
+        #    'Yearly Median Squeeze Factor across ANC visits',
+        #    plot_destination_folder, 'squeeze_med')
 
     # =================================================== CONSUMABLE COST =============================================
     if do_cons_calculation:  # only output if specified due to very long run tine
         resourcefilepath = Path("./resources/healthsystem/consumables/")
-        consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
+        consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables_Items_and_Packages.csv')
 
         # TODO: this should be scaled to the correct population size?
         # todo: also so slow...
@@ -575,30 +556,30 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
                 anc_cons = cons.loc[(cons.TREATMENT_ID.str.contains('AntenatalCare')) &
                                     (cons.year >= intervention_years[0])]
 
-                anc_cons_eval = anc_cons['Item_Available'].apply(lambda x: eval(x))
+                # anc_cons_eval = anc_cons['Item_Available'].apply(lambda x: eval(x))
                 cons_df_for_this_draw = pd.DataFrame(index=[intervention_years])
 
                 # Loop over each year
                 for year in intervention_years:
                     # Select the year of interest
                     year_df = anc_cons.loc[anc_cons.year == year]
-                   # anc_cons_eval.apply(
-                    #    lambda x: ((cons_df_for_this_draw[k] = v) for k, v in x if k not in
-                     #              cons_df_for_this_draw.columns))
 
                     # For each row (hsi) in that year we unpack the dictionary
                     for row in year_df.index:
-                        for k, v in year_df.at[row, 'Item_Available']:
+                        cons_dict = eval(year_df.at[row, 'Item_Available'])
+                        for k in cons_dict:
                             if k in cons_df_for_this_draw.columns:
-                                cons_df_for_this_draw.at[year, k] += v
+                                cons_df_for_this_draw.at[year, k] += cons_dict[k]
                             elif k not in cons_df_for_this_draw.columns:
-                                cons_df_for_this_draw[k] = v
+                                cons_df_for_this_draw[k] = 0
+                                cons_df_for_this_draw.at[year, k] += cons_dict[k]
+                                # todo error: adds value  to entire column (all years)
 
                 for row in cons_df_for_this_draw.index:
                     for column in cons_df_for_this_draw.columns:
                         cons_df_for_this_draw.at[row, column] =\
                             (cons_df_for_this_draw.at[row, column] *
-                             (consumables_df[consumables_df.Item_Code == 0]['Unit_Cost'].iloc[0]))
+                             (consumables_df[consumables_df.Item_Code == column]['Unit_Cost'].iloc[0]))
                         cons_df_for_this_draw.at[row, column] = cons_df_for_this_draw.at[row, column] * 0.0014
                         # todo: this is usd conversion
                         # todo: account for inflation, and use 2010 rate
@@ -617,28 +598,27 @@ def run_primary_analysis(baseline_scenario_filename, intervention_scenario_filen
 
             return [mean_cost, lq_cost, uq_cost]
 
-        baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
-        intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
+        cost_data = {k: get_cons_cost_per_year(results_folders[k]) for k in results_folders}
 
         if show_and_store_graphs:
-            analysis_utility_functions.basic_comparison_graph(
-                intervention_years, baseline_cost_data, intervention_cost_data,
-                'Total Cost (USD)', 'Total Consumable Cost Attributable To ANC Per Year (in USD) (unscaled)',
+            analysis_utility_functions.comparison_graph_multiple_scenarios(
+                intervention_years, cost_data, 'Total Cost (USD)',
+                'Total Consumable Cost Attributable To ANC Per Year (in USD) (unscaled)',
                 plot_destination_folder, 'cost')
 
         # ======================================== COST EFFECTIVENESS RATIO ===========================================
         # Cost (i) - Cost(b) / DALYs (i) - DALYs (b)
         # todo include healthcare worker cost
 
-        cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
-        daly_difference = [(x - y) for x, y in zip(baseline_maternal_dalys[0], intervention_maternal_dalys[0])]
-        ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
+        #cost_difference = [(x - y) for x, y in zip(intervention_cost_data[0], baseline_cost_data[0])]
+        #daly_difference = [(x - y) for x, y in zip(baseline_maternal_dalys[0], intervention_maternal_dalys[0])]
+        #ICR = [(x / y) for x, y in zip(cost_difference, daly_difference)]
 
-        fig, ax = plt.subplots()
-        ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
-        plt.xlabel('Year')
-        plt.ylabel("ICR")
-        plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
-        plt.legend()
-        plt.savefig(f'{plot_destination_folder}/icr_maternal.png')
-        plt.show()
+        #fig, ax = plt.subplots()
+        #ax.plot(intervention_years, ICR, label="Baseline (mean)", color='deepskyblue')
+        #plt.xlabel('Year')
+        #plt.ylabel("ICR")
+        #plt.title('Incremental Cost Effectiveness Ratio (maternal) (unscaled)')
+        #plt.legend()
+        #plt.savefig(f'{plot_destination_folder}/icr_maternal.png')
+        #plt.show()

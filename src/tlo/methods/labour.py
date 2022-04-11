@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -533,6 +533,13 @@ class Labour(Module):
         'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
             Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
+
+        # DUMMYS
+        'activate_perfect_bemonc': Parameter(
+            Types.BOOL, ''),
+        'activate_perfect_cemonc': Parameter(
+            Types.BOOL, ''),
+
     }
 
     PROPERTIES = {
@@ -587,10 +594,14 @@ class Labour(Module):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+        # pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
         params = self.current_parameters
 
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
@@ -825,6 +836,9 @@ class Labour(Module):
 
         # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
+
+        # Schedule analysis event
+        sim.schedule_event(LabourAnalysisEvent(self), Date(2010, 12, 30))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -3196,6 +3210,57 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def not_available(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+
+
+class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
+    """
+    """
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        params = self.module.current_parameters
+
+        def set_availability_of_cons(pkg_names, newborns):
+            ic_avail = {}
+            for cons in pkg_names:
+                for i in self.sim.modules['Labour'].item_codes_lab_consumables[cons]:
+                    ic_avail.update({i: 1.0})
+
+            if newborns:
+                for cons in ['resuscitation', 'sepsis_supportive_care_core', 'sepsis_abx']:
+                    for i in self.sim.modules['NewbornOutcomes'].item_codes_nb_consumables[cons]:
+                        ic_avail.update({i: 1.0})
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(ic_avail)
+
+        if params['activate_perfect_bemonc']:
+            logger.info(key='analysis', data='activate_perfect_bemonc param correctly switched')
+            for parameter in ['mean_hcw_competence_hc',
+                              'mean_hcw_competence_hp',
+                              'prob_hcw_avail_iv_abx',
+                              'prob_hcw_avail_uterotonic',
+                              'prob_hcw_avail_man_r_placenta',
+                              'prob_hcw_avail_avd'
+                              'prob_hcw_avail_neo_resus',
+                              'prob_hcw_avail_retained_prod']:
+                params[parameter] = 1.0
+
+            # todo: neonates
+            set_availability_of_cons(
+                ['delivery_core', 'abx_for_prom', 'iv_antihypertensives', 'oral_antihypertensives',
+                 'magnesium_sulfate', 'vacuum', 'maternal_sepsis_core', 'amtsl', 'pph_core'], newborns=True)
+
+        if params['activate_perfect_cemonc']:
+            logger.info(key='analysis', data='activate_perfect_cemonc param correctly switched')
+            for parameter in ['mean_hcw_competence_hc',
+                              'mean_hcw_competence_hp',
+                              'prob_hcw_avail_blood_tran',
+                              'prob_hcw_avail_surg']:
+                params[parameter] = 1.0
+
+            set_availability_of_cons(['caesarean_delivery_core', 'obstetric_surgery_core', 'blood_transfusion'],
+                                     newborns=False)
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

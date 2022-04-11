@@ -1,10 +1,10 @@
-
+from matplotlib import pyplot as plt
 import numpy as np
 from tlo.analysis.utils import extract_results
-from matplotlib import pyplot as plt
-plt.style.use('seaborn')
+plt.style.use('seaborn-darkgrid')
 
-# ==================================================== UTILITY CODE ===================================================
+
+# =========================================== FUNCTIONS TO EXTRACT RATES  ============================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
     yearly_mean_number = list()
     yearly_lq = list()
@@ -53,7 +53,6 @@ def get_mean_and_quants(df, sim_years):
 
 
 def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators, rate, dataframes, sim_years):
-
     def get_list_of_rates_and_quants(df):
         rates_per_year = list()
         lq_per_year = list()
@@ -98,84 +97,41 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
 
     return [total_rates, total_lq, total_uq]
 
-
-def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
-                                       graph_location, file_name):
-    fig, ax = plt.subplots()
-    ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
-    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1, label="UI (2.5-92.5)")
-
-    if target_data_dict['double']:
-        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
-                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
-                     fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
-        plt.errorbar(target_data_dict['second']['year'], target_data_dict['second']['value'],
-                     label=target_data_dict['second']['label'], yerr=target_data_dict['second']['ci'],
-                     fmt='o', color='red', ecolor='mistyrose', elinewidth=3, capsize=0)
-
-    elif not target_data_dict['double']:
-        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
-                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
-                     fmt='o', color='red', ecolor='pink', elinewidth=3, capsize=0)
-
-    plt.xlabel('Year')
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.gca().set_ylim(bottom=0)
-    plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
-
-
-def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, graph_location, save_name):
+# =========================================== FUNCTIONS TO PRODUCE PLOTS  ============================================
+def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
     ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
     ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1, label="UI (2.5-92.5)")
     ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
     ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel('Year')
-    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
-    plt.savefig(f'{graph_location}/{save_name}.png')
+    plt.savefig(f'./{graph_location}/{save_name}.png')
     plt.show()
 
 
 def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-    plt.ylabel(y_title)
     plt.xlabel('Year')
+    plt.ylabel(y_title)
     plt.title(title)
-    plt.gca().set_ylim(bottom=0)
     plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
-def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
-    plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
-    plt.ylabel(y_title)
-    plt.xlabel('Year')
-    plt.title(title)
-    plt.gca().set_ylim(bottom=0)
-    plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
-
-
-def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
+def simple_line_chart_with_ci(sim_years, data, y_label, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel(y_title)
+    plt.ylabel(y_label)
     plt.xlabel('Year')
     plt.title(title)
     plt.legend()
-    plt.gca().set_ylim(bottom=0)
-    plt.grid(True)
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -188,46 +144,8 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
-
-
-def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
-    hsi_med = extract_results(
-        folder,
-        module="tlo.methods.healthsystem",
-        key="HSI_Event",
-        custom_generate_series=(
-            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
-                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].median()))
-
-    hsi_mean = extract_results(
-        folder,
-        module="tlo.methods.healthsystem",
-        key="HSI_Event",
-        custom_generate_series=(
-            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
-                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
-
-
-    median = [hsi_med.loc[year].median() for year in sim_years]
-    lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
-    uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
-    data = [median, lq, uq]
-
-    simple_line_chart_with_ci(sim_years, data, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
-                              f'median_sf_{hsi_string}', graph_location)
-
-    mean = [hsi_mean.loc[year].mean() for year in sim_years]
-    lq = [hsi_mean.loc[year].quantile(0.025) for year in sim_years]
-    uq = [hsi_mean.loc[year].quantile(0.925) for year in sim_years]
-    data = [mean, lq, uq]
-
-    simple_line_chart_with_ci(sim_years, data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
-                              f'mean_sf_{hsi_string}', graph_location)
-
-
-
 
 
 def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
@@ -290,3 +208,247 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
                       f'med_sf_{hsi_string}', graph_location)
     simple_line_chart_with_ci(sim_years, prop_data, '% HSIs', f'Proportion of HSI {hsi_string} where squeeze > 0',
                               f'prop_sf_{hsi_string}', graph_location)
+
+
+def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, title, graph_location, save_name):
+    fig, ax = plt.subplots()
+
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+        ax.plot(intervention_years, data_dict[k][0], label=k, color=colour)
+        ax.fill_between(intervention_years, data_dict[k][1], data_dict[k][2], color=colour, alpha=.1)
+
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    #plt.style.use('seaborn-darkgrid')
+    plt.legend()
+    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.show()
+
+
+def comparison_graph_multiple_scenarios_multi_level_dict(
+    # todo combine with above
+    intervention_years, data_dict, key, y_label, title, graph_location, save_name):
+    fig, ax = plt.subplots()
+
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+        ax.plot(intervention_years, data_dict[k][key][0], label=k, color=colour)
+        ax.fill_between(intervention_years, data_dict[k][key][1], data_dict[k][key][2], color=colour, alpha=.1)
+
+    plt.ylabel(y_label)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    #plt.style.use('seaborn-darkgrid')
+    plt.legend()
+    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.show()
+
+
+def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_title, title,
+                                       plot_destination_folder, save_name):
+
+    N = len(intervention_years)  # todo: will crash if change the baseline name
+    ind = np.arange(N)
+    width = 0.2
+
+    for k, position, colour in zip(data, [ind - width, ind, ind + width, ind + width * 2],
+                                   ['bisque', 'powderblue', 'mistyrose', 'thistle']):
+        ci = [(x - y) / 2 for x, y in zip(data[k][dict_name][2], data[k][dict_name][1])]
+        plt.bar(position, data[k][dict_name][0], width, label=k, yerr=ci, color=colour)
+
+    plt.ylabel(y_title)
+    plt.xlabel('Years')
+    plt.title(title)
+    plt.legend(loc='best')
+    plt.xticks([0., 1., 2., 3., 4., 5.], labels=intervention_years)
+    plt.savefig(f'{plot_destination_folder}/{save_name}.png')
+    plt.show()
+
+
+# =========================== FUNCTIONS RETURNING DATA FROM MULTIPLE SCENARIOS =======================================
+def return_birth_data_from_multiple_scenarios(results_folders, intervention_years):
+        """
+        Extract mean, lower and upper quantile births per year for a given scenario
+        :param folder: results folder for scenario
+        :return: list of total births per year of pre defined intervention period (i.e. 2020-2030)
+        """
+
+        def extract_births(folder):
+            births_results = extract_results(
+                folder,
+                module="tlo.methods.demography",
+                key="on_birth",
+                custom_generate_series=(
+                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+                do_scaling=True
+            )
+            total_births_per_year = get_mean_and_quants(births_results, intervention_years)[0]
+            return total_births_per_year
+
+        return {k: extract_births(results_folders[k]) for k in results_folders}
+
+
+def return_death_data_from_multiple_scenarios(results_folders, births_dict, intervention_years):
+    """
+    Extract mean, lower and upper quantile maternal mortality ratio, neonatal mortality ratio, crude maternal
+    deaths and crude neonatal deaths per year for a given scenario
+    :param folder: results folder for scenario
+    :param births: list. mean number of births per year for a scenario (used as a denominator)
+    :return: dict containing mean, LQ, UQ for MMR, NMR, maternal deaths and neonatal deaths
+    """
+
+    def extract_deaths(folder, births):
+        death_results_labels = extract_results(
+            folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
+            do_scaling=True)
+
+        other_preg_deaths = extract_results(
+            folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label', 'pregnancy'])['year'].count()),
+            do_scaling=True
+        )
+
+        # Extract maternal mortality ratio from direct maternal causes
+        mmr = get_comp_mean_and_rate('Maternal Disorders', births, death_results_labels, 100000, intervention_years)
+
+        # Extract crude deaths due to direct maternal disorders
+        crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders', intervention_years)
+
+        # Extract crude deaths due to indirect causes in pregnant women
+        indirect_causes = ['AIDS', 'Malaria', 'TB']
+        indirect_deaths = list()
+        id_lq = list()
+        id_uq = list()
+        indirect_causes = [lambda x: x + other_preg_deaths.loc[year, cause, True].mean() for year in intervention_years]
+
+        for year in intervention_years:
+            id_deaths_per_year = 0
+            id_lq_py = 0
+            id_uq_pu = 0
+            for cause in indirect_causes:
+                if cause in other_preg_deaths.loc[year, :, True].index:
+                    id_deaths_per_year += other_preg_deaths.loc[year, cause, True].mean()
+                    id_lq_py += other_preg_deaths.loc[year, cause, True].quantile(0.025)
+                    id_uq_pu += other_preg_deaths.loc[year, cause, True].quantile(0.925)
+
+            indirect_deaths.append(id_deaths_per_year)
+            id_lq.append(id_deaths_per_year)
+            id_uq.append(id_deaths_per_year)
+
+        # Calculate total MMR (direct + indirect deaths)
+        total_mmr = [[((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths, crude_m_deaths[0], births)],
+                     [((x + y) / z) * 100000 for x, y, z in zip(id_lq, crude_m_deaths[1], births)],
+                     [((x + y) / z) * 100000 for x, y, z in zip(id_uq, crude_m_deaths[2], births)]
+                     ]
+
+        # Extract NMR
+        nmr = get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels,1000, intervention_years)
+
+        # And crude neonatal deaths
+        crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders', intervention_years)
+
+        return {'direct_mmr': mmr,
+                'total_mmr': total_mmr,
+                'nmr': nmr,
+                'crude_m_deaths': crude_m_deaths, # TODO: THIS EXLUDES INDIRECT CRUDE DEATHS....
+                'crude_n_deaths': crude_n_deaths}
+
+    # Extract data from scenarios
+    return {k: extract_deaths(results_folders[k], births_dict[k]) for k in results_folders}
+
+
+def return_stillbirth_data_from_multiple_scenarios(results_folders, births_dict, intervention_years):
+    """
+    Extract antenatal and intrapartum stillbirths from a scenario and return crude numbers and stillbirth rate per
+    year
+    :param folder: results folder for scenario
+    :param births: list. mean number of births per year for a scenario (used as a denominator)
+    """
+
+    # TODO: should we report total SBR even though only ISBR will really have been effected?
+
+    def extract_stillbirths(folder, births):
+        an_stillbirth_results = extract_results(
+            folder,
+            module="tlo.methods.pregnancy_supervisor",
+            key="antenatal_stillbirth",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
+        )
+        ip_stillbirth_results = extract_results(
+            folder,
+            module="tlo.methods.labour",
+            key="intrapartum_stillbirth",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
+        )
+
+        # Get stillbirths
+        an_still_birth_data = get_mean_and_quants(an_stillbirth_results, intervention_years)
+        ip_still_birth_data = get_mean_and_quants(ip_stillbirth_results, intervention_years)
+
+        # Store mean number of stillbirths, LQ, UQ
+        crude_sb = [[x + y for x, y in zip(an_still_birth_data[0], ip_still_birth_data[0])],
+                    [x + y for x, y in zip(an_still_birth_data[1], ip_still_birth_data[1])],
+                    [x + y for x, y in zip(an_still_birth_data[2], ip_still_birth_data[2])]]
+
+        # Then generate SBR
+        total_sbr = [[((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[0], ip_still_birth_data[0], births)],
+                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[1], ip_still_birth_data[1], births)],
+                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[2], ip_still_birth_data[2], births)]]
+
+        # Return as dict for graphs
+        return {'sbr': total_sbr,
+                'crude_sb': crude_sb}
+
+    return {k: extract_stillbirths(results_folders[k], births_dict[k]) for k in results_folders}
+
+
+def return_dalys_from_multiple_scenarios(results_folders, intervention_years):
+
+    def get_dalys_from_scenario(results_folder):
+        """
+        Extracted stacked DALYs from logger for maternal and neonatal disorders
+        :param results_folder: results folder for scenario
+        :return: Maternal and neonatal dalys [Mean, LQ, UQ]
+        """
+        # Get DALY df
+        dalys_stacked = extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys_stacked",
+            custom_generate_series=(
+                lambda df: df.drop(
+                    columns='date').groupby(['year']).sum().stack()),
+            do_scaling=True)
+
+        def extract_dalys_tlo_model(group):
+            """Extract mean, LQ, UQ DALYs for maternal or neonatal disorders"""
+            stacked_dalys = [dalys_stacked.loc[year, f'{group} Disorders'].mean() for year in
+                             intervention_years if year in intervention_years]
+
+            stacked_dalys_lq = [dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025) for year in
+                                intervention_years if year in intervention_years]
+
+            stacked_dalys_uq = [dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.925) for year in
+                                intervention_years if year in intervention_years]
+
+            return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
+
+        return {'maternal': extract_dalys_tlo_model('Maternal'),
+                'neonatal': extract_dalys_tlo_model('Neonatal')}
+
+    # Store DALYs data for baseline and intervention
+    return {k: get_dalys_from_scenario(results_folders[k]) for k in results_folders}
+
