@@ -266,7 +266,7 @@ def run_sba_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
                                                                hcw_cost['Status Quo']['cost'][1])],
                           [((x - y) / y) * 100 for x, y in zip(hcw_cost[k]['cost'][2],
                                                                hcw_cost['Status Quo']['cost'][2])]]}
-                   for k in ['Intervention 1', 'Intervention 2', 'Intervention 3']}
+                   for k in ['Perfect BEmONC', 'Perfect CEmONC', 'Perfect BEmONC+CEmONC']}
 
     analysis_utility_functions.comparison_bar_chart_multiple_bars(
         pd_dict, 'pd', intervention_years,
