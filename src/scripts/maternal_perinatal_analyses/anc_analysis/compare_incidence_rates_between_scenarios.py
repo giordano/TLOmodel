@@ -47,11 +47,12 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
     intervention_results_folder = get_scenario_outputs(intervention_scenario_filename, outputspath)[-1]
 
     # Create folder to store graphs (if it hasnt already been created when ran previously)
-    path_prim = f'{outputspath}/analysis_output_graphs_{intervention_results_folder.name}/comp_rates'
+    main_folder = f'{outputspath}/analysis_comparison_graphs_{baseline_results_folder.name}'
+    path_prim = f'{main_folder}/comparison_with_{intervention_results_folder.name}'
     path_mmr = f'{path_prim}/mmr'
     path_nmr = f'{path_prim}/nmr'
 
-    for path in [path_prim, path_mmr, path_nmr]:
+    for path in [main_folder, path_prim, path_mmr, path_nmr]:
         if not os.path.isdir(path):
             os.makedirs(path)
 

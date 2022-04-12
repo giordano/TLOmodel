@@ -14,6 +14,12 @@ run_sba_scenario_analysis(scenario_file_dict={'Status Quo': 'baseline_sba_scenar
                           intervention_years=list(range(2021, 2030)),
                           do_cons_calculation=False)
 
+#for intervention in ['perfect_bemonc_sba_scenario', 'perfect_cemonc_sba_scenario',
+#                     'perfect_bemonc_cemonc_sba_scenario']:
+
+#    compare_key_rates_between_two_scenarios('baseline_sba_scenario', intervention, './outputs/sejjj49@ucl.ac.uk/',
+#                                            True, list(range(2010, 2030)))
+
 """
 for intervention_file in ['increased_anc_scenario']:
     run_primary_analysis(baseline_scenario_filename='baseline_anc_scenario.py',
