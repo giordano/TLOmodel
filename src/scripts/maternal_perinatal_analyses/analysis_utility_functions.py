@@ -262,7 +262,7 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_ti
     plt.xlabel('Years')
     plt.title(title)
     plt.legend(loc='best')
-    plt.xticks([0., 1., 2., 3., 4., 5.], labels=intervention_years)
+    plt.xticks([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.], labels=intervention_years)  # todo: has the be editied with number of years
     plt.savefig(f'{plot_destination_folder}/{save_name}.png')
     plt.show()
 
