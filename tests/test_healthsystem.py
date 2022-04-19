@@ -19,21 +19,20 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.healthsystem import HSI_Event
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 200
 
+"""
+Test whether the system runs under multiple configurations of the healthsystem. (Running the dummy Mockitits and
+ChronicSyndrome modules is intended to test all aspects of the healthsystem module.)
+"""
 
-# Simply test whether the system runs under multiple configurations of the healthsystem
-# NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
 
 def check_dtypes(simulation):
     # check types of columns
@@ -418,50 +417,6 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     assert not any(sim.population.props['mi_status'] == 'P')
 
 
-# todo - need some better tests for consumables
-@pytest.mark.slow
-def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir, seed):
-    # Events should run and there be no squeeze factors
-    # (Mode 0 -> No Constraints)
-    # Ignoring consumables constraints --> all requests for consumables granted
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
-
-    # Define the service availability
-    service_availability = ['*']
-
-    # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability,
-                                           capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome()
-                 )
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # read the results
-    output = parse_log_file(sim.log_filepath)
-
-    # Do the checks for the consumables: all requests granted and nothing in NotAvailable
-    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
-    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
-
-    # Check that some mockitis cured occured (though health system)
-    assert any(sim.population.props['mi_status'] == 'P')
-
-
 @pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_with_hs_disabled(tmpdir, seed):
@@ -552,7 +507,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
 def test_all_appt_types_can_run(seed):
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
-    # todo - repeat for actual and funded and see if we get the right level of appt_availability
 
     # Create Dummy Module to host the HSI
     class DummyModule(Module):
@@ -652,9 +606,10 @@ def test_all_appt_types_can_run(seed):
     assert 0 == len(error_msg)
 
 
-def test_use_get_consumables(seed):
-    """Test that the helper function 'get_consumables' in the base class of the HSI works as expected."""
-    # todo - check that this is coming out in log correctly
+@pytest.mark.slow
+def test_two_loggers_in_healthsystem(seed, tmpdir):
+    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
+     these are consistent with one another."""
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -667,67 +622,99 @@ def test_use_get_consumables(seed):
             pass
 
         def initialise_simulation(self, sim):
-            pass
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                           topen=self.sim.date,
+                                                           tclose=None,
+                                                           priority=0)
 
     # Create a dummy HSI event:
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-            self.ACCEPTED_FACILITY_LEVEL = '0'
-            self.ALERT_OTHER_DISEASES = []
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
 
         def apply(self, person_id, squeeze_factor):
-            pass
+            # Request a consumable (either 0 or 1)
+            self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
 
-    # Create simulation with the HealthSystem and DummyModule
-    sim = Simulation(start_date=start_date, seed=seed)
+            # Schedule another occurrence of itself tomorrow.
+            sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           tclose=None,
+                                                           priority=0)
+
+    # Set up simulation:
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule(),
-        # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
         check_all_dependencies=False
     )
+    sim.make_initial_population(n=1000)
 
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    # Replace consumables class with version that declares only one consumable, available with probability 0.5
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 
-    # Manually edit availability probabilities to force some items to be (not) available
-    item_code_is_available = [0, 1]
-    item_code_not_available = [2, 3]
-
-    hs = sim.modules['HealthSystem']
-    hs.prob_item_codes_available.loc[item_code_is_available] = 1
-    hs.prob_item_codes_available.loc[item_code_not_available] = 0
-
-    hs.determine_availability_of_consumables_today()
-
-    # Make HSI Event to be the originator of the request for consumables
-    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
-
-    # Test using item_codes in different input format and with different output formats
-    # -- as `int`
-    assert True is hsi_event.get_consumables(item_codes=item_code_is_available[0])
-    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
-
-    # -- as `list`
-    assert True is hsi_event.get_consumables(item_codes=item_code_is_available)
-    assert False is hsi_event.get_consumables(item_codes=item_code_not_available)
-    assert False is hsi_event.get_consumables(item_codes=item_code_is_available + item_code_not_available)
-    assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
-        item_codes=[item_code_is_available[0], item_code_not_available[0]], return_individual_results=True)
-
-    # -- as `dict`
-    assert True is hsi_event.get_consumables(
-        item_codes={i: 10 for i in item_code_is_available}
+    sim.modules['HealthSystem'].consumables = Consumables(
+        data=create_dummy_data_for_cons_availability(
+            intrinsic_availability={0: 0.5, 1: 0.5},
+            months=list(range(1, 13)),
+            facility_ids=list(all_fac_ids)),
+        rng=sim.modules['HealthSystem'].rng,
+        availability='default'
     )
-    assert False is hsi_event.get_consumables(
-        item_codes={i: 10 for i in item_code_not_available}
-    )
-    assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
-        item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10},
-        return_individual_results=True
-    )
+
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
+    log = parse_log_file(sim.log_filepath)
+
+    # Standard log:
+    detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
+    detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
+    detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
+    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'
+            } == set(detailed_hsi_event.columns)
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+            } == set(detailed_capacity.columns)
+    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
+            } == set(detailed_consumables.columns)
+
+    # Summary log:
+    summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+    summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
+    summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
+
+    # Check correspondence between the two logs
+    #  - Counts of TREATMENT_ID (total over entire period of log)
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+
+    #  - Appointments (total over entire period of the log)
+    assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
+        detailed_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict()
+
+    #  - Average fraction of HCW time used (year by year)
+    assert summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year
+                                      )['average_Frac_Time_Used_Overall'].round(4).to_dict() == \
+        detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year
+                                    )['Frac_Time_Used_Overall'].groupby(level=0).mean().round(4).to_dict()
+
+    #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
+    assert summary_consumables['Item_Available'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_Available'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+    assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_NotAvailable'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
