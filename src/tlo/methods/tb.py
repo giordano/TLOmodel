@@ -2866,7 +2866,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_inf == "active") & (df.age_years < 16) & df.is_alive]
         )
         prev_active_child = num_active_child / len(
-            df[(df.age_years < 16) & df.is_alive]
+            df[(df.age_years <= 16) & df.is_alive]
         )
         assert prev_active_child <= 1
 
@@ -2890,7 +2890,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_inf == "latent") & (df.age_years < 16) & df.is_alive]
         )
         prev_latent_child = num_latent_child / len(
-            df[(df.age_years < 16) & df.is_alive]
+            df[(df.age_years <= 16) & df.is_alive]
         )
         assert prev_latent_child <= 1
 
@@ -2952,6 +2952,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
+            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
+        )
+
+        # number diagnoses (new, relapse, reinfection) in last timeperiod for children aged 0-16 years
+        new_tb_diagnosis_child = len(
             df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
@@ -2962,13 +2967,28 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
             ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod
         if new_tb_cases:
             tx_coverage = new_tb_tx / new_tb_cases
+            # assert tx_coverage <= 1
+        else:
+            tx_coverage = 0
+
+        # number of tb cases who became active in last timeperiod and initiated treatment for children aged 0-16 years
+        new_tb_tx_child = len(
+            df[
+                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years <= 16)
+            ]
+        )
+
+        # treatment coverage: if became active and was treated in last timeperiod for children aged 0-16 years
+        if new_tb_cases_child:
+            tx_coverage_child = new_tb_tx_child / new_tb_cases_child
             # assert tx_coverage <= 1
         else:
             tx_coverage = 0
@@ -3040,8 +3060,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="TB treatment coverage",
             data={
                 "tbNewDiagnosis": new_tb_diagnosis,
+                "tbNewDisgnosisChild": new_tb_diagnosis_child,
                 "tbNewTreatment": new_tb_tx,
+                "tbNewTreatmentChild": new_tb_tx_child,
                 "tbTreatmentCoverage": tx_coverage,
+                "tbTreatmentCoverageChild": tx_coverage_child,
                 "tbIptCoverage": ipt_coverage,
                 "tbChildTreatment": new_tb_tx_child,
                 "tbShorterChildTreatment": new_tb_tx_child_shorter,

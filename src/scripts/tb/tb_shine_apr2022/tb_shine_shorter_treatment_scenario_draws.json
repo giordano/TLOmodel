@@ -1,0 +1,25 @@
+{
+  "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py",
+  "scenario_seed": 138,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1070916858,
+      "parameters": {
+        "Tb": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1325326825,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        }
+      }
+    }
+  ]
+}

@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 17500
+popsize = 10000
 
 # set up the log config
 log_config = {
@@ -43,7 +43,7 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
@@ -122,6 +122,7 @@ data_who_tb_2020 = data_who_tb_2020.drop(columns=['year'])
 # ------------------------------------ ANALYSIS PLOTS ---------------------------------- #
 # (1) Number of New Active TB Infections
 sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+healthsystem_summary = output['tlo.methods.healthsystem.summary']
 
 tb_incidence_children = output["tlo.methods.tb"]["tb_incidence"]
 tb_incidence_children = tb_incidence_children.set_index('date')
