@@ -4,7 +4,7 @@ General utility functions for TLO analysis
 import json
 import os
 import pickle
-import gzip
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
@@ -36,29 +36,12 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level: int = logging.INFO):
-    """Parses logged output from a TLO run and returns Pandas dataframes.
-
-    The dictionary returned has the format::
-
-        {
-            <logger 1 name>: {
-                               <log key 1>: <pandas dataframe>,
-                               <log key 2>: <pandas dataframe>,
-                               <log key 3>: <pandas dataframe>
-                             },
-
-            <logger 2 name>: {
-                               <log key 4>: <pandas dataframe>,
-                               <log key 5>: <pandas dataframe>,
-                               <log key 6>: <pandas dataframe>
-                             },
-            ...
-        }
+def parse_log_file(log_filepath):
+    """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
+    these split logfiles.
 
     :param log_filepath: file path to log file
-    :param level: logging level to be parsed for structured logging
-    :return: dictionary of parsed log data
+    :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
@@ -90,46 +73,28 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     for file_handle in module_name_to_filehandle.values():
         file_handle.close()
 
-    # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
-    # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-    all_module_logs = dict()
-    metadata = dict()
-    for file_handle in module_name_to_filehandle.values():
-        print(f'Parsing {file_handle.name}', end='', flush=True)
-        module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
-        print(' - complete.')
-        all_module_logs.update(module_specific_logs)
-        # sometimes there is nothing to be parsed at a given level, so no metadata
-        if 'metadata_' in module_specific_logs:
-            metadata.update(module_specific_logs['_metadata'])
-
-    if len(metadata) > 0:
-        all_module_logs['_metadata'] = metadata
-
-    print('Finished.')
-
-    return all_module_logs
+    # return an object that accepts as an argument a dictionary containing paths to split logfiles
+    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
 
 
 def write_log_to_excel(filename, log_dataframes):
     """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
-    sheets = list()
+    metadata = list()
     sheet_count = 0
-    metadata = log_dataframes['_metadata']
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, dataframe in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
-                sheets.append([module, key, sheet_count, metadata[module][key]['description']])
+                metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
     writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=sheets, columns=['module', 'key', 'sheet', 'description'])
+    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
     index.to_excel(writer, sheet_name='Index')
 
     sheet_count = 0
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, df in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
                 df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
     writer.save()
@@ -218,111 +183,6 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
             output[name] = pickle.load(f)
 
     return output
-
-
-def extract_params_from_json(results_folder: Path, file_name: str, module_name: str, param_name: str):
-    """Utility function to get overridden parameters from scenario runs from the json file
-
-    returns the parameter values that change over the runs as a list
-    """
-
-    with open(str(results_folder) + '/' + file_name[:-3] + '_draws.json', 'r') as myfile:
-        data = myfile.read()
-    params_file = json.loads(data)
-    params_in_draws = []
-    for runs in params_file['draws']:
-        params_in_draws.append(params_file['draws'][runs['draw_number']]['parameters'][module_name][param_name])
-    return params_in_draws
-
-
-def get_failed_batch_run_information(results_folder: Path, file_name: str, draw_number: int, run_number: int):
-    """Utility function to recreate a particular draw from a batch run locally
-
-    You give this function the results folder, file name, and particular draw number and it will return everything
-    needed to recreate the model run locally. Specifically, the seed of the run, the parameters overwritten in a run,
-    the population size of the run and the date the simulation started
-    # todo: try and make this function a one liner:
-        1) Make function call and run simulation
-        2) Get a list of registered modules in simulation and order of module registration as this effects rng
-        3) Get an end date for the simulation
-    # todo: Find a way to make function work without unzipping the stdout.txt.gz file, I tried to do this but had a
-            permission error
-    """
-    # get the location of the failed batch run
-    file_location = str(results_folder) + '\\' + str(draw_number) + '\\' + str(run_number)
-    # get the outputted log of the failed run, note that currently this file will need to be manually extracted prior to
-    # this
-    std_out = file_location + '\\' + 'stdout.txt'
-    # create default value of seed incase actual seed not found
-    seed = - 1
-    # extract demographic information from simulations using extract results function
-    extracted_pop_size = extract_results(results_folder,
-                                         module="tlo.methods.demography",
-                                         key="population",
-                                         column="total",
-                                         index="date")
-    # get the first logged (initial) population size of the first draw, in the first run
-    popsize = int(extracted_pop_size[0][0][0])
-    # from these results get the start date
-    start_date = extracted_pop_size.index[0]
-    # read the text file and search for simulation seed value
-    with open(std_out, 'r') as f:
-        text = f.read()
-        # search for the seed
-        if 'Simulation RNG user entropy = ' in text:
-            # find the index of txt prior to the start of the seed number
-            seed_start_index = text.find('Simulation RNG user entropy = ') + len('Simulation RNG user entropy = ')
-            # find the index of the txt file at the end of the seen number
-            seed_end_index = text.find('"', seed_start_index)
-            # from this get the seed number
-            seed = int(text[seed_start_index: seed_end_index])
-        # search for modules registered
-        if 'RNG auto' in text:
-            # find last registered module
-            last_occurence_index = text.rfind(" RNG auto")
-            # the text to search for registered modules is between the initial assignment of the seed and the last
-            # registered module, filter text to search through by these bounds
-            text_filtered = text[seed_end_index: last_occurence_index]
-            # create a list to store the name and order of the registered modules
-            module_names = []
-            # create an index point to start the search at, which is updated in the while loop below
-            index_searched_through = 0
-            # loop over the filtered text while the index searched through is less than the length of the text
-            while index_searched_through < len(text_filtered) - 1:
-                # find the index of the character after the module name is registered starting from the value of the
-                # last index searched from
-                character_index_after_module_name = text_filtered.find(" RNG auto", index_searched_through + 1)
-                # find the index of the character before the name is registered starting from the value of the
-                # last index searched from
-                character_index_before_module_name = text_filtered.find(': ["', index_searched_through)
-                # append the module name to the list of module names
-                module_names.append(text_filtered[character_index_before_module_name + len(': ["'):
-                                                  character_index_after_module_name])
-                # update the index searched through parameter so in the next loop, the search will begin from the
-                # character after the last module
-                index_searched_through = character_index_after_module_name
-                # Use a property of the str.find function to break the loop (str.find returns -1 if the substring you
-                # are searching for isn't found, in this context it means that all module names have been found)
-                if character_index_before_module_name == -1:
-                    break
-        # search for the last date logged in text file
-        if '"date": "' in text:
-            # Find the index of the last logged "date": " in the txt file and then get the index after
-            last_recorded_date_index = text.rfind('"date": "') + len('"date": "')
-            last_recorded_values_index = text.rfind('", "values"')
-            last_recorded_date = text[last_recorded_date_index: last_recorded_values_index]
-            end_date = pd.to_datetime(last_recorded_date, format = '%Y-%m-%d %H:%M:%S', errors='coerce')
-
-
-
-    # get the parameter value(s) used in this particular run
-    # open json file as dictionary
-    with open(str(results_folder) + '/' + file_name[:-3] + '_draws.json', 'r') as myfile:
-        data = myfile.read()
-    params_file = json.loads(data)
-    # get the parameters overwritten in this simulation
-    params_in_draw = params_file['draws'][draw_number]['parameters']
-    return seed, params_in_draw, popsize, start_date
 
 
 def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
@@ -421,7 +281,7 @@ def extract_results(results_folder: Path,
                         idx = df[index]
                         assert idx.equals(results_index), "Indexes are not the same between runs"
 
-                except KeyError:
+                except ValueError:
                     results[draw, run] = np.nan
 
         # if 'index' is provided, set this to be the index of the results
@@ -633,3 +493,85 @@ def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame
     _y = _x.copy()
     _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
     return _y
+
+
+class LogsDict(Mapping):
+    """Parses module-specific log files and returns Pandas dataframes.
+
+        The dictionary returned has the format::
+
+            {
+                <logger 1 name>: {
+                                   <log key 1>: <pandas dataframe>,
+                                   <log key 2>: <pandas dataframe>,
+                                   <log key 3>: <pandas dataframe>
+                                 },
+
+                <logger 2 name>: {
+                                   <log key 4>: <pandas dataframe>,
+                                   <log key 5>: <pandas dataframe>,
+                                   <log key 6>: <pandas dataframe>
+                                 },
+                ...
+            }
+    """
+
+    def __init__(self, file_names_and_paths):
+        super().__init__()
+        # initialise class with module-specific log files paths
+        self._logfile_names_and_paths: Dict[str, str] = file_names_and_paths
+
+        # create a dictionary that will contain cached data
+        self._results_cache: Dict[str, Dict] = dict()
+
+    def __getitem__(self, key, cache=True):
+        # check if the requested key is found in a dictionary containing module name and log file paths. if key
+        # is found, return parsed logs else return KeyError
+        if key in self._logfile_names_and_paths:
+            # check if key is found in cache
+            if key not in self._results_cache:
+                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
+                # get metadata for the selected log file and merge it all with the selected key
+                result_df[key]['_metadata'] = result_df['_metadata']
+                if not cache:  # check if caching is disallowed
+                    return result_df[key]
+                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+            return self._results_cache[key]  # return the added results
+
+        else:
+            return KeyError
+
+    def __contains__(self, k):
+        # if key k is a valid logfile entry
+        return k in self._logfile_names_and_paths
+
+    def items(self):
+        # parse module-specific log file and return results as a generator
+        for key in self._logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key, cache=False)
+            yield key, module_specific_logs
+
+    def __repr__(self):
+        return repr(self._logfile_names_and_paths)
+
+    def __len__(self):
+        return len(self._logfile_names_and_paths)
+
+    def keys(self):
+        # return dictionary keys
+        return self._logfile_names_and_paths.keys()
+
+    def values(self):
+        # parse module-specific log file and yield the results
+        for key in self._logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key, cache=False)
+            yield module_specific_logs
+
+    def __iter__(self):
+        return iter(self._logfile_names_and_paths)
+
+    def __getstate__(self):
+        # Ensure all items cached before pickling
+        for key in self.keys():
+            self.__getitem__(key, cache=True)
+        return self.__dict__
