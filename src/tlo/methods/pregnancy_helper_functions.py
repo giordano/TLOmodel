@@ -19,6 +19,39 @@ def get_list_of_items(self, item_list):
     return codes
 
 
+def determine_consumables_to_request(self, core, optional, int_type, cons):
+    """
+    This function is called to determine if item codes should be requested as optional or not through the health
+    system. This functionality allows for specific interventions to be forced to run from specific time points when
+    analysis is being conducted
+    :param self: module
+    :param core: (STR) name of core package of item codes
+    :param optional: (STR) name of optional package of item codes
+    :param int_type: (STR) bemonc/cemonc intervention
+    :param cons: dict storing module level consumables
+    :return: (LIST) item codes of core and optional items
+    """
+    params = self.sim.modules['Labour'].current_parameters
+
+    # If analysis is being conducted, no item codes will be required to ensure the intervention runs, however they
+    # are still logged through 'optional' request
+    if (int_type == 'bemonc') and params['activate_perfect_bemonc'] and self.sim.year > 2020:
+        core_cons = []
+        optional_cons = cons[core] + cons[optional]
+
+    elif (int_type == 'cemonc') and params['activate_perfect_cemonc'] and self.sim.year > 2020:
+        core_cons = []
+        optional_cons = cons[core] + cons[optional]
+
+    # Otherwise 'core' item codes are set on which the intervention being delivered is conditioned
+    else:
+        core_cons = cons[core]
+        optional_cons = cons[optional]
+
+    return {'core': core_cons,
+            'optional': optional_cons}
+
+
 def scale_linear_model_at_initialisation(self, model, parameter_key):
     """
     This function scales the intercept value of linear models according to the distribution of predictor values

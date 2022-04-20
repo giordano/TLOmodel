@@ -1734,12 +1734,10 @@ class Labour(Module):
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and \
-           df.at[person_id, 'ac_mag_sulph_treatment']:
-            return
-
-        if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
-           (df.at[person_id, 'la_severe_pre_eclampsia_treatment'] and (labour_stage == 'pp')):
+        if (((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
+             df.at[person_id, 'ac_mag_sulph_treatment']) or
+            ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or
+           (df.at[person_id, 'la_severe_pre_eclampsia_treatment'] and (labour_stage == 'pp'))):
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
@@ -1749,13 +1747,18 @@ class Labour(Module):
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
+            # Return which item code are and are not optional
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='magnesium_sulfate', optional='eclampsia_management_optional',  int_type='bemonc',
+                cons=self.item_codes_lab_consumables)
+
             # Run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
                                                                  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
             # Define the required consumables
-            avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
-                                              optional_item_codes=cons['eclampsia_management_optional'])
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
 
             # If the consumables are available - the intervention is delivered. IV magnesium reduces the
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
@@ -1823,9 +1826,13 @@ class Labour(Module):
             # Run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
                                                                  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            # Return which item code are and are not optional
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='magnesium_sulfate', optional='eclampsia_management_optional', int_type='bemonc',
+                cons=self.item_codes_lab_consumables)
 
-            avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
-                                              optional_item_codes=cons['eclampsia_management_optional'])
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
 
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
@@ -1856,9 +1863,15 @@ class Labour(Module):
             return
 
         if df.at[person_id, 'la_obstructed_labour'] or for_spe:
-            # Define the consumables...
-            hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
-            avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
+
+            # Return which item code are and are not optional
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='vacuum', optional='obstructed_labour', int_type='bemonc',
+                cons=self.item_codes_lab_consumables)
+
+            # Check cons availability
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
 
             # run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='avd',
@@ -1868,7 +1881,7 @@ class Labour(Module):
             if not mni[person_id]['cpd']:
                 # If the general package is available AND the facility has the correct tools to carry out the
                 # delivery then it can occur
-                if avail_vacuum and sf_check:
+                if avail and sf_check:
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
                     # risk of intrapartum still birth when applying risk in the death event
@@ -1915,8 +1928,13 @@ class Labour(Module):
             sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
                                                                  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            avail = hsi_event.get_consumables(item_codes=cons['maternal_sepsis_core'],
-                                              optional_item_codes=cons['maternal_sepsis_optional'])
+            # Return which item code are and are not optional
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='maternal_sepsis_core', optional='maternal_sepsis_optional', int_type='bemonc',
+                cons=self.item_codes_lab_consumables)
+
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
 
             # If delivered this intervention reduces a womans risk of dying from sepsis
             if avail and sf_check:
@@ -1986,13 +2004,17 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         if 'active_management_of_the_third_stage_of_labour' not in params['allowed_interventions']:
             return
 
-        avail = hsi_event.get_consumables(item_codes=cons['amtsl'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+        # Return which item code are and are not optional
+        consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+            self, core='amtsl', optional='iv_drug_equipment', int_type='bemonc',
+            cons=self.item_codes_lab_consumables)
+
+        avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                          optional_item_codes=consumable_selection['optional'])
 
         # run HCW check
         sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
@@ -2022,8 +2044,14 @@ class Labour(Module):
 
         if df.at[person_id, 'la_postpartum_haem'] and not mni[person_id]['retained_placenta']:
 
-            avail = hsi_event.get_consumables(item_codes=cons['pph_core'],
-                                              optional_item_codes=cons['pph_optional'])
+            # Return which item code are and are not optional
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='pph_core', optional='pph_optional', int_type='bemonc',
+                cons=self.item_codes_lab_consumables)
+
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
+
             # run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
                                                                  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
@@ -2097,12 +2125,16 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        cons = self.item_codes_lab_consumables
+
+        # Return which item code are and are not optional
+        consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+            self, core='obstetric_surgery_core', optional='obstetric_surgery_optional', int_type='cemonc',
+            cons=self.item_codes_lab_consumables)
 
         # We log the log the required consumables and condition the surgery happening on the availability of the
         # first consumable in this package, the anaesthetic required for the surgery
-        avail = hsi_event.get_consumables(item_codes=cons['obstetric_surgery_core'],
-                                          optional_item_codes=cons['obstetric_surgery_optional'])
+        avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                          optional_item_codes=consumable_selection['optional'])
 
         # run HCW check
         sf_check = self.check_emonc_signal_function_will_run(sf='surg',
@@ -2142,9 +2174,14 @@ class Labour(Module):
         df = self.sim.population.props
         cons = self.item_codes_lab_consumables
 
+        # Return which item code are and are not optional
+        consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+            self, core='obstetric_surgery_core', optional='iv_drug_equipment', int_type='cemonc',
+            cons=self.item_codes_lab_consumables)
+
         # Check consumables
-        avail = hsi_event.get_consumables(item_codes=cons['blood_transfusion'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+        avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                          optional_item_codes=consumable_selection['optional'])
         # check HCW
         sf_check = self.check_emonc_signal_function_will_run(sf='blood_tran',
                                                              f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
@@ -2872,8 +2909,12 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables
-        avail = self.get_consumables(item_codes=cons['delivery_core'],
-                                     optional_item_codes=cons['delivery_optional'],)
+        consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+            self.module, core='delivery_core', optional='delivery_optional', int_type='bemonc',
+            cons=self.module.item_codes_lab_consumables)
+
+        avail = self.get_consumables(item_codes=consumable_selection['core'],
+                                     optional_item_codes=consumable_selection['optional'],)
 
         # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if avail:
@@ -3127,8 +3168,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             # We log the log the required consumables and condition the caesarean happening on the availability of the
             # first consumable in this package, the anaesthetic required for the surgery
-            avail = self.get_consumables(item_codes=cons['caesarean_delivery_core'],
-                                         optional_item_codes=cons['caesarean_delivery_optional'])
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self.module, core='caesarean_delivery_core', optional='caesarean_delivery_optional', int_type='cemonc',
+                cons=self.module.item_codes_lab_consumables)
+
+            avail = self.get_consumables(item_codes=consumable_selection['core'],
+                                         optional_item_codes=consumable_selection['optional'])
 
             # We check that the HCW will deliver the intervention
             sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
@@ -3154,8 +3199,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             # We log the log the required consumables and condition the surgery happening on the availability of the
             # first consumable in this package, the anaesthetic required for the surgery
-            avail = self.get_consumables(item_codes=cons['obstetric_surgery_core'],
-                                         optional_item_codes=cons['obstetric_surgery_optional'])
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self.module, core='obstetric_surgery_core', optional='obstetric_surgery_optional', int_type='cemonc',
+                cons=self.module.item_codes_lab_consumables)
+
+            avail = self.get_consumables(item_codes=consumable_selection['core'],
+                                         optional_item_codes=consumable_selection['optional'])
 
             sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
                                                                         f_lvl=self.ACCEPTED_FACILITY_LEVEL)
@@ -3222,7 +3271,8 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
 
-        def set_availability_of_cons(pkg_names, newborns):
+        pass
+        """def set_availability_of_cons(pkg_names, newborns):
             ic_avail = {}
             for cons in pkg_names:
                 for i in self.sim.modules['Labour'].item_codes_lab_consumables[cons]:
@@ -3261,7 +3311,7 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
                 params[parameter] = 1.0
 
             set_availability_of_cons(['caesarean_delivery_core', 'obstetric_surgery_core', 'blood_transfusion'],
-                                     newborns=False)
+                                     newborns=False) """
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
