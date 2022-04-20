@@ -3271,25 +3271,9 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
 
-        pass
-        """def set_availability_of_cons(pkg_names, newborns):
-            ic_avail = {}
-            for cons in pkg_names:
-                for i in self.sim.modules['Labour'].item_codes_lab_consumables[cons]:
-                    ic_avail.update({i: 1.0})
-
-            if newborns:
-                for cons in ['resuscitation', 'sepsis_supportive_care_core', 'sepsis_abx']:
-                    for i in self.sim.modules['NewbornOutcomes'].item_codes_nb_consumables[cons]:
-                        ic_avail.update({i: 1.0})
-
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(ic_avail)
-
         if params['activate_perfect_bemonc']:
             logger.info(key='analysis', data='activate_perfect_bemonc param correctly switched')
-            for parameter in ['mean_hcw_competence_hc',
-                              'mean_hcw_competence_hp',
-                              'prob_hcw_avail_iv_abx',
+            for parameter in ['prob_hcw_avail_iv_abx',
                               'prob_hcw_avail_uterotonic',
                               'prob_hcw_avail_man_r_placenta',
                               'prob_hcw_avail_avd'
@@ -3297,21 +3281,17 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
                               'prob_hcw_avail_retained_prod']:
                 params[parameter] = 1.0
 
-            # todo: neonates
-            set_availability_of_cons(
-                ['delivery_core', 'abx_for_prom', 'iv_antihypertensives', 'oral_antihypertensives',
-                 'magnesium_sulfate', 'vacuum', 'maternal_sepsis_core', 'amtsl', 'pph_core'], newborns=True)
+            params['mean_hcw_competence_hc'][0] = 1.0
+            params['mean_hcw_competence_hp'][0] = 1.0
 
         if params['activate_perfect_cemonc']:
             logger.info(key='analysis', data='activate_perfect_cemonc param correctly switched')
-            for parameter in ['mean_hcw_competence_hc',
-                              'mean_hcw_competence_hp',
-                              'prob_hcw_avail_blood_tran',
+            for parameter in ['prob_hcw_avail_blood_tran',
                               'prob_hcw_avail_surg']:
                 params[parameter] = 1.0
 
-            set_availability_of_cons(['caesarean_delivery_core', 'obstetric_surgery_core', 'blood_transfusion'],
-                                     newborns=False) """
+            params['mean_hcw_competence_hc'][1] = 1.0
+            params['mean_hcw_competence_hp'][1] = 1.0
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
