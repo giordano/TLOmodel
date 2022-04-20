@@ -79,7 +79,7 @@ class LongRun(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
 
             # - Contraception, Pregnancy and Labour
-            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=True),
+            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=False),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
