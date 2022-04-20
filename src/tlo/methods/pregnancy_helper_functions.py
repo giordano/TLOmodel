@@ -35,11 +35,11 @@ def determine_consumables_to_request(self, core, optional, int_type, cons):
 
     # If analysis is being conducted, no item codes will be required to ensure the intervention runs, however they
     # are still logged through 'optional' request
-    if (int_type == 'bemonc') and params['activate_perfect_bemonc'] and self.sim.year > 2020:
+    if (int_type == 'bemonc') and params['activate_perfect_bemonc'] and self.sim.date.year > 2020:
         core_cons = []
         optional_cons = cons[core] + cons[optional]
 
-    elif (int_type == 'cemonc') and params['activate_perfect_cemonc'] and self.sim.year > 2020:
+    elif (int_type == 'cemonc') and params['activate_perfect_cemonc'] and self.sim.date.year > 2020:
         core_cons = []
         optional_cons = cons[core] + cons[optional]
 

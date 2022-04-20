@@ -1730,7 +1730,6 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
