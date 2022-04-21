@@ -8,7 +8,6 @@ import squarify
 
 from tlo.analysis.utils import (
     extract_params,
-    extract_params_from_json,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
@@ -100,17 +99,31 @@ extracted_n_female = extract_results(results_folder,
                                      )
 params = extract_params(results_folder)
 
-av_total_n_male = summarize(extracted_n_male, only_mean=True).sum()
-av_total_n_female = summarize(extracted_n_female, only_mean=True).sum()
+n_male = summarize(extracted_n_male).sum()
+av_total_n_male = n_male[:, 'mean']
+av_total_n_male_upper = n_male[:, 'upper']
+av_total_n_male_lower = n_male[:, 'lower']
+n_female = summarize(extracted_n_female).sum()
+av_total_n_female = n_female[:, 'mean']
+av_total_n_female_upper = n_female[:, 'upper']
+av_total_n_female_lower = n_female[:, 'lower']
 perc_male = np.divide(av_total_n_male.tolist(), np.add(av_total_n_male.tolist(), av_total_n_female.tolist()))
-
+perc_male_upper = np.divide(av_total_n_male_upper.tolist(),
+                            np.add(av_total_n_male_upper.tolist(), av_total_n_female_upper.tolist()))
+perc_male_lower = np.divide(av_total_n_male_lower.tolist(),
+                            np.add(av_total_n_male_lower.tolist(), av_total_n_female_lower.tolist()))
 gbd_proportion_male = sum(male_rtis) / (sum(male_rtis) + sum(female_rtis))
+
 closest_est_found = min(perc_male, key=lambda x: abs(x - gbd_proportion_male))
 best_fit_idx = np.where(perc_male == closest_est_found)[0][0]
+standard_error_perc_male = np.sqrt((perc_male[best_fit_idx] * (1 - perc_male[best_fit_idx])) /
+                                   (av_total_n_male[best_fit_idx] + av_total_n_female[best_fit_idx]))
+gbd_standard_error = np.sqrt((gbd_proportion_male * (1 - gbd_proportion_male)) / (sum(male_rtis) + sum(female_rtis)))
+yerr = [1.96 * gbd_standard_error, 1.96 * standard_error_perc_male]
 best_fit_found = perc_male[best_fit_idx]
-ax2.bar(np.arange(2), [best_fit_found, gbd_proportion_male], color=['lightsteelblue', 'steelblue'])
+ax2.bar(np.arange(2), [gbd_proportion_male, best_fit_found], color=['steelblue', 'lightsteelblue'], yerr=yerr)
 ax2.set_xticks(np.arange(2))
-ax2.set_xticklabels(['Model', 'GBD'])
+ax2.set_xticklabels(['GBD', 'Model'])
 ax2.set_ylabel('Proportion male')
 # plot age distribution
 gbd_age_gender_data = \
@@ -183,10 +196,21 @@ for age_list in ages_in_sim:
         counts_in_sim.append(age_counts)
 ave_age_distribution = [float(sum(col)) / len(col) for col in zip(*counts_in_sim)]
 ave_age_distribution = list(np.divide(ave_age_distribution, sum(ave_age_distribution)))
+age_standard_dist = [np.std(np.divide(col, sum(col))) for col in zip(*counts_in_sim)]
+age_upper = np.add(ave_age_distribution,
+                   np.divide(np.multiply(1.96, np.sqrt(age_standard_dist)),
+                             np.sqrt(sum([float(sum(col)) / len(col) for col in zip(*counts_in_sim)]))))
+age_lower = np.add(ave_age_distribution,
+                   np.divide(np.multiply(- 1.96, np.sqrt(age_standard_dist)),
+                             np.sqrt(sum([float(sum(col)) / len(col) for col in zip(*counts_in_sim)]))))
 ax3 = fig.add_subplot(gs[1, 0])
+age_info['upper_prop'] = (age_info['upper'] / age_info['val']) * age_info['proportion']
+age_info['lower_prop'] = (age_info['lower'] / age_info['val']) * age_info['proportion']
 
-ax3.bar(np.arange(len(age_info.index)), age_info.proportion, width=0.4, color='lightsteelblue', label='GBD')
-ax3.bar(np.arange(len(age_info.index)) + 0.4, ave_age_distribution, width=0.4, color='lightsalmon', label='Model')
+ax3.bar(np.arange(len(age_info.index)), age_info.proportion, width=0.4, color='lightsteelblue', label='GBD',
+        yerr=[age_info.lower_prop, age_info.upper_prop])
+ax3.bar(np.arange(len(age_info.index)) + 0.4, ave_age_distribution, width=0.4, color='lightsalmon', label='Model',
+        yerr=[age_lower, age_upper])
 ax3.set_xticks(np.arange(len(age_info.index)) + 0.2)
 ax3.set_xticklabels(age_info.index, rotation=45)
 ax3.legend()
@@ -201,10 +225,13 @@ extracted_perc_related_to_alc = extract_results(results_folder,
                                                 index="date"
                                                 )
 mean_perc_alc = summarize(extracted_perc_related_to_alc, only_mean=True).mean().mean()
+upper_perc_alcohol = summarize(extracted_perc_related_to_alc).mean()[:, 'upper'].mean()
+lower_perc_alcohol = summarize(extracted_perc_related_to_alc).mean()[:, 'lower'].mean()
 kch_alc_perc = 0.249
 ax4 = fig.add_subplot(gs[1, 1])
 ax4.bar(np.arange(len([kch_alc_perc, mean_perc_alc])), [kch_alc_perc, mean_perc_alc],
-        color=['royalblue', 'midnightblue'])
+        color=['royalblue', 'midnightblue'], yerr=[[0, lower_perc_alcohol],
+                                                   [0, upper_perc_alcohol]])
 ax4.set_xticks(np.arange(len([kch_alc_perc, mean_perc_alc])))
 ax4.set_xticklabels(['KCH', 'Model'])
 ax4.set_ylabel('Proportion of crashes involving alcohol')
@@ -233,13 +260,16 @@ incidence_of_rti = extract_results(results_folder,
 inc_rti = summarize(incidence_of_rti, only_mean=True).mean()
 scale_to_gbd = np.divide(954.2, inc_rti)
 on_scene_inc_death = summarize(extracted_incidence_of_death_on_scene, only_mean=True).mean() * scale_to_gbd
+on_scene_inc_upper = summarize(extracted_incidence_of_death_on_scene).mean()[:, 'upper'] * scale_to_gbd
+on_scene_inc_lower = summarize(extracted_incidence_of_death_on_scene).mean()[:, 'lower'] * scale_to_gbd
 target_on_scene_inc_death = 6
 closest_est_found = min(on_scene_inc_death, key=lambda x: abs(x - target_on_scene_inc_death))
 best_fit_idx = np.where(on_scene_inc_death == closest_est_found)[0][0]
 ax5 = fig.add_subplot(gs[2, 0])
-ax5.bar(np.arange(2), [on_scene_inc_death[best_fit_idx], target_on_scene_inc_death], color=['violet', 'plum'])
+ax5.bar(np.arange(2), [target_on_scene_inc_death, on_scene_inc_death[best_fit_idx]], color=['plum', 'violet'])
+ax5.vlines(x=1, ymin=on_scene_inc_lower[best_fit_idx], ymax=on_scene_inc_upper[best_fit_idx], color='black')
 ax5.set_xticks(np.arange(2))
-ax5.set_xticklabels(['Model', 'Police data'])
+ax5.set_xticklabels(['Police data', 'Model'])
 ax5.set_ylabel('Inc. on scene mort. per \n100,000 p.y.')
 
 results_folder = get_scenario_outputs('rti_analysis_full_calibrated.py', outputspath)[- 4]
@@ -454,17 +484,20 @@ best_fitting_distribution_per_score = []
 best_fitting_ave_n = []
 
 average_ninj_in_hos = summarize(n_inj_per_person_in_hos, only_mean=True).mean(axis=0)
-
+ninj_upper = summarize(n_inj_per_person_in_hos).mean()[:, 'upper']
+ninj_lower = summarize(n_inj_per_person_in_hos).mean()[:, 'lower']
 for n, idx in enumerate(idxs):
     best_fit_found = min(average_ninj_in_hos[idx], key=lambda x: abs(x - average_n_inj_in_kch))
     best_fitting_ave_n.append(best_fit_found)
     best_fit_index = np.where(average_ninj_in_hos == best_fit_found)
 ax6 = fig.add_subplot(gs[2, 1])
 ax6.bar(np.arange(2),
-        [average_ninj_in_hos.values[best_fit_index[0][0]],
-         average_n_inj_in_kch], color=['teal', 'lightseagreen'])
+        [average_n_inj_in_kch,
+         average_ninj_in_hos.values[best_fit_index[0][0]]],
+        color=['lightseagreen', 'teal'])
+plt.vlines([1], ymin=ninj_lower[best_fit_index[0][0]], ymax=ninj_upper[best_fit_index[0][0]], color='black')
 ax6.set_xticks(np.arange(2))
-ax6.set_xticklabels(['Model', 'KCH'])
+ax6.set_xticklabels(['KCH', 'Model'])
 ax6.set_ylabel('Ave. number of\n injuries')
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
@@ -614,9 +647,12 @@ expected_hsb_lower = 0.6533
 average_n_inj_in_kch = 7057 / 4776
 expected_in_hos_mort = 144 / 7416
 hsb_in_accepted_range = np.where((results_df['HSB'] > expected_hsb_lower) & (results_df['HSB'] < expected_hsb_upper))
+hsb_upper = summarize(extracted_hsb).mean()[:, 'upper'].iloc[hsb_in_accepted_range]
+hsb_lower = summarize(extracted_hsb).mean()[:, 'lower'].iloc[hsb_in_accepted_range]
 ax7 = fig.add_subplot(gs[3, 0])
 ax7.bar(np.arange(len(results_df.iloc[hsb_in_accepted_range])), results_df.iloc[hsb_in_accepted_range]['HSB'],
         color='darkseagreen', label='proportion sought care')
+ax7.vlines(x=np.arange(len(results_df.iloc[hsb_in_accepted_range])), ymin=hsb_lower, ymax=hsb_upper, color='black')
 ax7.axhline(expected_hsb_upper, color='g', label='Upper HSB bound', linestyle='dashed')
 ax7.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='dashed')
 ax7.set_xticks(np.arange(len(results_df.iloc[hsb_in_accepted_range])))
@@ -692,20 +728,23 @@ scales_in_runs = np.divide(
 closest_est_found = min(mean_in_hos_mort[idxs[3]], key=lambda x: abs(x - expected_in_hospital_mortality))
 best_fit_idx = np.where(mean_in_hos_mort[idxs[3]] == closest_est_found)[0][0]
 best_fit_found = mean_in_hos_mort[idxs[3]].to_list()[best_fit_idx]
+in_hos_upper = summarize(extracted_perc_in_hos_death).mean()[:, 'upper'].iloc[best_fit_idx]
+in_hos_lower = summarize(extracted_perc_in_hos_death).mean()[:, 'lower'].iloc[best_fit_idx]
 ax8 = fig.add_subplot(gs[3, 1])
 
-ax8.bar(np.arange(2), [best_fit_found, expected_in_hospital_mortality], color=['lightcoral', 'indianred'])
+ax8.bar(np.arange(2), [expected_in_hospital_mortality, best_fit_found], color=['indianred', 'lightcoral'])
+ax8.vlines(x=2, ymin=in_hos_lower, ymax=in_hos_upper, color='black')
 ax8.set_xticks(np.arange(2))
-ax8.set_xticklabels(['Model', 'Tanzanian national average'])
-ax8.set_ylabel('In-hospital mortality')
+ax8.set_xticklabels(['Tanzanian national average', 'Model'])
+ax8.set_ylabel('Percent mortality')
 ax1.set_title('a)       Incidence of RTI', loc='left')
 ax2.set_title('b)       Proportion of RTIs involving males', loc='left')
 ax3.set_title('c)       Age distribution of RTIs', loc='left')
 ax4.set_title('d)       Proportion of RTIs involving alcohol', loc='left')
-ax5.set_title('e)       Proportion of crashes that result in on scene mortality', loc='left')
+ax5.set_title('e)       Incidence of on scene mortality per 100,000 persons', loc='left')
 ax6.set_title('f)       Average number of injuries of those with RTIs in hospital', loc='left')
 ax7.set_title('g)       Proportion of those with RTIs who seek care', loc='left')
-ax8.set_title('h)       Proportion of in-hospital mortality', loc='left')
+ax8.set_title('h)       Proportion of fatalities in those who receive healthcare', loc='left')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3.png",
             bbox_inches='tight')
 gbd_age_gender_data = \
