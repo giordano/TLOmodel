@@ -29,16 +29,16 @@ from tlo.scenario import BaseScenario
 class SBAPerfectEMONC(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 123
+        self.seed = 456
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 50000
+        self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'perfect_emonc_sba_50k', 'directory': './outputs',
+            'filename': 'perfect_emonc_sba_200k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
