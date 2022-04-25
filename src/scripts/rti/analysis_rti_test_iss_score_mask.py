@@ -49,7 +49,7 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         iss_min = 1
-        iss_max = 75
+        iss_max = 30
         mask_range = np.linspace(iss_min, iss_max, self.number_of_draws)
         inc_scale = [0.8173112452023374, 0.8977667624878415, 0.8952193951119278, 0.9312366789864156, 1.0068886519003462,
                      0.846059563757938]
