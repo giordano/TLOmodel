@@ -51,9 +51,12 @@ class TestScenario(BaseScenario):
         iss_min = 1
         iss_max = 75
         mask_range = np.linspace(iss_min, iss_max, self.number_of_draws)
-
+        inc_scale = [0.8173112452023374, 0.8977667624878415, 0.8952193951119278, 0.9312366789864156, 1.0068886519003462,
+                     0.846059563757938]
+        base_rate = 0.00433474669212151
         return {
-            'RTI': {'no_med_death_iss_mask': int(mask_range[draw_number])},
+            'RTI': {'no_med_death_iss_mask': int(mask_range[draw_number]),
+                    'base_rate_injrti': base_rate * inc_scale[draw_number]},
             }
 
 
