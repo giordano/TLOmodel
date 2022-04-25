@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/analysis_rti_test_ais_score_mask.py",
+  "scenario_script_path": "src/scripts/rti/analysis_rti_test_ais_score_mask.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -8,7 +8,8 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 1
+          "no_med_death_ais_mask": 1,
+          "base_rate_injrti": 0.0035428372165745444
         }
       }
     },
@@ -17,7 +18,8 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 2
+          "no_med_death_ais_mask": 2,
+          "base_rate_injrti": 0.0035430000277558247
         }
       }
     },
@@ -26,7 +28,8 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 3
+          "no_med_death_ais_mask": 3,
+          "base_rate_injrti": 0.0038883228126385836
         }
       }
     },
@@ -35,7 +38,8 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 4
+          "no_med_death_ais_mask": 4,
+          "base_rate_injrti": 0.003820309673781175
         }
       }
     },
@@ -44,7 +48,8 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 5
+          "no_med_death_ais_mask": 5,
+          "base_rate_injrti": 0.004235882363602551
         }
       }
     },
@@ -53,9 +58,12 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "no_med_death_ais_mask": 6
+          "no_med_death_ais_mask": 6,
+          "base_rate_injrti": 0.0036674538953374893
         }
       }
     }
-  ]
+  ],
+  "commit": "09e77be08529c68d973a123577514de0b2613891",
+  "github": "https://github.com/UCL/TLOmodel/blob/09e77be08529c68d973a123577514de0b2613891/src/scripts/rti/analysis_rti_test_ais_score_mask.py"
 }

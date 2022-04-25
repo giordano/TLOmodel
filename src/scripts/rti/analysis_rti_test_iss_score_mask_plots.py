@@ -44,5 +44,5 @@ mean_incidence_of_RTI_death = summarize(extracted_incidence_of_RTI_death, only_m
 scaled_inc_death = np.multiply(mean_incidence_of_RTI_death, scale_to_gbd)
 plt.bar(np.arange(len(scaled_inc_death)), scaled_inc_death)
 plt.xticks(np.arange(len(scaled_inc_death)), params['value'])
-plt.xlabel('AIS score above which to consider mortality without medical care')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/CalibrateDeathNoMed/AIS_mask.png")
+plt.xlabel('ISS score above which to consider mortality without medical care')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/CalibrateDeathNoMed/ISS_mask.png")
