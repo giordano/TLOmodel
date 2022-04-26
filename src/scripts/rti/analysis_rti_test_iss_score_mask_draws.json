@@ -8,8 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 12,
-          "base_rate_injrti": 0.0035428372165745444
+          "no_med_death_iss_mask": 1
         }
       }
     },
@@ -18,8 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 13,
-          "base_rate_injrti": 0.003891591503990808
+          "no_med_death_iss_mask": 2
         }
       }
     },
@@ -28,8 +26,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 14,
-          "base_rate_injrti": 0.0038805493116844483
+          "no_med_death_iss_mask": 3
         }
       }
     },
@@ -38,8 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 15,
-          "base_rate_injrti": 0.004036675113818586
+          "no_med_death_iss_mask": 4
         }
       }
     },
@@ -48,8 +44,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 16,
-          "base_rate_injrti": 0.0043646072531597115
+          "no_med_death_iss_mask": 5
         }
       }
     },
@@ -58,12 +53,632 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 18,
-          "base_rate_injrti": 0.0036674538953374893
+          "no_med_death_iss_mask": 6
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 7
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 8
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 9
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 10
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 11
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 145874993,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 12
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1721057204,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 13
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 1268891525,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 14
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 143543949,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 15
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 354439641,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 16
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 1962582434,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 17
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 970465739,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 18
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 589309558,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 19
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 1601311818,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 20
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 1219033472,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 21
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 755903861,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 22
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 455623784,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 23
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 2077248716,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 24
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 1907932429,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 25
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 2068156498,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 26
+        }
+      }
+    },
+    {
+      "draw_number": 26,
+      "draw_seed": 1514987609,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 27
+        }
+      }
+    },
+    {
+      "draw_number": 27,
+      "draw_seed": 1771840803,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 28
+        }
+      }
+    },
+    {
+      "draw_number": 28,
+      "draw_seed": 9703358,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 29
+        }
+      }
+    },
+    {
+      "draw_number": 29,
+      "draw_seed": 815512676,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 30
+        }
+      }
+    },
+    {
+      "draw_number": 30,
+      "draw_seed": 91165091,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 31
+        }
+      }
+    },
+    {
+      "draw_number": 31,
+      "draw_seed": 635542945,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 32
+        }
+      }
+    },
+    {
+      "draw_number": 32,
+      "draw_seed": 223499934,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 33
+        }
+      }
+    },
+    {
+      "draw_number": 33,
+      "draw_seed": 1749199991,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 34
+        }
+      }
+    },
+    {
+      "draw_number": 34,
+      "draw_seed": 2084680127,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 35
+        }
+      }
+    },
+    {
+      "draw_number": 35,
+      "draw_seed": 791670112,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 36
+        }
+      }
+    },
+    {
+      "draw_number": 36,
+      "draw_seed": 1151627410,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 37
+        }
+      }
+    },
+    {
+      "draw_number": 37,
+      "draw_seed": 1965929942,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 38
+        }
+      }
+    },
+    {
+      "draw_number": 38,
+      "draw_seed": 690273202,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 39
+        }
+      }
+    },
+    {
+      "draw_number": 39,
+      "draw_seed": 1958723792,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 40
+        }
+      }
+    },
+    {
+      "draw_number": 40,
+      "draw_seed": 1136278484,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 41
+        }
+      }
+    },
+    {
+      "draw_number": 41,
+      "draw_seed": 271189126,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 42
+        }
+      }
+    },
+    {
+      "draw_number": 42,
+      "draw_seed": 89377403,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 43
+        }
+      }
+    },
+    {
+      "draw_number": 43,
+      "draw_seed": 1293924973,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 44
+        }
+      }
+    },
+    {
+      "draw_number": 44,
+      "draw_seed": 580723273,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 45
+        }
+      }
+    },
+    {
+      "draw_number": 45,
+      "draw_seed": 1903433389,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 46
+        }
+      }
+    },
+    {
+      "draw_number": 46,
+      "draw_seed": 499388830,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 47
+        }
+      }
+    },
+    {
+      "draw_number": 47,
+      "draw_seed": 959320816,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 48
+        }
+      }
+    },
+    {
+      "draw_number": 48,
+      "draw_seed": 1330999968,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 49
+        }
+      }
+    },
+    {
+      "draw_number": 49,
+      "draw_seed": 871619694,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 50
+        }
+      }
+    },
+    {
+      "draw_number": 50,
+      "draw_seed": 736383515,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 51
+        }
+      }
+    },
+    {
+      "draw_number": 51,
+      "draw_seed": 2147247803,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 52
+        }
+      }
+    },
+    {
+      "draw_number": 52,
+      "draw_seed": 2023916505,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 53
+        }
+      }
+    },
+    {
+      "draw_number": 53,
+      "draw_seed": 870421179,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 54
+        }
+      }
+    },
+    {
+      "draw_number": 54,
+      "draw_seed": 1357932504,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 55
+        }
+      }
+    },
+    {
+      "draw_number": 55,
+      "draw_seed": 555616591,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 56
+        }
+      }
+    },
+    {
+      "draw_number": 56,
+      "draw_seed": 1243765785,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 57
+        }
+      }
+    },
+    {
+      "draw_number": 57,
+      "draw_seed": 619758326,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 58
+        }
+      }
+    },
+    {
+      "draw_number": 58,
+      "draw_seed": 1001268449,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 59
+        }
+      }
+    },
+    {
+      "draw_number": 59,
+      "draw_seed": 227425080,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 60
+        }
+      }
+    },
+    {
+      "draw_number": 60,
+      "draw_seed": 870256388,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 61
+        }
+      }
+    },
+    {
+      "draw_number": 61,
+      "draw_seed": 705955296,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 62
+        }
+      }
+    },
+    {
+      "draw_number": 62,
+      "draw_seed": 1406900164,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 63
+        }
+      }
+    },
+    {
+      "draw_number": 63,
+      "draw_seed": 1572931137,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 64
+        }
+      }
+    },
+    {
+      "draw_number": 64,
+      "draw_seed": 1437300203,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 65
+        }
+      }
+    },
+    {
+      "draw_number": 65,
+      "draw_seed": 160754988,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 66
+        }
+      }
+    },
+    {
+      "draw_number": 66,
+      "draw_seed": 2053243813,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 67
+        }
+      }
+    },
+    {
+      "draw_number": 67,
+      "draw_seed": 934763723,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 68
+        }
+      }
+    },
+    {
+      "draw_number": 68,
+      "draw_seed": 535076085,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 69
+        }
+      }
+    },
+    {
+      "draw_number": 69,
+      "draw_seed": 2089764211,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 70
+        }
+      }
+    },
+    {
+      "draw_number": 70,
+      "draw_seed": 1934081860,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 71
+        }
+      }
+    },
+    {
+      "draw_number": 71,
+      "draw_seed": 742351541,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 72
+        }
+      }
+    },
+    {
+      "draw_number": 72,
+      "draw_seed": 1148799179,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 73
+        }
+      }
+    },
+    {
+      "draw_number": 73,
+      "draw_seed": 522284341,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 74
+        }
+      }
+    },
+    {
+      "draw_number": 74,
+      "draw_seed": 1395904107,
+      "parameters": {
+        "RTI": {
+          "no_med_death_iss_mask": 75
         }
       }
     }
   ],
-  "commit": "4378f4062211463255503185ec877821cee1be50",
-  "github": "https://github.com/UCL/TLOmodel/blob/4378f4062211463255503185ec877821cee1be50/src/scripts/rti/analysis_rti_test_iss_score_mask.py"
+  "commit": "7da66075b5237f5ed240705274d880a9b9aa34ce",
+  "github": "https://github.com/UCL/TLOmodel/blob/7da66075b5237f5ed240705274d880a9b9aa34ce/src/scripts/rti/analysis_rti_test_iss_score_mask.py"
 }
