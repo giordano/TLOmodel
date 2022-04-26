@@ -20,9 +20,9 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
-        self.pop_size = 2000
-        self.smaller_pop_size = 2000
-        self.number_of_draws = 6
+        self.pop_size = 20000
+        self.smaller_pop_size = 20000
+        self.number_of_draws = 75
         self.runs_per_draw = 2
 
     def log_configuration(self):
@@ -48,15 +48,11 @@ class TestScenario(BaseScenario):
 
 
     def draw_parameters(self, draw_number, rng):
-        iss_min = 12
-        iss_max = 18
+        iss_min = 1
+        iss_max = 75
         mask_range = np.linspace(iss_min, iss_max, self.number_of_draws)
-        inc_scale = [0.8173112452023374, 0.8977667624878415, 0.8952193951119278, 0.9312366789864156, 1.0068886519003462,
-                     0.846059563757938]
-        base_rate = 0.00433474669212151
         return {
-            'RTI': {'no_med_death_iss_mask': int(mask_range[draw_number]),
-                    'base_rate_injrti': base_rate * inc_scale[draw_number]},
+            'RTI': {'no_med_death_iss_mask': int(mask_range[draw_number])},
             }
 
 
