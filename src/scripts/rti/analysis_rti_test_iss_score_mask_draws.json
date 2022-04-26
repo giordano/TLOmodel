@@ -18,7 +18,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 15,
+          "no_med_death_iss_mask": 6,
           "base_rate_injrti": 0.003891591503990808
         }
       }
@@ -28,7 +28,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 30,
+          "no_med_death_iss_mask": 12,
           "base_rate_injrti": 0.0038805493116844483
         }
       }
@@ -38,7 +38,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 45,
+          "no_med_death_iss_mask": 18,
           "base_rate_injrti": 0.004036675113818586
         }
       }
@@ -48,7 +48,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 60,
+          "no_med_death_iss_mask": 24,
           "base_rate_injrti": 0.0043646072531597115
         }
       }
@@ -58,12 +58,12 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "no_med_death_iss_mask": 75,
+          "no_med_death_iss_mask": 30,
           "base_rate_injrti": 0.0036674538953374893
         }
       }
     }
   ],
-  "commit": "f5ac08c14d993cd6c7a0040844a96e9386b52c9a",
-  "github": "https://github.com/UCL/TLOmodel/blob/f5ac08c14d993cd6c7a0040844a96e9386b52c9a/src/scripts/rti/analysis_rti_test_iss_score_mask.py"
+  "commit": "0db09321b81bcde805b957be7ca6d62842feba0f",
+  "github": "https://github.com/UCL/TLOmodel/blob/0db09321b81bcde805b957be7ca6d62842feba0f/src/scripts/rti/analysis_rti_test_iss_score_mask.py"
 }
