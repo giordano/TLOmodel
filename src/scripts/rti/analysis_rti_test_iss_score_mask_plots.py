@@ -16,6 +16,7 @@ from tlo.analysis.utils import (
 )
 # analysis_rti_test_iss_score_mask-2022-04-25T143828Z
 # analysis_rti_test_iss_score_mask-2022-04-25T181834Z
+# analysis_rti_test_iss_score_mask-2022-04-26T105249Z
 
 
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk')
@@ -37,6 +38,7 @@ extracted_incidence_of_RTI_death = extract_results(results_folder,
                                                    module="tlo.methods.rti",
                                                    key="summary_1m",
                                                    column="incidence of rti death per 100,000",
+
                                                    index="date"
                                                    )
 
@@ -44,7 +46,10 @@ mean_incidence_of_RTI = summarize(extracted_incidence_of_RTI, only_mean=True).me
 scale_to_gbd = np.divide(954.2, mean_incidence_of_RTI)
 mean_incidence_of_RTI_death = summarize(extracted_incidence_of_RTI_death, only_mean=True).mean()
 scaled_inc_death = np.multiply(mean_incidence_of_RTI_death, scale_to_gbd)
-plt.bar(np.arange(len(scaled_inc_death)), scaled_inc_death)
-plt.xticks(np.arange(len(scaled_inc_death)), params.loc[params['module_param'] == 'RTI:no_med_death_iss_mask', 'value'])
+plt.bar(np.arange(len(scaled_inc_death)) * 4, scaled_inc_death, width=3)
+plt.xticks(np.arange(len(scaled_inc_death)) * 4, params.loc[params['module_param'] == 'RTI:no_med_death_iss_mask',
+                                                            'value'],
+           rotation=90, fontsize=5)
 plt.xlabel('ISS score above which to consider mortality without medical care')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/CalibrateDeathNoMed/ISS_mask_pass_3.png")
+plt.ylabel('Incidence of death per 100,000 person years')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/CalibrateDeathNoMed/ISS_mask_pass_4.png")
