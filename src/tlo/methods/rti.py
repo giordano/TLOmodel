@@ -995,11 +995,6 @@ class RTI(Module):
             "A cut-off score above which an injury will result in additional mortality if the person has "
             "sought healthcare and not received it."
         ),
-        'no_med_death_ais_mask': Parameter(
-            Types.INT,
-            "An AIS cut-off score above which an injury will result in additional mortality if the person has "
-            "not sought healthcare."
-        ),
         'consider_death_no_treatment_ISS_cut_off': Parameter(
             Types.INT,
             "A cut-off score above which an injuries will be considered severe enough to cause mortality in those who"
@@ -2871,7 +2866,6 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_femur_fracture_long_term_without_treatment = \
             p['daly_wt_femur_fracture_long_term_without_treatment']
         self.no_treatment_mortality_mais_cutoff = p['unavailable_treatment_mortality_mais_cutoff']
-        self.no_med_death_ais_mask = p['no_med_death_ais_mask']
         self.no_treatment_ISS_cut_off = p['consider_death_no_treatment_ISS_cut_off']
 
     def apply(self, population):

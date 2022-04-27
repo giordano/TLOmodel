@@ -15,6 +15,8 @@ from tlo.analysis.utils import (
     summarize,
 )
 
+# HS most recent run rti_analysis_full_calibrated-2022-04-27T132823Z
+
 # Figure 1: GBD number of injuries
 gbd_data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/gbd_data.csv")
 # get data in years of study
