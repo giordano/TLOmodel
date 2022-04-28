@@ -2082,6 +2082,8 @@ class RTI(Module):
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][3] for code in codes])
         # round off any potential floating point errors
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
+        if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
+            df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # if the person's true total for daly weights is greater than one, report rt_disability as one, if not
         # report the true disability burden.
         if df.at[person_id, 'rt_debugging_DALY_wt'] > 1:
