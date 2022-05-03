@@ -770,7 +770,7 @@ ax5.set_title('e)       Incidence of on scene mortality per 100,000 persons', lo
 ax6.set_title('f)       Average number of injuries of those with RTIs in hospital', loc='left')
 ax7.set_title('g)       Proportion of those with RTIs who seek care', loc='left')
 ax8.set_title('h)       Proportion of fatalities in those who receive healthcare', loc='left')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3_alt.png",
             bbox_inches='tight')
 gbd_age_gender_data = \
     pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/age_and_gender_data.csv")
@@ -850,7 +850,7 @@ plt.bar(np.arange(len(age_info.index)), age_info.proportion, width=0.4, color='l
 plt.bar(np.arange(len(age_info.index)) + 0.4, ave_age_distribution, width=0.4, color='lightsalmon', label='Model')
 plt.xticks(np.arange(len(age_info.index)) + 0.2, age_info.index, rotation=45)
 plt.legend()
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/age_distribution.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/age_distribution_alt.png",
             bbox_inches='tight')
 # Figure 4
 plt.clf()
@@ -883,7 +883,7 @@ ax1.set_title("The model's predicted incidence of death for \nvarying levels of 
 # Show plot
 ax1.legend(loc='upper left')
 ax2.legend()
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/inc_death_vs_hsb.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/inc_death_vs_hsb_alt.png",
             bbox_inches='tight')
 plt.clf()
 # Figure 5
@@ -910,7 +910,7 @@ ax1.set_title("The model's predicted DALYs between 2010-2019 for \nvarying level
 # Show plot
 ax1.legend(loc='upper left')
 ax2.legend()
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/DALYs_vs_hsb.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/DALYs_vs_hsb_alt.png",
             bbox_inches='tight')
 plt.clf()
 # Figure 6
@@ -1008,7 +1008,7 @@ for index, value in enumerate(hsb_in_accepted_range[0]):
     ax2.set_ylabel('Total DALYs 2010-2019')
     ax2.set_ylim([0, 4500000])
     plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
-                f"IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
+                f"IncidenceSummary_ISS_cut_off_is_{value + 1}_alt.png", bbox_inches='tight')
     plt.clf()
     # scaled results
     fig, ax1 = plt.subplots()
@@ -1049,7 +1049,7 @@ for index, value in enumerate(hsb_in_accepted_range[0]):
     ax2.set_ylabel('Total DALYs 2010-2019')
     ax2.set_ylim([0, 4500000])
     plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
-                f"SCALED_IncidenceSummary_ISS_cut_off_is_{value + 1}.png", bbox_inches='tight')
+                f"SCALED_IncidenceSummary_ISS_cut_off_is_{value + 1}_alt.png", bbox_inches='tight')
     plt.clf()
 # Figure 7
 no_hs_results = get_scenario_outputs('rti_analysis_full_calibrated_no_hs.py', outputspath)[- 1]
@@ -1087,7 +1087,7 @@ for idx, val in enumerate([mult_dalys[hsb_in_accepted_range[0]].mean(), mean_no_
     plt.text(idx - 0.15, val + 500000, f"{np.round(val, 2)}")
 plt.ylim([0, 14000000])
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
-            f"hs_no_hs_inc_dalys.png", bbox_inches='tight')
+            f"hs_no_hs_inc_dalys_alt.png", bbox_inches='tight')
 plt.clf()
 plt.clf()
 plt.bar([0, 1], [mult_inc_death[hsb_in_accepted_range[0]].mean(), mean_no_hs_inc_death],
@@ -1099,7 +1099,7 @@ for idx, val in enumerate([mult_inc_death[hsb_in_accepted_range[0]].mean(), mean
     plt.text(idx - 0.08, val + 5, f"{np.round(val, 2)}")
 plt.ylim([0, 200])
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/"
-            f"hs_no_hs_inc_death.png", bbox_inches='tight')
+            f"hs_no_hs_inc_death_alt.png", bbox_inches='tight')
 plt.clf()
 # Figure 8
 
@@ -1137,7 +1137,7 @@ ax2 = fig.add_subplot(gs[1, 0])
 squarify.plot(new_order_values, label=new_order_names, color=new_order_colors)
 ax2.axis('off')
 ax2.set_title('Total DALYs predicted from 2010-2019 by condition with RTI model')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/DALY_rankings.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/DALY_rankings_alt.png",
             bbox_inches='tight')
 plt.clf()
 

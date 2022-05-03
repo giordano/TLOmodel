@@ -25,14 +25,18 @@ class TestScenario(BaseScenario):
         self.smaller_pop_size = 20000
         self.upper_iss_value = 6
         self.number_of_draws = 6
-        self.runs_per_draw = 4
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
             'filename': 'rti_calibrated_model_run.py',
             'directory': './outputs',
             'custom_levels': {
-                '*': logging.INFO,
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.rti": logging.INFO,
             }
         }
 
