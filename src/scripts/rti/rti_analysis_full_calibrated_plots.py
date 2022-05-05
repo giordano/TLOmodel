@@ -9,7 +9,6 @@ import squarify
 
 from tlo.analysis.utils import (
     extract_params,
-    extract_params_from_json,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,

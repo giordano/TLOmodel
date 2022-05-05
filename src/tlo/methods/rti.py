@@ -1713,7 +1713,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15))
 
     def rti_ask_for_suture_kit(self, person_id):
@@ -1745,7 +1745,7 @@ class RTI(Module):
                     hsi_event=HSI_RTI_Suture(module=self,
                                              person_id=person_id),
                     priority=0,
-                    topen=self.sim.date,
+                    topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
@@ -1769,7 +1769,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1784,7 +1784,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1811,22 +1811,13 @@ class RTI(Module):
                 logger.debug(key='rti_general_message',
                              data=f"person {person_id} requested burn treatment but does not need it")
                 return
-            # if this person is alive ask for the hsi event
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Burn_Management(module=self,
-                                                  person_id=person_id),
-                priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + DateOffset(days=15)
-            )
-            assert counts > 0, "This person has asked for burn treatment, but doens't have any burns"
 
             if 'Burn' not in p['blocked_interventions']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Burn_Management(module=self,
                                                       person_id=person_id),
                     priority=0,
-                    topen=self.sim.date,
+                    topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
@@ -1868,7 +1859,7 @@ class RTI(Module):
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
                     priority=0,
-                    topen=self.sim.date,
+                    topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
@@ -1947,7 +1938,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -4187,7 +4178,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
             random_for_severe_burn = self.module.rng.random_sample(size=1)
             # ======================== If burns severe enough then give IV fluid replacement ===========================
-            if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
+            if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns))[0]:
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
                 self.module.item_codes_for_consumables_required['burn_treatment'].update(
@@ -4233,6 +4224,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 self.module.rti_ask_for_burn_treatment(person_id)
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                print(random_for_severe_burn)
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for burns available.")
 
