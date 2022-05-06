@@ -232,6 +232,6 @@
       }
     }
   ],
-  "commit": "13834545d81c37616a6e9690a6cbf453340163bf",
-  "github": "https://github.com/UCL/TLOmodel/blob/13834545d81c37616a6e9690a6cbf453340163bf/src/scripts/rti/rti_analysis_full_calibrated.py"
+  "commit": "b57ecd71e64f8c69d5aa6fc9d2fb1d31089f24f1",
+  "github": "https://github.com/UCL/TLOmodel/blob/b57ecd71e64f8c69d5aa6fc9d2fb1d31089f24f1/src/scripts/rti/rti_analysis_full_calibrated.py"
 }
