@@ -651,27 +651,27 @@ expected_in_hos_mort = 144 / 7416
 hsb_in_accepted_range = np.where((results_df['HSB'] > expected_hsb_lower) & (results_df['HSB'] < expected_hsb_upper))
 hsb_upper = summarize(extracted_hsb).mean()[:, 'upper'].iloc[hsb_in_accepted_range]
 hsb_lower = summarize(extracted_hsb).mean()[:, 'lower'].iloc[hsb_in_accepted_range]
-ave_percent_admitted_per_draw = []
-for draw in range(info['number_of_draws']):
-    ave_n_inpatient_days_per_run = []
-    for run in range(info['runs_per_draw']):
-        try:
-            df: pd.DataFrame = \
-                load_pickled_dataframes(
-                    results_folder, draw, run, "tlo.methods.healthsystem"
-                )["tlo.methods.healthsystem"]
-            df = df['HSI_Event']
-            for person in df.index:
-                # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
-                # means that this patient didn't require any so append (0)
-                try:
-                    ave_n_inpatient_days_per_run.append(df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
-                except KeyError:
-                    ave_n_inpatient_days_per_run.append(0)
-        except KeyError:
-            pass
-    inpatient_day_counts = np.unique(ave_n_inpatient_days_per_run, return_counts=True)[1]
-    ave_percent_admitted_per_draw.append(inpatient_day_counts[0] / sum(inpatient_day_counts))
+# ave_percent_admitted_per_draw = []
+# for draw in range(info['number_of_draws']):
+#     ave_n_inpatient_days_per_run = []
+#     for run in range(info['runs_per_draw']):
+#         try:
+#             df: pd.DataFrame = \
+#                 load_pickled_dataframes(
+#                     results_folder, draw, run, "tlo.methods.healthsystem"
+#                 )["tlo.methods.healthsystem"]
+#             df = df['HSI_Event']
+#             for person in df.index:
+#                 # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+#                 # means that this patient didn't require any so append (0)
+#                 try:
+#                     ave_n_inpatient_days_per_run.append(df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+#                 except KeyError:
+#                     ave_n_inpatient_days_per_run.append(0)
+#         except KeyError:
+#             pass
+#     inpatient_day_counts = np.unique(ave_n_inpatient_days_per_run, return_counts=True)[1]
+#     ave_percent_admitted_per_draw.append(inpatient_day_counts[0] / sum(inpatient_day_counts))
 
 
 ax7 = fig.add_subplot(gs[3, 0])
