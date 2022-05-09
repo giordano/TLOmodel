@@ -103,5 +103,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "e443f57ea223161ae29cc5bff8170b377c07b29d",
+  "github": "https://github.com/UCL/TLOmodel/blob/e443f57ea223161ae29cc5bff8170b377c07b29d/src/scripts/hiv/hiv_tb_projections/tb_transmission_rate_batch_runs.py"
 }
