@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 15000
 
 # set up the log config
@@ -83,7 +83,7 @@ sim.register(
 
 # change parameters
 sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["transmission_rate"] = 1.0  # 6.5 default
+sim.modules["Tb"].parameters["transmission_rate"] = 0.1  # 6.5 default
 sim.modules["Tb"].parameters["progr_active"] = 0.8  # default 0.05
 
 
