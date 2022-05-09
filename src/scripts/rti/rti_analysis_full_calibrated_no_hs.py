@@ -32,7 +32,11 @@ class TestScenario(BaseScenario):
             'filename': 'rti_calibrated_model_run_no_hs.py',
             'directory': './outputs',
             'custom_levels': {
-                '*': logging.INFO,
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthsystem": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.rti": logging.INFO,
             }
         }
 
