@@ -11,7 +11,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py --draw 0 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario1.py
+tlo batch-submit src/scripts/hiv/hiv_tb_projections/tb_transmission_rate_batch_runs.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -52,21 +52,20 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 5
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2050, 12, 31)
-        self.pop_size = 500000
-        self.number_of_draws = 5
-        self.runs_per_draw = 5
+        self.end_date = Date(2040, 12, 31)
+        self.pop_size = 75000
+        self.number_of_draws = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            "filename": "scenario1_test",
+            "filename": "test_runs",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
             },
         }
 
@@ -98,7 +97,7 @@ class TestScenario(BaseScenario):
         return {
             'Tb': {
                 'scenario': 0,
-                'transmission_rate': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7][draw_number]
+                'transmission_rate': [0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8][draw_number]
             },
         }
 
