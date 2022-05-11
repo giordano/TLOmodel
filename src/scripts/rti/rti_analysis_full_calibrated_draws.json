@@ -306,8 +306,122 @@
           "imm_death_proportion_rti": 0.007
         }
       }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.006234297872961374,
+          "prob_death_iss_10_15": 0.009440117935606061,
+          "prob_death_iss_16_24": 0.026666012722672067,
+          "prob_death_iss_25_35": 0.11392873760000001,
+          "prob_death_iss_35_plus": 0.1937207394852941,
+          "rt_emergency_care_ISS_score_cut_off": 9,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              0.7612737346807732,
+              0.18174215061897694,
+              0.04338808474124165,
+              0.010358223951360018,
+              0.002472863323338708,
+              0.000590357289495644,
+              0.0001409385330646141,
+              3.364686174939126e-05
+            ]
+          ],
+          "base_rate_injrti": 0.004070670102910139,
+          "imm_death_proportion_rti": 0.007
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.006234297872961374,
+          "prob_death_iss_10_15": 0.009440117935606061,
+          "prob_death_iss_16_24": 0.026666012722672067,
+          "prob_death_iss_25_35": 0.11392873760000001,
+          "prob_death_iss_35_plus": 0.1937207394852941,
+          "rt_emergency_care_ISS_score_cut_off": 10,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              0.7612737346807732,
+              0.18174215061897694,
+              0.04338808474124165,
+              0.010358223951360018,
+              0.002472863323338708,
+              0.000590357289495644,
+              0.0001409385330646141,
+              3.364686174939126e-05
+            ]
+          ],
+          "base_rate_injrti": 0.004070670102910139,
+          "imm_death_proportion_rti": 0.007
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "prob_death_iss_less_than_9": 0.006234297872961374,
+          "prob_death_iss_10_15": 0.009440117935606061,
+          "prob_death_iss_16_24": 0.026666012722672067,
+          "prob_death_iss_25_35": 0.11392873760000001,
+          "prob_death_iss_35_plus": 0.1937207394852941,
+          "rt_emergency_care_ISS_score_cut_off": 11,
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              0.7612737346807732,
+              0.18174215061897694,
+              0.04338808474124165,
+              0.010358223951360018,
+              0.002472863323338708,
+              0.000590357289495644,
+              0.0001409385330646141,
+              3.364686174939126e-05
+            ]
+          ],
+          "base_rate_injrti": 0.004070670102910139,
+          "imm_death_proportion_rti": 0.007
+        }
+      }
     }
   ],
-  "commit": "8d5aa59fb836ab4e97ebf4444a660c04ddae8d66",
-  "github": "https://github.com/UCL/TLOmodel/blob/8d5aa59fb836ab4e97ebf4444a660c04ddae8d66/src/scripts/rti/rti_analysis_full_calibrated.py"
+  "commit": "e69c7e486bc5e38468dd6f47d29a630ffcfff8a6",
+  "github": "https://github.com/UCL/TLOmodel/blob/e69c7e486bc5e38468dd6f47d29a630ffcfff8a6/src/scripts/rti/rti_analysis_full_calibrated.py"
 }

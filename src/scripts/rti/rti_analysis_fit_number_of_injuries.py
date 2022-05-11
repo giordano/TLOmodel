@@ -23,9 +23,9 @@ class TestScenario(BaseScenario):
         self.pop_size = 20000
         self.smaller_pop_size = 20000
         self.number_of_samples_in_parameter_range = 6
-        self.upper_iss_value = 6
-        self.number_of_draws = self.number_of_samples_in_parameter_range * self.upper_iss_value
-        self.runs_per_draw = 3
+        self.upper_iss_value = 10
+        self.number_of_draws = 7 * 6
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -83,7 +83,7 @@ class TestScenario(BaseScenario):
             exponential_prediction = list(np.divide(exponential_prediction, sum(exponential_prediction)))
             probability_distributions.append(exponential_prediction)
         hsb_cutoff_max = self.upper_iss_value + 1
-        hsb_cutoff_min = 1
+        hsb_cutoff_min = 4
         iss_cut_off_scores = range(hsb_cutoff_min, hsb_cutoff_max)
         ninj_df = pd.DataFrame()
         ninj_df['ninj'] = [[[1, 2, 3, 4, 5, 6, 7, 8]]] * len(probability_distributions)
