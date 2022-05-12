@@ -1,7 +1,7 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_fit_number_of_injuries.py",
+  "scenario_script_path": "src/scripts/rti/rti_analysis_fit_number_of_injuries.py",
   "scenario_seed": 12,
-  "runs_per_draw": 3,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -1305,5 +1305,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "34938c09359c29730c43c5eb5a7764e2de6e54a9",
+  "github": "https://github.com/UCL/TLOmodel/blob/34938c09359c29730c43c5eb5a7764e2de6e54a9/src/scripts/rti/rti_analysis_fit_number_of_injuries.py"
 }

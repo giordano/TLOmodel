@@ -206,12 +206,12 @@ info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 search_range_lower = 1 - params.loc[params['module_param'] == 'RTI:number_of_injured_body_regions_distribution',
                                     'value'][0][1][0]
-search_range_upper = 1 - params.iloc[-2]['value'][1][0]
+search_range_upper = 1 - params.iloc[-2]['value']
 x_ticks = [f"Parameter \ndistribution {i + 1}" for i in range(0, len(params))]
 # 2) Extract a series for all runs:
 n_inj_overall = extract_results_number_of_injuries(results_folder, module="tlo.methods.rti", key='Injury_information',
                                                    column='Number_of_injuries')
-n_inj_overall.index = ['draw_1', 'draw_2', 'draw_3']
+# n_inj_overall.index = ['draw_1', 'draw_2', 'draw_3']
 average_n_inj_per_draw = n_inj_overall.mean()
 n_people_in_rti = extract_results(results_folder, module="tlo.methods.rti", key='summary_1m', column='number involved in a rti')
 average_n_people_per_draw = summarize(n_people_in_rti, only_mean=True).sum()
@@ -275,7 +275,8 @@ for n, idx in enumerate(idxs):
     inc_rti = rti_incidence.loc[best_fit_index].values[0]
     mean_perc_hsb = prop_sought_healthcare_onlymeans.loc[best_fit_index].values[0]
     inhospital_mortality = percent_inhospital_mortality_means.loc[best_fit_index].to_list()[0]
-    best_fit_dist_df.loc['ISS_cut_off_' + str(n + 1)] = \
+    ISS_scores = params.loc[params['module_param'] == 'RTI:rt_emergency_care_ISS_score_cut_off', 'value'].unique()
+    best_fit_dist_df.loc['ISS_cut_off_' + str(ISS_scores[n])] = \
         [
             params_in_run.loc[
                 params_in_run['module_param'] == 'RTI:number_of_injured_body_regions_distribution'
