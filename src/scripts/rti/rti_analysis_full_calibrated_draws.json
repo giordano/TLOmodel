@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_full_calibrated.py",
+  "scenario_script_path": "src/scripts/rti/rti_analysis_full_calibrated.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -140,16 +140,14 @@
               8
             ],
             [
-              [
-                0.7093834795440467,
-                0.2061841889568684,
-                0.05992798112965075,
-                0.017418226588785873,
-                0.00506265373502088,
-                0.0014714737295484586,
-                0.00042768774047753785,
-                0.00012430857560121887
-              ]
+              0.7093834795440467,
+              0.2061841889568684,
+              0.05992798112965075,
+              0.017418226588785873,
+              0.00506265373502088,
+              0.0014714737295484586,
+              0.00042768774047753785,
+              0.00012430857560121887
             ]
           ],
           "base_rate_injrti": 0.004268219608865612,
@@ -423,5 +421,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "84878141ba2187d6e339a0384839cbc664f9d42e",
+  "github": "https://github.com/UCL/TLOmodel/blob/84878141ba2187d6e339a0384839cbc664f9d42e/src/scripts/rti/rti_analysis_full_calibrated.py"
 }
