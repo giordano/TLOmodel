@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_analysis_full_calibrated.py",
+  "scenario_script_path": "src/scripts/rti/rti_analysis_full_calibrated.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -383,5 +383,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "82c248f68ae00a516198735e1bcea93453328b07",
+  "github": "https://github.com/UCL/TLOmodel/blob/82c248f68ae00a516198735e1bcea93453328b07/src/scripts/rti/rti_analysis_full_calibrated.py"
 }
