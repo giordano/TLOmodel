@@ -1,7 +1,7 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/full_calibrated_single_injury.py",
+  "scenario_script_path": "src/scripts/rti/full_calibrated_single_injury.py",
   "scenario_seed": 12,
-  "runs_per_draw": 4,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -373,5 +373,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "f9ba4c39ca65fdad02a4960bc674570966fda9e3",
+  "github": "https://github.com/UCL/TLOmodel/blob/f9ba4c39ca65fdad02a4960bc674570966fda9e3/src/scripts/rti/full_calibrated_single_injury.py"
 }
