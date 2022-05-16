@@ -36,7 +36,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0073265459144538775
+          "base_rate_injrti": 0.004856573892566458
         }
       }
     },
@@ -73,7 +73,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007305847526928069
+          "base_rate_injrti": 0.004701052238029585
         }
       }
     },
@@ -110,7 +110,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007327347317209445
+          "base_rate_injrti": 0.004552917476373716
         }
       }
     },
@@ -147,7 +147,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007221878581349396
+          "base_rate_injrti": 0.004517762200840012
         }
       }
     },
@@ -184,7 +184,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007096707222518839
+          "base_rate_injrti": 0.004459020336152398
         }
       }
     },
@@ -221,7 +221,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555
+          "base_rate_injrti": 0.004385252172352893
         }
       }
     },
@@ -258,7 +258,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555
+          "base_rate_injrti": 0.004393423642533623
         }
       }
     },
@@ -295,7 +295,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555
+          "base_rate_injrti": 0.0045037587683385005
         }
       }
     },
@@ -332,7 +332,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555
+          "base_rate_injrti": 0.00445896398800897
         }
       }
     },
@@ -369,11 +369,11 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007138974764176555
+          "base_rate_injrti": 0.00446515013297049
         }
       }
     }
   ],
-  "commit": "f9ba4c39ca65fdad02a4960bc674570966fda9e3",
-  "github": "https://github.com/UCL/TLOmodel/blob/f9ba4c39ca65fdad02a4960bc674570966fda9e3/src/scripts/rti/full_calibrated_single_injury.py"
+  "commit": "f9a4a62c8ee4d813fd55e3675ec0f959d5495726",
+  "github": "https://github.com/UCL/TLOmodel/blob/f9a4a62c8ee4d813fd55e3675ec0f959d5495726/src/scripts/rti/full_calibrated_single_injury.py"
 }
