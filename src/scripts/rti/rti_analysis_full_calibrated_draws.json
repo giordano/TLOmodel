@@ -36,7 +36,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004379838123425956,
+          "base_rate_injrti": 0.00448001066462556,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -74,7 +74,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004361454280220748,
+          "base_rate_injrti": 0.004395635752073786,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -112,7 +112,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004259142848806492,
+          "base_rate_injrti": 0.004251312821614598,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -150,7 +150,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004337774259518509,
+          "base_rate_injrti": 0.004290988456621076,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -188,7 +188,7 @@
               6.547319397917849e-05
             ]
           ],
-          "base_rate_injrti": 0.004185563585208227,
+          "base_rate_injrti": 0.004214573069790353,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -226,7 +226,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004161450605355551,
+          "base_rate_injrti": 0.0041805173921692935,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -264,7 +264,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.004155220241229541,
+          "base_rate_injrti": 0.004193188759262065,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -302,7 +302,7 @@
               6.547319397917849e-05
             ]
           ],
-          "base_rate_injrti": 0.0042886960484627284,
+          "base_rate_injrti": 0.004250734873531323,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -340,7 +340,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.0041771183703414455,
+          "base_rate_injrti": 0.004205320516888551,
           "imm_death_proportion_rti": 0.007
         }
       }
@@ -378,12 +378,12 @@
               6.547319397917849e-05
             ]
           ],
-          "base_rate_injrti": 0.004216694931229875,
+          "base_rate_injrti": 0.004126078966270524,
           "imm_death_proportion_rti": 0.007
         }
       }
     }
   ],
-  "commit": "3ccdb0a357626bb04c9aa6678a771599156d97d1",
-  "github": "https://github.com/UCL/TLOmodel/blob/3ccdb0a357626bb04c9aa6678a771599156d97d1/src/scripts/rti/rti_analysis_full_calibrated.py"
+  "commit": "7cf19a71b61bc138a787b477ad983bc62ab37726",
+  "github": "https://github.com/UCL/TLOmodel/blob/7cf19a71b61bc138a787b477ad983bc62ab37726/src/scripts/rti/rti_analysis_full_calibrated.py"
 }

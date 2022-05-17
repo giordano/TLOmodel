@@ -80,7 +80,9 @@ class TestScenario(BaseScenario):
                                         1.775581395 * 1.1213015334257184, 1.775581395, 1.475581395]
         new_inc = [0.004364235370981745, 0.004334746692121514, 0.004366273338474707, 0.004268219608865612,
                    0.0040991908466201646, 0.004070670102910139]
-        parameter_df['base_rate_injrti'] = new_inc
+        scale_for_inc = np.divide(954.2, [1065.88183924, 1039.03881773, 1050.35174955, 1075.32307716,
+                                  1010.86440546, 1017.65130995])
+        parameter_df['base_rate_injrti'] = np.multiply(new_inc, scale_for_inc)
         return {
             'RTI': {'prob_death_iss_less_than_9': parameter_df['scale_factor'][draw_number] * (102 / 11650),
                     'prob_death_iss_10_15': parameter_df['scale_factor'][draw_number] * (7 / 528),
