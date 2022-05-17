@@ -28,21 +28,22 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 111
+        self.seed = 876
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 30000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 25
 
     def log_configuration(self):
         return {
-            'filename': 'calibration_30k', 'directory': './outputs',
+            'filename': '30k_test', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
