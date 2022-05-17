@@ -25,7 +25,7 @@ class TestScenario(BaseScenario):
         self.smaller_pop_size = 20000
         self.upper_iss_value = 6
         self.number_of_draws = 6
-        self.runs_per_draw = 2
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
