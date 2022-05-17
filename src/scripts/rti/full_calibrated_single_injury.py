@@ -25,7 +25,7 @@ class TestScenario(BaseScenario):
         self.smaller_pop_size = 20000
         self.upper_iss_value = 10
         self.number_of_draws = 10
-        self.runs_per_draw = 2
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
@@ -68,8 +68,11 @@ class TestScenario(BaseScenario):
                          0.99833061, 0.99833061]
         out_put_inc = [1436.47294864, 1479.80232146, 1532.44598692, 1522.14137873, 1515.46396021, 1550.13474785,
                        1547.25160229, 1509.3463305, 1524.50923325, 1522.39713515]
+        extra_scale = [0.92285142, 0.93949053, 0.9611783 , 0.91216093, 0.94584172, 0.94874174, 0.94126555, 0.93742996,
+                       0.95696138, 0.9284968 ]
         rescale = np.divide(952.2, out_put_inc)
         scale_for_inc = np.multiply(scale_for_inc, rescale)
+        scale_for_inc = np.multiply(scale_for_inc, extra_scale)
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         return {
