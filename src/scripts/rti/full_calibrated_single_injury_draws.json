@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/rti/full_calibrated_single_injury.py",
   "scenario_seed": 12,
-  "runs_per_draw": 2,
+  "runs_per_draw": 4,
   "draws": [
     {
       "draw_number": 0,
@@ -36,7 +36,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004856573892566458
+          "base_rate_injrti": 0.004481896113089883
         }
       }
     },
@@ -73,7 +73,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004701052238029585
+          "base_rate_injrti": 0.004416594058664101
         }
       }
     },
@@ -110,7 +110,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004552917476373716
+          "base_rate_injrti": 0.0043761654799811785
         }
       }
     },
@@ -147,7 +147,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004517762200840012
+          "base_rate_injrti": 0.004120926170637072
         }
       }
     },
@@ -184,7 +184,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004459020336152398
+          "base_rate_injrti": 0.004217527464261362
         }
       }
     },
@@ -221,7 +221,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004385252172352893
+          "base_rate_injrti": 0.0041604717763368635
         }
       }
     },
@@ -258,7 +258,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.004393423642533623
+          "base_rate_injrti": 0.004135378321272414
         }
       }
     },
@@ -295,7 +295,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0045037587683385005
+          "base_rate_injrti": 0.004221958402053211
         }
       }
     },
@@ -332,7 +332,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.00445896398800897
+          "base_rate_injrti": 0.004267056331335367
         }
       }
     },
@@ -369,11 +369,11 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.00446515013297049
+          "base_rate_injrti": 0.004145877609982675
         }
       }
     }
   ],
-  "commit": "f9a4a62c8ee4d813fd55e3675ec0f959d5495726",
-  "github": "https://github.com/UCL/TLOmodel/blob/f9a4a62c8ee4d813fd55e3675ec0f959d5495726/src/scripts/rti/full_calibrated_single_injury.py"
+  "commit": "3ccdb0a357626bb04c9aa6678a771599156d97d1",
+  "github": "https://github.com/UCL/TLOmodel/blob/3ccdb0a357626bb04c9aa6678a771599156d97d1/src/scripts/rti/full_calibrated_single_injury.py"
 }
