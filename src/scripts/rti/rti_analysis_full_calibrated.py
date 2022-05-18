@@ -100,8 +100,12 @@ class TestScenario(BaseScenario):
                                         1.02077057, 1.05356021, 1.02615006, 1.03587243])
         output = [930.90891369, 944.79547439, 953.95375283, 962.58209307, 945.64587678, 947.85714176, 943.57801207,
                   960.70361922, 945.81425988, 973.11198994]
+        output_2 = [959.67588327, 972.29692437, 939.53105204, 949.92991072, 954.76988185, 943.20013057, 947.68114467,
+                    954.8271548, 939.28989698, 952.24764525]
         rescale = np.divide(952.2, output)
+        rescale_2 = np.divide(952.2, output_2)
         new_inc = np.multiply(new_inc, rescale)
+        new_inc = np.multiply(new_inc, rescale_2)
 
         # current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = new_inc

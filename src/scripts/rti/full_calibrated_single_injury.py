@@ -72,11 +72,15 @@ class TestScenario(BaseScenario):
                        0.95696138, 0.9284968 ]
         out_put_inc_2 = [970.12418182, 968.50729623, 972.4322916 , 941.63905179, 943.75581172, 972.96504427,
                          953.80351928, 966.72696234,968.45059946, 970.24978142]
+        out_put_inc_3 = [960.38588844, 964.92640775, 968.43159047, 941.01630126, 967.86953819, 935.04141754,
+                         951.7154408, 952.73867918, 939.13681765, 945.30128895]
         rescale = np.divide(952.2, out_put_inc)
         rescale_2 = np.divide(952.2, out_put_inc_2)
+        rescale_3 = np.divide(952.2, out_put_inc_3)
         scale_for_inc = np.multiply(scale_for_inc, rescale)
         scale_for_inc = np.multiply(scale_for_inc, extra_scale)
         scale_for_inc = np.multiply(scale_for_inc, rescale_2)
+        scale_for_inc = np.multiply(scale_for_inc, rescale_3)
         current_inc = 0.00715091242587118
         parameter_df['base_rate_injrti'] = np.multiply(current_inc, scale_for_inc)
         return {
