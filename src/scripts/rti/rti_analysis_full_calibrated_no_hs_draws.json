@@ -36,7 +36,7 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.003906955947349724
+          "base_rate_injrti": 0.003882261172754192
         }
       }
     },
@@ -73,11 +73,11 @@
               0.00012430857560121887
             ]
           ],
-          "base_rate_injrti": 0.0039808092085132935
+          "base_rate_injrti": 0.0039189130392214356
         }
       }
     }
   ],
-  "commit": "73532557efa34c1b09f33ae27b06d41e7226028d",
-  "github": "https://github.com/UCL/TLOmodel/blob/73532557efa34c1b09f33ae27b06d41e7226028d/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
+  "commit": "4e9f9d8cdd7b8cb848b4067600bf458b8a253a5e",
+  "github": "https://github.com/UCL/TLOmodel/blob/4e9f9d8cdd7b8cb848b4067600bf458b8a253a5e/src/scripts/rti/rti_analysis_full_calibrated_no_hs.py"
 }

@@ -679,7 +679,7 @@ ax7.bar(np.arange(len(results_df.iloc[hsb_in_accepted_range])), results_df.iloc[
         color='darkseagreen', label='proportion sought care')
 ax7.vlines(x=np.arange(len(results_df.iloc[hsb_in_accepted_range])), ymin=hsb_lower, ymax=hsb_upper, color='black')
 ax7.axhline(expected_hsb_upper, color='g', label='Upper HSB bound', linestyle='dashed')
-ax7.axhline(expected_hsb_lower, color='g', label='Upper HSB bound', linestyle='dashed')
+ax7.axhline(expected_hsb_lower, color='g', label='Lower HSB bound', linestyle='dashed')
 ax7.set_xticks(np.arange(len(results_df.iloc[hsb_in_accepted_range])))
 ax7.set_xticklabels(results_df.iloc[hsb_in_accepted_range]['ISS cutoff score'])
 ax7.set_ylabel('Proportion')
@@ -758,7 +758,7 @@ in_hos_lower = summarize(extracted_perc_in_hos_death).mean()[:, 'lower'].iloc[be
 ax8 = fig.add_subplot(gs[3, 1])
 
 ax8.bar(np.arange(2), [expected_in_hospital_mortality, best_fit_found], color=['indianred', 'lightcoral'])
-ax8.vlines(x=2, ymin=in_hos_lower, ymax=in_hos_upper, color='black')
+ax8.vlines(x=1, ymin=in_hos_lower, ymax=in_hos_upper, color='black')
 ax8.set_xticks(np.arange(2))
 ax8.set_xticklabels(['Tanzanian national average', 'Model'])
 ax8.set_ylabel('Percent mortality')
@@ -994,8 +994,6 @@ for index, value in enumerate(hsb_in_accepted_range[0]):
                  rotation=45)
     ax1.set_ylim([0, 1800])
     ax1.legend(loc='upper left')
-    ax1.set_title('Comparing the incidence of RTI, RTI death and injuries\nfor the GBD study, single injury model and\n'
-                  'multiple injury model')
     ax1.set_ylabel('Incidence per \n 100,000 person years')
     ax1.axvline(2.75, color='black', linestyle='solid')
     ax2 = ax1.twinx()
@@ -1078,7 +1076,7 @@ mean_no_hs_dalys = np.mean(no_hs_scaled_dalys)
 mult_inc_death = mean_incidence_of_death
 
 plt.clf()
-plt.bar([0, 1], [mult_dalys[hsb_in_accepted_range[0]].mean(), mean_no_hs_dalys],
+plt.bar([0, 1], [mult_dalys[4], mean_no_hs_dalys],
         color=['lightsteelblue', 'lightsalmon'])
 plt.xticks([0, 1], ['With health\nsystem', 'Without health\nsystem'])
 plt.ylabel('DALYs')
@@ -1090,7 +1088,7 @@ plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPape
             f"hs_no_hs_inc_dalys_alt.png", bbox_inches='tight')
 plt.clf()
 plt.clf()
-plt.bar([0, 1], [mult_inc_death[hsb_in_accepted_range[0]].mean(), mean_no_hs_inc_death],
+plt.bar([0, 1], [mult_inc_death[hsb_in_accepted_range[0][0]][0], mean_no_hs_inc_death],
         color=['lightsteelblue', 'lightsalmon'])
 plt.xticks([0, 1], ['With health\nsystem', 'Without health\nsystem'])
 plt.ylabel('Incidence per 100,000 p.y.')
