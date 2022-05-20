@@ -534,11 +534,11 @@ class Labour(Module):
             Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
 
-        # DUMMYS
+        # ANALYSIS PARAMETERS
         'activate_perfect_bemonc': Parameter(
-            Types.BOOL, ''),
+            Types.BOOL, 'When set to True, all BEmONC interventions will be delivered'),
         'activate_perfect_cemonc': Parameter(
-            Types.BOOL, ''),
+            Types.BOOL, 'When set to True, all CEmONC interventions will be delivered'),
 
     }
 
@@ -3317,6 +3317,8 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
 
 class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
     """
+    The LabourAnalysisEvent is scheduled to override parameters which govern the delivery of BEmONC/CEmONC interventions
+    at some predetermined time point in a simulation run
     """
     def __init__(self, module):
         super().__init__(module)
@@ -3324,6 +3326,8 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
 
+        # When the event runs, if activate_perfect_bemonc == True, the availability of trained healthcare workers and
+        # their competence is set to 100% in relation to BEmONC interventions
         if params['activate_perfect_bemonc']:
             logger.info(key='analysis', data='activate_perfect_bemonc param correctly switched')
             for parameter in ['prob_hcw_avail_iv_abx',
@@ -3338,6 +3342,8 @@ class LabourAnalysisEvent(Event, PopulationScopeEventMixin):
             params['mean_hcw_competence_hc'][0] = 1.0
             params['mean_hcw_competence_hp'][0] = 1.0
 
+        # Similarly, if activate_perfect_cemonc == True, the availibiltiy of trained healthcare workers and
+        # their competence is set to 100% in relation to CEmONC interventions
         if params['activate_perfect_cemonc']:
             logger.info(key='analysis', data='activate_perfect_cemonc param correctly switched')
             for parameter in ['prob_hcw_avail_blood_tran',
