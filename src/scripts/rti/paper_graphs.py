@@ -767,7 +767,7 @@ ax2.set_title('b)       Proportion of RTIs involving males', loc='left')
 ax3.set_title('c)       Age distribution of RTIs', loc='left')
 ax4.set_title('d)       Proportion of RTIs involving alcohol', loc='left')
 ax5.set_title('e)       Incidence of on scene mortality per 100,000 persons', loc='left')
-ax6.set_title('f)       Average number of injuries of those with RTIs in hospital', loc='left')
+ax6.set_title('f)       Average number of injuries in RTI patients in hospital', loc='left')
 ax7.set_title('g)       Proportion of those with RTIs who seek care', loc='left')
 ax8.set_title('h)       Proportion of fatalities in those who receive healthcare', loc='left')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/FinalPaperOutput/Figure_3_alt.png",
