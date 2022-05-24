@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_block_interventions_batch.py",
+  "scenario_script_path": "src/scripts/rti/rti_block_interventions_batch.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -78,5 +78,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "5fd74bf9789ab44b1347afae85f3a409ec65dd60",
+  "github": "https://github.com/UCL/TLOmodel/blob/5fd74bf9789ab44b1347afae85f3a409ec65dd60/src/scripts/rti/rti_block_interventions_batch.py"
 }
