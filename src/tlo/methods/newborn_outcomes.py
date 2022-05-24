@@ -975,8 +975,14 @@ class NewbornOutcomes(Module):
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
 
+            # check core/optional consumables
+            consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                self, core='resuscitation', optional='iv_drug_equipment', int_type='bemonc',
+                cons=self.item_codes_nb_consumables)
+
             # Required consumables are defined
-            avail = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['resuscitation'])
+            avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                              optional_item_codes=consumable_selection['optional'])
 
             # Run HCW check
             sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
@@ -1014,8 +1020,14 @@ class NewbornOutcomes(Module):
                 sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
             if facility_type != '1a':
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care_core'],
-                                                  optional_item_codes=cons['sepsis_supportive_care_optional'])
+
+                # check core/optional consumables
+                consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                    self, core='sepsis_supportive_care_core', optional='sepsis_supportive_care_optional',
+                    int_type='bemonc', cons=self.item_codes_nb_consumables)
+
+                avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                                  optional_item_codes=consumable_selection['optional'])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
@@ -1023,8 +1035,12 @@ class NewbornOutcomes(Module):
 
             # The same pattern is then followed for health centre care
             else:
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_abx'],
-                                                  optional_item_codes=cons['iv_drug_equipment'])
+                consumable_selection = pregnancy_helper_functions.determine_consumables_to_request(
+                    self, core='sepsis_abx', optional='iv_drug_equipment',
+                    int_type='bemonc', cons=self.item_codes_nb_consumables)
+
+                avail = hsi_event.get_consumables(item_codes=consumable_selection['core'],
+                                                  optional_item_codes=consumable_selection['optional'])
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
