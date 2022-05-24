@@ -19,37 +19,36 @@ def get_list_of_items(self, item_list):
     return codes
 
 
-def determine_consumables_to_request(self, core, optional, int_type, cons):
+def return_cons_avail(self, core, optional, hsi_event, cons):
     """
-    This function is called to determine if item codes should be requested as optional or not through the health
-    system. This functionality allows for specific interventions to be forced to run from specific time points when
-    analysis is being conducted
-    :param self: module
-    :param core: (STR) name of core package of item codes
-    :param optional: (STR) name of optional package of item codes
-    :param int_type: (STR) bemonc/cemonc intervention
-    :param cons: dict storing module level consumables
-    :return: (LIST) item codes of core and optional items
     """
     params = self.sim.modules['Labour'].current_parameters
 
-    # If analysis is being conducted, no item codes will be required to ensure the intervention runs, however they
-    # are still logged through 'optional' request
-    if (int_type == 'bemonc') and params['alternative_bemonc_availability'] and self.sim.date.year > 2020:
-        core_cons = []
-        optional_cons = cons[core] + cons[optional]
+    # Check the consumables are available, this will log the consumables for any intervention. If there is no analysis
+    # being conducted the result is returned
+    available = hsi_event.get_consumables(item_codes=cons[core],
+                                          optional_item_codes=cons[optional])
 
-    elif (int_type == 'cemonc') and params['alternative_cemonc_availability'] and self.sim.date.year > 2020:
-        core_cons = []
-        optional_cons = cons[core] + cons[optional]
+    # Otherwise, if analysis is being conducted we use a random draw to override the availability of the consumables
+    for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
+                                                                'DeliveryCare_Comprehensive',
+                                                                'PostnatalCare_Maternal'],
+                                                               ['alternative_bemonc_availability',
+                                                                'alternative_cemonc_availability',
+                                                                'pnc_availability_probability'],
+                                                               ['bemonc_availability', 'cemonc_availability',
+                                                                'pnc_availability_probability']):
 
-    # Otherwise 'core' item codes are set on which the intervention being delivered is conditioned
-    else:
-        core_cons = cons[core]
-        optional_cons = cons[optional]
+        if (hsi_event.TREATMENT_ID == treatment_id) and analysis_param and (self.sim.date > params['analysis_date']):
+            if self.rng.random_sample() < analysis_coverage:
+                available = True
+            else:
+                available = False
 
-    return {'core': core_cons,
-            'optional': optional_cons}
+    # todo : neonatal PNC
+    # todo : ANC
+
+    return available
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
