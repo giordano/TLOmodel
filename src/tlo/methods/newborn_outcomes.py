@@ -981,8 +981,9 @@ class NewbornOutcomes(Module):
                 cons=self.item_codes_nb_consumables)
 
             # Run HCW check
-            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-                sf='neo_resus',  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                       sf='neo_resus',
+                                                                                       hsi_event=hsi_event)
 
             # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
             # deliveries that are not attended
@@ -1012,9 +1013,9 @@ class NewbornOutcomes(Module):
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
             # Run HCW check
-            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-                sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
-
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                       sf='iv_abx',
+                                                                                       hsi_event=hsi_event)
             if facility_type != '1a':
 
                 # check consumables

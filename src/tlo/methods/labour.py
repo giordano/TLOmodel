@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -549,7 +549,8 @@ class Labour(Module):
             Types.BOOL, ''),
         'pnc_availability_odds': Parameter(
             Types.REAL, ''),
-
+        'pnc_availability_probability': Parameter(
+            Types.REAL, ''),
     }
 
     PROPERTIES = {
@@ -1621,53 +1622,6 @@ class Labour(Module):
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
     # similar pattern in which consumables are requested and the intervention is delivered if they are available
 
-    # The function is only called if the squeeze factor of the HSI calling the function is below a set 'threshold' for
-    # each intervention. Thresholds will vary between intervention
-
-    def check_emonc_signal_function_will_run(self, sf, f_lvl):
-        """
-        This function runs a check against parameters describing the mean availability of HCWs capable of delivering
-        this intervention in the health system and the mean HCW competence to determine if a EmONC signal function of
-        interest will run (pending consumable check). If analysis is being undertaken the logic is overridden and a
-        fixed availability parameter is used to ensure the correct availability of the intervention
-        :param sf: (str) signal function
-        :param f_lvl: (str) facility level
-        :return: bool True or False
-        """
-        params = self.current_parameters
-
-        # If a BEmONC intervention is being checked, and the script is being ran during analysis,
-        # params['bemonc_availability'] determines the availability/competence of the HCW
-        if ((sf not in ('surg', 'blood_tran')) and
-            params['alternative_bemonc_availability'] and
-           (self.rng.random_sample() < params['bemonc_availability']) and
-           self.sim.date > params['analysis_date']):
-            return True
-
-        # The same is true if analysis relating to CEmONC availability is being conducted
-        elif ((sf in ('surg', 'blood_tran')) and
-              params['alternative_cemonc_availability'] and
-              (self.rng.random_sample() < params['cemonc_availability']) and
-              self.sim.date > params['analysis_date']):
-            return True
-
-        # Otherwise baseline parameters are used to replicate service delivery in Malawi
-        else:
-            if sf in ('surg', 'blood_tran'):
-                list_pos = 1
-            else:
-                list_pos = 0
-
-            if f_lvl == '1a':
-                competence = params['mean_hcw_competence_hc'][list_pos]
-            else:
-                competence = params['mean_hcw_competence_hp'][list_pos]
-
-            if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
-                return True
-
-        return False
-
     def prophylactic_labour_interventions(self, hsi_event):
         """
         This function houses prophylactic interventions delivered by a Skilled Birth Attendant to women in labour.
@@ -1695,8 +1649,8 @@ class Labour(Module):
 
             else:
                 # Run HCW check
-                sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
-                                                                     f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='iv_abx',
+                                                                                           hsi_event=hsi_event)
 
                 # If she has not already receive antibiotics, we check for consumables
                 avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
@@ -1776,8 +1730,8 @@ class Labour(Module):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
             # Run HCW check
-            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
-                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='anticonvulsant',
+                                                                                       hsi_event=hsi_event)
 
             # Define and check for the required consumables
             avail = pregnancy_helper_functions.return_cons_avail(
@@ -1848,8 +1802,8 @@ class Labour(Module):
            (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
 
             # Run HCW check
-            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
-                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='anticonvulsant',
+                                                                                       hsi_event=hsi_event)
 
             # define and check required consumables
             avail = pregnancy_helper_functions.return_cons_avail(
@@ -1905,8 +1859,8 @@ class Labour(Module):
                     cons=self.item_codes_lab_consumables)
 
                 # run HCW check
-                sf_check = self.check_emonc_signal_function_will_run(sf='avd',
-                                                                     f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='avd',
+                                                                                           hsi_event=hsi_event)
 
                 if avail and sf_check:
 
@@ -1950,8 +1904,8 @@ class Labour(Module):
            (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
 
             # run HCW check
-            sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
-                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='iv_abx',
+                                                                                       hsi_event=hsi_event)
 
             # Define and check available consumables
             avail = pregnancy_helper_functions.return_cons_avail(
@@ -2036,8 +1990,8 @@ class Labour(Module):
             cons=self.item_codes_lab_consumables)
 
         # run HCW check
-        sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
-                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='uterotonic',
+                                                                                   hsi_event=hsi_event)
 
         # This treatment reduces a womans risk of developing uterine atony AND retained placenta, both of which are
         # preceding causes of postpartum haemorrhage
@@ -2069,8 +2023,8 @@ class Labour(Module):
                 cons=self.item_codes_lab_consumables)
 
             # run HCW check
-            sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
-                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='uterotonic',
+                                                                                       hsi_event=hsi_event)
 
             if avail and sf_check:
 
@@ -2113,8 +2067,8 @@ class Labour(Module):
             hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['pph_optional'])
 
             # run HCW check
-            sf_check = self.check_emonc_signal_function_will_run(sf='man_r_placenta',
-                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='man_r_placenta',
+                                                                                       hsi_event=hsi_event)
 
             # Similar to uterotonics we apply a probability that this intervention will successfully stop
             # bleeding to ensure some women go on to require further care
@@ -2149,8 +2103,8 @@ class Labour(Module):
             cons=self.item_codes_lab_consumables)
 
         # run HCW check
-        sf_check = self.check_emonc_signal_function_will_run(sf='surg',
-                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',
+                                                                                   hsi_event=hsi_event)
 
         if not mni[person_id]['retained_placenta']:
 
@@ -2191,8 +2145,8 @@ class Labour(Module):
             cons=self.item_codes_lab_consumables)
 
         # check HCW
-        sf_check = self.check_emonc_signal_function_will_run(sf='blood_tran',
-                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='blood_tran',
+                                                                                   hsi_event=hsi_event)
 
         if avail and sf_check:
             mni[person_id]['received_blood_transfusion'] = True
@@ -3188,8 +3142,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 cons=self.module.item_codes_lab_consumables)
 
             # We check that the HCW will deliver the intervention
-            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
-                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
+                                                                                       hsi_event=self)
 
             if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
                 person = df.loc[person_id]
@@ -3215,8 +3169,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 self.module, core='obstetric_surgery_core', optional='obstetric_surgery_optional', hsi_event=self,
                 cons=self.module.item_codes_lab_consumables)
 
-            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
-                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
+                                                                                       hsi_event=self)
 
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture

@@ -1280,8 +1280,9 @@ class CareOfWomenDuringPregnancy(Module):
         avail = hsi_event.get_consumables(item_codes=cons['blood_transfusion'],
                                           optional_item_codes=cons['iv_drug_equipment'])
 
-        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-            sf='blood_tran', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                   sf='blood_tran',
+                                                                                   hsi_event=hsi_event)
 
         # If the blood is available we assume the intervention can be delivered
         if avail and sf_check:
@@ -1358,8 +1359,9 @@ class CareOfWomenDuringPregnancy(Module):
                                           optional_item_codes=cons['eclampsia_management_optional'])
 
         # check HCW will deliver intervention
-        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-            sf='anticonvulsant', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                   sf='anticonvulsant',
+                                                                                   hsi_event=hsi_event)
 
         # If available deliver the treatment
         if avail and sf_check:
@@ -1378,8 +1380,9 @@ class CareOfWomenDuringPregnancy(Module):
         avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
                                           optional_item_codes=cons['iv_drug_equipment'])
 
-        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-            sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                   sf='iv_abx',
+                                                                                   hsi_event=hsi_event)
 
         if avail and sf_check:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
@@ -2610,8 +2613,9 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                                              optional_item_codes=cons['post_abortion_care_optional'])
 
         # Check HCW availability
-        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(sf='retained_prod',
-                                                                                   f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                   sf='retained_prod',
+                                                                                   hsi_event=self)
 
         # todo: add equipment for uterine evacuation for TLO version 2.0
         # todo: specify key consumables instead of groups (await calibration)
