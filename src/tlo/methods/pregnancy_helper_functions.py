@@ -56,32 +56,26 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     """
     params = self.current_parameters
 
-    # If analysis is not being conducted on any of the maternity services....
-    if ((not params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Basic') or
-        (not params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Neonatal') or
-        (not params['alternative_cemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Comprehensive') or
-       (not params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
-        (not params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
-
-        # We use the status quo parameters to determine availability of signal function interventions
-        if hsi_event.TREATMENT_ID == 'DeliveryCare_Comprehensive':
-            list_pos = 1
-        else:
-            list_pos = 0
-
+    def see_if_sf_will_run():
         if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
-            competence = params['mean_hcw_competence_hc'][list_pos]
+            competence = params['mean_hcw_competence_hc'][0]
         else:
-            competence = params['mean_hcw_competence_hp'][list_pos]
+            competence = params['mean_hcw_competence_hp'][1]
 
         if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
             return True
 
         return False
 
-    else:
-        # Otherwise we set the availability of interventions called within certain HSIs to a predetermined coverage
-        # level
+    if self.sim.date < params['analysis_date']:
+        return see_if_sf_will_run()
+
+    elif ((params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Basic') or
+          (params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Neonatal') or
+          (params['alternative_cemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Comprehensive') or
+          (params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
+          (params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
+
         for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
                                                                     'DeliveryCare_Comprehensive',
                                                                     'PostnatalCare_Maternal'],
@@ -92,10 +86,13 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
                                                                     'pnc_availability_probability']):
 
             if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
-               (self.rng.random_sample() > params[analysis_coverage]) and (self.sim.date > params['analysis_date']):
+               (self.rng.random_sample() > params[analysis_coverage]):
                 return True
 
         return False
+
+    else:
+        return see_if_sf_will_run()
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):

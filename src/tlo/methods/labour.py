@@ -3275,32 +3275,6 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
 
-        # If an alternative availability of BEmONC is desired then the availability of trained HCW and competence
-        # is set to a predetermined value for the relevant interventions
-        if params['alternative_bemonc_availability']:
-            logger.info(key='analysis', data='activate_perfect_bemonc param correctly switched')
-            for parameter in ['prob_hcw_avail_iv_abx',
-                              'prob_hcw_avail_uterotonic',
-                              'prob_hcw_avail_anticonvulsant',
-                              'prob_hcw_avail_man_r_placenta',
-                              'prob_hcw_avail_avd'
-                              'prob_hcw_avail_neo_resus',
-                              'prob_hcw_avail_retained_prod']:
-                params[parameter] = params['bemonc_availability']
-
-            params['mean_hcw_competence_hc'][0] = params['bemonc_availability']
-            params['mean_hcw_competence_hp'][0] = params['bemonc_availability']
-
-        # A similar process is then repeated for CEmONC interventions
-        if params['alternative_cemonc_availability']:
-            logger.info(key='analysis', data='activate_perfect_cemonc param correctly switched')
-            for parameter in ['prob_hcw_avail_blood_tran',
-                              'prob_hcw_avail_surg']:
-                params[parameter] = params['cemonc_availability']
-
-            params['mean_hcw_competence_hc'][1] = params['cemonc_availability']
-            params['mean_hcw_competence_hp'][1] = params['cemonc_availability']
-
         if params['alternative_pnc_availability']:
             params['odds_will_attend_pnc'] = params['pnc_availability_odds']
             params['probs_care_seeking_for_complication_pnc'] = params['pnc_availability_probability']
