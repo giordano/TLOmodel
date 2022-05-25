@@ -2197,8 +2197,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         _classification = imci_classification_by_SpO2_measure \
             if use_oximeter and (imci_classification_by_SpO2_measure != '') else hw_assigned_classification
-        # TODO: ASK TIM C. THIS ASSUMES PULSE OXIMETER READS AT 100% SENSITIVITY -
-        #  DO WE WANT TO LOOK INTO READING SENSITIVITY?
 
         logger.info(
             key='classification',
