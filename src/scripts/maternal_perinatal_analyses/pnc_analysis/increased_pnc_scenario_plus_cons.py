@@ -84,7 +84,7 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Labour': {'alternative_pnc_availability': True,
+            'Labour': {'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
                        'pnc_availability_odds': 8.5,
                        'pnc_availability_probability': 0.9},

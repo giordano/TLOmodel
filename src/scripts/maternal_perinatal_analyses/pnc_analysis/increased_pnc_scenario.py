@@ -87,7 +87,6 @@ class IncreasedPNCScenario(BaseScenario):
             'Labour': {'alternative_pnc_coverage': True,
                        'pnc_availability_odds': 8.5,
                        'pnc_availability_probability': 0.9},
-
             }
 
 
