@@ -83,6 +83,8 @@ class PNCStatusQuoScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+            'PregnancySupervisor': {'switch_pnc_coverage': True,
+                                    'target_anc_coverage_for_analysis': 3.0},
         }
 
 

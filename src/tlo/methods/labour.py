@@ -407,7 +407,11 @@ class Labour(Module):
 
         # EMERGENCY CARE SEEKING...
         'prob_careseeking_for_complication': Parameter(
-            Types.LIST, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
+            Types.LIST, 'probability of a woman seeking skilled assistance after developing a complication at a '
+                        'home birth'),
+        'prob_careseeking_for_complication_pn': Parameter(
+            Types.LIST, 'probability of a woman seeking skilled assistance after developing a postnatal complication '
+                        'following a home birth'),
         'test_care_seeking_probs': Parameter(
             Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
@@ -545,7 +549,9 @@ class Labour(Module):
             Types.REAL, 'set probability of BEmONC intervention being delivered during analysis'),
         'cemonc_availability': Parameter(
             Types.REAL, 'set probability of CEmONC intervention being delivered during analysis'),
-        'alternative_pnc_availability': Parameter(
+        'alternative_pnc_coverage': Parameter(
+            Types.BOOL, ''),
+        'alternative_pnc_quality': Parameter(
             Types.BOOL, ''),
         'pnc_availability_odds': Parameter(
             Types.REAL, ''),
@@ -603,9 +609,6 @@ class Labour(Module):
                                                                           'Attendance.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        # pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
@@ -665,7 +668,7 @@ class Labour(Module):
 
         previous_cs = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
-            self.current_parameters['prob_previous_caesarean_at_baseline'],
+            params['prob_previous_caesarean_at_baseline'],
             index=reproductive_age_women.loc[reproductive_age_women].index)
 
         df.loc[previous_cs.loc[previous_cs].index, 'la_previous_cs_delivery'] = 1
@@ -841,6 +844,9 @@ class Labour(Module):
 
     def initialise_simulation(self, sim):
 
+        # TODO: way around repeating this code????
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_labour_item_codes()
@@ -849,7 +855,7 @@ class Labour(Module):
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule analysis event
-        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self), self.parameters['analysis_date'])
+        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self), self.current_parameters['analysis_date'])
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -1653,8 +1659,9 @@ class Labour(Module):
                                                                                            hsi_event=hsi_event)
 
                 # If she has not already receive antibiotics, we check for consumables
-                avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
-                                                  optional_item_codes=cons['iv_drug_equipment'])
+                avail = pregnancy_helper_functions.return_cons_avail(
+                    self, core='abx_for_prom', optional='iv_drug_equipment', hsi_event=hsi_event,
+                    cons=self.item_codes_lab_consumables)
 
                 # Then query if these consumables are available during this HSI And provide if available.
                 # Antibiotics for from reduce risk of newborn sepsis within the first
@@ -1712,7 +1719,6 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
@@ -1793,7 +1799,6 @@ class Labour(Module):
         df = self.sim.population.props
         person_id = hsi_event.target
         params = self.current_parameters
-        cons = self.item_codes_lab_consumables
 
         if 'assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']:
             return
@@ -1824,14 +1829,13 @@ class Labour(Module):
         function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
         Labour
         :param hsi_event: HSI event in which the function has been called:
-        :param indication: STR indication for assesment and delivery of AVD
+        :param indication: STR indication for assessment and delivery of AVD
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         def refer_for_cs():
             if not indication == 'other':
@@ -1891,7 +1895,6 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         if 'assessment_and_treatment_of_maternal_sepsis' not in params['allowed_interventions']:
             return
@@ -2767,7 +2770,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                (df.at[mother_id, 'pn_htn_disorders'] == 'eclampsia')):
 
                 # Women with complications have a higher baseline probability of seeking postnatal care
-                prob_pnc = params['prob_careseeking_for_complication']
+                prob_pnc = params['prob_careseeking_for_complication_pn']
                 has_comps = True
 
             else:
@@ -3120,7 +3123,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
-        cons = self.module.item_codes_lab_consumables
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -3274,12 +3276,55 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.current_parameters
+        df = self.sim.population.props
+        pn_params = self.sim.modules['PostnatalSupervisor'].current_parameters
+        nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mni_df = pd.DataFrame.from_dict(mni, orient='index')
 
-        if params['alternative_pnc_availability']:
-            params['odds_will_attend_pnc'] = params['pnc_availability_odds']
-            params['probs_care_seeking_for_complication_pnc'] = params['pnc_availability_probability']
+        if params['alternative_bemonc_availability']:
+            params['squeeze_threshold_for_delay_three_bemonc'] = 10_000
+            params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
+
+        if params['alternative_cemonc_availability']:
+            params['squeeze_threshold_for_delay_three_cemonc'] = 10_000
+
+        if params['alternative_pnc_coverage']:
+            target = params['pnc_availability_odds']
+            params['odds_will_attend_pnc'] = 1
+
+            # TODO: check this as were using mni externals on a population that largely wont be in the mni
+            women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+            mode_of_delivery = pd.Series(False, index=women.index)
+            delivery_setting = pd.Series(False, index=women.index)
+
+            if 'mode_of_delivery' in mni_df.columns:
+                mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=women.index)
+            if 'delivery_setting' in mni_df.columns:
+                delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
+
+            mean = self.module.la_linear_models['postnatal_check'].predict(
+                df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                year=self.sim.date.year,
+                mode_of_delivery=mode_of_delivery,
+                delivery_setting=delivery_setting).mean()
+
+            mean = mean / (1.0 - mean)
+            scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+            params['odds_will_attend_pnc'] = scaled_intercept
+
+            for parameter in [nb_params['prob_pnc_check_newborn'],
+                              params['prob_careseeking_for_complication_pn'],
+                              pn_params['prob_care_seeking_postnatal_emergency'],
+                              pn_params['prob_care_seeking_postnatal_emergency_neonate'],
+                              nb_params['prob_care_seeking_for_complication']]:
+                parameter = params['pnc_availability_probability']
+
             params['prob_timings_pnc'] = [params['pnc_availability_probability'],
                                           (1 - params['pnc_availability_probability'])]
+
+        if params['alternative_pnc_quality']:
+            params['squeeze_threshold_for_delay_three_pn'] = 10_000
             params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
 
             # todo: turn of effect of risk factors?

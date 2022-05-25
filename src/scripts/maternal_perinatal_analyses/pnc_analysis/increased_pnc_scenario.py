@@ -26,22 +26,23 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class PNCStatusQuoScenario(BaseScenario):
+class IncreasedPNCScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 456
+        self.seed = 789
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.pop_size = 30_000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'status_quo_pnc_200k', 'directory': './outputs',
+            'filename': 'increased_pnc_coverage_30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
@@ -83,7 +84,11 @@ class PNCStatusQuoScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-        }
+            'Labour': {'alternative_pnc_coverage': True,
+                       'pnc_availability_odds': 8.5,
+                       'pnc_availability_probability': 0.9},
+
+            }
 
 
 if __name__ == '__main__':

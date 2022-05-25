@@ -31,16 +31,23 @@ def return_cons_avail(self, core, optional, hsi_event, cons):
 
     # Otherwise, if analysis is being conducted we use a random draw to override the availability of the consumables
     for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
+                                                                'DeliveryCare_Neonatal'
                                                                 'DeliveryCare_Comprehensive',
-                                                                'PostnatalCare_Maternal'],
+                                                                'PostnatalCare_Maternal',
+                                                                'PostnatalCare_Neonatal'],
                                                                ['alternative_bemonc_availability',
+                                                                'alternative_bemonc_availability',
                                                                 'alternative_cemonc_availability',
-                                                                'alternative_pnc_availability'],
-                                                               ['bemonc_availability', 'cemonc_availability',
+                                                                'alternative_pnc_quality',
+                                                                'alternative_pnc_quality'],
+                                                               ['bemonc_availability', 'bemonc_availability',
+                                                                'cemonc_availability',
+                                                                'pnc_availability_probability',
                                                                 'pnc_availability_probability']):
 
-        if (hsi_event.TREATMENT_ID == treatment_id) and analysis_param and (self.sim.date > params['analysis_date']):
-            if self.rng.random_sample() < analysis_coverage:
+        if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
+           (self.sim.date > params['analysis_date']):
+            if self.rng.random_sample() < params[analysis_coverage]:
                 available = True
             else:
                 available = False
@@ -73,16 +80,22 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     elif ((params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Basic') or
           (params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Neonatal') or
           (params['alternative_cemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Comprehensive') or
-          (params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
-          (params['alternative_pnc_availability'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
+          (params['alternative_pnc_coverage'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
+          (params['alternative_pnc_coverage'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
 
         for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
+                                                                    'DeliveryCare_Neonatal'
                                                                     'DeliveryCare_Comprehensive',
-                                                                    'PostnatalCare_Maternal'],
+                                                                    'PostnatalCare_Maternal',
+                                                                    'PostnatalCare_Neonatal'],
                                                                    ['alternative_bemonc_availability',
+                                                                    'alternative_bemonc_availability',
                                                                     'alternative_cemonc_availability',
-                                                                    'alternative_pnc_availability'],
-                                                                   ['bemonc_availability', 'cemonc_availability',
+                                                                    'alternative_pnc_quality',
+                                                                    'alternative_pnc_quality'],
+                                                                   ['bemonc_availability', 'bemonc_availability',
+                                                                    'cemonc_availability',
+                                                                    'pnc_availability_probability',
                                                                     'pnc_availability_probability']):
 
             if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
