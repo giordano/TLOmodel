@@ -69,7 +69,6 @@ for label, oximeter_avail in scenarios.items():
     )
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
 
     if oximeter_avail:
         sim.modules['HealthSystem'].override_availability_of_consumables({127: 1.0})
@@ -84,6 +83,8 @@ for label, oximeter_avail in scenarios.items():
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
+    sim.simulate(end_date=end_date)
 
     # Save the full set of results:
     output_files[label] = sim.log_filepath
@@ -135,7 +136,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
     deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
 
-    return inc_mean, deaths
+    return deaths
 
 
 inc_by_pathogen = dict()
@@ -145,21 +146,21 @@ for label, file in output_files.items():
         get_incidence_rate_and_death_numbers_from_logfile(file)
 
 
-def plot_for_column_of_interest(results, column_of_interest):
-    summary_table = dict()
-    for label in results.keys():
-        summary_table.update({label: results[label][column_of_interest]})
-    data = 100 * pd.concat(summary_table, axis=1)
-    data.plot.bar()
-    plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.tight_layout()
-    plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
-    plt.show()
-
-
-# Plot incidence by pathogen: across the scenarios
-for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
-    plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
+# def plot_for_column_of_interest(results, column_of_interest):
+#     summary_table = dict()
+#     for label in results.keys():
+#         summary_table.update({label: results[label][column_of_interest]})
+#     data = 100 * pd.concat(summary_table, axis=1)
+#     data.plot.bar()
+#     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
+#     plt.tight_layout()
+#     plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+#     plt.show()
+#
+#
+# # Plot incidence by pathogen: across the scenarios
+# for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
+#     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
 
 # Plot death rates by year: across the scenarios
 data = {}

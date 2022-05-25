@@ -41,9 +41,9 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 1
-runs_per_draw = 10
-pop_size = 760000  # 1:25 representative sample
+number_of_draws = 4
+runs_per_draw = 5
+pop_size = 50000
 
 
 class TestScenario(BaseScenario):
@@ -59,7 +59,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_alri_50k_pop_1drawx10runs',
+            'filename': 'baseline_scenario_alri_50k_pop_1drawx5runs',
             'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
@@ -99,7 +99,13 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-
+            'Alri': {'sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0': 1.0,
+                     'sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0': 1.0,
+                     'sensitivity_of_classification_of_non_severe_pneumonia_facility_level1': 1.0,
+                     'sensitivity_of_classification_of_severe_pneumonia_facility_level1': 1.0,
+                     'sensitivity_of_classification_of_non_severe_pneumonia_facility_level2': 1.0,
+                     'sensitivity_of_classification_of_severe_pneumonia_facility_level2': 1.0,
+                     },
         }
 
 
