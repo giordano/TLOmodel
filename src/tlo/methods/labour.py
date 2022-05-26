@@ -3313,13 +3313,12 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
             params['odds_will_attend_pnc'] = scaled_intercept
 
-            for parameter in [nb_params['prob_pnc_check_newborn'],
-                              params['prob_careseeking_for_complication_pn'],
-                              pn_params['prob_care_seeking_postnatal_emergency'],
-                              pn_params['prob_care_seeking_postnatal_emergency_neonate'],
-                              nb_params['prob_care_seeking_for_complication']]:
-                parameter = params['pnc_availability_probability']
-
+            # todo: for loop was being weird
+            params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+            nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
+            nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+            pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
+            pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
             params['prob_timings_pnc'] = [params['pnc_availability_probability'],
                                           (1 - params['pnc_availability_probability'])]
 

@@ -31,7 +31,7 @@ def return_cons_avail(self, core, optional, hsi_event, cons):
 
     # Otherwise, if analysis is being conducted we use a random draw to override the availability of the consumables
     for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
-                                                                'DeliveryCare_Neonatal'
+                                                                'DeliveryCare_Neonatal',
                                                                 'DeliveryCare_Comprehensive',
                                                                 'PostnatalCare_Maternal',
                                                                 'PostnatalCare_Neonatal'],
@@ -84,7 +84,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
           (params['alternative_pnc_coverage'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
 
         for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
-                                                                    'DeliveryCare_Neonatal'
+                                                                    'DeliveryCare_Neonatal',
                                                                     'DeliveryCare_Comprehensive',
                                                                     'PostnatalCare_Maternal',
                                                                     'PostnatalCare_Neonatal'],
