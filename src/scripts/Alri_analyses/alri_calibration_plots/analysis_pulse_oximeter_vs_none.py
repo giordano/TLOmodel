@@ -63,7 +63,7 @@ for label, oximeter_avail in scenarios.items():
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
@@ -90,83 +90,29 @@ for label, oximeter_avail in scenarios.items():
     output_files[label] = sim.log_filepath
 
 
-# # %% Extract the relevant outputs and make a graph:
-# def get_incidence_rate_and_death_numbers_from_logfile(logfile):
-#     # parse the simulation logfile to get the output dataframes
-#     output = parse_log_file(logfile)
-#
-#     # Calculate the "incidence rate" from the output counts of incidence
-#     counts = output['tlo.methods.alri']['incidence_count_by_age_and_pathogen']
-#     counts['year'] = pd.to_datetime(counts['date']).dt.year
-#     counts.drop(columns='date', inplace=True)
-#     counts.set_index(
-#         'year',
-#         drop=True,
-#         inplace=True
-#     )
-#     counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '2-4': '2-4y'})  # for consistency
-#
-#     # get person-years of 0 year-old, 1 year-olds and 1-4 year-old
-#     py_ = output['tlo.methods.demography']['person_years']
-#     years = pd.to_datetime(py_['date']).dt.year
-#     py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
-#     for year in years:
-#         tot_py = (
-#             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
-#             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
-#         ).transpose()
-#         tot_py.index = tot_py.index.astype(int)
-#         py.loc[year, '0y'] = tot_py.loc[0].values[0]
-#         py.loc[year, '1y'] = tot_py.loc[1].values[0]
-#         py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
-#
-#     # Incidence rate among 0, 1, 2-4 year-olds
-#     inc_rate = dict()
-#     for age_grp in ['0y', '1y', '2-4y']:
-#         inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
-#
-#     # Produce mean inicence rates of incidence rate during the simulation:
-#     inc_mean = pd.DataFrame()
-#     inc_mean['0y_model_output'] = inc_rate['0y'].mean()
-#     inc_mean['1y_model_output'] = inc_rate['1y'].mean()
-#     inc_mean['2-4y_model_output'] = inc_rate['2-4y'].mean()
-#
-#     # calculate death rate
-#     deaths_df = output['tlo.methods.demography']['death']
-#     deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-#     deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
-#
-#     return deaths
-#
-#
-# inc_by_pathogen = dict()
-# deaths = dict()
-# for label, file in output_files.items():
-#     inc_by_pathogen[label], deaths[label] = \
-#         get_incidence_rate_and_death_numbers_from_logfile(file)
-#
-#
-# # def plot_for_column_of_interest(results, column_of_interest):
-# #     summary_table = dict()
-# #     for label in results.keys():
-# #         summary_table.update({label: results[label][column_of_interest]})
-# #     data = 100 * pd.concat(summary_table, axis=1)
-# #     data.plot.bar()
-# #     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-# #     plt.tight_layout()
-# #     plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
-# #     plt.show()
-# #
-# #
-# # # Plot incidence by pathogen: across the scenarios
-# # for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
-# #     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
-#
-# # Plot death rates by year: across the scenarios
-# data = {}
-# for label in deaths.keys():
-#     data.update({label: deaths[label]})
-# pd.concat(data, axis=1).plot.bar()
-# plt.title('Number of Deaths Due to ALRI')
-# plt.savefig(outputpath / ("ALRI_deaths_by_scenario1" + datestamp + ".pdf"), format='pdf')
-# plt.show()
+# %% Extract the relevant outputs and make a graph:
+def get_death_numbers_from_logfile(logfile):
+    # parse the simulation logfile to get the output dataframes
+    output = parse_log_file(logfile)
+
+    # calculate death rate
+    deaths_df = output['tlo.methods.demography']['death']
+    deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
+
+    return deaths
+
+
+deaths = dict()
+for label, file in output_files.items():
+    deaths[label] = \
+        get_death_numbers_from_logfile(file)
+
+# Plot death rates by year: across the scenarios
+data = {}
+for label in deaths.keys():
+    data.update({label: deaths[label]})
+pd.concat(data, axis=1).plot.bar()
+plt.title('Number of Deaths Due to ALRI')
+plt.savefig(outputpath / ("ALRI_deaths_by_scenario2" + datestamp + ".pdf"), format='pdf')
+plt.show()

@@ -105,6 +105,8 @@ class TestScenario(BaseScenario):
                      'sensitivity_of_classification_of_severe_pneumonia_facility_level1': 1.0,
                      'sensitivity_of_classification_of_non_severe_pneumonia_facility_level2': 1.0,
                      'sensitivity_of_classification_of_severe_pneumonia_facility_level2': 1.0,
+                     'oxygen_availability': 0.0,
+                     'pulse_oximeter_availability': 0.0
                      },
         }
 

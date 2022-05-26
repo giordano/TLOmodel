@@ -624,6 +624,14 @@ class Alri(Module):
                       'given treatment for non-severe pneumonia ( fast-breathing or chest-indrawing) '
                       'at facility level 1a/1b/2'
                       ),
+        'oxygen_availability':
+            Parameter(Types.REAL,
+                      'temporary parameter, oxygen availability (across all health facilities)'
+                      ),
+        'pulse_oximeter_availability':
+            Parameter(Types.REAL,
+                      'temporary parameter, PO availability (across all health facilities)'
+                      ),
     }
 
     PROPERTIES = {
@@ -1219,10 +1227,10 @@ class Alri(Module):
 
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
-                if antibiotic_provided == '1st_line_IV_antibiotics':
+                if (antibiotic_provided == '1st_line_IV_antibiotics') & oxygen_provided:
                     return (
                                p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2']
-                               * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
+                               # * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
                            ) > self.rng.random_sample()
                 else:
                     return True
@@ -2028,11 +2036,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """This routine is called when in every HSI. It classifies the disease of the child and commissions treatment
         accordingly."""
 
+        # pulse_ox_available = self.module.parameters['pulse_oximeter_availability'] > self.module.rng.random_sample()
+
         classification_for_treatment_decision = self._get_disease_classification(
             age_exact_years=age_exact_years,
             symptoms=symptoms,
             oxygen_saturation=oxygen_saturation,
             facility_level=self.ACCEPTED_FACILITY_LEVEL,
+            # use_oximeter=pulse_ox_available,
             use_oximeter=self.get_consumables(item_codes=self.module.consumables_used_in_hsi['Pulse_oximetry'])
         )
 
@@ -2224,6 +2235,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                       )
 
             oxygen_available = self._get_cons('Oxygen_Therapy')
+            # oxygen_available = self.module.parameters['oxygen_availability'] > self.module.rng.random_sample()
+
             oxygen_indicated_and_available_or_oxygen_not_indicated = (oxygen_available and oxygen_indicated) or \
                                                                      (not oxygen_indicated)
 
