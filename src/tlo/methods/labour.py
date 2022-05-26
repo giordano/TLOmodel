@@ -3284,7 +3284,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
         if params['alternative_bemonc_availability']:
             params['squeeze_threshold_for_delay_three_bemonc'] = 10_000
-            params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
+            nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
 
         if params['alternative_cemonc_availability']:
             params['squeeze_threshold_for_delay_three_cemonc'] = 10_000
@@ -3313,7 +3313,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
             params['odds_will_attend_pnc'] = scaled_intercept
 
-            # todo: for loop was being weird
+            # todo: for loop was being weird...
             params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
             nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
             nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
