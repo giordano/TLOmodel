@@ -99,7 +99,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
                                                                     'pnc_availability_probability']):
 
             if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
-               (self.rng.random_sample() > params[analysis_coverage]):
+               (self.rng.random_sample() < params[analysis_coverage]):
                 return True
 
         return False
