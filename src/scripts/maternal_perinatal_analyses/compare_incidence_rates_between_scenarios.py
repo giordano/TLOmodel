@@ -10,125 +10,101 @@ from tlo.analysis.utils import (
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 
-# HELPER FUNCTION
-def get_modules_maternal_complication_dataframes(results_folder):
-    comp_dfs = dict()
+def compare_key_rates_between_multiple_scenarios(scenario_file_dict, outputspath, intervention_years):
 
-    for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
-        complications_df = extract_results(
-            results_folder,
-            module=f"tlo.methods.{module}",
-            key="maternal_complication",
-            custom_generate_series=(
-                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
-            do_scaling=False
-        )
-
-        comp_dfs[module] = complications_df
-
-    return comp_dfs
-
-
-def compare_key_rates_between_two_scenarios(baseline_scenario_filename, intervention_scenario_filename, outputspath,
-                                            show_and_store_graphs, sim_years):
     """
-    This function outputs plots of incidence rates and complication level NMR/MMRs for a number of key complications
-    within the model
-    :param baseline_scenario_filename:
-    :param intervention_scenario_filename:
-    :param outputspath:
-    :param show_and_store_graphs:
-    :param sim_years:
-    :return:
     """
-
     # Find results folder (most recent run generated using that scenario_filename)
-    baseline_results_folder = get_scenario_outputs(baseline_scenario_filename, outputspath)[-1]
-    intervention_results_folder = get_scenario_outputs(intervention_scenario_filename, outputspath)[-1]
 
-    # Create folder to store graphs (if it hasnt already been created when ran previously)
-    main_folder = f'{outputspath}/analysis_comparison_graphs_{baseline_results_folder.name}'
-    path_prim = f'{main_folder}/comparison_with_{intervention_results_folder.name}'
-    path_mmr = f'{path_prim}/mmr'
-    path_nmr = f'{path_prim}/nmr'
+    results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
-    for path in [main_folder, path_prim, path_mmr, path_nmr]:
-        if not os.path.isdir(path):
-            os.makedirs(path)
+    path = f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}'
+    if not os.path.isdir(path):
+        os.makedirs(f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}')
 
-    plot_destination_folder = path_prim
+    plot_destination_folder = path
 
-    # access complication dataframes
-    b_comps_dfs = get_modules_maternal_complication_dataframes(baseline_results_folder)
-    i_comps_dfs = get_modules_maternal_complication_dataframes(intervention_results_folder)
+    # GET COMPLICATION DATAFRAMES...
+    def get_modules_maternal_complication_dataframes(results_folder):
+        comp_dfs = dict()
 
-    # ============================================  DENOMINATORS... ==================================================
-    # ---------------------------------------------Total_pregnancies...------------------------------------------------
+        for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
+            complications_df = extract_results(
+                results_folder,
+                module=f"tlo.methods.{module}",
+                key="maternal_complication",
+                custom_generate_series=(
+                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
+                do_scaling=True
+            )
 
-    def get_pregnancies(results_folder):
-        pregnancy_poll_results = extract_results(
-            results_folder,
-            module="tlo.methods.contraception",
-            key="pregnancy",
-            custom_generate_series=(
-                lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
-            ))
+            comp_dfs[module] = complications_df
 
-        preg_data = analysis_utility_functions.get_mean_and_quants(pregnancy_poll_results, sim_years)
+        return comp_dfs
 
-        return preg_data
+    comp_dfs = {k: get_modules_maternal_complication_dataframes(results_folders[k]) for k in results_folders}
 
-    b_preg = get_pregnancies(baseline_results_folder)
-    i_preg = get_pregnancies(intervention_results_folder)
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_preg, i_preg, 'Pregnancies (mean)', 'Mean number of pregnancies for scenarios',
-            plot_destination_folder, 'pregnancies')
+    def get_neonatal_comp_dfs(results_folder):
+        nb_comp_dfs = dict()
+        nb_comp_dfs['newborn_outcomes'] = extract_results(
+                results_folder,
+                module="tlo.methods.newborn_outcomes",
+                key="newborn_complication",
+                custom_generate_series=(
+                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+                do_scaling=True
+            )
 
-    # -----------------------------------------------------Total births...---------------------------------------------
-    def get_births(results_folder):
-        births_results = extract_results(
-            results_folder,
-            module="tlo.methods.demography",
-            key="on_birth",
-            custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-            ),
-        )
+        nb_comp_dfs['newborn_postnatal'] = extract_results(
+                results_folder,
+                module="tlo.methods.postnatal_supervisor",
+                key="newborn_complication",
+                custom_generate_series=(
+                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+                do_scaling=True
+            )
 
-        birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
+        return nb_comp_dfs
 
-        return birth_data
+    neo_comp_dfs = {k: get_neonatal_comp_dfs(results_folders[k]) for k in results_folders}
 
-    b_births = get_births(baseline_results_folder)
-    i_births = get_births(intervention_results_folder)
+    # ------------------------------------ PREGNANCIES AND BIRTHS ----------------------------------------------------
+    preg_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
+                                                                                     intervention_years)
+    births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
+                                                                                       intervention_years)
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_births, i_births, 'Births (mean)', 'Mean number of Births for scenarios',
-            plot_destination_folder, 'births')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, preg_dict, 'Total Pregnancies',
+        'Total Number of Pregnancies Per Year By Scenario',
+        plot_destination_folder, 'preg')
 
-    # -------------------------------------------------Completed pregnancies...----------------------------------------
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, births_dict, 'Total Births',
+        'Total Number of Births Per Year By Scenario)',
+        plot_destination_folder, 'births')
+
+    # TOTAL COMPLETED PREGNANCIES
     def get_completed_pregnancies(comps_df, total_births_per_year, results_folder):
         ectopic_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comps_df['pregnancy_supervisor'], 'ectopic_unruptured', sim_years)[0]
+            comps_df['pregnancy_supervisor'], 'ectopic_unruptured', intervention_years)[0]
 
         ia_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comps_df['pregnancy_supervisor'], 'induced_abortion', sim_years)[0]
+            comps_df['pregnancy_supervisor'], 'induced_abortion', intervention_years)[0]
 
         sa_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comps_df['pregnancy_supervisor'], 'spontaneous_abortion', sim_years)[0]
+            comps_df['pregnancy_supervisor'], 'spontaneous_abortion', intervention_years)[0]
 
         an_stillbirth_results = extract_results(
             results_folder,
             module="tlo.methods.pregnancy_supervisor",
             key="antenatal_stillbirth",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-            ),
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
         )
-        an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, sim_years)
+        an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, intervention_years)
 
         total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in zip(total_births_per_year,
                                                                                            ectopic_mean_numbers_per_year,
@@ -138,136 +114,20 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return total_completed_pregnancies_per_year
 
-    comp_preg_baseline = get_completed_pregnancies(b_comps_dfs, b_births[0], baseline_results_folder)
-    comp_preg_intervention = get_completed_pregnancies(i_comps_dfs, i_births[0], intervention_results_folder)
+    comp_pregs = {k: get_completed_pregnancies(comp_dfs[k], births_dict[k][0], results_folders[k]) for k in
+                  results_folders}
 
-    # ========================================== INTERVENTION COVERAGE... =============================================
-
-    # 2.) Facility delivery
-    # Total FDR per year (denominator - total births)
-    def get_facility_delivery(results_folder, total_births_per_year):
-        deliver_setting_results = extract_results(
-                results_folder,
-                module="tlo.methods.labour",
-                key="delivery_setting_and_mode",
-                custom_generate_series=(
-                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(
-                        ['year', 'facility_type'])['mother'].count()),
-                do_scaling=False
-            )
-
-        hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            deliver_setting_results, 'home_birth', sim_years)
-        home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], total_births_per_year)]
-
-        hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            deliver_setting_results, 'hospital', sim_years)
-        health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], total_births_per_year)]
-        health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], total_births_per_year)]
-        health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], total_births_per_year)]
-
-        hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            deliver_setting_results, 'health_centre', sim_years)
-        hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], total_births_per_year)]
-        hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], total_births_per_year)]
-        hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], total_births_per_year)]
-
-        total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
-        fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
-        fd_uqs = [x + y for x, y in zip(health_centre_uq, hospital_uq)]
-
-        return [total_fd_rate, fd_lqs, fd_uqs]
-
-
-    b_fd = get_facility_delivery(baseline_results_folder, b_births[0])
-    i_fd = get_facility_delivery(intervention_results_folder, i_births[0])
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_fd, i_fd, '% of total births', 'Proportion of Women Delivering in a Health Facility per Year',
-            plot_destination_folder, 'sba_prop_facility_deliv')
-
-    # 3.) Postnatal Care
-    def get_pnc(results_folder, total_births_per_year):
-        pnc_results_maternal = extract_results(
-            results_folder,
-            module="tlo.methods.postnatal_supervisor",
-            key="total_mat_pnc_visits",
-            custom_generate_series=(
-                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['mother'].count()),
-            do_scaling=False
-        )
-
-        pnc_results_newborn = extract_results(
-            results_folder,
-            module="tlo.methods.postnatal_supervisor",
-            key="total_neo_pnc_visits",
-            custom_generate_series=(
-                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['child'].count()),
-            do_scaling=False
-        )
-
-        pnc_0_means = list()
-        pnc_0_lqs = list()
-        pnc_0_uqs = list()
-        pnc_0_means_neo = list()
-        pnc_0_lqs_neo = list()
-        pnc_0_uqs_neo = list()
-
-        for year in sim_years:
-            pnc_0_means.append(pnc_results_maternal.loc[year, 0].mean())
-            pnc_0_lqs.append(pnc_results_maternal.loc[year, 0].quantile(0.025))
-            pnc_0_uqs.append(pnc_results_maternal.loc[year, 0].quantile(0.925))
-
-            pnc_0_means_neo.append(pnc_results_newborn.loc[year, 0].mean())
-            pnc_0_lqs_neo.append(pnc_results_newborn.loc[year, 0].quantile(0.025))
-            pnc_0_uqs_neo.append(pnc_results_newborn.loc[year, 0].quantile(0.925))
-
-
-        pnc_1_plus_rate_mat = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means, total_births_per_year)]
-        pnc_mat_lqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_lqs, total_births_per_year)]
-        pnc_mat_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs, total_births_per_year)]
-
-        pnc1_plus_rate_neo = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means_neo, total_births_per_year)]
-        pnc_neo_lqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_lqs_neo, total_births_per_year)]
-        pnc_neo_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs_neo, total_births_per_year)]
-
-        return [[pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
-                [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]]
-
-
-    b_pnc_data = get_pnc(baseline_results_folder, b_births[0])
-    b_pnc_m = b_pnc_data[0]
-    b_pnc_n =b_pnc_data [1]
-
-    i_pnc_data = get_pnc(intervention_results_folder, i_births[0])
-    i_pnc_m = i_pnc_data[0]
-    i_pnc_n = i_pnc_data[1]
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_pnc_data[0], i_pnc_data[0], '% of total births',
-            'Proportion of Women post-delivery attending PNC per year',
-            plot_destination_folder, 'pnc_mat')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_pnc_data[1], i_pnc_data[1], '% of total births',
-            'Proportion of Women post-delivery attending PNC per year',
-            plot_destination_folder, 'pnc_neo')
-
-    # ========================================== COMPLICATION/DISEASE RATES.... =======================================
-    # ---------------------------------------- Twinning Rate... -------------------------------------------------------
-    # % Twin births/Total Births per year
     def get_twin_data(results_folder, total_births_per_year):
         twins_results = extract_results(
             results_folder,
             module="tlo.methods.newborn_outcomes",
             key="twin_birth",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-            ),
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
         )
-        twin_data = analysis_utility_functions.get_mean_and_quants(twins_results, sim_years)
+
+        twin_data = analysis_utility_functions.get_mean_and_quants(twins_results, intervention_years)
 
         total_deliveries = [x - y for x, y in zip(total_births_per_year, twin_data[0])]
         final_twining_rate = [(x / y) * 100 for x, y in zip(twin_data[0], total_deliveries)]
@@ -276,97 +136,86 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [final_twining_rate, lq_rate, uq_rate]
 
-    b_twins = get_twin_data(baseline_results_folder, b_births[0])
-    l_twins = get_twin_data(intervention_results_folder, i_births[0])
+    twin_data = {k: get_twin_data(results_folders[k], births_dict[k][0]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_twins, l_twins, 'Rate per 100 pregnancies', 'Yearly trends for Twin Births',
-            plot_destination_folder, 'twin_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, twin_data, '% Total Births',
+        'Twin births as a Proportion of Total Births',
+        plot_destination_folder, 'twins')
 
     # ---------------------------------------- Early Pregnancy Loss... ----------------------------------------------
-    # Ectopics
-    b_ectopic_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'ectopic_unruptured', b_preg[0], b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    ectopic_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'ectopic_unruptured', preg_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years) for k in
+        results_folders}
 
-    i_ectopic_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'ectopic_unruptured', i_preg[0], i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, ectopic_data, 'Rate per 1000 Completed Pregnancies',
+        'Ectopic Pregnancy Rate Per Year By Scenario',
+        plot_destination_folder, 'ectopic')
 
-    # Spontaneous Abortions....
-    b_sa_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'spontaneous_abortion', comp_preg_baseline, b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    sa_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'spontaneous_abortion', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    i_sa_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'spontaneous_abortion', comp_preg_intervention, i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, sa_data, 'Rate per 1000 Completed Pregnancies',
+        'Miscarriage Rate Per Year By Scenario',
+        plot_destination_folder, 'miscarriage')
 
-    # Induced Abortions...
-    b_ia_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'induced_abortion', comp_preg_baseline, b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    ia_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'induced_abortion', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    i_ia_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'induced_abortion', comp_preg_intervention, i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ectopic_data, i_ectopic_data, 'Rate per 100 pregnancies',
-            'Yearly trends for Ectopic Pregnancy',
-            plot_destination_folder, 'ectopic_rate')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_sa_data, i_sa_data, 'Rate per 1000 completed pregnancies', 'Yearly rate of Miscarriage',
-            plot_destination_folder, 'miscarriage_rate')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ia_data, i_ia_data, 'Rate per 1000 completed pregnancies', 'Yearly rate of Induced Abortion',
-            plot_destination_folder, 'abortion_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, ia_data, 'Rate per 1000 Completed Pregnancies',
+        'Abortion Rate Per Year By Scenario',
+        plot_destination_folder, 'abortion')
 
     # --------------------------------------------------- Syphilis Rate... --------------------------------------------
-    b_syphilis_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'syphilis', comp_preg_baseline, b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
-    i_syphilis_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'syphilis', comp_preg_intervention,  i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    syph_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'syphilis', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_syphilis_data, i_syphilis_data, 'Rate per 1000 completed pregnancies', 'Yearly rate of Syphilis',
-            plot_destination_folder, 'syphilis_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, syph_data, 'Rate per 1000 Completed Pregnancies',
+        'Syphilis Rate Per Year By Scenario',
+        plot_destination_folder, 'syphilis')
 
     # ------------------------------------------------ Gestational Diabetes... ----------------------------------------
-    b_gdm_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'gest_diab', comp_preg_baseline, b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
-    i_gdm_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'gest_diab', comp_preg_intervention, i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    gdm_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'gest_diab', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_gdm_data, i_gdm_data, 'Rate per 1000 completed pregnancies', 'Yearly rate of Gestational Diabetes',
-            plot_destination_folder, 'gest_diab_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, gdm_data, 'Rate per 1000 Completed Pregnancies',
+        'Gestational Diabetes Rate Per Year By Scenario',
+        plot_destination_folder, 'gdm')
 
     # ------------------------------------------------ PROM... --------------------------------------------------------
-    b_prom_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'PROM', b_births[0], b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
-    i_prom_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'PROM', i_births[0], i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+    prom_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'PROM', births_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_prom_data, i_prom_data, 'Rate per 1000 completed pregnancies', 'Yearly rate of PROM',
-            plot_destination_folder, 'prom_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, prom_data, 'Rate per 1000 Births',
+        'Premature Rupture of Membranes Rate Per Year By Scenario',
+        plot_destination_folder, 'prom')
+
 
     # ---------------------------------------------- Anaemia... --------------------------------------------------------
     # Total prevalence of Anaemia at birth (total cases of anaemia at birth/ total births per year) and by severity
-
     def get_anaemia_output_at_birth(results_folder, total_births_per_year):
         anaemia_results = extract_results(
             results_folder,
             module="tlo.methods.pregnancy_supervisor",
             key="anaemia_on_birth",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'anaemia_status'])['year'].count()
-            ),
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'anaemia_status'])['year'].count()),
+            do_scaling=True
         )
 
-        no_anaemia_data = analysis_utility_functions.get_mean_and_quants_from_str_df(anaemia_results, 'none', sim_years)
+        no_anaemia_data = analysis_utility_functions.get_mean_and_quants_from_str_df(anaemia_results, 'none',
+                                                                                     intervention_years)
 
         prevalence_of_anaemia_per_year = [100 - ((x / y) * 100) for x, y in zip(no_anaemia_data[0],
                                                                                 total_births_per_year)]
@@ -375,8 +224,8 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [prevalence_of_anaemia_per_year, no_anaemia_lqs, no_anaemia_uqs]
 
-    b_anaemia_b = get_anaemia_output_at_birth(baseline_results_folder, b_births[0])
-    i_anaemia_b = get_anaemia_output_at_birth(intervention_results_folder, i_births[0])
+    anaemia_birth_data = {k: get_anaemia_output_at_birth(results_folders[k], births_dict[k][0]) for k in
+                          results_folders}
 
     def get_anaemia_output_at_delivery(results_folder, total_births_per_year):
         pnc_anaemia = extract_results(
@@ -385,10 +234,11 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
             key="total_mat_pnc_visits",
             custom_generate_series=(
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'anaemia'])['mother'].count()),
-            do_scaling=False
+            do_scaling=True
         )
 
-        no_anaemia_data = analysis_utility_functions.get_mean_and_quants_from_str_df(pnc_anaemia, 'none', sim_years)
+        no_anaemia_data = analysis_utility_functions.get_mean_and_quants_from_str_df(pnc_anaemia, 'none',
+                                                                                     intervention_years)
         prevalence_of_anaemia_per_year = [100 - ((x / y) * 100) for x, y in zip(no_anaemia_data[0],
                                                                                 total_births_per_year)]
         no_anaemia_lqs = [100 - ((x / y) * 100) for x, y in zip(no_anaemia_data[1], total_births_per_year)]
@@ -396,89 +246,95 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [prevalence_of_anaemia_per_year, no_anaemia_lqs, no_anaemia_uqs]
 
-    b_anaemia_d = get_anaemia_output_at_delivery(baseline_results_folder, b_births[0])
-    i_anaemia_d = get_anaemia_output_at_delivery(intervention_results_folder, i_births[0])
+    anaemia_delivery_data = {k: get_anaemia_output_at_delivery(results_folders[k], births_dict[k][0]) for k in
+                             results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_anaemia_b, i_anaemia_b, 'Prevalence at birth',
-            'Yearly prevalence of Anaemia (all severity) at birth', plot_destination_folder, 'anaemia_prev_birth')
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_anaemia_d, i_anaemia_d, 'Prevalence at Delivery',
-            'Yearly prevalence of Anaemia (all severity) at delivery', plot_destination_folder, 'anaemia_prev_delivery')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, anaemia_birth_data, '% Total Births',
+        'Prevalence of Anaemia at Birth Per Year By Scenario',
+        plot_destination_folder, 'anaemia_birth')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, anaemia_delivery_data, '% Total Births',
+        'Prevalence of Anaemia at End of Postnatal Period Per Year By Scenario',
+        plot_destination_folder, 'anaemia_pn')
 
     # ------------------------------------------- Hypertensive disorders ---------------------------------------------
     def get_htn_disorders_outputs(comps_df, total_births_per_year):
-
         output = dict()
         output['gh'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'mild_gest_htn', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'],
-                                                           comps_df['postnatal_supervisor']], sim_years)
+                                                           comps_df['postnatal_supervisor']], intervention_years)
 
         output['sgh'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'severe_gest_htn', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'], comps_df['labour'],
-                                                             comps_df['postnatal_supervisor']], sim_years)
+                                                             comps_df['postnatal_supervisor']], intervention_years)
 
         output['mpe'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'mild_pre_eclamp', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'],
-                                                             comps_df['postnatal_supervisor']], sim_years)
+                                                             comps_df['postnatal_supervisor']], intervention_years)
 
         output['spe'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'severe_pre_eclamp', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'], comps_df['labour'],
-                                                               comps_df['postnatal_supervisor']], sim_years)
+                                                               comps_df['postnatal_supervisor']], intervention_years)
 
         output['ec'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'eclampsia', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'], comps_df['labour'],
-                                                       comps_df['postnatal_supervisor']], sim_years)
+                                                       comps_df['postnatal_supervisor']], intervention_years)
         return output
 
-    b_htn_disorders = get_htn_disorders_outputs(b_comps_dfs, b_births[0])
-    i_htn_disorders = get_htn_disorders_outputs(i_comps_dfs, i_births[0])
+    htn_data = {k: get_htn_disorders_outputs(comp_dfs[k], births_dict[k][0]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_htn_disorders['gh'], i_htn_disorders['gh'], 'Rate per 1000 births',
-            'Rate of Gestational Hypertension per Year', plot_destination_folder, 'gest_htn_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, htn_data, 'gh',
+        'Rate per 1000 Births',
+        'Gestational Hypertension Rate Per Year Per Scenario',
+        plot_destination_folder, 'gh')
 
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_htn_disorders['sgh'], i_htn_disorders['sgh'], 'Rate per 1000 births',
-            'Rate of Severe Gestational Hypertension per Year', plot_destination_folder, 'severe_gest_htn_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, htn_data, 'sgh',
+        'Rate per 1000 Births',
+        'Severe Gestational Hypertension Rate Per Year Per Scenario',
+        plot_destination_folder, 'sgh')
 
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_htn_disorders['mpe'], i_htn_disorders['mpe'], 'Rate per 1000 births',
-            'Rate of Mild pre-eclampsia per Year', plot_destination_folder, 'mild_pre_eclampsia_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, htn_data, 'mpe',
+        'Rate per 1000 Births',
+        'Mild Pre-eclampsia Rate Per Year Per Scenario',
+        plot_destination_folder, 'mpe')
 
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_htn_disorders['spe'], i_htn_disorders['spe'], 'Rate per 1000 birth',
-            'Rate of Severe pre-eclampsia per Year', plot_destination_folder, 'severe_pre_eclampsia_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, htn_data, 'spe',
+        'Rate per 1000 Births',
+        'Severe Pre-eclampsia Rate Per Year Per Scenario',
+        plot_destination_folder, 'spe')
 
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_htn_disorders['ec'], i_htn_disorders['ec'], 'Rate per 1000 births',
-            'Rate of Eclampsia per Year', plot_destination_folder, 'eclampsia_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, htn_data, 'ec',
+        'Rate per 1000 Births',
+        'Eclampsia Rate Per Year Per Scenario',
+        plot_destination_folder, 'ec')
 
-    #  ---------------------------------------------Placenta praevia... ------------------------------------------------
-    b_pp_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'placenta_praevia', b_preg[0], b_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
-    i_pp_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'placenta_praevia', i_preg[0], i_comps_dfs['pregnancy_supervisor'], 1000, sim_years)
+#  ---------------------------------------------Placenta praevia... ------------------------------------------------
+    praevia_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'placenta_praevia', preg_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_pp_data, i_pp_data, 'Rate per 1000 pregnancies',
-            'Rate of Placenta Praevia per Year', plot_destination_folder, 'praevia_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, praevia_data, 'Rate per 1000 Pregnancies',
+        'Rate of Placenta Praevia Per Year Per Scenario',
+        plot_destination_folder, 'praevia')
 
     #  ---------------------------------------------Placental abruption... --------------------------------------------
-    b_pa_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'placental_abruption', b_births[0], 1000, [b_comps_dfs['pregnancy_supervisor'], b_comps_dfs['labour']],
-        sim_years)
-    i_pa_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-        'placental_abruption', i_births[0], 1000, [i_comps_dfs['pregnancy_supervisor'], i_comps_dfs['labour']],
-        sim_years)
+    abruption = {k: analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
+        'placental_abruption', births_dict[k][0], 1000, [comp_dfs[k]['pregnancy_supervisor'], comp_dfs[k]['labour']],
+        intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_pa_data, i_pa_data, 'Rate per 1000 births',
-            'Rate of Placental Abruption per Year', plot_destination_folder, 'abruption_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, abruption, 'Rate per 1000 Births',
+        'Rate of Placental Abruption Per Year Per Scenario',
+        plot_destination_folder, 'abruption')
 
     # --------------------------------------------- Antepartum Haemorrhage... -----------------------------------------
     # Rate of APH/total births (antenatal and labour)
@@ -486,11 +342,11 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
     def get_aph_data(comps_df, total_births_per_year):
         mm_aph_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'mild_mod_antepartum_haemorrhage', total_births_per_year, 1000,
-            [comps_df['pregnancy_supervisor'], comps_df['labour']], sim_years)
+            [comps_df['pregnancy_supervisor'], comps_df['labour']], intervention_years)
 
         s_aph_data =analysis_utility_functions. get_comp_mean_and_rate_across_multiple_dataframes(
             'severe_antepartum_haemorrhage', total_births_per_year, 1000,
-            [b_comps_dfs['pregnancy_supervisor'], b_comps_dfs['labour']], sim_years)
+            [comps_df['pregnancy_supervisor'], comps_df['labour']], intervention_years)
 
         total_aph_rates = [x + y for x, y in zip(mm_aph_data[0], s_aph_data[0])]
         aph_lqs = [x + y for x, y in zip(mm_aph_data[1], s_aph_data[1])]
@@ -498,20 +354,19 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_aph_rates, aph_lqs, aph_uqs]
 
-    b_aph_data = get_aph_data(b_comps_dfs, b_births[0])
-    i_aph_data = get_aph_data(i_comps_dfs, i_births[0])
+    aph_data = {k: get_aph_data(comp_dfs[k], births_dict[k][0]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_aph_data, i_aph_data, 'Rate per 1000 births',
-            'Rate of Antepartum Haemorrhage per Year', plot_destination_folder, 'aph_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, aph_data, 'Rate per 1000 Births',
+        'Rate of Antepartum Haemorrhage Per Year Per Scenario',
+        plot_destination_folder, 'aph')
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
     def get_ptl_data(total_births_per_year, comps_df):
         early_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'early_preterm_labour', total_births_per_year, comps_df['labour'], 100, sim_years)
+            'early_preterm_labour', total_births_per_year, comps_df['labour'], 100, intervention_years)
         late_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'late_preterm_labour', total_births_per_year, comps_df['labour'], 100, sim_years)
+            'late_preterm_labour', total_births_per_year, comps_df['labour'], 100, intervention_years)
 
 
         total_ptl_rates = [x + y for x, y in zip(early_ptl_data[0], late_ptl_data[0])]
@@ -520,127 +375,70 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_ptl_rates, ptl_lqs, ltl_uqs]
 
-    b_ptl_data = get_ptl_data(b_births[0], b_comps_dfs)
-    i_ptl_data = get_ptl_data(i_births[0], i_comps_dfs)
+    ptl_data = {k: get_ptl_data( births_dict[k][0], comp_dfs[k]) for k in results_folders}
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, ptl_data, 'Rate per 100 Births',
+        'Rate of Preterm Labour Per Year Per Scenario',
+        plot_destination_folder, 'ptl')
 
     # --------------------------------------------- Post term birth ... -----------------------------------------------
-    b_potl_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'post_term_labour', b_births[0], b_comps_dfs['labour'], 100, sim_years)
-    i_potl_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'post_term_labour', i_births[1], i_comps_dfs['labour'], 100, sim_years)
+    potl = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'post_term_labour', preg_dict[k][0], comp_dfs[k]['labour'], 100, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ptl_data, i_ptl_data, 'Proportion of total births',
-            'Preterm birth rate', plot_destination_folder, 'ptb_rate')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_potl_data, i_potl_data, 'Proportion of total births',
-            'Post term birth rate', plot_destination_folder, 'potl_rate')
-
-    # todo plot early and late seperated
-
-    # ------------------------------------------- Antenatal Stillbirth ... --------------------------------------------
-    def get_an_stillbirth(results_folder, total_births_per_year):
-        an_stillbirth_results = extract_results(
-            results_folder,
-            module="tlo.methods.pregnancy_supervisor",
-            key="antenatal_stillbirth",
-            custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-            ),
-        )
-        an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, sim_years)
-
-        an_sbr_per_year = [(x / y) * 1000 for x, y in zip(an_still_birth_data[0], total_births_per_year)]
-        an_sbr_lqs = [(x / y) * 1000 for x, y in zip(an_still_birth_data[1], total_births_per_year)]
-        an_sbr_uqs = [(x / y) * 1000 for x, y in zip(an_still_birth_data[2], total_births_per_year)]
-
-        return [an_sbr_per_year, an_sbr_lqs, an_sbr_uqs]
-
-    b_an_sbr = get_an_stillbirth(baseline_results_folder, b_births[0])
-    i_an_sbr = get_an_stillbirth(intervention_results_folder, i_births[0])
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_an_sbr, i_an_sbr, 'Rate per 1000 births',
-            'Antenatal Stillbirth Rate per Year', plot_destination_folder, 'sbr_an')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, potl, 'Rate per 100 Births',
+        'Rate of Post Term Labour Per Year Per Scenario',
+        plot_destination_folder, 'potl')
 
     # ------------------------------------------------- Birth weight... ----------------------------------------------
-    def get_neonatal_comp_dfs(results_folder):
-        nb_comp_dfs = dict()
-        nb_comp_dfs['newborn_outcomes'] = extract_results(
-                results_folder,
-                module="tlo.methods.newborn_outcomes",
-                key="newborn_complication",
-                custom_generate_series=(
-                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-                do_scaling=False
-            )
+    lbw = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'low_birth_weight', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 100, intervention_years)
+        for k in results_folders}
 
-        nb_comp_dfs['newborn_postnatal'] = extract_results(
-                results_folder,
-                module="tlo.methods.postnatal_supervisor",
-                key="newborn_complication",
-                custom_generate_series=(
-                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-                do_scaling=False
-            )
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, lbw, 'Rate per 100 Births',
+        'Rate of Low Birth Weight Per Year Per Scenario',
+        plot_destination_folder, 'lbw')
 
-        return nb_comp_dfs
+    macro = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'macrosomia', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 100, intervention_years)
+        for k in results_folders}
 
-    b_neonatal_comp_dfs = get_neonatal_comp_dfs(baseline_results_folder)
-    i_neonatal_comp_dfs = get_neonatal_comp_dfs(intervention_results_folder)
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, macro, 'Rate per 100 Births',
+        'Rate of Macrosomia Per Year Per Scenario',
+        plot_destination_folder, 'macro')
 
-    b_lbw_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'low_birth_weight', b_births[0], b_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
-    i_lbw_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'low_birth_weight', i_births[0], i_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
+    sga = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'small_for_gestational_age', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 100, intervention_years)
+        for k in results_folders}
 
-    b_macro_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'macrosomia', b_births[0], b_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
-    i_macro_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'macrosomia', i_births[0], i_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
-
-    b_sga_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'small_for_gestational_age', b_births[0], b_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
-    i_sga_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'small_for_gestational_age', i_births[0], i_neonatal_comp_dfs['newborn_outcomes'], 100, sim_years)
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_lbw_data, i_lbw_data, 'Proportion of total births',
-            'Yearly Prevalence of Low Birth Weight', plot_destination_folder, 'neo_lbw_prev')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_macro_data, i_macro_data, 'Proportion of total births',
-            'Yearly Prevalence of Macrosomia', plot_destination_folder, 'neo_macrosomia_prev')
-
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_sga_data, i_sga_data, 'Proportion of total births',
-            'Yearly Prevalence of Small for Gestational Age', plot_destination_folder, 'neo_sga_prev')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, sga, 'Rate per 100 Births',
+        'Rate of Small For Gestational Age Per Year Per Scenario',
+        plot_destination_folder, 'sga')
 
     # --------------------------------------------- Obstructed Labour... ---------------------------------------------
-    b_ol_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'obstructed_labour', b_births[0], b_comps_dfs['labour'], 1000, sim_years)
-    i_ol_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'obstructed_labour', i_births[0], i_comps_dfs['labour'], 1000, sim_years)
+    ol = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'obstructed_labour', births_dict[k][0], comp_dfs[k]['labour'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ol_data, i_ol_data, 'Rate per 1000 births',
-            'Obstructed Labour Rate per Year', plot_destination_folder, 'ol_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, ol, 'Rate per 1000 Births',
+        'Rate of Obstructed Labour Per Year Per Scenario',
+        plot_destination_folder, 'ol')
 
     # --------------------------------------------- Uterine rupture... ------------------------------------------------
-    b_ur_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'uterine_rupture', b_births[0], b_comps_dfs['labour'], 1000, sim_years)
-    i_ur_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'uterine_rupture', i_births[0], i_comps_dfs['labour'], 1000, sim_years)
+    ur = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'uterine_rupture', births_dict[k][0], comp_dfs[k]['labour'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ur_data, i_ur_data, 'Rate per 1000 births',
-            'Rate of Uterine Rupture per Year', plot_destination_folder, 'ur_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, ur, 'Rate per 1000 Births',
+        'Rate of Uterine Rupture Per Year Per Scenario',
+        plot_destination_folder, 'ur')
 
     # ---------------------------Caesarean Section Rate & Assisted Vaginal Delivery Rate... ---------------------------
     def get_delivery_data(results_folder,total_births_per_year):
@@ -650,39 +448,43 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
             key="delivery_setting_and_mode",
             custom_generate_series=(
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'mode'])['mother'].count()),
-            do_scaling=False
+            do_scaling=True
         )
 
         cs_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'caesarean_section', total_births_per_year, delivery_mode, 100, sim_years)
+            'caesarean_section', total_births_per_year, delivery_mode, 100, intervention_years)
         avd_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'instrumental', total_births_per_year, delivery_mode, 100, sim_years)
+            'instrumental', total_births_per_year, delivery_mode, 100, intervention_years)
 
-        return [cs_data, avd_data]
+        return {'cs':cs_data,
+                'avd': avd_data}
 
-    b_delivery_data = get_delivery_data(baseline_results_folder, b_births[0])
-    i_delivery_data = get_delivery_data(intervention_results_folder, i_births[0])
+    delivery_data = {k: get_delivery_data(results_folders[k], births_dict[k][0]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_delivery_data[0], i_delivery_data[0], 'Proportion of total births',
-            'Caesarean Section Rate per Year', plot_destination_folder, 'caesarean_section_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, delivery_data, 'cs',
+        '% Total Births',
+        'Caesarean Section Rate Per Year Per Scenario',
+        plot_destination_folder, 'cs')
 
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_delivery_data[1], i_delivery_data[1], 'Proportion of total births',
-            'Assisted Vaginal Delivery Rate per Year', plot_destination_folder, 'avd_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, delivery_data, 'avd',
+        '% Total Births',
+        'Assisted Vaginal Delivery Rate Per Year Per Scenario',
+        plot_destination_folder, 'avd')
 
     # ------------------------------------------ Maternal Sepsis Rate... ----------------------------------------------
     def get_total_sepsis_rates(total_births_per_year, comps_df):
         an_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'clinical_chorioamnionitis', total_births_per_year, comps_df['pregnancy_supervisor'], 1000, sim_years)
+            'clinical_chorioamnionitis', total_births_per_year, comps_df['pregnancy_supervisor'], 1000,
+            intervention_years)
         la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'sepsis', total_births_per_year, comps_df['labour'], 1000, sim_years)
+            'sepsis', total_births_per_year, comps_df['labour'], 1000, intervention_years)
 
         pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'sepsis_postnatal', total_births_per_year, comps_df['labour'], 1000, sim_years)
+            'sepsis_postnatal', total_births_per_year, comps_df['labour'], 1000, intervention_years)
         pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, sim_years)
+            'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, intervention_years)
 
         complete_pn_sep_data = [x + y for x, y in zip(pn_la_sep_data[0], pn_sep_data[0])]
         complete_pn_sep_lq = [x + y for x, y in zip(pn_la_sep_data[1], pn_sep_data[1])]
@@ -694,21 +496,20 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_sep_rates, sep_lq, sep_uq]
 
-    b_sep_data = get_total_sepsis_rates(b_births[0], b_comps_dfs)
-    i_sep_data = get_total_sepsis_rates(i_births[0], i_comps_dfs)
+    sep_data = {k: get_total_sepsis_rates(births_dict[k][0], comp_dfs[k]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_sep_data, i_sep_data, 'Rate per 1000 births',
-            'Rate of Maternal Sepsis per Year', plot_destination_folder, 'sepsis_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, sep_data, 'Rate per 1000 Births',
+        'Rate of Maternal Sepsis Per Year Per Scenario',
+        plot_destination_folder, 'mat_sep')
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
     def get_pph_data(total_births_per_year, comps_df):
         la_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'primary_postpartum_haemorrhage', total_births_per_year, comps_df['labour'], 1000, sim_years)
+            'primary_postpartum_haemorrhage', total_births_per_year, comps_df['labour'], 1000, intervention_years)
         pn_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
             'secondary_postpartum_haemorrhage', total_births_per_year, comps_df['postnatal_supervisor'],
-            1000, sim_years)
+            1000, intervention_years)
 
         total_pph_rates = [x + y for x, y in zip(la_pph_data[0], pn_pph_data[0])]
         pph_lq = [x + y for x, y in zip(la_pph_data[1], pn_pph_data[1])]
@@ -716,49 +517,25 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_pph_rates, pph_lq, pph_uq]
 
-    b_pph_data = get_pph_data(b_births[0], b_comps_dfs)
-    i_pph_data = get_pph_data(i_births[0], i_comps_dfs)
+    pph_data = {k: get_pph_data(births_dict[k][0], comp_dfs[k]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_pph_data, i_pph_data, 'Rate per 1000 births',
-            'Rate of Postpartum Haemorrhage per Year', plot_destination_folder, 'pph_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, pph_data, 'Rate per 1000 Births',
+        'Rate of Postpartum Haemorrhage Per Year Per Scenario',
+        plot_destination_folder, 'pph')
 
-    # ------------------------------------------- Intrapartum Stillbirth ... ------------------------------------------
-    def get_ip_stillbirths(results_folder, total_births_per_year):
-        ip_stillbirth_results = extract_results(
-            results_folder,
-            module="tlo.methods.labour",
-            key="intrapartum_stillbirth",
-            custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-            ),
-        )
-
-        ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
-        ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[0], total_births_per_year)]
-        ip_sbr_lqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[1], total_births_per_year)]
-        ip_sbr_uqs = [(x/y) * 1000 for x, y in zip(ip_still_birth_data[2], total_births_per_year)]
-
-        return [ip_sbr_per_year, ip_sbr_lqs, ip_sbr_uqs]
-
-    b_ip_sbr = get_ip_stillbirths(baseline_results_folder, b_births[0])
-    i_ip_sbr = get_ip_stillbirths(intervention_results_folder, i_births[0])
-
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_ip_sbr, i_ip_sbr, 'Rate per 1000 births',
-            'Intrapartum Stillbirth Rate per Year', plot_destination_folder, 'sbr_ip')
 
     # ==================================================== NEWBORN OUTCOMES ===========================================
     #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -------------------------------
-    def get_neonatal_sepsis(total_births_per_year, nb_outcomes_df, nb_outcomes_pn_df):
+    def get_neonatal_sepsis(total_births_per_year, nb_comp_dfs):
         early_ns_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'early_onset_sepsis', total_births_per_year, nb_outcomes_df, 1000, sim_years)
+            'early_onset_sepsis', total_births_per_year, nb_comp_dfs['newborn_outcomes'], 1000, intervention_years)
+
         early_ns_pn = analysis_utility_functions.get_comp_mean_and_rate(
-            'early_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000, sim_years)
+            'early_onset_sepsis', total_births_per_year, nb_comp_dfs['newborn_postnatal'], 1000, intervention_years)
+
         late_ns_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'late_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000, sim_years)
+            'late_onset_sepsis', total_births_per_year, nb_comp_dfs['newborn_postnatal'], 1000, intervention_years)
 
         total_ns_rates = [x + y + z for x, y, z in zip(early_ns_data[0], early_ns_pn[0], late_ns_data[0])]
         ns_lqs = [x + y + z for x, y, z in zip(early_ns_data[1], early_ns_pn[1], late_ns_data[1])]
@@ -766,24 +543,22 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_ns_rates, ns_lqs, ns_uqs]
 
-    b_n_sepsis = get_neonatal_sepsis(b_births[0], b_neonatal_comp_dfs['newborn_outcomes'],
-                                     b_neonatal_comp_dfs['newborn_postnatal'])
-    i_n_sepsis = get_neonatal_sepsis(i_births[0], i_neonatal_comp_dfs['newborn_outcomes'],
-                                     i_neonatal_comp_dfs['newborn_postnatal'])
+    neo_sep_data = {k: get_neonatal_sepsis(births_dict[k][0], neo_comp_dfs[k]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_n_sepsis, i_n_sepsis, 'Rate per 1000 births',
-            'Rate of Neonatal Sepsis per year', plot_destination_folder, 'neo_sepsis_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, neo_sep_data, 'Rate per 1000 Births',
+        'Rate of Neonatal Sepsis Per Year Per Scenario',
+        plot_destination_folder, 'neo_sep')
+
 
     #  ------------------------------------------- Neonatal encephalopathy --------------------------------------------
-    def get_neonatal_encephalopathy(total_births_per_year, nb_outcomes_df):
+    def get_neonatal_encephalopathy(total_births_per_year, nb_comp_dfs):
         mild_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'mild_enceph', total_births_per_year, nb_outcomes_df, 1000, sim_years)
+            'mild_enceph', total_births_per_year,  nb_comp_dfs['newborn_outcomes'], 1000, intervention_years)
         mod_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'moderate_enceph', total_births_per_year, nb_outcomes_df, 1000, sim_years)
+            'moderate_enceph', total_births_per_year,  nb_comp_dfs['newborn_outcomes'], 1000, intervention_years)
         sev_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'severe_enceph', total_births_per_year, nb_outcomes_df, 1000, sim_years)
+            'severe_enceph', total_births_per_year,  nb_comp_dfs['newborn_outcomes'], 1000, intervention_years)
 
         total_enceph_rates = [x + y + z for x, y, z in zip(mild_data[0], mod_data[0], sev_data[0])]
         enceph_lq = [x + y + z for x, y, z in zip(mild_data[1], mod_data[1], sev_data[1])]
@@ -791,135 +566,236 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
 
         return [total_enceph_rates, enceph_lq, enceph_uq]
 
-    b_enceph = get_neonatal_encephalopathy(b_births[0], b_neonatal_comp_dfs['newborn_outcomes'])
-    i_enceph = get_neonatal_encephalopathy(i_births[0], i_neonatal_comp_dfs['newborn_outcomes'])
+    neo_enceph_data = {k: get_neonatal_encephalopathy(births_dict[k][0], neo_comp_dfs[k]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_enceph, i_enceph, 'Rate per 1000 births',
-            'Rate of Neonatal Encephalopathy per year', plot_destination_folder, 'neo_enceph_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, neo_enceph_data, 'Rate per 1000 Births',
+        'Rate of Neonatal Encephalopathy Per Year Per Scenario',
+        plot_destination_folder, 'neo_enceph')
 
     # ----------------------------------------- Respiratory Depression -------------------------------------------------
-    b_rd_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'not_breathing_at_birth', b_births[0], b_neonatal_comp_dfs['newborn_outcomes'], 1000, sim_years)
-    i_rd_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'not_breathing_at_birth', i_births[0], i_neonatal_comp_dfs['newborn_outcomes'], 1000, sim_years)
+    rd = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'not_breathing_at_birth', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 1000, intervention_years)
+        for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_rd_data, i_rd_data, 'Rate per 1000 births',
-            'Rate of Neonatal Respiratory Depression per year', plot_destination_folder, 'neo_resp_depression_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, rd, 'Rate per 1000 Births',
+        'Rate of Respiratory Depression Per Year Per Scenario',
+        plot_destination_folder, 'rd')
 
     # ----------------------------------------- Respiratory Distress Syndrome -----------------------------------------
-    def get_rds(la_comps, nb_outcomes_df):
-        ept = analysis_utility_functions.get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour', sim_years)[0]
+    def get_rds(neo_comp_dfs, comp_dfs):
+        ept = analysis_utility_functions.get_mean_and_quants_from_str_df(comp_dfs['labour'], 'early_preterm_labour',
+                                                                         intervention_years)[0]
         # todo: should be live births
-        lpt = analysis_utility_functions.get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour', sim_years)[0]
+        lpt = analysis_utility_functions.get_mean_and_quants_from_str_df(comp_dfs['labour'], 'late_preterm_labour',
+                                                                         intervention_years)[0]
         total_ptbs = [x + y for x, y in zip(ept, lpt)]
 
         rds_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'respiratory_distress_syndrome', total_ptbs, nb_outcomes_df, 1000, sim_years)
+            'respiratory_distress_syndrome', total_ptbs, neo_comp_dfs['newborn_outcomes'], 1000, intervention_years)
 
         return rds_data
 
-    b_rds = get_rds(b_comps_dfs['labour'], b_neonatal_comp_dfs['newborn_outcomes'])
-    i_rds = get_rds(i_comps_dfs['labour'], i_neonatal_comp_dfs['newborn_outcomes'])
+    rds_data = {k: get_rds(neo_comp_dfs[k], comp_dfs[k]) for k in results_folders}
 
-    if show_and_store_graphs:
-        analysis_utility_functions.basic_comparison_graph(
-            sim_years, b_rds, i_rds, 'Rate per 1000 preterm births',
-            'Rate of Preterm Respiratory Distress Syndrome per year', plot_destination_folder, 'neo_rds_rate')
+    analysis_utility_functions.comparison_graph_multiple_scenarios(
+        intervention_years, rds_data, 'Rate per 1000 Preterm Births',
+        'Rate of Preterm Respiratory Distress Syndrome Per Year Per Scenario',
+        plot_destination_folder, 'rds')
 
     # ===================================== COMPARING COMPLICATION LEVEL MMR ==========================================
-    b_death_results = extract_results(
-        baseline_results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
-        ),
-    )
-
-    i_death_results = extract_results(
-        intervention_results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
-        ),
-    )
-
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
-                         'postpartum_haemorrhage',  'antepartum_haemorrhage']
+                         'postpartum_haemorrhage', 'antepartum_haemorrhage']
+    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Suicide', 'ever_stroke', 'diabetes', 'chronic_ischemic_hd',
+                       'ever_heart_attack', 'ever_stroke', 'chronic_kidney_disease']
+
+    def get_death_data(results_folder, total_births):
+
+        direct_death_results = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
+            ),
+            do_scaling=True
+        )
+        mmr_dict = dict()
+        deaths_2030_dict = dict()
+
+        for cause in simplified_causes:
+            if (cause == 'ectopic_pregnancy') or (cause == 'antepartum_haemorrhage') or (cause == 'uterine_rupture'):
+                deaths_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                    direct_death_results, cause, intervention_years)
+                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+
+            elif cause == 'abortion':
+                def get_ab_mmr(death_results):
+                    ia_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'induced_abortion', intervention_years)
+                    sa_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'spontaneous_abortion', intervention_years)
+                    mean_deaths = [x + y for x, y in zip(ia_deaths[0], sa_deaths[0])]
+                    lq_deaths = [x + y for x, y in zip(ia_deaths[1], sa_deaths[1])]
+                    uq_deaths = [x + y for x, y in zip(ia_deaths[2], sa_deaths[2])]
+
+                    return [mean_deaths, lq_deaths, uq_deaths]
+                deaths_data = get_ab_mmr(direct_death_results)
+                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+
+            elif cause == 'severe_pre_eclampsia':
+                def get_htn_mmr(death_results):
+                    spe_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'severe_pre_eclampsia', intervention_years)
+                    ec_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'eclampsia', intervention_years)
+                    sgh_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'severe_gestational_hypertension', intervention_years)
+
+                    deaths = [x + y + z for x, y, z in zip(spe_deaths[0], ec_deaths[0], sgh_deaths[0])]
+                    lq = [x + y + z for x, y, z in zip(spe_deaths[1], ec_deaths[1], sgh_deaths[1])]
+                    uq = [x + y + z for x, y, z in zip(spe_deaths[2], ec_deaths[2], sgh_deaths[2])]
+
+                    return [deaths, lq, uq]
+
+                deaths_data = get_htn_mmr(direct_death_results)
+                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+
+            elif cause == 'postpartum_haemorrhage':
+                def get_pph_mmr(death_results):
+                    p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'postpartum_haemorrhage', intervention_years)
+                    s_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'secondary_postpartum_haemorrhage', intervention_years)
+                    deaths = [x + y for x, y in zip(p_deaths[0], s_deaths[0])]
+                    lq = [x + y for x, y in zip(p_deaths[1], s_deaths[1])]
+                    uq = [x + y for x, y in zip(p_deaths[2], s_deaths[2])]
+
+                    return [deaths, lq, uq]
+                deaths_data = get_pph_mmr(direct_death_results)
+                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+
+            elif cause == 'sepsis':
+                def get_sep_mmr(death_results):
+                    a_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'antenatal_sepsis', intervention_years)
+                    i_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'intrapartum_sepsis', intervention_years)
+                    p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'postpartum_sepsis', intervention_years)
+
+                    deaths = [x + y + z for x, y, z in zip(a_deaths[0], i_deaths[0], p_deaths[0])]
+                    lq = [x + y + z for x, y, z in zip(a_deaths[1], i_deaths[1], p_deaths[1])]
+                    uq = [x + y + z for x, y, z in zip(a_deaths[2], i_deaths[2], p_deaths[2])]
+
+                    return [deaths, lq, uq]
+
+                deaths_data = get_sep_mmr(direct_death_results)
+                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+
+            mmr_mean = [(x / y) * 100000 for x, y in zip(deaths_data[0], total_births[0])]
+            mmr_lq = [(x / y) * 100000 for x, y in zip(deaths_data[1], total_births[1])]
+            mmr_uq = [(x / y) * 100000 for x, y in zip(deaths_data[2], total_births[2])]
+
+            mmr_dict.update({cause: [mmr_mean, mmr_lq, mmr_uq]})
+
+        indirect_death_results = extract_results(
+            results_folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum'])].assign(
+                    year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()),
+            do_scaling=True
+        )
+
+
+        # Only interested in 2030 currently
+        indirect_deaths_means = {}
+        for complication in indirect_causes:
+            indirect_deaths_means.update({complication: 0})
+
+            if complication in indirect_death_results.loc[intervention_years[-1]].index:
+                indirect_deaths_means[complication] = indirect_death_results.loc[intervention_years[-1],
+                                                                                 complication].mean()
+        total_deaths = deaths_2030_dict
+        total_deaths.update(indirect_deaths_means)
+
+        return {'mmr_dict': mmr_dict,
+                'crude_deaths_direct': deaths_2030_dict,
+                'crude_deaths_indirect': indirect_deaths_means,
+                'total_crude_deaths': total_deaths}
+
+    comp_mmrs = {k: get_death_data(results_folders[k], births_dict[k]) for k in results_folders}
+
+    path = f'{plot_destination_folder}/comp_mmr'
+    if not os.path.isdir(path):
+        os.makedirs(f'{plot_destination_folder}/comp_mmr')
+
+    mmr_destination = path
 
     for cause in simplified_causes:
-        if (cause == 'ectopic_pregnancy') or (cause == 'antepartum_haemorrhage') or (cause == 'uterine_rupture'):
-            b_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(b_death_results, cause, sim_years)[0]
-            i_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(i_death_results, cause, sim_years)[0]
+        fig, ax = plt.subplots()
+        for k, colour in zip(comp_mmrs, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+            ax.plot(intervention_years, comp_mmrs[k]['mmr_dict'][cause][0], label=k, color=colour)
+            ax.fill_between(intervention_years, comp_mmrs[k]['mmr_dict'][cause][1],
+                            comp_mmrs[k]['mmr_dict'][cause][2], color=colour, alpha=.1)
 
-        elif cause == 'abortion':
-            def get_ab_mmr(death_results):
-                ia_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'induced_abortion', sim_years)[0]
-                sa_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'spontaneous_abortion', sim_years)[0]
-                deaths = [x + y for x, y in zip(ia_deaths, sa_deaths)]
-                return deaths
-            b_deaths = get_ab_mmr(b_death_results)
-            i_deaths = get_ab_mmr(i_death_results)
+        plt.ylabel('Deaths per 100,000 live births')
+        plt.xlabel('Year')
+        plt.title(f'Maternal Morality Ratio due to {cause} Per Year by Scenario')
+        plt.gca().set_ylim(bottom=0)
+        plt.legend()
+        plt.savefig(f'./{mmr_destination}/{cause}_mmr.png')
+        plt.show()
 
-        elif cause == 'severe_pre_eclampsia':
-            def get_htn_mmr(death_results):
-                spe_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'severe_pre_eclampsia', sim_years)[0]
-                ec_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'eclampsia', sim_years)[0]
-                sgh_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'severe_gestational_hypertension', sim_years)[0]
-                deaths = [x + y + z for x, y, z in zip(spe_deaths, ec_deaths, sgh_deaths)]
-                return deaths
-            b_deaths = get_htn_mmr(b_death_results)
-            i_deaths = get_htn_mmr(i_death_results)
+    def get_pie_sizes(crude_deaths, type):
+        pie_sizes = list()
+        total_deaths = sum(crude_deaths.values())
+        if type == 'Direct':
+            for cause in simplified_causes:
+                pie_sizes.append((crude_deaths[cause]/total_deaths * 100))
+        else:
+            causes = simplified_causes + indirect_causes
+            for cause in causes:
+                pie_sizes.append((crude_deaths[cause]/total_deaths * 100))
 
-        elif cause == 'postpartum_haemorrhage':
-            def get_pph_mmr(death_results):
-                p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'postpartum_haemorrhage', sim_years)[0]
-                s_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'secondary_postpartum_haemorrhage', sim_years)[0]
-                deaths = [x + y for x, y in zip(p_deaths, s_deaths)]
-                return deaths
-            b_deaths = get_pph_mmr(b_death_results)
-            i_deaths = get_pph_mmr(i_death_results)
+        return pie_sizes
 
-        elif cause == 'sepsis':
-            def get_sep_mmr(death_results):
-                a_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'antenatal_sepsis', sim_years)[0]
-                i_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'intrapartum_sepsis', sim_years)[0]
-                p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'postpartum_sepsis', sim_years)[0]
-                deaths = [x + y + z for x, y, z in zip(a_deaths, i_deaths, p_deaths)]
-                return deaths
-            b_deaths = get_sep_mmr(b_death_results)
-            i_deaths = get_sep_mmr(i_death_results)
+    pie_sizes = {k: get_pie_sizes(comp_mmrs[k]['crude_deaths_direct'], 'Direct') for k in results_folders}
+    pie_sizes_total = {k: get_pie_sizes(comp_mmrs[k]['total_crude_deaths'], 'Total') for k in results_folders}
 
-        b_mmr = [(x / y) * 100000 for x, y in zip(b_deaths, b_births[0])]
-        i_mmr = [(x / y) * 100000 for x, y in zip(i_deaths, i_births[0])]
+    def get_pie_charts(sizes, type):
+        for k in sizes:
+            lables = list()
+            if type == 'Direct':
+                for x, y in zip(sizes[k], simplified_causes):
+                    lables.append(f'{y} ({round(x, 2)}%)')
+            else:
+                causes = simplified_causes + indirect_causes
+                for x, y in zip(sizes[k], causes):
+                    lables.append(f'{y} ({round(x, 2)}%)')
 
-        if show_and_store_graphs:
-            plt.plot(sim_years, b_mmr, 'o-g', label="Baseline", color='deepskyblue')
-            plt.plot(sim_years, i_mmr, 'o-g', label="Intervention", color='darkseagreen')
-            plt.xlabel('Year')
-            plt.ylabel('Deaths per 100,000 births')
-            plt.title(f'Maternal Mortality Ratio per Year for {cause} by Scenario')
-            plt.legend()
-            plt.savefig(f'{plot_destination_folder}/mmr/mmr_{cause}.png')
+            values = sizes[k]
+            fig1, ax1 = plt.subplots()
+            ax1.pie(values, shadow=True, startangle=90)
+            ax1.axis('equal')
+            box = ax1.get_position()
+            ax1.set_position([box.x0, box.y0, box.width * 0.5, box.height])
+            plt.legend(lables, loc='center left', bbox_to_anchor=(1, 0.5))
+            # Equal aspect ratio ensures that pie is drawn as a circle.
+            plt.title(f'{type} Maternal Deaths by Cause in 2030 For {k} Scenario')
+            plt.savefig(f'./{mmr_destination}/{type}_prop_cause_of_death_{k}.png',
+                        bbox_inches="tight")
             plt.show()
 
+    get_pie_charts(pie_sizes, 'Direct')
+    get_pie_charts(pie_sizes_total, 'Total')
+
+
     # ===================================== COMPARING COMPLICATION LEVEL NMR ========================================
-    simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
+    """simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
 
     for cause in simplified_causes_neo:
         if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
@@ -964,3 +840,4 @@ def compare_key_rates_between_two_scenarios(baseline_scenario_filename, interven
             plt.legend()
             plt.savefig(f'{plot_destination_folder}/nmr/nmr_{cause}.png')
             plt.show()
+"""

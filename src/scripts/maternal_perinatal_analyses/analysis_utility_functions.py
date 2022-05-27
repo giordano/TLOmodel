@@ -214,7 +214,7 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
 def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
 
-    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon']):
         ax.plot(intervention_years, data_dict[k][0], label=k, color=colour)
         ax.fill_between(intervention_years, data_dict[k][1], data_dict[k][2], color=colour, alpha=.1)
 
@@ -285,10 +285,29 @@ def return_birth_data_from_multiple_scenarios(results_folders, intervention_year
                     lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
                 do_scaling=True
             )
-            total_births_per_year = get_mean_and_quants(births_results, intervention_years)[0]
+            total_births_per_year = get_mean_and_quants(births_results, intervention_years)
             return total_births_per_year
 
         return {k: extract_births(results_folders[k]) for k in results_folders}
+
+
+def return_pregnancy_data_from_multiple_scenarios(results_folders, intervention_years):
+    """
+    """
+
+    def extract_pregnancies(folder):
+        preg_results = extract_results(
+            folder,
+            module="tlo.methods.contraception",
+            key="pregnancy",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
+        )
+        total_pregnancies_per_year = get_mean_and_quants(preg_results, intervention_years)
+        return total_pregnancies_per_year
+
+    return {k: extract_pregnancies(results_folders[k]) for k in results_folders}
 
 
 def return_death_data_from_multiple_scenarios(results_folders, births_dict, intervention_years, detailed_log):
