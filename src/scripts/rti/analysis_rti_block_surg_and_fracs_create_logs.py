@@ -106,29 +106,30 @@ log_file_location = './outputs/blocked_interventions/'
 #     sim.modules['RTI'].parameters['blocked_interventions'] = ['Major Surgery']
 #
 #     sim.simulate(end_date=end_date)
+nsim=1
 
-# for i in range(0, nsim):
-#     # Create the simulation object
-#     sim = Simulation(start_date=start_date)
-#     # Register the modules
-#     sim.register(
-#         demography.Demography(resourcefilepath=resourcefilepath),
-#         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-#         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-#         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-#         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-#         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-#         rti.RTI(resourcefilepath=resourcefilepath),
-#         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-#     )
-#     # Get the log file
-#     logfile = sim.configure_logging(filename="LogFile_casts",
-#                                     directory=log_file_location + "casts")
-#     # create and run the simulation
-#     sim.make_initial_population(n=pop_size)
-#     sim.modules['RTI'].parameters['blocked_interventions'] = ['Fracture Casts']
-#
-#     sim.simulate(end_date=end_date)
+for i in range(0, nsim):
+    # Create the simulation object
+    sim = Simulation(start_date=start_date)
+    # Register the modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        rti.RTI(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    )
+    # Get the log file
+    logfile = sim.configure_logging(filename="LogFile_casts",
+                                    directory=log_file_location + "casts")
+    # create and run the simulation
+    sim.make_initial_population(n=pop_size)
+    sim.modules['RTI'].parameters['blocked_interventions'] = ['Fracture Casts']
+
+    sim.simulate(end_date=end_date)
 
 # for i in range(0, nsim):
 #     # Create the simulation object
@@ -151,72 +152,72 @@ log_file_location = './outputs/blocked_interventions/'
 #     sim.make_initial_population(n=pop_size)
 #
 #     sim.simulate(end_date=end_date)
-
-for i in range(0, nsim):
-    # Create the simulation object
-    sim = Simulation(start_date=start_date)
-    # Register the modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
-    # Get the log file
-    logfile = sim.configure_logging(filename="LogFile_suture",
-                                    directory=log_file_location + "suture")
-    # create and run the simulation
-    sim.make_initial_population(n=pop_size)
-    sim.modules['RTI'].parameters['blocked_interventions'] = ['Suture']
-    # Run the simulation
-    sim.simulate(end_date=end_date)
-
-for i in range(0, nsim):
-    # Create the simulation object
-    sim = Simulation(start_date=start_date)
-    # Register the modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
-    # Get the log file
-    logfile = sim.configure_logging(filename="LogFile_burn",
-                                    directory=log_file_location + "burn")
-    # create and run the simulation
-    sim.make_initial_population(n=pop_size)
-    sim.modules['RTI'].parameters['blocked_interventions'] = ['Burn']
-    # Run the simulation
-    sim.simulate(end_date=end_date)
-
-for i in range(0, nsim):
-    # Create the simulation object
-    sim = Simulation(start_date=start_date)
-    # Register the modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
-    # Get the log file
-    logfile = sim.configure_logging(filename="LogFile_open",
-                                    directory=log_file_location + "open_fracture")
-    # create and run the simulation
-    sim.make_initial_population(n=pop_size)
-    sim.modules['RTI'].parameters['blocked_interventions'] = ['Open fracture']
-    # Run the simulation
-    sim.simulate(end_date=end_date)
+#
+# for i in range(0, nsim):
+#     # Create the simulation object
+#     sim = Simulation(start_date=start_date)
+#     # Register the modules
+#     sim.register(
+#         demography.Demography(resourcefilepath=resourcefilepath),
+#         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+#         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+#         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+#         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+#         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+#         rti.RTI(resourcefilepath=resourcefilepath),
+#         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+#     )
+#     # Get the log file
+#     logfile = sim.configure_logging(filename="LogFile_suture",
+#                                     directory=log_file_location + "suture")
+#     # create and run the simulation
+#     sim.make_initial_population(n=pop_size)
+#     sim.modules['RTI'].parameters['blocked_interventions'] = ['Suture']
+#     # Run the simulation
+#     sim.simulate(end_date=end_date)
+#
+# for i in range(0, nsim):
+#     # Create the simulation object
+#     sim = Simulation(start_date=start_date)
+#     # Register the modules
+#     sim.register(
+#         demography.Demography(resourcefilepath=resourcefilepath),
+#         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+#         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+#         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+#         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+#         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+#         rti.RTI(resourcefilepath=resourcefilepath),
+#         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+#     )
+#     # Get the log file
+#     logfile = sim.configure_logging(filename="LogFile_burn",
+#                                     directory=log_file_location + "burn")
+#     # create and run the simulation
+#     sim.make_initial_population(n=pop_size)
+#     sim.modules['RTI'].parameters['blocked_interventions'] = ['Burn']
+#     # Run the simulation
+#     sim.simulate(end_date=end_date)
+#
+# for i in range(0, nsim):
+#     # Create the simulation object
+#     sim = Simulation(start_date=start_date)
+#     # Register the modules
+#     sim.register(
+#         demography.Demography(resourcefilepath=resourcefilepath),
+#         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+#         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+#         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+#         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+#         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+#         rti.RTI(resourcefilepath=resourcefilepath),
+#         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+#     )
+#     # Get the log file
+#     logfile = sim.configure_logging(filename="LogFile_open",
+#                                     directory=log_file_location + "open_fracture")
+#     # create and run the simulation
+#     sim.make_initial_population(n=pop_size)
+#     sim.modules['RTI'].parameters['blocked_interventions'] = ['Open fracture']
+#     # Run the simulation
+#     sim.simulate(end_date=end_date)

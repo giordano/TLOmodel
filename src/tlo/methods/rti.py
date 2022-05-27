@@ -2069,8 +2069,11 @@ class RTI(Module):
 
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
         # update the total values of the daly weights
-        df.at[person_id, 'rt_debugging_DALY_wt'] += \
-            sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][3] for code in codes])
+        try:
+            df.at[person_id, 'rt_debugging_DALY_wt'] += \
+                sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][3] for code in codes])
+        except KeyError:
+            df.at[person_id, 'rt_debugging_DALY_wt'] += 0
         # round off any potential floating point errors
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
@@ -3969,7 +3972,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         # check if they have a fracture that requires a cast
         codes = ['813bo', '813co', '813do', '813eo']
         _, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        assert open_fracture_counts > 0
+        # assert open_fracture_counts > 0
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
@@ -4079,7 +4082,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been through A and E'
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
         # Check that the person sent here has an injury that is treated by this HSI event
-        assert lacerationcounts > 0
+        # assert lacerationcounts > 0
         if lacerationcounts > 0:
             self.module.item_codes_for_consumables_required['laceration_treatment'] = {
                 get_item_code('Suture pack'): lacerationcounts,
