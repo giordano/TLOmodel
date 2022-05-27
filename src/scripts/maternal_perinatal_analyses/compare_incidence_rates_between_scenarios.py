@@ -10,7 +10,7 @@ from tlo.analysis.utils import (
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 
-def compare_key_rates_between_multiple_scenarios(scenario_file_dict, outputspath, intervention_years):
+def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier, outputspath, intervention_years):
 
     """
     """
@@ -18,9 +18,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, outputspath
 
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
-    path = f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}'
+    path = f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{identifier}'
     if not os.path.isdir(path):
-        os.makedirs(f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}')
+        os.makedirs(f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{identifier}')
 
     plot_destination_folder = path
 
@@ -793,51 +793,87 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, outputspath
     get_pie_charts(pie_sizes, 'Direct')
     get_pie_charts(pie_sizes_total, 'Total')
 
-
     # ===================================== COMPARING COMPLICATION LEVEL NMR ========================================
-    """simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
+    simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
+
+    def get_neo_death_data(results_folder, births):
+
+        direct_death_results = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
+            ),
+            do_scaling=True
+        )
+
+        nmr_dict = dict()
+
+        for cause in simplified_causes_neo:
+            if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
+                deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(direct_death_results, cause,
+                                                                                    intervention_years)
+
+            elif cause == 'neonatal_sepsis':
+                def get_neo_sep_deaths(death_results):
+                    early1 = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'early_onset_neonatal_sepsis', intervention_years)
+                    early2 = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'early_onset_sepsis', intervention_years)
+                    late = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'late_onset_sepsis', intervention_years)
+
+                    deaths = [x + y + z for x, y, z in zip(early1[0], early2[0], late[0])]
+                    lq = [x + y + z for x, y, z in zip(early1[1], early2[1], late[1])]
+                    uq = [x + y + z for x, y, z in zip(early1[2], early2[2], late[2])]
+
+                    return [deaths, lq, uq]
+
+                deaths = get_neo_sep_deaths(direct_death_results)
+
+            elif cause == 'prematurity':
+                def get_pt_deaths(death_results):
+                    rds_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'respiratory_distress_syndrome', intervention_years)
+                    other_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                        death_results, 'preterm_other', intervention_years)
+                    deaths = [x + y for x, y in zip(rds_deaths[0], other_deaths[0])]
+                    lq = [x + y for x, y in zip(rds_deaths[1], other_deaths[1])]
+                    uq = [x + y for x, y in zip(rds_deaths[2], other_deaths[2])]
+
+                    return [deaths, lq, uq]
+
+                deaths = get_pt_deaths(direct_death_results)
+
+            nmr_mean = [(x / y) * 1000 for x, y in zip(deaths[0], births[0])]
+            nmr_lq = [(x / y) * 1000 for x, y in zip(deaths[1], births[1])]
+            nmr_uq = [(x / y) * 1000 for x, y in zip(deaths[2], births[2])]
+
+            nmr_dict.update({cause: [nmr_mean, nmr_lq, nmr_uq]})
+
+        return {'nmr_dict': nmr_dict}
+
+    nmr_data = {k: get_neo_death_data(results_folders[k], births_dict[k]) for k in results_folders}
+
+    path = f'{plot_destination_folder}/comp_nmr'
+    if not os.path.isdir(path):
+        os.makedirs(f'{plot_destination_folder}/comp_nmr')
+
+    nmr_destination = path
 
     for cause in simplified_causes_neo:
-        if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
-            b_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(b_death_results, cause, sim_years)[0]
-            i_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(i_death_results, cause, sim_years)[0]
+        fig, ax = plt.subplots()
+        for k, colour in zip(comp_mmrs, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+            ax.plot(intervention_years, nmr_data[k]['nmr_dict'][cause][0], label=k, color=colour)
+            ax.fill_between(intervention_years, nmr_data[k]['nmr_dict'][cause][1],
+                            nmr_data[k]['nmr_dict'][cause][2], color=colour, alpha=.1)
 
-        elif cause == 'neonatal_sepsis':
-            def get_neo_sep_deaths(death_results):
-                early1 = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'early_onset_neonatal_sepsis', sim_years)[0]
-                early2 = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'early_onset_sepsis', sim_years)[0]
-                late = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'late_onset_sepsis', sim_years)[0]
-                deaths = [x + y + z for x, y, z in zip(early1, early2, late)]
-                return deaths
+        plt.ylabel('Deaths per 1000 live births')
+        plt.xlabel('Year')
+        plt.title(f'Neonatal Morality Ratio due to {cause} Per Year by Scenario')
+        plt.gca().set_ylim(bottom=0)
+        plt.legend()
+        plt.savefig(f'./{nmr_destination}/{cause}_mmr.png')
+        plt.show()
 
-            b_deaths = get_neo_sep_deaths(b_death_results)
-            i_deaths = get_neo_sep_deaths(i_death_results)
-
-        elif cause == 'prematurity':
-            def get_pt_deaths(death_results):
-                rds_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'respiratory_distress_syndrome', sim_years)[0]
-                other_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    death_results, 'preterm_other', sim_years)[0]
-                deaths = [x + y for x, y in zip(rds_deaths, other_deaths)]
-                return deaths
-
-            b_deaths = get_pt_deaths(b_death_results)
-            i_deaths = get_pt_deaths(i_death_results)
-
-        b_nmr = [(x / y) * 1000 for x, y in zip(b_deaths, b_births[0])]
-        i_nmr = [(x / y) * 1000 for x, y in zip(i_deaths, i_births[0])]
-
-        if show_and_store_graphs:
-            plt.plot(sim_years, b_nmr, 'o-g', label="Baseline", color='deepskyblue')
-            plt.plot(sim_years, i_nmr, 'o-g', label="Intervention", color='darkseagreen')
-            plt.xlabel('Year')
-            plt.ylabel('Deaths per 1000 births')
-            plt.title(f'Neonatal Mortality Ratio per Year for {cause} by Scenario')
-            plt.legend()
-            plt.savefig(f'{plot_destination_folder}/nmr/nmr_{cause}.png')
-            plt.show()
-"""

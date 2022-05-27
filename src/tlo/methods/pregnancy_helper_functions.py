@@ -80,8 +80,8 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     elif ((params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Basic') or
           (params['alternative_bemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Neonatal') or
           (params['alternative_cemonc_availability'] and hsi_event.TREATMENT_ID == 'DeliveryCare_Comprehensive') or
-          (params['alternative_pnc_coverage'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
-          (params['alternative_pnc_coverage'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
+          (params['alternative_pnc_quality'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Maternal') or
+          (params['alternative_pnc_quality'] and hsi_event.TREATMENT_ID == 'PostnatalCare_Neonatal')):
 
         for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
                                                                     'DeliveryCare_Neonatal',

@@ -53,7 +53,7 @@ def run_sba_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
     # Extract data from scenarios
     death_data = analysis_utility_functions.return_death_data_from_multiple_scenarios(results_folders, births_dict,
                                                                                       intervention_years,
-                                                                                      detailed_log=False)
+                                                                                      detailed_log=True)
     if show_and_store_graphs:
         # Generate plots of yearly MMR and NMR
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(

@@ -69,13 +69,13 @@ def run_pnc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
         pn_mat_data = analysis_utility_functions.get_mean_and_quants(pnc_results_maternal, intervention_years)
         pn_neo_data = analysis_utility_functions.get_mean_and_quants(pnc_results_newborn, intervention_years)
 
-        pnc_1_plus_rate_mat = [(x / y) * 100 for x, y in zip(pn_mat_data[0], birth_data)]
-        pnc_mat_lqs = [(x / y) * 100 for x, y in zip(pn_mat_data[1], birth_data)]
-        pnc_mat_uqs = [(x / y) * 100 for x, y in zip(pn_mat_data[2], birth_data)]
+        pnc_1_plus_rate_mat = [(x / y) * 100 for x, y in zip(pn_mat_data[0], birth_data[0])]
+        pnc_mat_lqs = [(x / y) * 100 for x, y in zip(pn_mat_data[1], birth_data[1])]
+        pnc_mat_uqs = [(x / y) * 100 for x, y in zip(pn_mat_data[2], birth_data[2])]
 
-        pnc1_plus_rate_neo = [(x / y) * 100 for x, y in zip(pn_neo_data[0], birth_data)]
-        pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data)]
-        pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data)]
+        pnc1_plus_rate_neo = [(x / y) * 100 for x, y in zip(pn_neo_data[0], birth_data[0])]
+        pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data[1])]
+        pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data[2])]
 
         return {'maternal': [pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
                 'neonatal': [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]}

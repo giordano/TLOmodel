@@ -98,40 +98,82 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
     return [total_rates, total_lq, total_uq]
 
 
-# =========================================== FUNCTIONS TO PRODUCE PLOTS  ============================================
-def basic_comparison_graph(intervention_years, bdata, idata, y_label, title, graph_location, save_name):
+def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
+                                       graph_location, file_name):
+    fig, ax = plt.subplots()
+    ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
+    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1, label="UI (2.5-92.5)")
+
+    if target_data_dict['double']:
+        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
+                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
+                     fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
+        plt.errorbar(target_data_dict['second']['year'], target_data_dict['second']['value'],
+                     label=target_data_dict['second']['label'], yerr=target_data_dict['second']['ci'],
+                     fmt='o', color='red', ecolor='mistyrose', elinewidth=3, capsize=0)
+
+    elif not target_data_dict['double']:
+        plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
+                     label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
+                     fmt='o', color='red', ecolor='pink', elinewidth=3, capsize=0)
+
+    plt.xlabel('Year')
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    plt.legend()
+    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.show()
+
+
+def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
     ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
     ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1, label="UI (2.5-92.5)")
     ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
     ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel(y_label)
-    plt.xlabel('Year')
+    plt.ylabel('Year')
+    plt.xlabel(x_label)
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
-    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.savefig(f'{graph_location}/{save_name}.png')
     plt.show()
 
 
 def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_location):
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-    plt.xlabel('Year')
     plt.ylabel(y_title)
+    plt.xlabel('Year')
     plt.title(title)
+    plt.gca().set_ylim(bottom=0)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
 
-def simple_line_chart_with_ci(sim_years, data, y_label, title, file_name, graph_location):
+def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
+    plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
+    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    plt.ylabel(y_title)
+    plt.xlabel('Year')
+    plt.title(title)
+    plt.gca().set_ylim(bottom=0)
+    plt.legend()
+    plt.savefig(f'{graph_location}/{file_name}.png')
+    plt.show()
+
+
+def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
-    plt.ylabel(y_label)
+    plt.ylabel(y_title)
     plt.xlabel('Year')
     plt.title(title)
     plt.legend()
+    plt.gca().set_ylim(bottom=0)
+    plt.grid(True)
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
 
@@ -147,6 +189,40 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
     plt.show()
+
+
+def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
+    hsi_med = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].median()))
+
+    hsi_mean = extract_results(
+        folder,
+        module="tlo.methods.healthsystem",
+        key="HSI_Event",
+        custom_generate_series=(
+            lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
+                year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
+
+    median = [hsi_med.loc[year].median() for year in sim_years]
+    lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
+    uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
+    data = [median, lq, uq]
+
+    simple_line_chart_with_ci(sim_years, data, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
+                              f'median_sf_{hsi_string}', graph_location)
+
+    mean = [hsi_mean.loc[year].mean() for year in sim_years]
+    lq = [hsi_mean.loc[year].quantile(0.025) for year in sim_years]
+    uq = [hsi_mean.loc[year].quantile(0.925) for year in sim_years]
+    data = [mean, lq, uq]
+
+    simple_line_chart_with_ci(sim_years, data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
+                              f'mean_sf_{hsi_string}', graph_location)
 
 
 def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
@@ -263,7 +339,7 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_ti
     plt.xlabel('Years')
     plt.title(title)
     plt.legend(loc='best')
-    plt.xticks([0., 1., 2., 3., 4., 5., 6., 7., 8.], labels=intervention_years)  # todo: has the be editied with number of years
+    plt.xticks([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.], labels=intervention_years)  # todo: has the be editied with number of years
     plt.savefig(f'{plot_destination_folder}/{save_name}.png')
     plt.show()
 
@@ -339,7 +415,7 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
         )
 
         # Extract maternal mortality ratio from direct maternal causes
-        mmr = get_comp_mean_and_rate('Maternal Disorders', births, death_results_labels, 100000, intervention_years)
+        mmr = get_comp_mean_and_rate('Maternal Disorders', births[0], death_results_labels, 100000, intervention_years)
 
         # Extract crude deaths due to direct maternal disorders
         crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders', intervention_years)
@@ -386,13 +462,13 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
             indirect_deaths = [indirect_deaths, id_lq, id_uq]
 
         # Calculate total MMR (direct + indirect deaths)
-        total_mmr = [[((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[0], crude_m_deaths[0], births)],
-                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[1], crude_m_deaths[1], births)],
-                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[2], crude_m_deaths[2], births)]
+        total_mmr = [[((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[0], crude_m_deaths[0], births[0])],
+                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[1], crude_m_deaths[1], births[1])],
+                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[2], crude_m_deaths[2], births[2])]
                      ]
 
         # Extract NMR
-        nmr = get_comp_mean_and_rate('Neonatal Disorders', births, death_results_labels, 1000, intervention_years)
+        nmr = get_comp_mean_and_rate('Neonatal Disorders', births[0], death_results_labels, 1000, intervention_years)
 
         # And crude neonatal deaths
         crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders', intervention_years)
@@ -445,17 +521,20 @@ def return_stillbirth_data_from_multiple_scenarios(results_folders, births_dict,
                     [x + y for x, y in zip(an_still_birth_data[2], ip_still_birth_data[2])]]
 
         # Then generate SBR
-        an_sbr = [[(x / y) * 1000 for x, y in zip(an_still_birth_data[0], births)],
-                  [(x / y) * 1000 for x, y in zip(an_still_birth_data[1], births)],
-                  [(x / y) * 1000 for x, y in zip(an_still_birth_data[2], births)]]
+        an_sbr = [[(x / y) * 1000 for x, y in zip(an_still_birth_data[0], births[0])],
+                  [(x / y) * 1000 for x, y in zip(an_still_birth_data[1], births[1])],
+                  [(x / y) * 1000 for x, y in zip(an_still_birth_data[2], births[2])]]
 
-        ip_sbr = [[(x / y) * 1000 for x, y in zip(ip_still_birth_data[0], births)],
-                  [(x / y) * 1000 for x, y in zip(ip_still_birth_data[1], births)],
-                  [(x / y) * 1000 for x, y in zip(ip_still_birth_data[2], births)]]
+        ip_sbr = [[(x / y) * 1000 for x, y in zip(ip_still_birth_data[0], births[0])],
+                  [(x / y) * 1000 for x, y in zip(ip_still_birth_data[1], births[1])],
+                  [(x / y) * 1000 for x, y in zip(ip_still_birth_data[2], births[2])]]
 
-        total_sbr = [[((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[0], ip_still_birth_data[0], births)],
-                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[1], ip_still_birth_data[1], births)],
-                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[2], ip_still_birth_data[2], births)]]
+        total_sbr = [[((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[0], ip_still_birth_data[0],
+                                                              births[0])],
+                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[1], ip_still_birth_data[1],
+                                                              births[1])],
+                     [((x + y) / z) * 1000 for x, y, z in zip(an_still_birth_data[2], ip_still_birth_data[2],
+                                                              births[2])]]
 
         # Return as dict for graphs
         return {'an_sbr': an_sbr,
