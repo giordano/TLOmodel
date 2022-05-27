@@ -29,16 +29,16 @@ from tlo.scenario import BaseScenario
 class SBAStatusQuoScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 789
+        self.seed = 246
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 30_000
+        self.pop_size = 60_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'status_quo_sba_30k', 'directory': './outputs',
+            'filename': 'status_quo_sba_60k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
