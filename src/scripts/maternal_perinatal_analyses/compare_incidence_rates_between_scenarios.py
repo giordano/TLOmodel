@@ -786,7 +786,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, outputspath
             plt.legend(lables, loc='center left', bbox_to_anchor=(1, 0.5))
             # Equal aspect ratio ensures that pie is drawn as a circle.
             plt.title(f'{type} Maternal Deaths by Cause in 2030 For {k} Scenario')
-            plt.savefig(f'./{mmr_destination}/{type}_prop_cause_of_death_{k}.png',
+            plt.savefig(f'{mmr_destination}/{type}_prop_cause_of_death_{k}.png',
                         bbox_inches="tight")
             plt.show()
 
