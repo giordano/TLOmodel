@@ -178,10 +178,10 @@ hhfa.loc[cond_no & cond_notna, 'functional_refrigerator_epi'] = "No"
 cond_na = hhfa.service_epi == "No"
 hhfa.loc[cond_na, 'vaccine_storage'] = "No"
 
-cond_yes = hhfa.functional_refrigerator == 'AVAILABLEANDFUNCTIONAL'
+cond_yes = hhfa.functional_refrigerator.str.replace(" ","") == 'AVAILABLEANDFUNCTIONAL'
 hhfa.loc[cond_yes, 'functional_refrigerator'] = "Yes"
-cond_no1 = hhfa.functional_refrigerator == 'NOTAVAILABLE'
-cond_no2 = hhfa.functional_refrigerator == 'AVAILABLENOTFUNCTIONAL'
+cond_no1 = hhfa.functional_refrigerator.str.replace(" ","") == 'NOTAVAILABLE'
+cond_no2 = hhfa.functional_refrigerator.str.replace(" ","")== 'AVAILABLENOTFUNCTIONAL'
 hhfa.loc[cond_no1 | cond_no2, 'functional_refrigerator'] = "No"
 
 hhfa.functional_refrigerator_diagnostics = hhfa.functional_refrigerator_diagnostics.str.lower()
