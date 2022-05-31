@@ -54,6 +54,24 @@ def run_sba_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
     death_data = analysis_utility_functions.return_death_data_from_multiple_scenarios(results_folders, births_dict,
                                                                                       intervention_years,
                                                                                       detailed_log=True)
+
+    def get_diff_direct_mmr(baseline_mmr_data, comparator):
+        crude_diff = [x - y for x, y in zip(baseline_mmr_data[0], comparator[0])]
+
+        avg_crude_diff = sum(crude_diff) / len(crude_diff)
+
+        percentage_diff = [100 - ((x/y) * 100) for x, y in zip(comparator[0], baseline_mmr_data[0])]
+
+        avg_percentage_diff = sum(percentage_diff) / len(percentage_diff)
+
+        return {'crude': crude_diff,
+                'crude_avg': avg_crude_diff,
+                'percentage': percentage_diff,
+                'percentage_avf': avg_percentage_diff}
+
+    diff_data = {k: get_diff_direct_mmr(death_data['Status Quo']['direct_mmr'], death_data[k]['direct_mmr']) for k
+                 in ['Increased BEmONC', 'Increased CEmONC']}
+
     if show_and_store_graphs:
         # Generate plots of yearly MMR and NMR
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -79,6 +97,25 @@ def run_sba_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
                 death_data, f'crude_{l}_deaths', intervention_years,
                 f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
                 plot_destination_folder, f'{group}_crude_deaths_comparison.png')
+
+        # todo: make function that can be used for MMR, NMR, SBR
+        N = len(intervention_years)
+        ind = np.arange(N)
+        width = 0.2
+
+        for dict_name in ['crude', 'percentage']:
+            for k, position, colour in zip(diff_data, [ind, ind + width],
+                                           ['bisque', 'powderblue']):
+                plt.bar(position, diff_data[k][dict_name], width, label=k, color=colour)
+
+            plt.ylabel('Reduction From Baseline')
+            plt.xlabel('Years')
+            plt.title(f'Mean Reduction of MMR from Baseline per Year ({dict_name})')
+            plt.legend(loc='best')
+            plt.xticks([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.],
+                       labels=intervention_years)  # todo: has the be editied with number of years
+            plt.savefig(f'{plot_destination_folder}/{dict_name}_diff_mmr.png')
+            plt.show()
 
     #  ================================== STILLBIRTH  ===============================================
     # Get data

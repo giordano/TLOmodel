@@ -622,13 +622,13 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
             do_scaling=True
         )
         mmr_dict = dict()
-        deaths_2030_dict = dict()
+        crude_deaths = dict()
 
         for cause in simplified_causes:
             if (cause == 'ectopic_pregnancy') or (cause == 'antepartum_haemorrhage') or (cause == 'uterine_rupture'):
                 deaths_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
                     direct_death_results, cause, intervention_years)
-                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+                crude_deaths.update({cause: deaths_data[0]})
 
             elif cause == 'abortion':
                 def get_ab_mmr(death_results):
@@ -642,7 +642,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
 
                     return [mean_deaths, lq_deaths, uq_deaths]
                 deaths_data = get_ab_mmr(direct_death_results)
-                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+                crude_deaths.update({cause: deaths_data[0]})
 
             elif cause == 'severe_pre_eclampsia':
                 def get_htn_mmr(death_results):
@@ -660,7 +660,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
                     return [deaths, lq, uq]
 
                 deaths_data = get_htn_mmr(direct_death_results)
-                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+                crude_deaths.update({cause: deaths_data[0]})
 
             elif cause == 'postpartum_haemorrhage':
                 def get_pph_mmr(death_results):
@@ -674,7 +674,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
 
                     return [deaths, lq, uq]
                 deaths_data = get_pph_mmr(direct_death_results)
-                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+                crude_deaths.update({cause: deaths_data[0]})
 
             elif cause == 'sepsis':
                 def get_sep_mmr(death_results):
@@ -692,7 +692,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
                     return [deaths, lq, uq]
 
                 deaths_data = get_sep_mmr(direct_death_results)
-                deaths_2030_dict.update({cause: deaths_data[0][-1]})
+                crude_deaths.update({cause: deaths_data[0]})
 
             mmr_mean = [(x / y) * 100000 for x, y in zip(deaths_data[0], total_births[0])]
             mmr_lq = [(x / y) * 100000 for x, y in zip(deaths_data[1], total_births[1])]
@@ -710,22 +710,28 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
             do_scaling=True
         )
 
+        indirect_deaths_means = []
 
-        # Only interested in 2030 currently
-        indirect_deaths_means = {}
-        for complication in indirect_causes:
-            indirect_deaths_means.update({complication: 0})
+        # todo: stacked area chart
 
-            if complication in indirect_death_results.loc[intervention_years[-1]].index:
-                indirect_deaths_means[complication] = indirect_death_results.loc[intervention_years[-1],
-                                                                                 complication].mean()
-        total_deaths = deaths_2030_dict
-        total_deaths.update(indirect_deaths_means)
+        #for year in intervention_years:
+        #    id_deaths_per_year = 0
+         #   for cause in indirect_causes:
+         #       if cause in indirect_death_results.loc[year, :, True].index:
+         #           id_deaths_per_year += indirect_death_results.loc[year, cause, True].mean()
 
-        return {'mmr_dict': mmr_dict,
-                'crude_deaths_direct': deaths_2030_dict,
-                'crude_deaths_indirect': indirect_deaths_means,
-                'total_crude_deaths': total_deaths}
+         #   indirect_deaths.append(id_deaths_per_year)
+
+
+
+
+       # total_deaths = deaths_2030_dict
+        #total_deaths.update(indirect_deaths_means)
+
+        return {'mmr_dict': mmr_dict,}
+               # 'crude_deaths_direct': deaths_2030_dict,
+                #'crude_deaths_indirect': indirect_deaths_means,}
+                #'total_crude_deaths': total_deaths}
 
     comp_mmrs = {k: get_death_data(results_folders[k], births_dict[k]) for k in results_folders}
 
@@ -750,7 +756,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         plt.savefig(f'./{mmr_destination}/{cause}_mmr.png')
         plt.show()
 
-    def get_pie_sizes(crude_deaths, type):
+
+
+    """def get_pie_sizes(crude_deaths, type):
         pie_sizes = list()
         total_deaths = sum(crude_deaths.values())
         if type == 'Direct':
@@ -791,7 +799,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
             plt.show()
 
     get_pie_charts(pie_sizes, 'Direct')
-    get_pie_charts(pie_sizes_total, 'Total')
+    get_pie_charts(pie_sizes_total, 'Total')"""
 
     # ===================================== COMPARING COMPLICATION LEVEL NMR ========================================
     simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']

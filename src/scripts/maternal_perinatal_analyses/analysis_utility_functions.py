@@ -290,7 +290,7 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
 def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
 
-    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon']):
+    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'orchid']):
         ax.plot(intervention_years, data_dict[k][0], label=k, color=colour)
         ax.fill_between(intervention_years, data_dict[k][1], data_dict[k][2], color=colour, alpha=.1)
 
