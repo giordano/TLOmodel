@@ -700,5 +700,39 @@ df_for_regression['fac_type'] = pd.Categorical(df_for_regression['fac_type'], ['
                 'Central Hospital'])
 df_for_regression.sort_values(['fac_name','fac_type'], inplace = True)
 
+# Convert binary variables to numeric
+fac_vars_binary = ['outpatient_only', 'fac_urban',
+                'service_fp','service_anc','service_pmtct','service_delivery','service_pnc','service_epi','service_imci',
+                'service_hiv','service_tb','service_othersti','service_malaria','service_blood_transfusion','service_diagnostic',
+                'service_cvd', 'service_consumable_stock',
+                'functional_landline','fuctional_mobile','functional_radio','functional_computer','internet_access_today',
+                'electricity', 'functional_toilet','functional_handwashing_facility',
+                'water_disruption_last_3mts',
+                'functional_emergency_vehicle','accessible_emergency_vehicle',
+                'functional_ambulance',
+                'functional_car',
+                'functional_motor_cycle',
+                'functional_bike_ambulance',
+                'functional_bicycle',
+                'vaccine_storage','functional_refrigerator',
+                'source_drugs_cmst','source_drugs_local_warehouse','source_drugs_ngo','source_drugs_donor','source_drugs_pvt',
+                'drug_transport_local_supplier','drug_transport_higher_level_supplier','drug_transport_self','drug_transport_other',
+                'referral_system_from_community','referrals_to_other_facs']
+
+binary_dict = {'yes': 1, 'no': 0}
+
+df_for_regression_binvars_cleaned = copy.deepcopy(df_for_regression)
+for col in fac_vars_binary:
+    df_for_regression_binvars_cleaned[col] = df_for_regression_binvars_cleaned[col].str.lower()
+
+    # replace don't know as missing
+    cond = df_for_regression_binvars_cleaned[col] == "don't know"
+    df_for_regression_binvars_cleaned.loc[cond, col] = np.nan
+
+    assert len([x for x in df_for_regression_binvars_cleaned[col].unique() if
+                pd.isnull(x) == False]) == 2  # verify that the variable is binary
+
+    df_for_regression_binvars_cleaned[col] = df_for_regression_binvars_cleaned[col].map(binary_dict).fillna(df_for_regression_binvars_cleaned[col])
+
 # Save dataset ready for regression analysis as a .csv file
-df_for_regression.to_csv(path_to_files_in_the_tlo_dropbox / '2 clean/cleaned_hhfa_2019.csv')
+df_for_regression_binvars_cleaned.to_csv(path_to_files_in_the_tlo_dropbox / '2 clean/cleaned_hhfa_2019.csv')
