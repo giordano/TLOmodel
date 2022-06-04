@@ -15,8 +15,13 @@ from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
+# Standard logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Detailed logger
+logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail.setLevel(logging.INFO)
 
 
 class Labour(Module):
@@ -574,8 +579,6 @@ class Labour(Module):
         'la_antepartum_haem': Property(Types.CATEGORICAL, 'whether the woman has experienced an antepartum haemorrhage'
                                                           ' in this delivery and it severity',
                                        categories=['none', 'mild_moderate', 'severe']),
-        'la_antepartum_haem_treatment': Property(Types.BOOL, 'whether this womans antepartum haemorrhage has been '
-                                                             'treated'),
         'la_uterine_rupture': Property(Types.BOOL, 'whether the woman has experienced uterine rupture in this '
                                                    'delivery'),
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
@@ -627,7 +630,6 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
         df.loc[df.is_alive, 'la_placental_abruption'] = False
         df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
-        df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
         df.loc[df.is_alive, 'la_uterine_rupture'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
         df.loc[df.is_alive, 'la_sepsis'] = False
@@ -659,7 +661,7 @@ class Labour(Module):
             parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
 
         if not (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all():
-            logger.debug(key='error', data='Parity was calculated incorrectly at initialisation ')
+            logger.info(key='error', data='Parity was calculated incorrectly at initialisation ')
 
         #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
         # This equation determines the proportion of women at baseline who have previously delivered via caesarean
@@ -1002,7 +1004,6 @@ class Labour(Module):
         df.at[child_id, 'la_obstructed_labour'] = False
         df.at[child_id, 'la_placental_abruption'] = False
         df.at[child_id, 'la_antepartum_haem'] = 'none'
-        df.at[child_id, 'la_antepartum_haem_treatment'] = False
         df.at[child_id, 'la_uterine_rupture'] = False
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
@@ -1078,7 +1079,7 @@ class Labour(Module):
         if (not df.at[individual_id, 'is_alive'] and
             not df.at[individual_id, 'is_pregnant'] and
            (not df.at[individual_id, 'date_of_last_pregnancy'] == self.sim.date)):
-            logger.debug(key='error', data=f'Attempt to schedule labour for woman {individual_id} inappropriately')
+            logger.info(key='error', data=f'Attempt to schedule labour for woman {individual_id} inappropriately')
             return
 
         # At the point of conception we schedule labour to onset for all women between after 37 weeks gestation - first
@@ -1100,7 +1101,7 @@ class Labour(Module):
         # ensuring all preterm labour comes from the pregnancy supervisor module
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
         if not days_until_labour >= pd.Timedelta(245, unit='d'):
-            logger.debug(key='error', data=f'Labour scheduled for woman {individual_id} beyond the maximum estimated '
+            logger.info(key='error', data=f'Labour scheduled for woman {individual_id} beyond the maximum estimated '
                                            f'possible length of pregnancy')
 
     def predict(self, eq, person_id):
@@ -1223,14 +1224,14 @@ class Labour(Module):
 
         # First we run check to ensure only women who have started the labour process are passed to this function
         if mni[individual_id]['delivery_setting'] == 'none':
-            logger.debug(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
+            logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
                                            f'delivery setting')
             return
 
         # Then we check that only complications from the master complication list are passed to the function (to ensure
         # any typos for string variables are caught)
         if complication not in self.possible_intrapartum_complications:
-            logger.debug(key='error', data=f'A complication ("{complication}") was passed to '
+            logger.info(key='error', data=f'A complication ("{complication}") was passed to '
                                            f'set_intrapartum_complications')
             return
 
@@ -1338,12 +1339,12 @@ class Labour(Module):
 
         # This function follows a roughly similar pattern as set_intrapartum_complications
         if mni[individual_id]['delivery_setting'] == 'none':
-            logger.debug(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
+            logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
                                            f'delivery setting')
             return
 
         if complication not in self.possible_postpartum_complications:
-            logger.debug(key='error', data=f'A complication ("{complication}") was passed to '
+            logger.info(key='error', data=f'A complication ("{complication}") was passed to '
                                            f'set_postpartum_complications')
             return
 
@@ -1496,18 +1497,21 @@ class Labour(Module):
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
             self, individual_id=individual_id)
 
+        # Log df row containing complications and treatments to calculate met need
+
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
+            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
         else:
-
             # Reset delay property
             mni[individual_id]['delay_one_two'] = False
             mni[individual_id]['delay_three'] = False
+            mni[individual_id]['didnt_seek_care'] = False
 
             if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
                 df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
@@ -1552,7 +1556,6 @@ class Labour(Module):
                 df.at[individual_id, 'la_sepsis_pp'] = False
 
                 # Labour specific treatment variables
-                df.at[individual_id, 'la_antepartum_haem_treatment'] = False
                 df.at[individual_id, 'la_uterine_rupture_treatment'] = False
 
                 # This event determines if women will develop complications in week one. We stagger when women
@@ -1561,7 +1564,7 @@ class Labour(Module):
                 days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
 
                 if not days_post_birth_int < 6:
-                    logger.debug(key='error', data=f'Mother {individual_id} scheduled to PN week one at >1 '
+                    logger.info(key='error', data=f'Mother {individual_id} scheduled to PN week one at >1 '
                                                    f'week postnatal')
 
                 day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['probs_of_attending_pn_event_by_day']))
@@ -1576,10 +1579,10 @@ class Labour(Module):
 
             elif mni[individual_id]['passed_through_week_one']:
                 if individual_id not in self.women_in_labour:
-                    logger.debug(key='error', data=f'Mother {individual_id} is still stored in self.women_in_labour')
+                    logger.info(key='error', data=f'Mother {individual_id} is still stored in self.women_in_labour')
 
                 if df.at[individual_id, 'la_currently_in_labour']:
-                    logger.debug(key='error', data=f'Mother {individual_id} is currently in labour within '
+                    logger.info(key='error', data=f'Mother {individual_id} is currently in labour within '
                                                    f'apply_risk_of_early_postpartum_death')
 
     def labour_characteristics_checker(self, individual_id):
@@ -1600,7 +1603,7 @@ class Labour(Module):
             mother.ps_gestational_age_in_weeks < 22 or
             pd.isnull(mother.la_due_date_current_pregnancy)
           ):
-            logger.debug(key='error', data=f'Person {individual_id} has characteristics that mean they should'
+            logger.info(key='error', data=f'Person {individual_id} has characteristics that mean they should'
                                            f' not be in labour ')
 
     def postpartum_characteristics_checker(self, individual_id):
@@ -1621,7 +1624,7 @@ class Labour(Module):
             not mother.la_is_postpartum or
             (not mni[individual_id]['passed_through_week_one'] and individual_id not in self.women_in_labour)
         ):
-            logger.debug(key='error', data=f'Person {individual_id} has characteristics that mean they should'
+            logger.info(key='error', data=f'Person {individual_id} has characteristics that mean they should'
                                            f' not be in the postnatal period ')
 
     # ============================================== HSI FUNCTIONS ====================================================
@@ -1674,9 +1677,9 @@ class Labour(Module):
         if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
            mni[person_id]['labour_state'] == 'late_preterm_labour':
 
-            # todo: condition using EMONC data
-            avail = hsi_event.get_consumables(item_codes=cons['antenatal_steroids'],
-                                              optional_item_codes=cons['iv_drug_equipment'])
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self, core='antenatal_steroids', optional='iv_drug_equipment', hsi_event=hsi_event,
+                cons=cons)
 
             # If available they are given. Antenatal steroids reduce a preterm newborns chance of developing
             # respiratory distress syndrome and of death associated with prematurity
@@ -1748,6 +1751,7 @@ class Labour(Module):
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
             if avail and sf_check:
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self, person_id, 'mag_sulph')
 
     def assessment_and_treatment_of_hypertension(self, hsi_event):
         """
@@ -1761,7 +1765,6 @@ class Labour(Module):
         df = self.sim.population.props
         person_id = hsi_event.target
         params = self.current_parameters
-        cons = self.item_codes_lab_consumables
 
         # If the treatment is not allowed to be delivered or it has already been delivered the function won't run
         if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or \
@@ -1771,14 +1774,16 @@ class Labour(Module):
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
 
             # Then query if these consumables are available during this HSI
-            avail = hsi_event.get_consumables(item_codes=cons['iv_antihypertensives'],
-                                              optional_item_codes=cons['iv_drug_equipment'])
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self, core='iv_antihypertensives', optional='iv_drug_equipment', hsi_event=hsi_event,
+                cons=self.item_codes_lab_consumables)
 
             # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
             # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
             # women with severe pre-eclampsia and eclampsia
             if avail:
                 df.at[person_id, 'la_maternal_hypertension_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self, person_id, 'iv_htns')
 
                 avail = hsi_event.get_consumables(
                     item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
@@ -1821,6 +1826,7 @@ class Labour(Module):
             if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self, person_id, 'mag_sulph')
 
     def assessment_for_assisted_vaginal_delivery(self, hsi_event, indication):
         """
@@ -1872,6 +1878,7 @@ class Labour(Module):
                     # risk of intrapartum still birth when applying risk in the death event
                     if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
+                        pregnancy_helper_functions.log_met_need(self, person_id, f'avd_{indication}')
                     else:
                         # If unsuccessful, this woman will require a caesarean section
                         refer_for_cs()
@@ -1918,6 +1925,7 @@ class Labour(Module):
             # If delivered this intervention reduces a womans risk of dying from sepsis
             if avail and sf_check:
                 df.at[person_id, 'la_sepsis_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self, person_id, 'sepsis_abx')
 
     def assessment_and_plan_for_antepartum_haemorrhage(self, hsi_event):
         """
@@ -2013,7 +2021,6 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         if 'assessment_and_treatment_of_pph_uterine_atony' not in params['allowed_interventions']:
             return
@@ -2038,6 +2045,7 @@ class Labour(Module):
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['uterine_atony'] = False
+                    pregnancy_helper_functions.log_met_need(self, person_id, 'uterotonics')
 
                 # If uterotonics do not stop bleeding the woman is referred for additional treatment
                 else:
@@ -2079,6 +2087,7 @@ class Labour(Module):
 
                 df.at[person_id, 'la_postpartum_haem'] = False
                 mni[person_id]['retained_placenta'] = False
+                pregnancy_helper_functions.log_met_need(self, person_id, 'man_r_placenta')
 
                 if df.at[person_id, 'pn_postpartum_haem_secondary']:
                     df.at[person_id, 'pn_postpartum_haem_secondary'] = False
@@ -2127,8 +2136,11 @@ class Labour(Module):
         elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
                                                                                      'manual_removal_placenta')
               and sf_check and avail):
-
             self.pph_treatment.set(person_id, 'surgery')
+
+        # log intervention delivery
+        if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
+            pregnancy_helper_functions.log_met_need(self, person_id, 'pph_surg')
 
     def blood_transfusion(self, hsi_event):
         """
@@ -2153,6 +2165,7 @@ class Labour(Module):
 
         if avail and sf_check:
             mni[person_id]['received_blood_transfusion'] = True
+            pregnancy_helper_functions.log_met_need(self, person_id, 'blood_tran')
 
             # We assume that anaemia is corrected by blood transfusion
             if df.at[person_id, 'pn_anaemia_following_pregnancy'] != 'none':
@@ -2390,7 +2403,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # We check all women have had their labour state set
             if labour_state is None:
-                logger.debug(key='error', data=f'Mother {individual_id} has not had their labour state stored in '
+                logger.info(key='error', data=f'Mother {individual_id} has not had their labour state stored in '
                                                f'the mni')
 
             logger.debug(key='message', data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
@@ -2479,7 +2492,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # Check all women's 'delivery setting' is set
             if mni[individual_id]['delivery_setting'] is None:
-                logger.debug(key='error', data=f'Mother {individual_id} did not have their delivery setting stored in '
+                logger.info(key='error', data=f'Mother {individual_id} did not have their delivery setting stored in '
                                                f'the mni')
 
             # Women delivering at home move the the LabourAtHomeEvent as they will not receive skilled birth attendance
@@ -2540,7 +2553,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Check only women delivering at home pass through this event and that the right characteristics are present
         if not mni[individual_id]['delivery_setting'] == 'home_birth':
-            logger.debug(key='error', data=f'Mother {individual_id} arrived at home birth event incorrectly')
+            logger.info(key='error', data=f'Mother {individual_id} arrived at home birth event incorrectly')
             return
 
         self.module.labour_characteristics_checker(individual_id)
@@ -2595,6 +2608,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                         priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1))
+                else:
+                    mni[individual_id]['didnt_seek_care'] = True
 
 
 class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
@@ -2617,7 +2632,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         # Check the correct amount of time has passed between labour onset and this event event
         if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):
-            logger.debug(key='error', data=f'Mother {individual_id} arrived at LabourDeathAndStillBirthEvent at the '
+            logger.info(key='error', data=f'Mother {individual_id} arrived at LabourDeathAndStillBirthEvent at the '
                                            f'wrong date')
 
         self.module.labour_characteristics_checker(individual_id)
@@ -2629,6 +2644,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
+            pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
 
@@ -2679,6 +2695,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         if individual_id in mni:
             mni[individual_id]['delay_one_two'] = False
             mni[individual_id]['delay_three'] = False
+            mni[individual_id]['didnt_seek_care'] = False
 
 
 class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
@@ -2702,7 +2719,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
         # at the event have the right characteristics present
 
         if not (self.sim.date - df.at[mother_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D'):
-            logger.debug(key='error', data=f'Mother {mother_id} arrived at BirthAndPostnatalOutcomesEvent at the '
+            logger.info(key='error', data=f'Mother {mother_id} arrived at BirthAndPostnatalOutcomesEvent at the '
                                            f'wrong date')
 
         self.module.labour_characteristics_checker(mother_id)
@@ -2802,9 +2819,11 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                     # For women who do not have prompt PNC, we determine if they will die from complications occurring
                     # following birth that have not been treated
                     mni[mother_id]['will_receive_pnc'] = 'late'
+                    mni[mother_id]['didnt_seek_care'] = True
                     self.module.apply_risk_of_early_postpartum_death(mother_id)
             else:
                 # Similarly for women who will not receive PNC at all we apply risk of death
+                mni[mother_id]['didnt_seek_care'] = True
                 self.module.apply_risk_of_early_postpartum_death(mother_id)
 
 
@@ -2855,7 +2874,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # Log potential error
         if mni[person_id]['delivery_setting'] == 'home_birth':
-            logger.debug(key='error', data=f'Mother {person_id} is receiving SBA with delivery setting as home birth')
+            logger.info(key='error', data=f'Mother {person_id} is receiving SBA with delivery setting as home birth')
 
         # Here we ensure that women who were admitted via the antenatal ward for assisted/caesarean delivery have the
         # correct variables updated leading to referral for delivery
@@ -2873,8 +2892,9 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables
-        avail = self.get_consumables(item_codes=cons['delivery_core'],
-                                     optional_item_codes=cons['delivery_optional'],)
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self.module, core='delivery_core', optional='delivery_optional', hsi_event=self,
+            cons=cons)
 
         # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if avail:
@@ -3008,17 +3028,17 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         # PostnatalWeekOneMaternalEvent
         if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:
             if not self.sim.date < (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Mother {person_id} attended early PNC too late')
+                logger.info(key='error', data=f'Mother {person_id} attended early PNC too late')
 
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
-                logger.debug(key='error', data=f'Mother {person_id} attended early PNC twice')
+                logger.info(key='error', data=f'Mother {person_id} attended early PNC twice')
 
         elif mni[person_id]['will_receive_pnc'] == 'late' and not mni[person_id]['passed_through_week_one']:
             if not self.sim.date >= (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Mother {person_id} attended late PNC too early')
+                logger.info(key='error', data=f'Mother {person_id} attended late PNC too early')
 
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
-                logger.debug(key='error', data=f'Mother {person_id} attended late PNC twice')
+                logger.info(key='error', data=f'Mother {person_id} attended late PNC twice')
 
         # Run checks
         self.module.postpartum_characteristics_checker(person_id)
@@ -3180,11 +3200,13 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             if avail and treatment_success_ur and sf_check:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True
+                pregnancy_helper_functions.log_met_need(self.module, person_id, 'ur_surg')
 
             # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
             # of death from uterine rupture but leads to permanent infertility in the simulation
             elif avail and sf_check and not treatment_success_ur:
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
+                pregnancy_helper_functions.log_met_need(self.module, person_id, 'ur_surg')
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding

@@ -103,6 +103,8 @@ def test_run_no_constraints(tmpdir, seed):
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
+    # TODO: THE LOGGER NEEDS TO BE SET TO DEBUG FOR LABOUR OTHERWISE ITS NOT GOING TO PICK UP ANY ERRORS
+    #  (im also not sure that parse_log_file is extracting it properly)
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
     assert 'error' not in output['tlo.methods.labour']

@@ -833,6 +833,7 @@ class PostnatalSupervisor(Module):
         # ================================== MATERNAL DEATH EQUATIONS ==============================================
         # Create a list of all the causes that may cause death in the individual (matched to GBD labels)
         if mother_or_child == 'mother':
+
             # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
             # (either from one or multiple causes) and if death occurs returns the cause
             potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
@@ -840,9 +841,10 @@ class PostnatalSupervisor(Module):
 
             # If a cause is returned death is scheduled
             if potential_cause_of_death:
+                mni[individual_id]['didnt_seek_care'] = True
+                pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                         originating_module=self.sim.modules['PostnatalSupervisor'])
-
                 del mni[individual_id]
 
             else:
@@ -910,7 +912,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Check that all women are week 1 or above
         if not (df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] > 0).all().all():
-            logger.debug(key='error', data='Postnatal weeks incorrectly calculated')
+            logger.info(key='error', data='Postnatal weeks incorrectly calculated')
 
         # ================================= COMPLICATIONS/CARE SEEKING FOR WOMEN ======================================
         # This function is called to apply risk of complications to women in weeks 2, 3, 4, 5 and 6 of the postnatal
@@ -1005,7 +1007,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         if (not mother.la_is_postpartum or
             not (self.sim.date - mother.la_date_most_recent_delivery) < pd.to_timedelta(7, unit='d') or
            mni[individual_id]['passed_through_week_one']):
-            logger.debug(key='error', data='Mother incorrectly scheduled to arrive at PostnatalWeekOneMaternalEvent')
+            logger.info(key='error', data='Mother incorrectly scheduled to arrive at PostnatalWeekOneMaternalEvent')
             return
 
         # Signify this woman has reached week one of the postnatal period (this variable is used in the labour module)
@@ -1223,7 +1225,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
 
         # Run checks to ensure only the right newborns have arrived here
         if not child.age_days < 7 or nci[individual_id]['passed_through_week_one']:
-            logger.debug(key='error', data='Child incorrectly scheduled for PostnatalWeekOneNeonatalEvent')
+            logger.info(key='error', data='Child incorrectly scheduled for PostnatalWeekOneNeonatalEvent')
             return
 
         nci[individual_id]['passed_through_week_one'] = True

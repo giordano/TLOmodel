@@ -624,7 +624,7 @@ class NewbornOutcomes(Module):
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
-                logger.debug(key='error', data=f'Child {child_id} should have developed encephalopathy but didnt')
+                logger.info(key='error', data=f'Child {child_id} should have developed encephalopathy but didnt')
 
     def apply_risk_of_preterm_respiratory_distress_syndrome(self, child_id):
         """
@@ -690,7 +690,7 @@ class NewbornOutcomes(Module):
 
         # Ensure that these newborns are less than one week old and scheduled the event accordingly
         if not days_post_birth_int < 6:
-            logger.debug(key='error', data=f'Child {individual_id} was older than 6 days when '
+            logger.info(key='error', data=f'Child {individual_id} was older than 6 days when '
                                            f'PostnatalWeekOneNeonatalEvent was scheduled')
 
         day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['prob_day_reaches_week_one_event']))
@@ -860,6 +860,7 @@ class NewbornOutcomes(Module):
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
+        # todo: condition on use of clean birth kit?
         df.at[person_id, 'nb_received_cord_care'] = True
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
@@ -1213,7 +1214,7 @@ class NewbornOutcomes(Module):
         # Check no children born at term or postterm women are incorrectly categorised as preterm
         if (m['labour_state'] == 'term_labour') or (m['labour_state'] == 'postterm_labour'):
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
-                logger.debug(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
+                logger.info(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
                                                f'delivering at term')
 
         if df.at[child_id, 'is_alive']:
@@ -1239,7 +1240,7 @@ class NewbornOutcomes(Module):
 
             # Check these variables are not unassigned
             if nci[child_id]['delivery_setting'] == 'none':
-                logger.debug(key='error', data=f'Child {child_id} does not have a delivery setting stored')
+                logger.info(key='error', data=f'Child {child_id} does not have a delivery setting stored')
 
             # --------------------------------------- Breastfeeding -------------------------------------------------
             # Check see if this newborn will start breastfeeding
@@ -1430,7 +1431,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         if (not self.sim.date == df.at[person_id, 'date_of_birth'] or
            df.at[person_id, 'nb_death_after_birth'] or
            nci[person_id]['delivery_setting'] == 'home_birth'):
-            logger.debug(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
+            logger.info(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
                                            f'when they shouldnt have')
             return
 
@@ -1483,17 +1484,17 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC too late')
+                logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
-                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC twice')
+                logger.info(key='error', data=f'Child {person_id} arrived at early PNC twice')
 
         elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date >= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC too early')
+                logger.info(key='error', data=f'Child {person_id} arrived at late PNC too early')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
-                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC twice')
+                logger.info(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,

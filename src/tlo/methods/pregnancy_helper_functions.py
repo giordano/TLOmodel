@@ -6,6 +6,8 @@ module suite
 import numpy as np
 import pandas as pd
 
+from tlo import logging
+
 
 def get_list_of_items(self, item_list):
     """
@@ -23,6 +25,7 @@ def return_cons_avail(self, core, optional, hsi_event, cons):
     """
     """
     params = self.sim.modules['Labour'].current_parameters
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     # Check the consumables are available, this will log the consumables for any intervention. If there is no analysis
     # being conducted the result is returned
@@ -52,6 +55,9 @@ def return_cons_avail(self, core, optional, hsi_event, cons):
             else:
                 available = False
 
+    if not available and (hsi_event.target in mni):
+        mni[hsi_event.target]['cons_not_avail'] = True
+
     # todo : neonatal PNC
     # todo : ANC
 
@@ -62,6 +68,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     """
     """
     params = self.current_parameters
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     def see_if_sf_will_run():
         if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
@@ -69,8 +76,16 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
         else:
             competence = params['mean_hcw_competence_hp'][1]
 
-        if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
+        comp_result = self.rng.random_sample() < competence
+        hcw_result = self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']
+
+        if comp_result and hcw_result:
             return True
+
+        if not comp_result and (hsi_event.target in mni):
+            mni[hsi_event.target]['comp_not_avail'] = True
+        if not hcw_result and (hsi_event.target in mni):
+            mni[hsi_event.target]['hcw_not_avail'] = True
 
         return False
 
@@ -101,11 +116,54 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
             if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
                (self.rng.random_sample() < params[analysis_coverage]):
                 return True
+            elif hsi_event.target in mni:
+                barrier = self.rng.choice(['comp_not_avail', 'hcw_not_avail'])
+                mni[hsi_event.target][barrier] = True
 
         return False
 
     else:
         return see_if_sf_will_run()
+
+
+def log_met_need(self, person_id, intervention):
+    """
+    """
+    df = self.sim.population.props
+    logger = logging.getLogger("tlo.methods.labour.detail")
+    person = df.loc[person_id]
+
+    if intervention in ('ep_case_mang', 'pac', 'avd_other', 'avd_ol', 'avd_spe_ec', 'uterotonics', 'man_r_placenta',
+                        'pph_surg', 'ur_surg'):
+        logger.info(key='intervention', data={'person_id': person_id, 'int': intervention})
+
+    elif intervention == 'mag_sulph':  # TODO: these are repeating per person (as its not reset yet?)
+        for timing in ['ps', 'pn']:
+            if df.at[person_id, f'{timing}_htn_disorders'] in ('severe_pre_eclamp', 'eclampsia'):
+                logger.info(key='intervention',
+                            data={'person_id': person_id,
+                                  'int': f'{intervention}_{timing}_{df.at[person_id, f"{timing}_htn_disorders"]}'})
+
+    elif intervention == 'iv_htns':
+        for timing in ['ps', 'pn']:
+            if df.at[person_id, f'{timing}_htn_disorders'] in ('severe_pre_eclamp', 'severe_gest_htn'):
+                logger.info(key='intervention',
+                            data={'person_id': person_id,
+                                  'int': f'{intervention}_{timing}_{df.at[person_id, f"{timing}_htn_disorders"]}'})
+
+    elif intervention == 'sepsis_abx':
+        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'ps_chorioamnionitis']:
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_an_sepsis'})
+        else:
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_pn_sepsis'})
+
+    elif intervention == 'blood_tran':
+        if person.la_postpartum_haem or person.pn_postpartum_haem_secondary:
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_pph'})
+        elif (person.la_antepartum_haem != 'none') or (person.ps_antepartum_haemorrhage != 'none'):
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_aph'})
+        elif person.la_uterine_rupture:
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_ur'})
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
@@ -256,6 +314,17 @@ def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
         treatment_effect = params[treatment_effect]
 
     return treatment_effect
+
+
+def log_mni_for_maternal_death(self, person_id):
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    logger = logging.getLogger("tlo.methods.labour.detail")
+
+    mni_to_log = dict()
+    for k in ['delay_one_two', 'delay_three', 'didnt_seek_care', 'cons_not_avail', 'comp_not_avail', 'hcw_not_avail']:
+        mni_to_log.update({k: mni[person_id][k]})
+
+    logger.info(key='death_mni', data=mni_to_log)
 
 
 def calculate_risk_of_death_from_causes(self, risks):
@@ -462,6 +531,12 @@ def update_mni_dictionary(self, individual_id):
         mni[individual_id] = {'delay_one_two': False,
                               'delay_three': False,
                               'delete_mni': False,  # if True, mni deleted in report_daly_values function
+                              'didnt_seek_care': False,
+                              'cons_not_avail': False,
+                              'comp_not_avail': False,
+                              'hcw_not_avail': False,
+                              'ga_anc_one': 0,
+                              'anc_ints': [],
                               'abortion_onset': pd.NaT,
                               'abortion_haem_onset': pd.NaT,
                               'abortion_sep_onset': pd.NaT,
@@ -537,11 +612,9 @@ def update_mni_dictionary(self, individual_id):
                             'received_blood_transfusion': False,  # True (T) or False (F)
                             'referred_for_surgery': False,  # True (T) or False (F)'
                             'death_in_labour': False,  # True (T) or False (F)
-                            'cause_of_death_in_labour': [],
                             'single_twin_still_birth': False,  # True (T) or False (F)
                             'will_receive_pnc': 'none',
-                            'passed_through_week_one': False
-                            }
+                            'passed_through_week_one': False}
 
         mni[individual_id].update(labour_variables)
 

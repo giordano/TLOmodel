@@ -29,23 +29,24 @@ from tlo.scenario import BaseScenario
 class PNCStatusQuoScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 456
+        self.seed = 258
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.end_date = Date(2014, 1, 1)
+        self.pop_size = 30000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'status_quo_pnc_200k', 'directory': './outputs',
+            'filename': 'test_30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
-                "tlo.methods.labour": logging.INFO,
+                "tlo.methods.labour": logging.DEBUG,
+                "tlo.methods.labour.detail": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
