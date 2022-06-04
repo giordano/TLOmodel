@@ -1286,6 +1286,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the blood is available we assume the intervention can be delivered
         if avail and sf_check:
+            pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
             # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
             # RBCs will correct this woman's severe anaemia
@@ -1342,7 +1343,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                            'ps_htn_disorders'] ==
                                                                                      'eclampsia'):
                 df.at[individual_id, 'ac_iv_anti_htn_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, individual_id, 'iv_htns')
+                pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
 
     def treatment_for_severe_pre_eclampsia_or_eclampsia(self, individual_id, hsi_event):
         """
@@ -1366,7 +1367,7 @@ class CareOfWomenDuringPregnancy(Module):
         # If available deliver the treatment
         if avail and sf_check:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
-            pregnancy_helper_functions.log_met_need(self, individual_id, 'mag_sulph')
+            pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
         """
@@ -2655,8 +2656,8 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         elif abortion_complications.has_any([person_id], 'other', first=True) and baseline_cons:
             df.at[person_id, 'ac_received_post_abortion_care'] = True
 
-        # if df.at[person_id, 'ac_received_post_abortion_care']:
-            pregnancy_helper_functions.log_met_need(self, person_id, 'pac')
+        if df.at[person_id, 'ac_received_post_abortion_care']:
+            pregnancy_helper_functions.log_met_need(self.module, 'pac', self)
 
 
     def did_not_run(self):
@@ -2699,7 +2700,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         # If they are available then treatment can go ahead
         if avail:
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]['delete_mni'] = True
-            pregnancy_helper_functions.log_met_need(self, person_id, 'ep_case_mang')
+            pregnancy_helper_functions.log_met_need(self.module, 'ep_case_mang', self)
 
             # For women who have sought care after they have experienced rupture we use this treatment variable to
             # reduce risk of death (women who present prior to rupture do not pass through the death event as we assume

@@ -1751,7 +1751,7 @@ class Labour(Module):
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
             if avail and sf_check:
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, person_id, 'mag_sulph')
+                pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
 
     def assessment_and_treatment_of_hypertension(self, hsi_event):
         """
@@ -1783,7 +1783,7 @@ class Labour(Module):
             # women with severe pre-eclampsia and eclampsia
             if avail:
                 df.at[person_id, 'la_maternal_hypertension_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, person_id, 'iv_htns')
+                pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
 
                 avail = hsi_event.get_consumables(
                     item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
@@ -1826,7 +1826,7 @@ class Labour(Module):
             if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, person_id, 'mag_sulph')
+                pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
 
     def assessment_for_assisted_vaginal_delivery(self, hsi_event, indication):
         """
@@ -1878,7 +1878,7 @@ class Labour(Module):
                     # risk of intrapartum still birth when applying risk in the death event
                     if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
-                        pregnancy_helper_functions.log_met_need(self, person_id, f'avd_{indication}')
+                        pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
                     else:
                         # If unsuccessful, this woman will require a caesarean section
                         refer_for_cs()
@@ -1925,7 +1925,7 @@ class Labour(Module):
             # If delivered this intervention reduces a womans risk of dying from sepsis
             if avail and sf_check:
                 df.at[person_id, 'la_sepsis_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, person_id, 'sepsis_abx')
+                pregnancy_helper_functions.log_met_need(self, 'sepsis_abx', hsi_event)
 
     def assessment_and_plan_for_antepartum_haemorrhage(self, hsi_event):
         """
@@ -2045,7 +2045,7 @@ class Labour(Module):
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['uterine_atony'] = False
-                    pregnancy_helper_functions.log_met_need(self, person_id, 'uterotonics')
+                    pregnancy_helper_functions.log_met_need(self, 'uterotonics', hsi_event)
 
                 # If uterotonics do not stop bleeding the woman is referred for additional treatment
                 else:
@@ -2087,7 +2087,7 @@ class Labour(Module):
 
                 df.at[person_id, 'la_postpartum_haem'] = False
                 mni[person_id]['retained_placenta'] = False
-                pregnancy_helper_functions.log_met_need(self, person_id, 'man_r_placenta')
+                pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
 
                 if df.at[person_id, 'pn_postpartum_haem_secondary']:
                     df.at[person_id, 'pn_postpartum_haem_secondary'] = False
@@ -2140,7 +2140,7 @@ class Labour(Module):
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
-            pregnancy_helper_functions.log_met_need(self, person_id, 'pph_surg')
+            pregnancy_helper_functions.log_met_need(self, 'pph_surg', hsi_event)
 
     def blood_transfusion(self, hsi_event):
         """
@@ -2165,7 +2165,7 @@ class Labour(Module):
 
         if avail and sf_check:
             mni[person_id]['received_blood_transfusion'] = True
-            pregnancy_helper_functions.log_met_need(self, person_id, 'blood_tran')
+            pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
             # We assume that anaemia is corrected by blood transfusion
             if df.at[person_id, 'pn_anaemia_following_pregnancy'] != 'none':
@@ -3050,6 +3050,8 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
                                                  'timing':  mni[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'la_pn_checks_maternal'] += 1
+        # reset variable for capturing early pnc
+        mni[person_id]['will_receive_pnc'] = 'none'
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -3200,13 +3202,13 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             if avail and treatment_success_ur and sf_check:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self.module, person_id, 'ur_surg')
+                pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
             # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
             # of death from uterine rupture but leads to permanent infertility in the simulation
             elif avail and sf_check and not treatment_success_ur:
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
-                pregnancy_helper_functions.log_met_need(self.module, person_id, 'ur_surg')
+                pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding

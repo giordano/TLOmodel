@@ -126,44 +126,47 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
         return see_if_sf_will_run()
 
 
-def log_met_need(self, person_id, intervention):
+def log_met_need(self, intervention, hsi):
     """
     """
     df = self.sim.population.props
     logger = logging.getLogger("tlo.methods.labour.detail")
-    person = df.loc[person_id]
+    person = df.loc[hsi.target]
+    person_id = hsi.target
+    # todo: what about same intervention for different indications
 
     if intervention in ('ep_case_mang', 'pac', 'avd_other', 'avd_ol', 'avd_spe_ec', 'uterotonics', 'man_r_placenta',
                         'pph_surg', 'ur_surg'):
         logger.info(key='intervention', data={'person_id': person_id, 'int': intervention})
 
-    elif intervention == 'mag_sulph':  # TODO: these are repeating per person (as its not reset yet?)
-        for timing in ['ps', 'pn']:
-            if df.at[person_id, f'{timing}_htn_disorders'] in ('severe_pre_eclamp', 'eclampsia'):
-                logger.info(key='intervention',
-                            data={'person_id': person_id,
-                                  'int': f'{intervention}_{timing}_{df.at[person_id, f"{timing}_htn_disorders"]}'})
-
-    elif intervention == 'iv_htns':
-        for timing in ['ps', 'pn']:
-            if df.at[person_id, f'{timing}_htn_disorders'] in ('severe_pre_eclamp', 'severe_gest_htn'):
-                logger.info(key='intervention',
-                            data={'person_id': person_id,
-                                  'int': f'{intervention}_{timing}_{df.at[person_id, f"{timing}_htn_disorders"]}'})
+    elif (intervention == 'mag_sulph') or (intervention == 'iv_htns'):
+        if ((hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient')) and \
+          not person.la_is_postpartum:
+            logger.info(key='intervention',
+                        data={'person_id': person_id,
+                              'int': f'{intervention}_an_{df.at[person_id, "ps_htn_disorders"]}'})
+        elif (hsi.TREATMENT_ID == 'PostnatalCare_Maternal') and person.la_is_postpartum:
+            logger.info(key='intervention',
+                        data={'person_id': person_id,
+                              'int': f'{intervention}_pn_{df.at[person_id, "pn_htn_disorders"]}'})
 
     elif intervention == 'sepsis_abx':
-        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'ps_chorioamnionitis']:
+        if (hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient'):
             logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_an_sepsis'})
-        else:
+        elif hsi.TREATMENT_ID == 'PostnatalCare_Maternal':
             logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_pn_sepsis'})
 
     elif intervention == 'blood_tran':
-        if person.la_postpartum_haem or person.pn_postpartum_haem_secondary:
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_pph'})
-        elif (person.la_antepartum_haem != 'none') or (person.ps_antepartum_haemorrhage != 'none'):
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_aph'})
-        elif person.la_uterine_rupture:
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_ur'})
+        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_anaemia'})
+        elif hsi.TREATMENT_ID == 'DeliveryCare_Comprehensive':
+            if ((person.la_antepartum_haem != 'none') or (person.ps_antepartum_haemorrhage != 'none')) and \
+              not person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_aph'})
+            elif person.la_uterine_rupture and not person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_ur'})
+            elif (person.la_postpartum_haem or person.pn_postpartum_haem_secondary) and person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_pph'})
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
