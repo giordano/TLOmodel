@@ -24,10 +24,10 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
+        self.end_date = Date(2036, 1, 1)
         self.pop_size = 175_000
         self.number_of_draws = 2
-        self.runs_per_draw = 3
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
