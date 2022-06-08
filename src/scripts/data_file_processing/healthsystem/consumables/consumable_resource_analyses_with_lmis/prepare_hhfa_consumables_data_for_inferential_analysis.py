@@ -685,8 +685,34 @@ df_for_regression = pd.merge(merged_df2,item_categories[cols], how = 'left', on 
 
 cond = df_for_regression.item.str.contains('art_component')
 df_for_regression.loc[cond, 'program'] = 'hiv'
-df_for_regression.loc[cond, 'drug_class_rx_list'] = 'antiretroviral'
 df_for_regression.loc[cond, 'mode_administration'] = 'oral'
+df_for_regression.loc[cond, 'drug_class_rx_list'] = 'antiretroviral'
+
+# Clean program to reduce the number of categories
+cond_resp = df_for_regression.program == 'respiratory illness'
+df_for_regression.loc[cond_resp,'program'] = 'acute lower respiratory infections'
+
+cond_road = df_for_regression.program == 'road traffic injuries'
+df_for_regression.loc[cond_road,'program'] = 'surgical'
+
+cond_fungal = df_for_regression.program == 'fungal infection'
+df_for_regression.loc[cond_fungal,'program'] = 'other'
+
+cond_iv = df_for_regression.program == 'IV and injectables'
+df_for_regression.loc[cond_iv,'program'] = 'general'
+
+cond_ncd1 = df_for_regression.program == 'hypertension'
+cond_ncd2 = df_for_regression.program == 'diabetes'
+df_for_regression.loc[cond_ncd1|cond_ncd2,'program'] = 'ncds'
+
+cond_vit = df_for_regression.item == 'Vitamin A (retinol) capsule'
+df_for_regression.loc[cond_vit, 'program'] = 'obstetric and newborn care'
+
+cond_mvit = df_for_regression.item == 'Multivitamins'
+df_for_regression.loc[cond_mvit, 'program'] = 'general'
+
+cond_rutf = df_for_regression.item == 'Ready to use therapeutic food(RUTF)'
+df_for_regression.loc[cond_rutf, 'program'] = 'child health'
 
 # Sort by facility type
 df_for_regression['fac_type'] = pd.Categorical(df_for_regression['fac_type'], ['Health Post',
