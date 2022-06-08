@@ -714,8 +714,32 @@ df_for_regression.loc[cond_mvit, 'program'] = 'general'
 cond_rutf = df_for_regression.item == 'Ready to use therapeutic food(RUTF)'
 df_for_regression.loc[cond_rutf, 'program'] = 'child health'
 
+# Clean facility type
+df_for_regression = df_for_regression.rename(columns = {'fac_type': 'fac_type_original'})
+df_for_regression['fac_type'] = ""
+
+cond_mch = (df_for_regression['fac_name'].str.contains('Mzuzu Cental Hospital'))
+df_for_regression.loc[cond_mch, 'fac_name'] = 'Mzuzu Central Hospital'
+
+cond_level0 = (df_for_regression['fac_name'].str.contains('Health Post'))
+cond_level1a = (df_for_regression['fac_type_original'] == 'Clinic') | (df_for_regression['fac_type_original'] == 'Health Centre') | \
+        (df_for_regression['fac_type_original'].str.contains('Dispensary')) | \
+        (df_for_regression['fac_type_original'].str.contains('Maternity'))
+cond_level1b =  (df_for_regression['fac_type_original'].str.contains('Community Hospital')) | \
+                (df_for_regression['fac_type_original'] == 'Other Hospital')
+cond_level2 = (df_for_regression['fac_type_original'] == 'District Hospital')
+cond_level3 = df_for_regression.fac_name.str.contains("Central Hospit")
+cond_level4 = df_for_regression.fac_name.str.contains("Mental Hospit")
+
+df_for_regression.loc[cond_level0,'fac_type'] = 'Facility_level_0'
+df_for_regression.loc[cond_level1a,'fac_type'] = 'Facility_level_1a'
+df_for_regression.loc[cond_level1b,'fac_type'] = 'Facility_level_1b'
+df_for_regression.loc[cond_level2,'fac_type'] = 'Facility_level_2'
+df_for_regression.loc[cond_level3,'fac_type'] = 'Facility_level_3'
+df_for_regression.loc[cond_level4,'fac_type'] = 'Facility_level_4'
+
 # Sort by facility type
-df_for_regression['fac_type'] = pd.Categorical(df_for_regression['fac_type'], ['Health Post',
+df_for_regression['fac_type_original'] = pd.Categorical(df_for_regression['fac_type_original'], ['Health Post',
                 'Dispensary',
                 'Maternity',
                 'Clinic',
@@ -724,7 +748,7 @@ df_for_regression['fac_type'] = pd.Categorical(df_for_regression['fac_type'], ['
                 'Other Hospital',
                 'District Hospital',
                 'Central Hospital'])
-df_for_regression.sort_values(['fac_name','fac_type'], inplace = True)
+df_for_regression.sort_values(['fac_name','fac_type_original'], inplace = True)
 
 # Convert binary variables to numeric
 fac_vars_binary = ['outpatient_only', 'fac_urban',
