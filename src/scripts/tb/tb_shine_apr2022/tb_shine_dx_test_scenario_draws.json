@@ -1,0 +1,52 @@
+{
+  "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_dx_test_scenario.py",
+  "scenario_seed": 4793,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1757833670,
+      "parameters": {
+        "Tb": {
+          "scenario_4_dx_test_new_availability": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 2087210668,
+      "parameters": {
+        "Tb": {
+          "scenario_4_dx_test_new_availability": 0.25
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1091165841,
+      "parameters": {
+        "Tb": {
+          "scenario_4_dx_test_new_availability": 0.5
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 878098426,
+      "parameters": {
+        "Tb": {
+          "scenario_4_dx_test_new_availability": 0.75
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 588625116,
+      "parameters": {
+        "Tb": {
+          "scenario_4_dx_test_new_availability": 1.0
+        }
+      }
+    }
+  ]
+}

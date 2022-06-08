@@ -407,6 +407,18 @@ class Tb(Module):
             Types.DATE,
             "date from which different scenarios are run"
         ),
+        "scenario_4_dx_test": Parameter(
+            Types.INT,
+            "diagnostic test selected for reinvestment of scenario 4 cost savings"
+        ),
+        "scenario_4_dx_test_new_availability": Parameter(
+            Types.INT,
+            "new availability of selected diagnostic test"
+        ),
+        "scenario_4_dx_test_date": Parameter(
+            Types.DATE,
+            "date from which reinvestment of scenario 4 cost savings begins"
+        ),
         "first_line_test": Parameter(
             Types.STRING,
             "name of first test to be used for TB diagnosis"
@@ -1355,6 +1367,17 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # increase coverage of IPT
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
+
+        if (scenario == 4) & (self.sim.date >= self.module.parameters["scenario_4_dx_test_date"]):
+
+            # increase the availability of selected diagnostic test
+
+            item_code = self.sim.modules["Tb"].parameters["scenario_4_dx_test"]
+            #item_code_availability = self.sim.modules["HealthSystem"].override_availability_of_consumables({item_code: })
+            item_code_new_availability = self.sim.modules["Tb"].parameters["scenario_4_dx_test_new_availability"]
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({
+                item_code: item_code_new_availability})
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
