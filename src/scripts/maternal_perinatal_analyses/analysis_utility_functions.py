@@ -98,6 +98,24 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
     return [total_rates, total_lq, total_uq]
 
 
+def get_modules_maternal_complication_dataframes(results_folder):
+    comp_dfs = dict()
+
+    for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
+        complications_df = extract_results(
+            results_folder,
+            module=f"tlo.methods.{module}",
+            key="maternal_complication",
+            custom_generate_series=(
+                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
+            do_scaling=True
+            )
+
+        comp_dfs[module] = complications_df
+
+    return comp_dfs
+
+
 def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
                                        graph_location, file_name):
     fig, ax = plt.subplots()

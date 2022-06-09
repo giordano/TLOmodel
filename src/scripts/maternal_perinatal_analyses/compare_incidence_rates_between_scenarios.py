@@ -25,25 +25,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
     plot_destination_folder = path
 
     # GET COMPLICATION DATAFRAMES...
-    def get_modules_maternal_complication_dataframes(results_folder):
-        comp_dfs = dict()
-
-        for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
-            complications_df = extract_results(
-                results_folder,
-                module=f"tlo.methods.{module}",
-                key="maternal_complication",
-                custom_generate_series=(
-                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
-                do_scaling=True
-            )
-
-            comp_dfs[module] = complications_df
-
-        return comp_dfs
-
-    comp_dfs = {k: get_modules_maternal_complication_dataframes(results_folders[k]) for k in results_folders}
-
+    comp_dfs = {k: analysis_utility_functions.get_modules_maternal_complication_dataframes(results_folders[k])
+                for k in results_folders}
 
     def get_neonatal_comp_dfs(results_folder):
         nb_comp_dfs = dict()
@@ -200,7 +183,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         intervention_years, prom_data, 'Rate per 1000 Births',
         'Premature Rupture of Membranes Rate Per Year By Scenario',
         plot_destination_folder, 'prom')
-
 
     # ---------------------------------------------- Anaemia... --------------------------------------------------------
     # Total prevalence of Anaemia at birth (total cases of anaemia at birth/ total births per year) and by severity
@@ -524,7 +506,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         'Rate of Postpartum Haemorrhage Per Year Per Scenario',
         plot_destination_folder, 'pph')
 
-
     # ==================================================== NEWBORN OUTCOMES ===========================================
     #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -------------------------------
     def get_neonatal_sepsis(total_births_per_year, nb_comp_dfs):
@@ -549,7 +530,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         intervention_years, neo_sep_data, 'Rate per 1000 Births',
         'Rate of Neonatal Sepsis Per Year Per Scenario',
         plot_destination_folder, 'neo_sep')
-
 
     #  ------------------------------------------- Neonatal encephalopathy --------------------------------------------
     def get_neonatal_encephalopathy(total_births_per_year, nb_comp_dfs):

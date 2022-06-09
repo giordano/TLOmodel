@@ -2037,6 +2037,7 @@ class Labour(Module):
                                                                                        hsi_event=hsi_event)
 
             if avail and sf_check:
+                pregnancy_helper_functions.log_met_need(self, 'uterotonics', hsi_event)
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
                 # meaning she will not require further treatment
@@ -2045,7 +2046,6 @@ class Labour(Module):
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['uterine_atony'] = False
-                    pregnancy_helper_functions.log_met_need(self, 'uterotonics', hsi_event)
 
                 # If uterotonics do not stop bleeding the woman is referred for additional treatment
                 else:
@@ -2083,18 +2083,21 @@ class Labour(Module):
 
             # Similar to uterotonics we apply a probability that this intervention will successfully stop
             # bleeding to ensure some women go on to require further care
-            if sf_check and (params['prob_successful_manual_removal_placenta'] > self.rng.random_sample()):
-
-                df.at[person_id, 'la_postpartum_haem'] = False
-                mni[person_id]['retained_placenta'] = False
+            if sf_check:
                 pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
 
-                if df.at[person_id, 'pn_postpartum_haem_secondary']:
-                    df.at[person_id, 'pn_postpartum_haem_secondary'] = False
+                if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
 
-            else:
-                mni[person_id]['referred_for_surgery'] = True
-                mni[person_id]['referred_for_blood'] = True
+                    df.at[person_id, 'la_postpartum_haem'] = False
+                    mni[person_id]['retained_placenta'] = False
+                    pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
+
+                    if df.at[person_id, 'pn_postpartum_haem_secondary']:
+                        df.at[person_id, 'pn_postpartum_haem_secondary'] = False
+
+                else:
+                    mni[person_id]['referred_for_surgery'] = True
+                    mni[person_id]['referred_for_blood'] = True
 
     def surgical_management_of_pph(self, hsi_event):
         """
