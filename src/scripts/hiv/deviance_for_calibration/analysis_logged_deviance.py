@@ -5,6 +5,7 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
+# import random
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -33,30 +34,31 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
-popsize = 1000
+end_date = Date(2040, 12, 31)
+popsize = 30000
 
 # set up the log config
 log_config = {
-    "filename": "deviance_calibrated",
+    "filename": "tb_transmission_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
         # "tlo.methods.deviance_measure": logging.INFO,
+        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
+        # "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = 26091  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=16),
+    demography.Demography(resourcefilepath=resourcefilepath),
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
@@ -74,7 +76,7 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
@@ -87,11 +89,6 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "deviance_calibrated.pickle", "wb") as f:
+with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
-
-# check some children are being infected from 2022 onwards
-# should be around 5% of child population each year (or 4000 if pop big enough)
-tb_children = output["tlo.methods.tb"]["tb_incidence"]["num_new_active_tb_child"]
-
