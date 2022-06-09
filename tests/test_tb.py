@@ -48,7 +48,7 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
 
     # Register the appropriate modules
     if use_simplified_birth:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=16),
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
@@ -922,6 +922,181 @@ def test_shorter_paediatric_treatment():
 
     assert df.at[person_id_0, 'tb_on_treatment']
     assert df.at[person_id_0, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+    # check that children aged >5 are assigned to shorter paediatric regimen via screening route
+    # note that currently microscopy diagnostic test will miss smear negative children
+    # create person
+    person_id_1 = 1
+    df.at[person_id_1, 'age_exact_years'] = 8
+    df.at[person_id_1, 'age_years'] = 8
+    df.at[person_id_1, 'tb_inf'] = 'active'
+    df.at[person_id_1, 'tb_date_active'] = sim.date
+    df.at[person_id_1, 'tb_strain'] = 'ds'
+    df.at[person_id_1, 'tb_smear'] = False
+
+    # assign symptoms
+    for symptom in symptom_list:
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id_1,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id_1)) == symptom_list
+
+    # run tb screening and refer event
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id_1, module=sim.modules['Tb'])
+    screening_and_refer.apply(person_id=person_id_1, squeeze_factor=0)
+
+    assert df.at[person_id_1, 'tb_ever_tested']
+    assert df.at[person_id_1, 'tb_diagnosed']
+
+    # run start treatment event
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_1, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_1, squeeze_factor=0)
+
+    assert df.at[person_id_1, 'tb_on_treatment']
+    assert df.at[person_id_1, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+    # create person
+    person_id_2 = 2
+    df.at[person_id_2, 'age_exact_years'] = 8
+    df.at[person_id_2, 'age_years'] = 8
+    df.at[person_id_2, 'tb_inf'] = 'active'
+    df.at[person_id_2, 'tb_date_active'] = sim.date
+    df.at[person_id_2, 'tb_strain'] = 'ds'
+    df.at[person_id_2, 'tb_smear'] = False
+    df.at[person_id_2, 'hv_inf'] = True
+    df.at[person_id_2, 'hv_diagnosed'] = True
+
+    # assign symptoms
+    for symptom in symptom_list:
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id_2,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id_2)) == symptom_list
+
+    # run tb screening and refer event
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id_2, module=sim.modules['Tb'])
+    screening_and_refer.apply(person_id=person_id_2, squeeze_factor=0)
+
+    assert df.at[person_id_2, 'tb_ever_tested']
+    assert df.at[person_id_2, 'tb_diagnosed']
+    assert not df.at[person_id_2, 'tb_diagnosed_mdr']
+
+    # run start treatment event
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_2, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_2, squeeze_factor=0)
+
+    assert df.at[person_id_2, 'tb_on_treatment']
+    assert df.at[person_id_2, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+    # check shorter treatment regimen ends at 4-months
+    # run tb end treatment event
+    sim.date = Date(2010, 5, 2)
+    tx_end_treatment = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
+    tx_end_treatment.apply(sim.population)
+
+    assert df.at[person_id_0, 'tb_ever_treated']
+    assert not df.at[person_id_0, 'tb_on_treatment']
+    assert not df.at[person_id_0, 'tb_treated_mdr']
+
+
+def test_cons_for_shorter_paediatric_treatment():
+    """
+    run scenario 4 SHINE trial
+    check children with smear negative tb are placed on shorter treatment regimen via the 3 referral routes
+    check shorter treatment regimen ends at 4 months
+    """
+
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # make population
+    popsize = 10
+    sim.make_initial_population(n=popsize)
+
+    # run scenario 4
+    sim.modules['Tb'].parameters["scenario"] = 4
+    sim.modules['Tb'].parameters["scenario_start_date"] = sim.date
+    sim.modules["Demography"].parameters["max_age_initial"] = 16
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # check that children aged <5 are assigned to shorter paediatric regimen via xray route
+    # create person
+    person_id_0 = 0
+    df.at[person_id_0, 'age_exact_years'] = 2
+    df.at[person_id_0, 'age_years'] = 2
+    df.at[person_id_0, 'tb_inf'] = 'active'
+    df.at[person_id_0, 'tb_date_active'] = sim.date
+    df.at[person_id_0, 'tb_strain'] = 'ds'
+    df.at[person_id_0, 'tb_smear'] = False
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    for symptom in symptom_list:
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id_0,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id_0)) == symptom_list
+
+    # run tb screening and refer event
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id_0, module=sim.modules['Tb'])
+    screening_and_refer.apply(person_id=person_id_0, squeeze_factor=0)
+
+    # check tb xray level 1b event is scheduled and run
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id_0) if
+        isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
+    ][0]
+
+    assert event.TREATMENT_ID == "Tb_Xray"
+    assert date_event == sim.date
+
+    # sensitivity is 80%
+    xray_level1b = tb.HSI_Tb_Xray_level1b(person_id=person_id_0, module=sim.modules['Tb'])
+    xray_level1b.apply(person_id=person_id_0, squeeze_factor=0)
+
+    assert df.at[person_id_0, 'tb_ever_tested']
+
+    # todo person is not diagnosed - anything more scheduled??
+
+    assert df.at[person_id_0, 'tb_diagnosed']
+    assert not df.at[person_id_0, 'tb_diagnosed_mdr']
+
+    # run start treatment event
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_0, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_0, squeeze_factor=0)
+
+    assert df.at[person_id_0, 'tb_on_treatment']
+    assert df.at[person_id_0, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+
+    # read the results
+    from tlo.analysis.utils import parse_log_file
+
+    output = parse_log_file(sim.log_filepath)
+
+    # check which treatments have occurred
+    output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
+
+
 
     # check that children aged >5 are assigned to shorter paediatric regimen via screening route
     # note that currently microscopy diagnostic test will miss smear negative children

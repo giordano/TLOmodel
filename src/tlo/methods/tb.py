@@ -19,7 +19,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Tb(Module):
@@ -2068,6 +2068,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 {"Under5OPD": 1}
             )
 
+            logger.debug(
+                key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id} scheduling xray at level 1b"
+            )
             # this HSI will choose relevant sensitivity/specificity depending on person's smear status
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
@@ -2118,6 +2121,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the tests are available, try again for sputum
         # requires another appointment - added in ACTUAL_APPT_FOOTPRINT
         if test_result is None:
+
+            logger.debug(
+                key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id} test not available"
+            )
+
             if smear_status:
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
@@ -2140,6 +2148,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if sputum test result is negative but patient still displays symptoms that indicate active TB,
         # refer to clinical diagnosis (this is to avoid smear negative patients being missed via sputum test)
         if (test == "sputum") and not test_result and not smear_status:
+            logger.debug(
+                key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id} referring for clinical dx"
+            )
+
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
@@ -2400,6 +2412,10 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
         )
 
+        logger.debug(
+            key="message", data=f"Starting treatment {treatment_regimen}: person {person_id}"
+        )
+
         if treatment_available:
             # start person on tb treatment - update properties
             df.at[person_id, "tb_on_treatment"] = True
@@ -2457,7 +2473,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         elif not person["tb_ever_treated"]:
 
-            if person["age_years"] >= 15:
+            if person["age_years"] > 16:
                 # treatment for ds-tb: adult
                 treatment_regimen = "tb_tx_adult"
             else:
@@ -2469,7 +2485,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # possible treatment failure or subsequent reinfection
         else:
 
-            if person["age_years"] >= 15:
+            if person["age_years"] > 16:
                 # treatment for reinfection ds-tb: adult
                 treatment_regimen = "tb_retx_adult"
 
