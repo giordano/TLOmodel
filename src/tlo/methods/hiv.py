@@ -2538,112 +2538,112 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="Prevalence of HIV split by age and sex",
         )
 
-        male_prev_1524 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")])
-
-        male_prev_2549 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
-
-        female_prev_1524 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")])
-
-        female_prev_2549 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
-
-        total_prev = len(
-            df[df.hv_inf & df.is_alive]
-        ) / len(df[df.is_alive])
-
-        # incidence by age-group and sex
-        n_new_infections_male_1524 = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_male_1524 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "M")
-                                  & df.age_years.between(15, 24)])
-        male_inc_1524 = n_new_infections_male_1524 / denom_male_1524
-
-        n_new_infections_male_2549 = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_male_2549 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "M")
-                                  & df.age_years.between(25, 49)])
-        male_inc_2549 = n_new_infections_male_2549 / denom_male_2549
-
-        n_new_infections_male_1549 = len(
-            df.loc[
-                df.age_years.between(15, 49)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        n_new_infections_female_1524 = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_female_1524 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(15, 24)])
-        female_inc_1524 = n_new_infections_female_1524 / denom_female_1524
-
-        n_new_infections_female_2549 = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_female_2549 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(25, 49)])
-        female_inc_2549 = n_new_infections_female_2549 / denom_female_2549
-
-        logger.info(
-            key="infections_by_2age_groups_and_sex",
-            data={
-                "male_prev_1524": male_prev_1524,
-                "male_prev_2549": male_prev_2549,
-                "female_prev_1524": female_prev_1524,
-                "female_prev_2549": female_prev_2549,
-                "total_prev": total_prev,
-                "n_new_infections_male_1524": n_new_infections_male_1524,
-                "n_new_infections_male_2549": n_new_infections_male_2549,
-                "n_new_infections_male_1549": n_new_infections_male_1549,
-                "n_new_infections_female_1524": n_new_infections_female_1524,
-                "n_new_infections_female_2549": n_new_infections_female_2549,
-                "male_inc_1524": male_inc_1524,
-                "male_inc_2549": male_inc_2549,
-                "female_inc_1524": female_inc_1524,
-                "female_inc_2549": female_inc_2549,
-            },
-            description="HIV infections split by 2 age-groups age and sex",
-        )
+        # male_prev_1524 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
+        # ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")])
+        #
+        # male_prev_2549 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
+        # ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
+        #
+        # female_prev_1524 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
+        # ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")])
+        #
+        # female_prev_2549 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
+        # ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
+        #
+        # total_prev = len(
+        #     df[df.hv_inf & df.is_alive]
+        # ) / len(df[df.is_alive])
+        #
+        # # incidence by age-group and sex
+        # n_new_infections_male_1524 = len(
+        #     df.loc[
+        #         df.age_years.between(15, 24)
+        #         & (df.sex == "M")
+        #         & df.is_alive
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        # denom_male_1524 = len(df[
+        #                           df.is_alive
+        #                           & (df.sex == "M")
+        #                           & df.age_years.between(15, 24)])
+        # male_inc_1524 = n_new_infections_male_1524 / denom_male_1524
+        #
+        # n_new_infections_male_2549 = len(
+        #     df.loc[
+        #         df.age_years.between(25, 49)
+        #         & (df.sex == "M")
+        #         & df.is_alive
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        # denom_male_2549 = len(df[
+        #                           df.is_alive
+        #                           & (df.sex == "M")
+        #                           & df.age_years.between(25, 49)])
+        # male_inc_2549 = n_new_infections_male_2549 / denom_male_2549
+        #
+        # n_new_infections_male_1549 = len(
+        #     df.loc[
+        #         df.age_years.between(15, 49)
+        #         & (df.sex == "M")
+        #         & df.is_alive
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # n_new_infections_female_1524 = len(
+        #     df.loc[
+        #         df.age_years.between(15, 24)
+        #         & (df.sex == "F")
+        #         & df.is_alive
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        # denom_female_1524 = len(df[
+        #                           df.is_alive
+        #                           & (df.sex == "F")
+        #                           & df.age_years.between(15, 24)])
+        # female_inc_1524 = n_new_infections_female_1524 / denom_female_1524
+        #
+        # n_new_infections_female_2549 = len(
+        #     df.loc[
+        #         df.age_years.between(25, 49)
+        #         & (df.sex == "F")
+        #         & df.is_alive
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        # denom_female_2549 = len(df[
+        #                           df.is_alive
+        #                           & (df.sex == "F")
+        #                           & df.age_years.between(25, 49)])
+        # female_inc_2549 = n_new_infections_female_2549 / denom_female_2549
+        #
+        # logger.info(
+        #     key="infections_by_2age_groups_and_sex",
+        #     data={
+        #         "male_prev_1524": male_prev_1524,
+        #         "male_prev_2549": male_prev_2549,
+        #         "female_prev_1524": female_prev_1524,
+        #         "female_prev_2549": female_prev_2549,
+        #         "total_prev": total_prev,
+        #         "n_new_infections_male_1524": n_new_infections_male_1524,
+        #         "n_new_infections_male_2549": n_new_infections_male_2549,
+        #         "n_new_infections_male_1549": n_new_infections_male_1549,
+        #         "n_new_infections_female_1524": n_new_infections_female_1524,
+        #         "n_new_infections_female_2549": n_new_infections_female_2549,
+        #         "male_inc_1524": male_inc_1524,
+        #         "male_inc_2549": male_inc_2549,
+        #         "female_inc_1524": female_inc_1524,
+        #         "female_inc_2549": female_inc_2549,
+        #     },
+        #     description="HIV infections split by 2 age-groups age and sex",
+        # )
 
         # ------------------------------------ TESTING ------------------------------------
         # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
