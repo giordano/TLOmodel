@@ -23,6 +23,7 @@ def get_list_of_items(self, item_list):
 
 def return_cons_avail(self, hsi_event, cons_dict, **info):
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    analysis_date = self.sim.modules['Labour'].current_parameters['analysis_date']
 
     if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
         params = self.sim.modules['PregnancySupervisor'].current_parameters
@@ -51,7 +52,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
                      'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
     for k in analysis_dict:
-        if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]] and (self.sim.date > params['analysis_date']):
+        if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]] and (self.sim.date > analysis_date):
             if self.rng.random_sample() < params[analysis_dict[k][1]]:
                 available = True
             else:
