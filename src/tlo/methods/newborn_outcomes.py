@@ -978,8 +978,7 @@ class NewbornOutcomes(Module):
 
             # check consumables
             avail = pregnancy_helper_functions.return_cons_avail(
-                self, core='resuscitation', optional='iv_drug_equipment', hsi_event=hsi_event,
-                cons=self.item_codes_nb_consumables)
+                self, hsi_event, self.item_codes_nb_consumables, core='resuscitation')
 
             # Run HCW check
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
@@ -1021,8 +1020,8 @@ class NewbornOutcomes(Module):
 
                 # check consumables
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, core='sepsis_supportive_care_core', optional='sepsis_supportive_care_optional',
-                    hsi_event=hsi_event, cons=self.item_codes_nb_consumables)
+                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_supportive_care_core',
+                    optional='sepsis_supportive_care_optional')
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
@@ -1031,8 +1030,8 @@ class NewbornOutcomes(Module):
             # The same pattern is then followed for health centre care
             else:
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, core='sepsis_abx', optional='iv_drug_equipment', hsi_event=hsi_event,
-                    cons=self.item_codes_nb_consumables)
+                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_abx',
+                    optional='iv_drug_equipment')
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True

@@ -21,45 +21,44 @@ def get_list_of_items(self, item_list):
     return codes
 
 
-def return_cons_avail(self, core, optional, hsi_event, cons):
-    """
-    """
-    params = self.sim.modules['Labour'].current_parameters
+def return_cons_avail(self, hsi_event, cons_dict, **info):
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    # Check the consumables are available, this will log the consumables for any intervention. If there is no analysis
-    # being conducted the result is returned
-    available = hsi_event.get_consumables(item_codes=cons[core],
-                                          optional_item_codes=cons[optional])
+    if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
+        params = self.sim.modules['PregnancySupervisor'].current_parameters
+    else:
+        params = self.sim.modules['Labour'].current_parameters
+
+    if 'number' in info.keys():  # todo: will only work if the 'core' package contains only 1 IC
+        core_cons = {cons_dict[info['core']][0]: info['number']}
+    else:
+        core_cons = cons_dict[info['core']]
+
+    if 'optional' in info.keys():
+        opt_cons = cons_dict[info['optional']]
+    else:
+        opt_cons = []
+
+    available = hsi_event.get_consumables(item_codes=core_cons,
+                                          optional_item_codes=opt_cons)
 
     # Otherwise, if analysis is being conducted we use a random draw to override the availability of the consumables
-    for treatment_id, analysis_param, analysis_coverage in zip(['DeliveryCare_Basic',
-                                                                'DeliveryCare_Neonatal',
-                                                                'DeliveryCare_Comprehensive',
-                                                                'PostnatalCare_Maternal',
-                                                                'PostnatalCare_Neonatal'],
-                                                               ['alternative_bemonc_availability',
-                                                                'alternative_bemonc_availability',
-                                                                'alternative_cemonc_availability',
-                                                                'alternative_pnc_quality',
-                                                                'alternative_pnc_quality'],
-                                                               ['bemonc_availability', 'bemonc_availability',
-                                                                'cemonc_availability',
-                                                                'pnc_availability_probability',
-                                                                'pnc_availability_probability']):
+    analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
+                     'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+                     'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
+                     'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+                     'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                     'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
-        if (hsi_event.TREATMENT_ID == treatment_id) and params[analysis_param] and \
-           (self.sim.date > params['analysis_date']):
-            if self.rng.random_sample() < params[analysis_coverage]:
+    for k in analysis_dict:
+        if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]] and (self.sim.date > params['analysis_date']):
+            if self.rng.random_sample() < params[analysis_dict[k][1]]:
                 available = True
             else:
                 available = False
 
     if not available and (hsi_event.target in mni):
         mni[hsi_event.target]['cons_not_avail'] = True
-
-    # todo : neonatal PNC
-    # todo : ANC
 
     return available
 

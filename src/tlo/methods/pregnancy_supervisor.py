@@ -348,12 +348,16 @@ class PregnancySupervisor(Module):
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
                        ' scripts to change ANC structure'),
-        'switch_anc_coverage': Parameter(
+        'alternative_anc_coverage': Parameter(
             Types.BOOL, 'used to signal if a change in parameters governing ANC coverage should be made at some '
                         'predetermined time point'),
-        'target_anc_coverage_for_analysis': Parameter(
-            Types.REAL, 'contains a target level of coverage for analysis so that a linear model of choice can be '
-                        'scaled to force set level of intervention coverage'),
+        'alternative_anc_quality': Parameter(
+            Types.BOOL, 'used to signal if a change in parameters governing ANC quality should be made at some '
+                        'predetermined time point'),
+        'anc_availability_odds': Parameter(
+            Types.REAL, 'analysis parameter representing the odds of ANC coverage for an individual'),
+        'anc_availability_probability': Parameter(
+            Types.REAL, 'analysis parameter representing the probability of ANC intervetions being delivered'),
 
     }
 
@@ -409,7 +413,7 @@ class PregnancySupervisor(Module):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # self.current_parameters is used to store the module level parameters for this time period
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+        # pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -483,6 +487,9 @@ class PregnancySupervisor(Module):
 
     def initialise_simulation(self, sim):
 
+        # self.current_parameters is used to store the module level parameters for this time period
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
                            sim.date + DateOffset(days=0))
@@ -497,7 +504,7 @@ class PregnancySupervisor(Module):
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period
-        sim.schedule_event(OverrideKeyParameterForAnalysis(self),
+        sim.schedule_event(PregnancyAnalysisEvent(self),
                            Date(2021, 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
@@ -2098,9 +2105,9 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 self.sim.modules['Labour'], model=model[0], parameter_key=model[1])
 
 
-class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
+class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
     """
-    This is OverrideKeyParameterForAnalysis. This event is scheduled in initialise_simulation and allows for a parameter
+    This is PregnancyAnalysisEvent. This event is scheduled in initialise_simulation and allows for a parameter
      value/values to be overridden at a set time point within a simulation run.
     """
     def __init__(self, module):
@@ -2108,12 +2115,13 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.current_parameters
+        cwdp_params = self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters
         df = self.sim.population.props
 
         # When this parameter is set as True, the following parameters are overridden when the event is called.
         # Otherwise no parameters are updated.
-        if params['switch_anc_coverage']:
-            target = params['target_anc_coverage_for_analysis']
+        if params['alternative_anc_coverage']:
+            target = params['anc_availability_odds']
             params['odds_early_init_anc4'] = 1
             mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
                     df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
@@ -2122,6 +2130,25 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
             mean = mean / (1.0 - mean)
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
             params['odds_early_init_anc4'] = scaled_intercept
+
+            if params['anc_service_structure'] == 8:
+                params['prob_anc1_months_2_to_4'] = [0, 1.0, 0]
+                for visit in [5, 6, 7, 8]:
+                    cwdp_params[f'prob_seek_anc{visit}'] = params['anc_availability_probability']
+
+        if params['alternative_anc_quality']:
+            if 'Malaria' in self.sim.modules:
+                iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
+                ic = list(iptp.keys())[0]
+                self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                    {ic: params['anc_availability_probability']})
+
+            for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
+                              'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
+                              'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
+                              'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
+                              'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                params[parameter] = params['anc_availability_probability']
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
