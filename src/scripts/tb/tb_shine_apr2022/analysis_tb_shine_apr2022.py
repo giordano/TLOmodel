@@ -76,6 +76,7 @@ sim.register(
 
 # choose the scenario, 0=baseline, 4=shorter paediatric treatment
 sim.modules["Tb"].parameters["scenario"] = 0
+sim.modules["Tb"].parameters["scenario_start_date"] = "01/01/2010"
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
