@@ -2407,7 +2407,20 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        if person["tb_on_treatment"]:
+            return
+
         treatment_regimen = self.select_treatment(person_id)
+        # todo remove
+        logger.info(
+            key="tb_debug",
+            description="debug",
+            data={
+                "person": person_id,
+                "treatment": treatment_regimen,
+            },
+        )
+
         treatment_available = self.get_consumables(
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
         )
@@ -2443,6 +2456,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # if treatment not available, return for treatment start in 1 week
         else:
+            print("restart treatment")
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date + DateOffset(weeks=1),
