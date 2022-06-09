@@ -861,7 +861,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Currently we schedule women to the TB screening HSI in the TB module
         if 'Tb' in self.sim.modules.keys():
             tb_screen = HSI_Tb_ScreeningAndRefer(
-                    module=self.sim.modules['tb'], person_id=hsi_event.target)
+                    module=self.sim.modules['Tb'], person_id=hsi_event.target)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
                                                                 topen=self.sim.date,
