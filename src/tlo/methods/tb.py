@@ -1573,7 +1573,7 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
 
         # need to scale the sampling if small population size
         if len(eligible) < number_active_tb:
-            number_active_tb = int(len(eligible) * 0.05)
+            number_active_tb = len(eligible)
 
         # probability based on risk factors, 25x higher if HIV+
         risk_of_tb = LinearModel.multiplicative(

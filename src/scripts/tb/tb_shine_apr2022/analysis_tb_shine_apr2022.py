@@ -52,7 +52,7 @@ log_config = {
 seed = 4  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=16),
+    demography.Demography(resourcefilepath=resourcefilepath),
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
@@ -75,8 +75,9 @@ sim.register(
 )
 
 # choose the scenario, 0=baseline, 4=shorter paediatric treatment
-sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["scenario_start_date"] = "01/01/2010"
+sim.modules["Tb"].parameters["scenario"] = 4
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
+sim.modules["Demography"].parameters["max_age_initial"] = 16
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
