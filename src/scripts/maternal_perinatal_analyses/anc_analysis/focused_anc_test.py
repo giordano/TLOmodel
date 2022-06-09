@@ -20,6 +20,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -74,6 +75,7 @@ class TestScenario(BaseScenario):
                 # dependencies)
                 alri.Alri(resourcefilepath=self.resources),
                 hiv.Hiv(resourcefilepath=self.resources),
+                tb.Tb(resourcefilepath=self.resources),
                 malaria.Malaria(resourcefilepath=self.resources),
                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
                 depression.Depression(resourcefilepath=self.resources),
