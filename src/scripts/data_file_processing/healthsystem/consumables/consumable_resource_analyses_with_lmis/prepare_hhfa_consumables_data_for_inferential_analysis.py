@@ -721,7 +721,8 @@ df_for_regression['fac_type'] = ""
 cond_mch = (df_for_regression['fac_name'].str.contains('Mzuzu Cental Hospital'))
 df_for_regression.loc[cond_mch, 'fac_name'] = 'Mzuzu Central Hospital'
 
-cond_level0 = (df_for_regression['fac_name'].str.contains('Health Post'))
+cond_level0 = (df_for_regression['fac_name'].str.contains('Health Post')) | \
+                (df_for_regression['fac_type_original'].str.contains('Health Post'))
 cond_level1a = (df_for_regression['fac_type_original'] == 'Clinic') | (df_for_regression['fac_type_original'] == 'Health Centre') | \
         (df_for_regression['fac_type_original'].str.contains('Dispensary')) | \
         (df_for_regression['fac_type_original'].str.contains('Maternity'))
