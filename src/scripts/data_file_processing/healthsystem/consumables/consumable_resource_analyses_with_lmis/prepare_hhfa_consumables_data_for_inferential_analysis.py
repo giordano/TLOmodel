@@ -113,9 +113,21 @@ cond = hhfa.fac_daily_opening_hours > 24
 hhfa.loc[cond, 'fac_daily_opening_hours'] = 24
 
 # Water source within 500m if piped into facility or facility grounds
-cond1 = hhfa['water_source_main'] == "PIPED INTO FACILITY"
-cond2 = hhfa['water_source_main'] == "PIPED ONTO FACILITY GROUNDS"
+hhfa.water_source_main = hhfa.water_source_main.str.lower()
+cond1 = hhfa['water_source_main'] == "piped into facility"
+cond2 = hhfa['water_source_main'] == "piped onto facility grounds"
 hhfa.loc[cond1 | cond2, 'water_source_main_within_500m'] = "Yes"
+
+# Edit water_source variable to reduce the number of categories
+cond_other_watersource_1 = hhfa['water_source_main'] == 'protected spring'
+cond_other_watersource_2 = hhfa['water_source_main'] == 'unprotected dug well'
+cond_other_watersource_3 = hhfa['water_source_main'] == 'unprotected spring'
+cond_other_watersource_4 = hhfa['water_source_main'] == 'tanker truck'
+cond_other_watersource_5 = hhfa['water_source_main'] == 'cart w/small tank/drum ………'
+cond_other_watersource_6 = hhfa['water_source_main'] == 'rainwater collection'
+hhfa.loc[cond_other_watersource_1 | cond_other_watersource_2 | cond_other_watersource_3 | \
+    cond_other_watersource_4 | cond_other_watersource_5 | cond_other_watersource_6, \
+    'water_source_main'] = 'other'
 
 # Convert water disruption duration
 cond_hours = hhfa['water_disruption_duration_units'] == "Hours"
