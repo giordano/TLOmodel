@@ -216,7 +216,7 @@ def run_anc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
     # MALARIA
-    # todo: what else?
+    # todo: what else? (proportion of infected women receiving iptp)
     def get_malaria_incidence_in_pregnancy(folder):
         # Number of clinical episodes in pregnant women per year
         preg_clin_counter_dates = extract_results(
@@ -233,14 +233,68 @@ def run_anc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
         preg_clinical_counter = analysis_utility_functions.get_mean_and_quants(preg_clin_counter_years,
                                                                                intervention_years)
 
-        return preg_clinical_counter
+        incidence_dates = extract_results(
+            folder,
+            module="tlo.methods.malaria",
+            key="incidence",
+            column='inc_1000py',
+            index='date',
+            do_scaling=True
+        )
+
+        years = incidence_dates.index.year
+        incidence_years = incidence_dates.set_index(years)
+        incidence = analysis_utility_functions.get_mean_and_quants(incidence_years, intervention_years)
+
+        return {'clin_counter': preg_clinical_counter,
+                'incidence': incidence}
 
     mal_data = {k: get_malaria_incidence_in_pregnancy(results_folders[k]) for k in results_folders}
 
-    analysis_utility_functions.comparison_graph_multiple_scenarios(
-        intervention_years, mal_data, 'Num. Clinical Cases',
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, mal_data, 'clin_counter',
+        'Num. Clinical Cases',
         'Number of Clinical Cases of Malaria During Pregnancy Per Year Per Scenario',
         plot_destination_folder, 'mal_clinical_cases')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, mal_data, 'incidence',
+        'Incidence per 1000 person years',
+        'Incidence of Malaria Per Year Per Scenario',
+        plot_destination_folder, 'mal_incidence')
+
+    def get_hiv_information(folder):
+
+        # Number of tests by sex- female
+        hiv_tests = extract_results(
+            folder,
+            module="tlo.methods.malaria",
+            key="incidence",
+            column='clinical_preg_counter',
+            index='date',
+            do_scaling=True
+        )
+
+        years = preg_clin_counter_dates.index.year
+        preg_clin_counter_years = preg_clin_counter_dates.set_index(years)
+        preg_clinical_counter = analysis_utility_functions.get_mean_and_quants(preg_clin_counter_years,
+                                                                               intervention_years)
+
+        incidence_dates = extract_results(
+            folder,
+            module="tlo.methods.malaria",
+            key="incidence",
+            column='inc_1000py',
+            index='date',
+            do_scaling=True
+        )
+
+        years = incidence_dates.index.year
+        incidence_years = incidence_dates.set_index(years)
+        incidence = analysis_utility_functions.get_mean_and_quants(incidence_years, intervention_years)
+
+        return {'clin_counter': preg_clinical_counter,
+                'incidence': incidence}
 
 
     # HIV
