@@ -750,14 +750,15 @@ df_for_regression['fac_type_original'] = pd.Categorical(df_for_regression['fac_t
                 'Central Hospital'])
 df_for_regression.sort_values(['fac_name','fac_type_original'], inplace = True)
 
-# Convert binary variables to numeric
+# Convert
+# ry variables to numeric
 fac_vars_binary = ['outpatient_only', 'fac_urban',
                 'service_fp','service_anc','service_pmtct','service_delivery','service_pnc','service_epi','service_imci',
                 'service_hiv','service_tb','service_othersti','service_malaria','service_blood_transfusion','service_diagnostic',
                 'service_cvd', 'service_consumable_stock',
                 'functional_landline','fuctional_mobile','functional_radio','functional_computer','internet_access_today',
                 'electricity', 'functional_toilet','functional_handwashing_facility',
-                'water_disruption_last_3mts',
+                'water_disruption_last_3mts', 'water_source_main_within_500m',
                 'functional_emergency_vehicle','accessible_emergency_vehicle',
                 'functional_ambulance',
                 'functional_car',
