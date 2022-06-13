@@ -648,7 +648,7 @@ class CareOfWomenDuringPregnancy(Module):
         # check correct women have been sent
         if not df.at[individual_id, 'ac_to_be_admitted']:
             logger.info(key='error', data=f'Mother {individual_id} was scheduled for admission despite not requiring'
-                                           f' it')
+                                          f' it')
             return
 
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})

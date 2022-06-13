@@ -1102,7 +1102,7 @@ class Labour(Module):
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
         if not days_until_labour >= pd.Timedelta(245, unit='d'):
             logger.info(key='error', data=f'Labour scheduled for woman {individual_id} beyond the maximum estimated '
-                                           f'possible length of pregnancy')
+                                          f'possible length of pregnancy')
 
     def predict(self, eq, person_id):
         """

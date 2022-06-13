@@ -42,6 +42,7 @@ class TestScenario(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
@@ -92,6 +93,7 @@ class TestScenario(BaseScenario):
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
                                     'anc_availability_probability': 0.9},
+            'CareOfWomenDuringPregnancy': {'squeeze_factor_threshold_anc': 10_000}
         }
 
 

@@ -345,6 +345,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
         # ANALYSIS PARAMETERS...
+        'analysis_date': Parameter(
+            Types.DATE, 'Date on which analysis event is scheduled to update parameters'),
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
                        ' scripts to change ANC structure'),
@@ -490,6 +492,8 @@ class PregnancySupervisor(Module):
         # self.current_parameters is used to store the module level parameters for this time period
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
+        params = self.current_parameters
+
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
                            sim.date + DateOffset(days=0))
@@ -504,8 +508,7 @@ class PregnancySupervisor(Module):
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period
-        sim.schedule_event(PregnancyAnalysisEvent(self),
-                           Date(2021, 1, 1))
+        sim.schedule_event(PregnancyAnalysisEvent(self), params['analysis_date'])
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -2129,12 +2132,17 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
 
             mean = mean / (1.0 - mean)
             scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
-            params['odds_early_init_anc4'] = scaled_intercept
 
-            if params['anc_service_structure'] == 8:
-                params['prob_anc1_months_2_to_4'] = [0, 1.0, 0]
-                for visit in [5, 6, 7, 8]:
-                    cwdp_params[f'prob_seek_anc{visit}'] = params['anc_availability_probability']
+            # Update parameters
+            params['odds_early_init_anc4'] = scaled_intercept
+            params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
+            params['prob_late_initiation_anc4'] = 0
+
+            #if params['anc_service_structure'] == 8:  # todo: not right
+            #    cwdp_params['prob_seek_anc5'] = 1.0
+            #    cwdp_params['prob_seek_anc6'] = 1.0
+            #    cwdp_params['prob_seek_anc7'] = 1.0
+            #    cwdp_params['prob_seek_anc8'] = 1.0
 
         if params['alternative_anc_quality']:
             if 'Malaria' in self.sim.modules:
