@@ -163,7 +163,6 @@ hhfa.loc[
 
 # If a facility does not report whether a particular source of drugs is used but indicates
 # that another is used, mark the first as No
-
 source_drugs_varlist = ['source_drugs_cmst', 'source_drugs_local_warehouse', 'source_drugs_ngo',
              'source_drugs_donor', 'source_drugs_pvt']
 for source1 in source_drugs_varlist:
@@ -171,6 +170,16 @@ for source1 in source_drugs_varlist:
     for source2 in source_drugs_varlist:
         cond_source_other = hhfa[source2] == "Yes"
         hhfa.loc[cond_source_empty & cond_source_other,source1] = "No"
+
+# If a facility does not report whether a particular drug transport system is used but indicates
+# that another is used, mark the first as No
+drug_transport_varlist = ['drug_transport_local_supplier', 'drug_transport_higher_level_supplier',
+'drug_transport_self', 'drug_transport_other']
+for transport1 in drug_transport_varlist:
+    cond_transport_empty = hhfa[transport1].isna()
+    for transport2 in drug_transport_varlist:
+        cond_transport_other = hhfa[transport2] == "Yes"
+        hhfa.loc[cond_transport_empty & cond_transport_other,transport1] = "No"
 
 # Drop outliers
 cond = hhfa.travel_time_to_district_hq > 1000
