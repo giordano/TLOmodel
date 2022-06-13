@@ -264,7 +264,7 @@ def run_anc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
         plot_destination_folder, 'mal_incidence')
 
     def get_hiv_information(folder):
-
+        # prop_tested_adult_female, per_capita_testing_rate
         # Number of tests by sex- female
         hiv_tests = extract_results(
             folder,
