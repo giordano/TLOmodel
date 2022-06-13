@@ -161,6 +161,17 @@ hhfa.loc[
 # Clean "other" catergory for how drugs are transported
 # TODO: drug_transport_other_spec
 
+# If a facility does not report whether a particular source of drugs is used but indicates
+# that another is used, mark the first as No
+
+source_drugs_varlist = ['source_drugs_cmst', 'source_drugs_local_warehouse', 'source_drugs_ngo',
+             'source_drugs_donor', 'source_drugs_pvt']
+for source1 in source_drugs_varlist:
+    cond_source_empty = hhfa[source1].isna()
+    for source2 in source_drugs_varlist:
+        cond_source_other = hhfa[source2] == "Yes"
+        hhfa.loc[cond_source_empty & cond_source_other,source1] = "No"
+
 # Drop outliers
 cond = hhfa.travel_time_to_district_hq > 1000
 hhfa.loc[cond, 'travel_time_to_district_hq'] = np.nan
@@ -169,9 +180,10 @@ cond = hhfa.referrals_to_other_facs == "3"
 hhfa.loc[cond, 'referrals_to_other_facs'] = np.nan
 
 # Reduce the number of categories - whether functional refrigerator is available
-cond_yes = hhfa.functional_refrigerator_epi.str.contains("Yes")
+cond_yes1 = hhfa.functional_refrigerator_epi.str.contains("Yes")
+cond_yes2 = hhfa.vaccine_storage.str.contains("Yes")
 cond_notna = hhfa.functional_refrigerator_epi.notna()
-hhfa.loc[cond_yes & cond_notna, 'functional_refrigerator_epi'] = "Yes"
+hhfa.loc[(cond_yes1 | cond_yes2) & cond_notna, 'functional_refrigerator_epi'] = "Yes"
 cond_no = hhfa.functional_refrigerator_epi.str.contains("No")
 hhfa.loc[cond_no & cond_notna, 'functional_refrigerator_epi'] = "No"
 
@@ -196,6 +208,18 @@ cond_no = hhfa.functional_refrigerator_diagnostics == "available not functional"
           hhfa.functional_refrigerator_diagnostics.str.contains("not available")
 hhfa.loc[cond_no, 'functional_refrigerator_diagnostics'] = "No"
 hhfa.loc[cond_no & cond_na, 'functional_refrigerator_epi'] = "No"
+
+# Aggregate refrigerator availability
+cond_fridge_epi = hhfa.functional_refrigerator_epi == "Yes"
+cond_fridge_diag = hhfa.functional_refrigerator_diagnostics == "Yes"
+cond_vaccine_storage =  hhfa.vaccine_storage == "Yes"
+hhfa.loc[cond_fridge_epi | cond_fridge_diag | cond_vaccine_storage, 'functional_refrigerator'] = "Yes"
+cond_no_fridge_epi = hhfa.functional_refrigerator_epi == "No"
+cond_no_fridge_diag = hhfa.functional_refrigerator_diagnostics == "No"
+hhfa.loc[cond_no_fridge_epi & cond_no_fridge_diag, 'functional_refrigerator'] = "Yes"
+cond_no_vaccine_storage = hhfa.vaccine_storage == "No"
+cond_fridge_na = hhfa.functional_refrigerator.isna()
+hhfa.loc[cond_no_vaccine_storage & cond_fridge_na, 'functional_refrigerator'] = "No"
 
 # convert fac_location to binary (Yes/No)
 hhfa = hhfa.rename(columns={'fac_location': 'fac_urban'})
@@ -633,7 +657,7 @@ feature_cols = ['fac_code', 'fac_name',
             'outpatient_only','bed_count', 'inpatient_visit_count','inpatient_days_count',
             'service_fp','service_anc','service_pmtct','service_delivery','service_pnc','service_epi','service_imci',
             'service_hiv','service_tb','service_othersti','service_malaria','service_blood_transfusion','service_diagnostic',
-            'service_cvd','service_consumable_stock',
+            'service_cvd','service_chronic_respiratory_mgt', 'service_consumable_stock',
 
             # operation frequency
             'fac_weekly_opening_days','fac_daily_opening_hours',
