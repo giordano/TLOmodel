@@ -90,7 +90,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # INTERVENTION PROBABILITIES...
         'squeeze_factor_threshold_anc': Parameter(
-            Types.LIST, 'squeeze factor threshold over which an ANC appointment cannot run'),
+            Types.INT, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -188,8 +188,6 @@ class CareOfWomenDuringPregnancy(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
@@ -362,10 +360,12 @@ class CareOfWomenDuringPregnancy(Module):
             self, ['Insulin soluble 100 IU/ml, 10ml_each_CMST'])
 
     def initialise_simulation(self, sim):
-
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_pregnancy_item_codes()
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # ==================================== REGISTERING DX_TESTS =================================================
         params = self.current_parameters
