@@ -99,5 +99,6 @@ tmp2=output["tlo.methods.tb"]
 
 # (3) Number of Diagnosed TB Cases
 tb_treatment_children = output["tlo.methods.tb"]["tb_treatment"]
-tb_treatment_children.tbNewTreatmentChild
-tb_treatment_children.tbShorterChildTreatment
+
+# (4) Treatment Coverage
+tb_treatment_children_monthly_stats = output["tlo.methods.tb"]["tb_treatment_monthly_stats"]
