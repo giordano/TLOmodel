@@ -45,7 +45,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources, max_age_initial=16),
+            demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(
@@ -69,6 +69,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+            'Demography': {'max_age_initial': 16},
             'Tb': {'scenario': [0, 4][draw_number]}
 
         }
