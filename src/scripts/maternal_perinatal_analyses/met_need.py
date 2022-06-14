@@ -11,11 +11,10 @@ from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 
 def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath, intervention_years):
+    """
+    """
 
-    """
-    """
     # Find results folder (most recent run generated using that scenario_filename)
-
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
     path = f'{outputspath}/met_need_{results_folders["Status Quo"].name}'
@@ -63,7 +62,6 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
     # todo: (notes) Same issue with retained placenta
 
     def get_crude_complication_numbers(comp_dfs, intervention_years):
-
         crude_comps = dict()
 
         def sum_lists(list1, list2):
@@ -155,25 +153,12 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
     def get_met_need(ints, crude_comps):
 
-        met_need_dict = dict()
 
-        for comp, treatment in zip(['ectopic', 'abortion', 'an_ip_sepsis', 'uterine_rupture', 'pph_uterine_atony',
-                                    'pph_retained_p', 'pp_sepsis', 'spe_an_la', 'spe_an_la', 'spe_pn', 'spe_pn',
-                                    'sgh_an_la', 'sgh_pn', 'ec_an_la', 'ec_an_la', 'ec_pn', 'ec_pn'],
-                                   ['ep_case_mang', 'pac', 'abx_an_sepsis', 'ur_surg', 'uterotonics',
-                                    'man_r_placenta', 'abx_pn_sepsis', 'mag_sulph_an_severe_pre_eclamp',
-                                    'iv_htns_an_severe_pre_eclamp', 'mag_sulph_pn_severe_pre_eclamp',
-                                    'iv_htns_pn_severe_pre_eclamp', 'iv_htns_an_severe_gest_htn',
-                                    'iv_htns_pn_severe_gest_htn', 'mag_sulph_an_eclampsia',
-                                    'iv_htns_an_eclampsia', 'mag_sulph_pn_eclampsia',
-                                    'iv_htns_pn_eclampsia']):
-            # todo: check this....
-            # todo: blood, CS, AVD, other surgeries
-
+        def update_met_need_dict(comp, treatment):
             if (0 in ints[treatment][0]) or (0 in crude_comps[comp][0]):
                 mean_met_need = [0] * len(intervention_years)
             else:
-                mean_met_need = [(x / y) * 100 for x, y in zip(ints[treatment][0], crude_comps[comp][0])]
+                mean_met_need = [(x / y) * 100 for x, y in zip(ints[k][0], crude_comps[comp][0])]
 
             if (0 in ints[treatment][1]) or (0 in crude_comps[comp][1]):
                 lq_mn = [0] * len(intervention_years)
@@ -186,6 +171,33 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                 uq_mn = [(x / y) * 100 for x, y in zip(ints[treatment][2], crude_comps[comp][2])]
 
             met_need_dict.update({treatment: [mean_met_need, lq_mn, uq_mn]})
+
+
+        met_need_dict = dict()
+        comp_and_treatment = {'ectopic': 'ep_case_mang',
+                              'abortion': 'pac',
+                              'an_ip_sepsis': 'abx_an_sepsis',
+                              'uterine_rupture': 'ur_surg',
+                              'pph_uterine_atony': 'uterotonics',
+                              'pph_retained_p': 'man_r_placenta',
+                              'pp_sepsis': 'abx_pn_sepsis',
+                              'spe_an_la': ['mag_sulph_an_severe_pre_eclamp', 'iv_htns_an_severe_pre_eclamp'],
+                              'spe_pn': ['iv_htns_pn_severe_pre_eclamp', 'mag_sulph_pn_severe_pre_eclamp'],
+                              'sgh_an_la': 'iv_htns_an_severe_gest_htn',
+                              'sgh_pn': 'iv_htns_pn_severe_gest_htn',
+                              'ec_an_la': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
+                              'ec_pn': ['iv_htns_an_eclampsia', 'iv_htns_pn_eclampsia']}
+
+        for k in comp_and_treatment:
+            if isinstance(comp_and_treatment[k], list):
+                update_met_need_dict(k, comp_and_treatment[k])
+            else:
+                for l in comp_and_treatment[k]:
+                  update_met_need_dict(k, comp_and_treatment[k][l])
+
+
+        # todo: check this....
+        # todo: blood, CS, AVD, other surgeries
 
         return met_need_dict
 
@@ -211,7 +223,6 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                'hcw_not_avail']
 
     def get_factors_impacting_death(results_folder, factors, intervention_years):
-
         total_deaths = extract_results(
             results_folder,
             module="tlo.methods.labour.detail",

@@ -10,17 +10,25 @@ from tlo.analysis.utils import (
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 
-def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier, outputspath, intervention_years):
+def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_interest, outputspath,
+                                                 intervention_years):
+    """
+    This function can be called to output plots showing the incidence of core complications within a model run across
+    a series of scenarios.
+    :param scenario_file_dict: dict containing names of python scripts for each scenario of interest
+    :param service_of_interest:  ANC/SBA/PNC
+    :param outputspath: directory for graphs to be saved
+    :param intervention_years: years of interest for the analysis
+    :return:
+    """
 
-    """
-    """
     # Find results folder (most recent run generated using that scenario_filename)
-
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
-    path = f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{identifier}'
+    path = f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{service_of_interest}'
     if not os.path.isdir(path):
-        os.makedirs(f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{identifier}')
+        os.makedirs(
+            f'{outputspath}/analysis_comparing_incidence_{results_folders["Status Quo"].name}_{service_of_interest}')
 
     plot_destination_folder = path
 
@@ -89,11 +97,10 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         )
         an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, intervention_years)
 
-        total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in zip(total_births_per_year,
-                                                                                           ectopic_mean_numbers_per_year,
-                                                                                           ia_mean_numbers_per_year,
-                                                                                           sa_mean_numbers_per_year,
-                                                                                           an_still_birth_data[0])]
+        total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in
+                                                zip(total_births_per_year, ectopic_mean_numbers_per_year,
+                                                    ia_mean_numbers_per_year, sa_mean_numbers_per_year,
+                                                    an_still_birth_data[0])]
 
         return total_completed_pregnancies_per_year
 
@@ -587,8 +594,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
     # ===================================== COMPARING COMPLICATION LEVEL MMR ==========================================
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
                          'postpartum_haemorrhage', 'antepartum_haemorrhage']
-    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Suicide', 'ever_stroke', 'diabetes', 'chronic_ischemic_hd',
-                       'ever_heart_attack', 'ever_stroke', 'chronic_kidney_disease']
 
     def get_death_data(results_folder, total_births):
 
@@ -680,38 +685,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
 
             mmr_dict.update({cause: [mmr_mean, mmr_lq, mmr_uq]})
 
-        indirect_death_results = extract_results(
-            results_folder,
-            module="tlo.methods.demography.detail",
-            key="properties_of_deceased_persons",
-            custom_generate_series=(
-                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum'])].assign(
-                    year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()),
-            do_scaling=True
-        )
-
-        indirect_deaths_means = []
-
         # todo: stacked area chart
 
-        #for year in intervention_years:
-        #    id_deaths_per_year = 0
-         #   for cause in indirect_causes:
-         #       if cause in indirect_death_results.loc[year, :, True].index:
-         #           id_deaths_per_year += indirect_death_results.loc[year, cause, True].mean()
-
-         #   indirect_deaths.append(id_deaths_per_year)
-
-
-
-
-       # total_deaths = deaths_2030_dict
-        #total_deaths.update(indirect_deaths_means)
-
-        return {'mmr_dict': mmr_dict,}
-               # 'crude_deaths_direct': deaths_2030_dict,
-                #'crude_deaths_indirect': indirect_deaths_means,}
-                #'total_crude_deaths': total_deaths}
+        return {'mmr_dict': mmr_dict}
 
     comp_mmrs = {k: get_death_data(results_folders[k], births_dict[k]) for k in results_folders}
 
@@ -735,51 +711,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, identifier,
         plt.legend()
         plt.savefig(f'./{mmr_destination}/{cause}_mmr.png')
         plt.show()
-
-
-
-    """def get_pie_sizes(crude_deaths, type):
-        pie_sizes = list()
-        total_deaths = sum(crude_deaths.values())
-        if type == 'Direct':
-            for cause in simplified_causes:
-                pie_sizes.append((crude_deaths[cause]/total_deaths * 100))
-        else:
-            causes = simplified_causes + indirect_causes
-            for cause in causes:
-                pie_sizes.append((crude_deaths[cause]/total_deaths * 100))
-
-        return pie_sizes
-
-    pie_sizes = {k: get_pie_sizes(comp_mmrs[k]['crude_deaths_direct'], 'Direct') for k in results_folders}
-    pie_sizes_total = {k: get_pie_sizes(comp_mmrs[k]['total_crude_deaths'], 'Total') for k in results_folders}
-
-    def get_pie_charts(sizes, type):
-        for k in sizes:
-            lables = list()
-            if type == 'Direct':
-                for x, y in zip(sizes[k], simplified_causes):
-                    lables.append(f'{y} ({round(x, 2)}%)')
-            else:
-                causes = simplified_causes + indirect_causes
-                for x, y in zip(sizes[k], causes):
-                    lables.append(f'{y} ({round(x, 2)}%)')
-
-            values = sizes[k]
-            fig1, ax1 = plt.subplots()
-            ax1.pie(values, shadow=True, startangle=90)
-            ax1.axis('equal')
-            box = ax1.get_position()
-            ax1.set_position([box.x0, box.y0, box.width * 0.5, box.height])
-            plt.legend(lables, loc='center left', bbox_to_anchor=(1, 0.5))
-            # Equal aspect ratio ensures that pie is drawn as a circle.
-            plt.title(f'{type} Maternal Deaths by Cause in 2030 For {k} Scenario')
-            plt.savefig(f'{mmr_destination}/{type}_prop_cause_of_death_{k}.png',
-                        bbox_inches="tight")
-            plt.show()
-
-    get_pie_charts(pie_sizes, 'Direct')
-    get_pie_charts(pie_sizes_total, 'Total')"""
 
     # ===================================== COMPARING COMPLICATION LEVEL NMR ========================================
     simplified_causes_neo = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']

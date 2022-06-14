@@ -344,9 +344,12 @@ def comparison_graph_multiple_scenarios_multi_level_dict(
 def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_title, title,
                                        plot_destination_folder, save_name):
 
-    N = len(intervention_years)  # todo: will crash if change the baseline name
+    N = len(intervention_years)
     ind = np.arange(N)
     width = 0.2
+    x_ticks = list()
+    for x in range(len(intervention_years)):
+        x_ticks.append(x)
 
     for k, position, colour in zip(data, [ind - width, ind, ind + width, ind + width * 2],
                                    ['bisque', 'powderblue', 'mistyrose', 'thistle']):
@@ -357,7 +360,7 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_ti
     plt.xlabel('Years')
     plt.title(title)
     plt.legend(loc='best')
-    plt.xticks([0., 1., 2., 3.,], labels=intervention_years)  # todo: has the be editied with number of years
+    plt.xticks(x_ticks, labels=intervention_years)
     plt.savefig(f'{plot_destination_folder}/{save_name}.png')
     plt.show()
 
@@ -499,6 +502,18 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
 
     # Extract data from scenarios
     return {k: extract_deaths(results_folders[k], births_dict[k]) for k in results_folders}
+
+
+def get_differences_between_two_outcomes(baseline_data, comparator):
+    crude_diff = [x - y for x, y in zip(baseline_data[0], comparator[0])]
+    avg_crude_diff = sum(crude_diff) / len(crude_diff)
+    percentage_diff = [100 - ((x / y) * 100) for x, y in zip(comparator[0], baseline_data[0])]
+    avg_percentage_diff = sum(percentage_diff) / len(percentage_diff)
+
+    return {'crude': crude_diff,
+            'crude_avg': avg_crude_diff,
+            'percentage': percentage_diff,
+            'percentage_avf': avg_percentage_diff}
 
 
 def return_stillbirth_data_from_multiple_scenarios(results_folders, births_dict, intervention_years):

@@ -43,6 +43,7 @@ class TestScenario(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
@@ -86,7 +87,8 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'anc_service_structure': 4}
+            'PregnancySupervisor': {'anc_service_structure': 4},
+            'CareOfWomenDuringPregnancy': {'squeeze_factor_threshold_anc': 10_000}
         }
 
 

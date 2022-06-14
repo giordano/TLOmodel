@@ -2067,7 +2067,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
         # updated mni with GA at first visit
         if self.visit_number == 1:
-            mni[person_id]['ps_gestational_age_in_weeks'] = df.at[person_id, 'ps_gestational_age_in_weeks']
+            mni[person_id]['ga_anc_one'] = df.at[person_id, 'ps_gestational_age_in_weeks']
 
         # We add a visit to a rolling total of ANC visits in this pregnancy used for logging
         df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1

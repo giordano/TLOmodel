@@ -215,7 +215,7 @@ def run_anc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
                 intervention_years, dalys_data, dict_key, axis, title, plot_destination_folder, save_name)
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
-    # MALARIA
+    # ------------------------------------------------ MALARIA ------------------------------------------------------
     # todo: what else? (proportion of infected women receiving iptp)
     def get_malaria_incidence_in_pregnancy(folder):
         # Number of clinical episodes in pregnant women per year
@@ -264,38 +264,117 @@ def run_anc_scenario_analysis(scenario_file_dict, outputspath, show_and_store_gr
         plot_destination_folder, 'mal_incidence')
 
     def get_hiv_information(folder):
-        # prop_tested_adult_female, per_capita_testing_rate
-        # Number of tests by sex- female
-        hiv_tests = extract_results(
+        # Proportion of adult females tested in the last year
+        hiv_tests_dates = extract_results(
             folder,
-            module="tlo.methods.malaria",
-            key="incidence",
-            column='clinical_preg_counter',
+            module="tlo.methods.hiv",
+            key="hiv_program_coverage",
+            column='prop_tested_adult_female',
             index='date',
             do_scaling=True
         )
 
-        years = preg_clin_counter_dates.index.year
-        preg_clin_counter_years = preg_clin_counter_dates.set_index(years)
-        preg_clinical_counter = analysis_utility_functions.get_mean_and_quants(preg_clin_counter_years,
-                                                                               intervention_years)
-
-        incidence_dates = extract_results(
+        years = hiv_tests_dates.index.year
+        hiv_tests_years = hiv_tests_dates.set_index(years)
+        hiv_tests = analysis_utility_functions.get_mean_and_quants(hiv_tests_years,
+                                                                     intervention_years)
+        # Per-capita testing rate
+        hiv_tests_rate_dates = extract_results(
             folder,
-            module="tlo.methods.malaria",
-            key="incidence",
-            column='inc_1000py',
+            module="tlo.methods.hiv",
+            key="hiv_program_coverage",
+            column='per_capita_testing_rate',
             index='date',
             do_scaling=True
         )
 
-        years = incidence_dates.index.year
-        incidence_years = incidence_dates.set_index(years)
-        incidence = analysis_utility_functions.get_mean_and_quants(incidence_years, intervention_years)
+        years = hiv_tests_rate_dates.index.year
+        hiv_tests_rate_years = hiv_tests_rate_dates.set_index(years)
+        hiv_test_rate = analysis_utility_functions.get_mean_and_quants(hiv_tests_rate_years,
+                                                                   intervention_years)
 
-        return {'clin_counter': preg_clinical_counter,
-                'incidence': incidence}
+        # Number of women on ART
+        art_dates = extract_results(
+            folder,
+            module="tlo.methods.hiv",
+            key="hiv_program_coverage",
+            column='n_on_art_female_15plus',
+            index='date',
+            do_scaling=True
+        )
 
+        years = art_dates.index.year
+        art_years = art_dates.set_index(years)
+        art = analysis_utility_functions.get_mean_and_quants(art_years, intervention_years)
 
-    # HIV
+        return {'testing_prop': hiv_tests,
+                'testing_rate': hiv_test_rate,
+                'art_number': art}
+
+    hiv_data = {k: get_hiv_information(results_folders[k]) for k in results_folders}
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, hiv_data, 'testing_prop',
+        '% Total Female Pop.',
+        'Proportion of Female Population Who Received HIV test Per Year Per Scenario',
+        plot_destination_folder, 'hiv_fem_testing_prop')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, hiv_data, 'testing_rate',
+        'Per Captia Rate',
+        'Rate of HIV testing per capita per year per scenario',
+        plot_destination_folder, 'hiv_pop_testing_rate')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, hiv_data, 'art_number',
+        'Women',
+        'Number of Women Receiving ART per Year Per Scenario',
+        plot_destination_folder, 'hiv_women_art')
+
+    # ------------------------------------------------ TB ------------------------------------------------------
+    def get_tb_info_in_pregnancy(folder):
+        # New Tb diagnoses per year
+        tb_new_diag_dates = extract_results(
+            folder,
+            module="tlo.methods.tb",
+            key="tb_treatment",
+            column='tbNewDiagnosis',
+            index='date',
+            do_scaling=True
+        )
+
+        years = tb_new_diag_dates.index.year
+        tb_new_diag_years = tb_new_diag_dates.set_index(years)
+        tb_diagnosis = analysis_utility_functions.get_mean_and_quants(tb_new_diag_years,
+                                                                     intervention_years)
+        # Treatment coverage
+        tb_treatment_dates = extract_results(
+            folder,
+            module="tlo.methods.tb",
+            key="tb_treatment",
+            column='tbTreatmentCoverage',
+            index='date',
+            do_scaling=True
+        )
+
+        years = tb_treatment_dates.index.year
+        tb_treatment_years = tb_treatment_dates.set_index(years)
+        tb_treatment = analysis_utility_functions.get_mean_and_quants(tb_treatment_years, intervention_years)
+
+        return {'diagnosis': tb_diagnosis,
+                'treatment': tb_treatment}
+
+    tb_data = {k: get_tb_info_in_pregnancy(results_folders[k]) for k in results_folders}
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, tb_data, 'diagnosis',
+        'Number of Tb Diagnoses',
+        'Number of New Tb Diagnoses Per Year Per Scenario',
+        plot_destination_folder, 'tb_diagnoses')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, tb_data, 'treatment',
+        '% New Tb Cases Treated',
+        'Proportion of New Cases of Tb Treated Per Year Per Scenario',
+        plot_destination_folder, 'tb_treatment')
 
