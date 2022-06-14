@@ -452,4 +452,39 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Number of Women Receiving ART per Year Per Scenario',
             plot_destination_folder, 'hiv_women_art')
 
+    if service_of_interest != 'sba':
+        def get_depression_info_in_pregnancy(folder):
+            # todo: when depression logged...
+
+            # Diagnosis of depression in ever depressed people
+            depression__diag_dates = extract_results(
+                folder,
+                module="tlo.methods.depression",
+                key="summary_stats",
+                column='p_ever_diagnosed_depression_if_ever_depressed',
+                index='date',
+                do_scaling=True
+            )
+            depression__diag_dates = extract_results(
+                folder,
+                module="tlo.methods.depression",
+                key="summary_stats",
+                column='prop_antidepr_if_ever_depr',  # todo: consider other logging
+                index='date',
+                do_scaling=True
+            )
+            depression__diag_dates = extract_results(
+                folder,
+                module="tlo.methods.depression",
+                key="summary_stats",
+                column='prop_ever_talk_ther_if_ever_depr',
+                index='date',
+                do_scaling=True
+            )
+
+            return
+
+        depression_data = {k: get_depression_info_in_pregnancy(results_folders[k]) for k in results_folders}
+
+
         # todo: depression

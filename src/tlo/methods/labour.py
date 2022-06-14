@@ -2111,8 +2111,8 @@ class Labour(Module):
         # We log the log the required consumables and condition the surgery happening on the availability of the
         # first consumable in this package, the anaesthetic required for the surgery
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_lab_consumables, core='obstetric_surgery_optional',
-            optional='obstetric_surgery_core')
+            self, hsi_event, self.item_codes_lab_consumables, core='obstetric_surgery_core',
+            optional='obstetric_surgery_optional')
 
         # run HCW check
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',

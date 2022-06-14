@@ -31,12 +31,13 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                   'ur_surg', 'mag_sulph_an_severe_pre_eclamp', 'mag_sulph_an_eclampsia',
                   'iv_htns_an_severe_pre_eclamp', 'iv_htns_an_severe_gest_htn', 'iv_htns_an_eclampsia',
                   'iv_htns_pn_severe_pre_eclamp', 'iv_htns_pn_severe_gest_htn', 'iv_htns_pn_eclampsia',
-                  'mag_sulph_pn_severe_pre_eclamp', 'mag_sulph_pn_eclampsia']
+                  'mag_sulph_pn_severe_pre_eclamp', 'mag_sulph_pn_eclampsia', 'blood_tran_ur', 'blood_tran_aph',
+                  'blood_tran_pph', 'pph_surg', 'avd_ol']
 
     # ============================================ MET NEED ==========================================================
     def get_total_interventions_delivered(results_folder, interventions, intervention_years):
 
-        intervention_results = extract_results(
+        int_df = extract_results(
             results_folder,
             module="tlo.methods.labour.detail",
             key="intervention",
@@ -45,10 +46,10 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
             do_scaling=True
         )
 
+        intervention_results = int_df.fillna(0)
         treatment_dict = dict()
 
         for treatment in interventions:
-
             treatment_dict.update({treatment: analysis_utility_functions.get_mean_and_quants_from_str_df(
                 intervention_results, treatment, intervention_years)})
 
@@ -56,10 +57,6 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
     ints = {k: get_total_interventions_delivered(results_folders[k], treatments, intervention_years) for k in
             results_folders}
-
-    # todo: (notes) Uterotonics were previously conditioned on them stopping bleeding not just being delivered (now
-    #  been moved)
-    # todo: (notes) Same issue with retained placenta
 
     def get_crude_complication_numbers(comp_dfs, intervention_years):
         crude_comps = dict()
@@ -89,6 +86,24 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
             comp_dfs['labour'], 'sepsis', intervention_years)
         crude_comps.update({'an_ip_sepsis': sum_lists(incidence_an_sep, incidence_la_sep)})
 
+        # Antenatal/Intrapartum Haemorrhage
+        incidence_an_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comp_dfs['pregnancy_supervisor'], 'mild_mod_antepartum_haemorrhage', intervention_years)
+        incidence_an_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comp_dfs['pregnancy_supervisor'], 'severe_antepartum_haemorrhage', intervention_years)
+        incidence_la_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comp_dfs['labour'], 'mild_mod_antepartum_haemorrhage', intervention_years)
+        incidence_la_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comp_dfs['labour'], 'severe_antepartum_haemorrhage', intervention_years)
+
+        mean = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[0], incidence_an_haem_s[0],
+                                                    incidence_la_haem_mm[0], incidence_la_haem_s[0])]
+        lq = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[1], incidence_an_haem_s[1],
+                                                  incidence_la_haem_mm[1], incidence_la_haem_s[1])]
+        uq = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[2], incidence_an_haem_s[2],
+                                                  incidence_la_haem_mm[2], incidence_la_haem_s[2])]
+        crude_comps.update({'an_ip_haem': [mean, lq, uq]})
+
         # Postpartum Sepsis
         incidence_pn_l_sep = analysis_utility_functions.get_mean_and_quants_from_str_df(
             comp_dfs['labour'], 'sepsis_postnatal', intervention_years)
@@ -109,6 +124,16 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         incidence_s_rp = analysis_utility_functions.get_mean_and_quants_from_str_df(
             comp_dfs['postnatal_supervisor'], 'secondary_postpartum_haemorrhage', intervention_years)
         crude_comps.update({'pph_retained_p': sum_lists(incidence_p_rp, incidence_s_rp)})
+
+        # PPH - requring surgery
+        # 43% of uterine atony
+        surg_data = list()
+        surg_data_rp = list()
+        for list_pos in [0, 1, 2]:
+            surg_data.append([x * 0.43 for x in crude_comps['pph_uterine_atony'][list_pos]])
+            surg_data_rp.append([x * 0.3 for x in crude_comps['pph_retained_p'][list_pos]])
+
+        crude_comps.update({'pph_surg_cases': sum_lists(surg_data, surg_data_rp)})
 
         # Uterine rupture
         crude_comps.update({'uterine_rupture': analysis_utility_functions.get_mean_and_quants_from_str_df(
@@ -147,61 +172,88 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         crude_comps.update({'ec_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
             comp_dfs['postnatal_supervisor'], 'eclampsia', intervention_years)})
 
+        # Obstructed labour
+        crude_comps.update({'obs_labour': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comp_dfs['labour'], 'obstructed_labour', intervention_years)})
         return crude_comps
 
     comp_numbers = {k: get_crude_complication_numbers(comp_dfs[k], intervention_years) for k in results_folders}
 
-    def get_met_need(ints, crude_comps):
+    def get_cs_indication_counts(folder):
+        cs_results = extract_results(
+           folder,
+           module="tlo.methods.labour",
+           key="cs_indications",
+           custom_generate_series=(
+               lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'indication'])['id'].count()),
+           do_scaling=True)
 
+        cs_id_counts = dict()
+        for indication in ['ol', 'ur']:  # 'spe_ec', 'other', 'previous_scar'
+            cs_id_counts.update({f'{indication}_cs': analysis_utility_functions.get_mean_and_quants_from_str_df(
+                cs_results, indication, intervention_years)})
 
-        def update_met_need_dict(comp, treatment):
-            if (0 in ints[treatment][0]) or (0 in crude_comps[comp][0]):
-                mean_met_need = [0] * len(intervention_years)
+        pa_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pa', intervention_years)
+        pp_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pp', intervention_years)
+        la_aph_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'la_aph', intervention_years)
+
+        mean = [a + b + c for a, b, c in zip(pa_cs[0], pp_cs[0], la_aph_cs[0])]
+        lq = [a + b + c for a, b, c, in zip(pa_cs[1], pp_cs[1], la_aph_cs[1])]
+        uq = [a + b + c for a, b, c in zip(pa_cs[2], pp_cs[2], la_aph_cs[2],)]
+
+        cs_id_counts.update({'aph_cs': [mean, lq, uq]})
+
+        return cs_id_counts
+
+    cs_indication = {k: get_cs_indication_counts(results_folders[k]) for k in results_folders}
+
+    def get_met_need(ints, cs_data, crude_comps):
+
+        def update_met_need_dict(comp, treatment, cs):
+            if cs:
+                iv = cs_data
             else:
-                mean_met_need = [(x / y) * 100 for x, y in zip(ints[k][0], crude_comps[comp][0])]
+                iv = ints
 
-            if (0 in ints[treatment][1]) or (0 in crude_comps[comp][1]):
-                lq_mn = [0] * len(intervention_years)
-            else:
-                lq_mn = [(x / y) * 100 for x, y in zip(ints[treatment][1], crude_comps[comp][1])]
-
-            if (0 in ints[treatment][2]) or (0 in crude_comps[comp][2]):
-                uq_mn = [0] * len(intervention_years)
-            else:
-                uq_mn = [(x / y) * 100 for x, y in zip(ints[treatment][2], crude_comps[comp][2])]
-
+            mean_met_need = [(x / y) * 100 for x, y in zip(iv[treatment][0], crude_comps[comp][0])]
+            lq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][1], crude_comps[comp][1])]
+            uq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][2], crude_comps[comp][2])]
             met_need_dict.update({treatment: [mean_met_need, lq_mn, uq_mn]})
-
 
         met_need_dict = dict()
         comp_and_treatment = {'ectopic': 'ep_case_mang',
                               'abortion': 'pac',
                               'an_ip_sepsis': 'abx_an_sepsis',
-                              'uterine_rupture': 'ur_surg',
+                              'uterine_rupture': ['ur_surg', 'blood_tran_ur'],
+                              'an_ip_haem': 'blood_tran_aph',
                               'pph_uterine_atony': 'uterotonics',
                               'pph_retained_p': 'man_r_placenta',
+                              'pph_surg_cases': ['pph_surg', 'blood_tran_pph'],
                               'pp_sepsis': 'abx_pn_sepsis',
                               'spe_an_la': ['mag_sulph_an_severe_pre_eclamp', 'iv_htns_an_severe_pre_eclamp'],
                               'spe_pn': ['iv_htns_pn_severe_pre_eclamp', 'mag_sulph_pn_severe_pre_eclamp'],
                               'sgh_an_la': 'iv_htns_an_severe_gest_htn',
                               'sgh_pn': 'iv_htns_pn_severe_gest_htn',
                               'ec_an_la': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
-                              'ec_pn': ['iv_htns_an_eclampsia', 'iv_htns_pn_eclampsia']}
+                              'ec_pn': ['iv_htns_pn_eclampsia', 'mag_sulph_pn_eclampsia'],
+                              'obs_labour': 'avd_ol'}
 
         for k in comp_and_treatment:
-            if isinstance(comp_and_treatment[k], list):
-                update_met_need_dict(k, comp_and_treatment[k])
+            if not isinstance(comp_and_treatment[k], list):
+                update_met_need_dict(k, comp_and_treatment[k], False)
             else:
-                for l in comp_and_treatment[k]:
-                  update_met_need_dict(k, comp_and_treatment[k][l])
+                update_met_need_dict(k, comp_and_treatment[k][0], False)
+                update_met_need_dict(k, comp_and_treatment[k][1], False)
 
-
-        # todo: check this....
-        # todo: blood, CS, AVD, other surgeries
+        cs_comp = {'an_ip_haem': 'aph_cs',
+                   'uterine_rupture': 'ur_cs',
+                   'obs_labour': 'ol_cs'}
+        for k in cs_comp:
+            update_met_need_dict(k, cs_comp[k], True)
 
         return met_need_dict
 
-    met_need = {k: get_met_need(ints[k], comp_numbers[k]) for k in ints}
+    met_need = {k: get_met_need(ints[k], cs_indication[k], comp_numbers[k]) for k in ints}
 
     for t in treatments:
         fig, ax = plt.subplots()
@@ -216,7 +268,6 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         plt.legend()
         plt.savefig(f'{plot_destination_folder}/{t}.png')
         plt.show()
-
 
 # ===================================== CONTRIBUTION TO DEATH ========================================================
     factors = ['delay_one_two', 'delay_three', 'didnt_seek_care', 'cons_not_avail', 'comp_not_avail',
@@ -236,7 +287,6 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
         factors_prop = dict()
         for factor in factors:
-
             factor_df = extract_results(
                 results_folder,
                 module="tlo.methods.labour.detail",
@@ -247,40 +297,20 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                 do_scaling=True
             )
 
-            year_means = list()
-            lower_quantiles = list()
-            upper_quantiles = list()
+            death_factors = factor_df.fillna(0)
 
-            # year_means = [factor_df.loc[year, True].mean() for year in intervention_years if year in factor_df.index]
-
-            for year in intervention_years:
-                if year in factor_df.index:
-                    year_means.append(factor_df.loc[year, True].mean())
-                    lower_quantiles.append(factor_df.loc[year, True].quantile(0.025))
-                    upper_quantiles.append(factor_df.loc[year, True].quantile(0.925))
-                else:
-                    year_means.append(0)
-                    lower_quantiles.append(0)
-                    lower_quantiles.append(0)
+            year_means = [death_factors.loc[year, True].mean() for year in intervention_years if year in
+                          death_factors.index]
+            lower_quantiles = [death_factors.loc[year, True].quantile(0.025) for year in intervention_years if year in
+                               death_factors.index]
+            upper_quantiles = [death_factors.loc[year, True].quantile(0.925) for year in intervention_years if year in
+                               death_factors.index]
 
             factor_data = [year_means, lower_quantiles, upper_quantiles]
 
-            # factor_data = analysis_utility_functions.get_mean_and_quants(factor_df, intervention_years)
-
-            if (0 in factor_data[0]) or (0 in deaths[0]):
-                mean = [0] * len(intervention_years)
-            else:
-                mean = [(x / y) * 100 for x, y in zip(factor_data[0], deaths[0])]
-
-            if (0 in factor_data[1]) or (0 in deaths[1]):
-                lq = [0] * len(intervention_years)
-            else:
-                lq = [(x / y) * 100 for x, y in zip(factor_data[1], deaths[1])]
-
-            if (0 in factor_data[2]) or (0 in deaths[2]):
-                uq = [0] * len(intervention_years)
-            else:
-                uq = [(x / y) * 100 for x, y in zip(factor_data[2], deaths[2])]
+            mean = [(x / y) * 100 for x, y in zip(factor_data[0], deaths[0])]
+            lq = [(x / y) * 100 for x, y in zip(factor_data[1], deaths[1])]
+            uq = [(x / y) * 100 for x, y in zip(factor_data[2], deaths[2])]
 
             factors_prop.update({factor: [mean, lq, uq]})
 
@@ -302,5 +332,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         plt.legend()
         plt.savefig(f'{plot_destination_folder}/{f}_factor_in_death.png')
         plt.show()
+
+    # todo: proportion of women who died with 0, 1, 2, 3 factors etc?
 
     x ='y'
