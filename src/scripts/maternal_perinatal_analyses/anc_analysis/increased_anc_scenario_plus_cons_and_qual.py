@@ -89,7 +89,7 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'analysis_date': (Date(2017, 1, 1)),
+            'PregnancySupervisor': {'analysis_date': Date(2017, 1, 1),
                                     'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
