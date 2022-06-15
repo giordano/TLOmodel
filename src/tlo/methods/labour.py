@@ -3187,28 +3187,22 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         if mni[person_id]['referred_for_surgery'] and self.timing == 'intrapartum' and df.at[person_id,
                                                                                              'la_uterine_rupture']:
 
-            # We log the log the required consumables and condition the surgery happening on the availability of the
-            # first consumable in this package, the anaesthetic required for the surgery
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self.module, self, self.module.item_codes_lab_consumables, core='obstetric_surgery_core',
-                optional='obstetric_surgery_optional')
+            # If the staff and consumables are available to deliver a caesarean for this individual we do not run any
+            # further checks and surgical repair is assume to have occurred during their caesarean surgery
+            if mni[person_id]['mode_of_delivery'] == 'caesarean_section':
 
-            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
-                                                                                       hsi_event=self)
+                # Determine if the uterus can be repaired
+                treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
-            # We apply a probability that repair surgery will be successful which will reduce risk of death from
-            # uterine rupture
-            treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
+                if treatment_success_ur:
+                    df.at[person_id, 'la_uterine_rupture_treatment'] = True
+                    pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
-            if avail and treatment_success_ur and sf_check:
-                df.at[person_id, 'la_uterine_rupture_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
-
-            # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
-            # of death from uterine rupture but leads to permanent infertility in the simulation
-            elif avail and sf_check and not treatment_success_ur:
-                df.at[person_id, 'la_has_had_hysterectomy'] = True
-                pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
+                # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
+                # risk of death from uterine rupture but leads to permanent infertility in the simulation
+                else:
+                    df.at[person_id, 'la_has_had_hysterectomy'] = True
+                    pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding

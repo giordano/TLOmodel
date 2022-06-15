@@ -20,37 +20,42 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
 from tlo.scenario import BaseScenario
 
 
-class PNCStatusQuoScenario(BaseScenario):
+class Calibration(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 258
+        self.seed = 664
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 1, 1)
+        self.end_date = Date(2021, 1, 1)
         self.pop_size = 30000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'test_30k', 'directory': './outputs',
+            'filename': 'calibration_check_30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
-                "tlo.methods.labour": logging.DEBUG,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.labour": logging.INFO,
                 "tlo.methods.labour.detail": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
             }
         }
 
@@ -74,6 +79,7 @@ class PNCStatusQuoScenario(BaseScenario):
                 # dependencies)
                 alri.Alri(resourcefilepath=self.resources),
                 hiv.Hiv(resourcefilepath=self.resources),
+                tb.Tb(resourcefilepath=self.resources),
                 malaria.Malaria(resourcefilepath=self.resources),
                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
                 depression.Depression(resourcefilepath=self.resources),

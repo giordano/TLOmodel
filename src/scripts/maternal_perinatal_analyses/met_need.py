@@ -175,6 +175,15 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         # Obstructed labour
         crude_comps.update({'obs_labour': analysis_utility_functions.get_mean_and_quants_from_str_df(
             comp_dfs['labour'], 'obstructed_labour', intervention_years)})
+
+        ol_cpd = list()
+        old_oth = list()
+        for list_pos in [0, 1, 2]:
+            ol_cpd.append([x * 0.7 for x in crude_comps['obs_labour'][list_pos]])
+            old_oth.append([x * 0.3 for x in crude_comps['obs_labour'][list_pos]])
+        crude_comps.update({'obs_labour_cpd': sum_lists(incidence_a_ec, incidence_p_ec)})
+        crude_comps.update({'obs_labour_other': sum_lists(incidence_a_ec, incidence_p_ec)})
+
         return crude_comps
 
     comp_numbers = {k: get_crude_complication_numbers(comp_dfs[k], intervention_years) for k in results_folders}
@@ -192,6 +201,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         for indication in ['ol', 'ur']:  # 'spe_ec', 'other', 'previous_scar'
             cs_id_counts.update({f'{indication}_cs': analysis_utility_functions.get_mean_and_quants_from_str_df(
                 cs_results, indication, intervention_years)})
+            treatments.append(f'{indication}_cs')
 
         pa_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pa', intervention_years)
         pp_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pp', intervention_years)
@@ -202,6 +212,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         uq = [a + b + c for a, b, c in zip(pa_cs[2], pp_cs[2], la_aph_cs[2],)]
 
         cs_id_counts.update({'aph_cs': [mean, lq, uq]})
+        treatments.append('aph_cs')
 
         return cs_id_counts
 
@@ -236,7 +247,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                               'sgh_pn': 'iv_htns_pn_severe_gest_htn',
                               'ec_an_la': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
                               'ec_pn': ['iv_htns_pn_eclampsia', 'mag_sulph_pn_eclampsia'],
-                              'obs_labour': 'avd_ol'}
+                              'obs_labour_other': 'avd_ol'}
 
         for k in comp_and_treatment:
             if not isinstance(comp_and_treatment[k], list):

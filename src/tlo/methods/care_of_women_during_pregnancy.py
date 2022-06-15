@@ -240,8 +240,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
-            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
-                                     'Metronidazole 200mg_1000_CMST'])
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg']),
+                                     # 'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             get_list_of_items(self, ['Complete blood count',
@@ -2619,9 +2619,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='retained_prod',
                                                                                    hsi_event=self)
-
-        # todo: add equipment for uterine evacuation for TLO version 2.0
-        # todo: specify key consumables instead of groups (await calibration)
 
         # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
         # consumables plus additional consumables required for management of her specific complication
