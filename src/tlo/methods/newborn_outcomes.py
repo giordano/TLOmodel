@@ -989,6 +989,7 @@ class NewbornOutcomes(Module):
             # deliveries that are not attended
             if avail and sf_check:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
+                pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
@@ -1004,7 +1005,6 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = int(hsi_event.target)
-        cons = self.item_codes_nb_consumables
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -1026,6 +1026,7 @@ class NewbornOutcomes(Module):
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
 
             # The same pattern is then followed for health centre care
             else:
@@ -1035,6 +1036,7 @@ class NewbornOutcomes(Module):
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
 
     def link_twins(self, child_one, child_two, mother_id):
         """

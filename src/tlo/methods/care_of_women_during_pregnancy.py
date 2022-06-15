@@ -240,7 +240,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
-            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg']),
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg'])
                                      # 'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
@@ -2599,7 +2599,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        cons = self.module.item_codes_preg_consumables
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
 
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',

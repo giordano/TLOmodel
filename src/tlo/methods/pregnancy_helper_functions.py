@@ -157,7 +157,7 @@ def log_met_need(self, intervention, hsi):
 
     # Interventions with single indications are simply logged
     if intervention in ('ep_case_mang', 'pac', 'avd_other', 'avd_ol', 'avd_spe_ec', 'uterotonics', 'man_r_placenta',
-                        'pph_surg', 'ur_surg'):
+                        'pph_surg', 'ur_surg', 'neo_resus', 'neo_sep_supportive_care', 'neo_sep_abx'):
         logger.info(key='intervention', data={'person_id': person_id, 'int': intervention})
 
     # For interventions with multiple indications the HSI and properties of the individual are used to determine the
