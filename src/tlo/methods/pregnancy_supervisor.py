@@ -350,6 +350,8 @@ class PregnancySupervisor(Module):
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
                        ' scripts to change ANC structure'),
+        'ps_analysis_in_progress': Parameter(
+            Types.BOOL, ''),
         'alternative_anc_coverage': Parameter(
             Types.BOOL, 'used to signal if a change in parameters governing ANC coverage should be made at some '
                         'predetermined time point'),
@@ -2118,45 +2120,44 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.current_parameters
-        cwdp_params = self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters
         df = self.sim.population.props
 
-        # When this parameter is set as True, the following parameters are overridden when the event is called.
-        # Otherwise no parameters are updated.
-        if params['alternative_anc_coverage']:
-            target = params['anc_availability_odds']
-            params['odds_early_init_anc4'] = 1
-            mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year).mean()
+        if params['alternative_anc_coverage'] or params['alternative_anc_quality']:
+            params['ps_analysis_in_progress'] = True
 
-            mean = mean / (1.0 - mean)
-            scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+            # When this parameter is set as True, the following parameters are overridden when the event is called.
+            # Otherwise no parameters are updated.
+            if params['alternative_anc_coverage']:
 
-            # Update parameters
-            params['odds_early_init_anc4'] = scaled_intercept
-            params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
-            params['prob_late_initiation_anc4'] = 0
+                params['ps_analysis_in_progress'] = True
 
-            #if params['anc_service_structure'] == 8:  # todo: not right
-            #    cwdp_params['prob_seek_anc5'] = 1.0
-            #    cwdp_params['prob_seek_anc6'] = 1.0
-            #    cwdp_params['prob_seek_anc7'] = 1.0
-            #    cwdp_params['prob_seek_anc8'] = 1.0
+                target = params['anc_availability_odds']
+                params['odds_early_init_anc4'] = 1
+                mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
+                        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                        year=self.sim.date.year).mean()
 
-        if params['alternative_anc_quality']:
-            if 'Malaria' in self.sim.modules:
-                iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
-                ic = list(iptp.keys())[0]
-                self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                    {ic: params['anc_availability_probability']})
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
 
-            for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                              'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
-                              'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
-                              'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
-                              'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
-                params[parameter] = params['anc_availability_probability']
+                # Update parameters
+                params['odds_early_init_anc4'] = scaled_intercept
+                params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
+                params['prob_late_initiation_anc4'] = 0
+
+            if params['alternative_anc_quality']:
+                if 'Malaria' in self.sim.modules:
+                    iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
+                    ic = list(iptp.keys())[0]
+                    self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                        {ic: params['anc_availability_probability']})
+
+                for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
+                                  'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
+                                  'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
+                                  'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
+                                  'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                    params[parameter] = params['anc_availability_probability']
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

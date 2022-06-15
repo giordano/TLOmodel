@@ -35,6 +35,8 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     # Save the file path
     plot_destination_folder = path
 
+    intervention_years = list(range(2010, 2025))
+
     # ========================================= BIRTHs PER SCENARIO ==================================================
     # Access birth data for each scenario (used as a denominator in some parts of the script)
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
@@ -284,6 +286,51 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plt.xticks(x_ticks, labels=intervention_years)
             plt.savefig(f'{plot_destination_folder}/{dict_name}_diff_{output}.png')
             plt.show()
+
+    # ========================================= HEALTH SYSTEM OUTCOMES ================================================
+    if service_of_interest != 'sba':
+
+        def get_hsi_counts_from_summary_logger(folder, intervention_years):
+            # Todo think this is more interesting as difference from baseline i.e. number of additional HSIs required
+            #  or precentage change
+
+            TREATMENT_ID = 'AntenatalCare_Outpatient'
+            hsi = extract_results(
+                folder,
+                module="tlo.methods.healthsystem.summary",
+                key="HSI_Event",
+                custom_generate_series=(
+                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                        year=df['date'].dt.year).groupby(['year'])[TREATMENT_ID].sum()),
+                do_scaling=True)
+
+            #def get_counts_of_hsi_by_treatment_id(_df):
+            #    return _df \
+            #        .loc[pd.to_datetime(_df['date']).between(2010, 2025), 'TREATMENT_ID'] \
+            #        .apply(pd.Series) \
+            #        .sum() \
+            #        .astype(int)
+
+            #counts_of_hsi_by_treatment_id = extract_results(
+            #    folder,
+            #    module='tlo.methods.healthsystem.summary',
+            #    key='HSI_Event',
+            #    custom_generate_series=get_counts_of_hsi_by_treatment_id,
+            #    do_scaling=True
+            #).fillna(0.0).sort_index()
+
+            hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
+
+            return hsi_data
+
+        hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
+                   results_folders}
+
+        # Better as a rate?
+        analysis_utility_functions.comparison_graph_multiple_scenarios(
+            intervention_years, hs_data, 'Crude Number',
+            'Total Number of Antenatal Care Visits per Year Per Scenario',
+            plot_destination_folder, f'{service_of_interest}_visits')
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
     # ------------------------------------------------ MALARIA ------------------------------------------------------

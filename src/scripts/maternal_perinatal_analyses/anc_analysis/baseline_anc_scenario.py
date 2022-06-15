@@ -32,17 +32,18 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 444
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 2)
-        self.pop_size = 60_000
+        self.end_date = Date(2021, 1, 1)
+        self.pop_size = 30_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc4_coverage_scenario', 'directory': './outputs',
+            'filename': 'baseline30k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,

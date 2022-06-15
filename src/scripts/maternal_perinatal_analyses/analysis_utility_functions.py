@@ -102,7 +102,7 @@ def get_modules_maternal_complication_dataframes(results_folder):
     comp_dfs = dict()
 
     for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
-        complications_df = extract_results(
+        c_df = extract_results(
             results_folder,
             module=f"tlo.methods.{module}",
             key="maternal_complication",
@@ -110,6 +110,26 @@ def get_modules_maternal_complication_dataframes(results_folder):
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
             do_scaling=True
             )
+        complications_df = c_df.fillna(0)
+
+        comp_dfs[module] = complications_df
+
+    return comp_dfs
+
+
+def get_modules_neonatal_complication_dataframes(results_folder):
+    comp_dfs = dict()
+
+    for module in ['newborn_outcomes', 'postnatal_supervisor']:
+        n_df = extract_results(
+            results_folder,
+            module=f"tlo.methods.{module}",
+            key="newborn_complication",
+            custom_generate_series=(
+                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+            do_scaling=True
+            )
+        complications_df = n_df.fillna(0)
 
         comp_dfs[module] = complications_df
 

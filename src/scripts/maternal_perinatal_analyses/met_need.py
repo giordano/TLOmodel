@@ -26,13 +26,15 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
     # Get complication dataframes
     comp_dfs = {k: analysis_utility_functions.get_modules_maternal_complication_dataframes(results_folders[k]) for
                 k in results_folders}
+    neo_comp_dfs = {k: analysis_utility_functions.get_modules_neonatal_complication_dataframes(results_folders[k]) for
+                    k in results_folders}
 
     treatments = ['pac', 'ep_case_mang', 'abx_an_sepsis', 'uterotonics', 'man_r_placenta', 'abx_pn_sepsis',
                   'ur_surg', 'mag_sulph_an_severe_pre_eclamp', 'mag_sulph_an_eclampsia',
                   'iv_htns_an_severe_pre_eclamp', 'iv_htns_an_severe_gest_htn', 'iv_htns_an_eclampsia',
                   'iv_htns_pn_severe_pre_eclamp', 'iv_htns_pn_severe_gest_htn', 'iv_htns_pn_eclampsia',
                   'mag_sulph_pn_severe_pre_eclamp', 'mag_sulph_pn_eclampsia', 'blood_tran_ur', 'blood_tran_aph',
-                  'blood_tran_pph', 'pph_surg', 'avd_ol']
+                  'blood_tran_pph', 'pph_surg', 'avd_ol', 'neo_resus', 'neo_sep_treat']
 
     # ============================================ MET NEED ==========================================================
     def get_total_interventions_delivered(results_folder, interventions, intervention_years):
@@ -50,15 +52,25 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         treatment_dict = dict()
 
         for treatment in interventions:
-            treatment_dict.update({treatment: analysis_utility_functions.get_mean_and_quants_from_str_df(
-                intervention_results, treatment, intervention_years)})
+            if treatment == 'neo_sep_treat':
+                abx = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                intervention_results, 'neo_sep_abx', intervention_years)
+                supp = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                intervention_results, 'neo_sep_supportive_care', intervention_years)
+                treatment_dict.update({treatment: []})
+                for lp in [0, 1, 2]:
+                    data = [abx[lp], supp[lp]]
+                    treatment_dict[treatment].append(list(map(sum, zip(*data))))
+            else:
+                treatment_dict.update({treatment: analysis_utility_functions.get_mean_and_quants_from_str_df(
+                    intervention_results, treatment, intervention_years)})
 
         return treatment_dict
 
     ints = {k: get_total_interventions_delivered(results_folders[k], treatments, intervention_years) for k in
             results_folders}
 
-    def get_crude_complication_numbers(comp_dfs, intervention_years):
+    def get_crude_complication_numbers(mat_comps, neo_comps, intervention_years):
         crude_comps = dict()
 
         def sum_lists(list1, list2):
@@ -70,59 +82,57 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
         # Ectopic
         crude_comps.update({'ectopic': analysis_utility_functions.get_mean_and_quants_from_str_df(
-                    comp_dfs['pregnancy_supervisor'], 'ectopic_unruptured', intervention_years)})
+                    mat_comps['pregnancy_supervisor'], 'ectopic_unruptured', intervention_years)})
 
         # Complicated abortion
         incidence_compsa = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'complicated_spontaneous_abortion', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'complicated_spontaneous_abortion', intervention_years)
         incidence_compia = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'complicated_induced_abortion', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'complicated_induced_abortion', intervention_years)
         crude_comps.update({'abortion': sum_lists(incidence_compia, incidence_compsa)})
 
         # Antenatal/Intrapartum Sepsis
         incidence_an_sep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'clinical_chorioamnionitis', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'clinical_chorioamnionitis', intervention_years)
         incidence_la_sep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'sepsis', intervention_years)
+            mat_comps['labour'], 'sepsis', intervention_years)
         crude_comps.update({'an_ip_sepsis': sum_lists(incidence_an_sep, incidence_la_sep)})
 
         # Antenatal/Intrapartum Haemorrhage
         incidence_an_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'mild_mod_antepartum_haemorrhage', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'mild_mod_antepartum_haemorrhage', intervention_years)
         incidence_an_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'severe_antepartum_haemorrhage', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'severe_antepartum_haemorrhage', intervention_years)
         incidence_la_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'mild_mod_antepartum_haemorrhage', intervention_years)
+            mat_comps['labour'], 'mild_mod_antepartum_haemorrhage', intervention_years)
         incidence_la_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'severe_antepartum_haemorrhage', intervention_years)
+            mat_comps['labour'], 'severe_antepartum_haemorrhage', intervention_years)
 
-        mean = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[0], incidence_an_haem_s[0],
-                                                    incidence_la_haem_mm[0], incidence_la_haem_s[0])]
-        lq = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[1], incidence_an_haem_s[1],
-                                                  incidence_la_haem_mm[1], incidence_la_haem_s[1])]
-        uq = [a + b + c + d for a, b, c, d in zip(incidence_an_haem_mm[2], incidence_an_haem_s[2],
-                                                  incidence_la_haem_mm[2], incidence_la_haem_s[2])]
-        crude_comps.update({'an_ip_haem': [mean, lq, uq]})
+        crude_comps.update({'an_ip_haem': []})
+        for lp in [0, 1, 2]:
+            data = [incidence_an_haem_mm[lp], incidence_an_haem_s[lp], incidence_la_haem_mm[lp],
+                    incidence_la_haem_s[lp]]
+            crude_comps['an_ip_haem'].append(list(map(sum, zip(*data))))
 
         # Postpartum Sepsis
         incidence_pn_l_sep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'sepsis_postnatal', intervention_years)
+            mat_comps['labour'], 'sepsis_postnatal', intervention_years)
         incidence_pn_p_sep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['postnatal_supervisor'], 'sepsis', intervention_years)
+            mat_comps['postnatal_supervisor'], 'sepsis', intervention_years)
         crude_comps.update({'pp_sepsis': sum_lists(incidence_pn_l_sep, incidence_pn_p_sep)})
 
         # PPH - uterine atony
         incidence_ua_pph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'pph_uterine_atony', intervention_years)
+            mat_comps['labour'], 'pph_uterine_atony', intervention_years)
         incidence_oth_pph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'pph_other', intervention_years)
+            mat_comps['labour'], 'pph_other', intervention_years)
         crude_comps.update({'pph_uterine_atony': sum_lists(incidence_ua_pph, incidence_oth_pph)})
 
         # PPH - retained placenta
         incidence_p_rp = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'pph_retained_placenta', intervention_years)
+            mat_comps['labour'], 'pph_retained_placenta', intervention_years)
         incidence_s_rp = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['postnatal_supervisor'], 'secondary_postpartum_haemorrhage', intervention_years)
+            mat_comps['postnatal_supervisor'], 'secondary_postpartum_haemorrhage', intervention_years)
         crude_comps.update({'pph_retained_p': sum_lists(incidence_p_rp, incidence_s_rp)})
 
         # PPH - requring surgery
@@ -137,44 +147,44 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
         # Uterine rupture
         crude_comps.update({'uterine_rupture': analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'uterine_rupture', intervention_years)})
+            mat_comps['labour'], 'uterine_rupture', intervention_years)})
 
         # Severe pre-eclampsia - antenatal
         incidence_a_spe = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'severe_pre_eclamp', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'severe_pre_eclamp', intervention_years)
         incidence_p_spe = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'severe_pre_eclamp', intervention_years)
+            mat_comps['labour'], 'severe_pre_eclamp', intervention_years)
         crude_comps.update({'spe_an_la': sum_lists(incidence_a_spe, incidence_p_spe)})
 
         # Severe pre-eclampsia - postnatal
         crude_comps.update({'spe_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['postnatal_supervisor'], 'severe_pre_eclamp', intervention_years)})
+            mat_comps['postnatal_supervisor'], 'severe_pre_eclamp', intervention_years)})
 
         # Severe gestational hypertension - antenatal
         incidence_a_sgh = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'severe_gest_htn', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'severe_gest_htn', intervention_years)
         incidence_p_sgh = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'severe_gest_htn', intervention_years)
+            mat_comps['labour'], 'severe_gest_htn', intervention_years)
         crude_comps.update({'sgh_an_la': sum_lists(incidence_a_sgh, incidence_p_sgh)})
 
         # Severe gestational hypertension - postnatal
         crude_comps.update({'sgh_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['postnatal_supervisor'], 'severe_gest_htn', intervention_years)})
+            mat_comps['postnatal_supervisor'], 'severe_gest_htn', intervention_years)})
 
         # Eclampsia - antenatal
         incidence_a_ec = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['pregnancy_supervisor'], 'eclampsia', intervention_years)
+            mat_comps['pregnancy_supervisor'], 'eclampsia', intervention_years)
         incidence_p_ec = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'eclampsia', intervention_years)
+            mat_comps['labour'], 'eclampsia', intervention_years)
         crude_comps.update({'ec_an_la': sum_lists(incidence_a_ec, incidence_p_ec)})
 
         # Eclampsia - postnatal
         crude_comps.update({'ec_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['postnatal_supervisor'], 'eclampsia', intervention_years)})
+            mat_comps['postnatal_supervisor'], 'eclampsia', intervention_years)})
 
         # Obstructed labour
         crude_comps.update({'obs_labour': analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comp_dfs['labour'], 'obstructed_labour', intervention_years)})
+            mat_comps['labour'], 'obstructed_labour', intervention_years)})
 
         ol_cpd = list()
         old_oth = list()
@@ -184,9 +194,42 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         crude_comps.update({'obs_labour_cpd': sum_lists(incidence_a_ec, incidence_p_ec)})
         crude_comps.update({'obs_labour_other': sum_lists(incidence_a_ec, incidence_p_ec)})
 
+        # Neonatal sepsis
+        incidence_eons_nb = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'early_onset_sepsis', intervention_years)
+        incidence_eons_pn = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['postnatal_supervisor'], 'early_onset_sepsis', intervention_years)
+        incidence_lons_pn = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['postnatal_supervisor'], 'late_onset_sepsis', intervention_years)
+
+        crude_comps.update({'neo_sepsis': []})
+        for lp in [0, 1, 2]:
+            data = [incidence_eons_nb[lp], incidence_eons_pn[lp], incidence_lons_pn[lp]]
+            crude_comps['neo_sepsis'].append(list(map(sum, zip(*data))))
+
+        # Neonatal respiratory distress
+        incidence_prds = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'respiratory_distress_syndrome', intervention_years)
+        incidence_nbab = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'not_breathing_at_birth', intervention_years)
+
+        incidence_enceph_mi = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'mild_enceph', intervention_years)
+        incidence_enceph_mo = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'moderate_enceph', intervention_years)
+        incidence_enceph_se = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            neo_comps['newborn_outcomes'], 'severe_enceph', intervention_years)
+
+        crude_comps.update({'neo_resp_distress': []})
+        for lp in [0, 1, 2]:
+            data = [incidence_prds[lp], incidence_nbab[lp], incidence_enceph_mi[lp], incidence_enceph_mo[lp],
+                    incidence_enceph_se[lp]]
+            crude_comps['neo_resp_distress']. append(list(map(sum, zip(*data))))
+
         return crude_comps
 
-    comp_numbers = {k: get_crude_complication_numbers(comp_dfs[k], intervention_years) for k in results_folders}
+    comp_numbers = {k: get_crude_complication_numbers(comp_dfs[k], neo_comp_dfs[k],
+                                                      intervention_years) for k in results_folders}
 
     def get_cs_indication_counts(folder):
         cs_results = extract_results(
@@ -247,7 +290,9 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                               'sgh_pn': 'iv_htns_pn_severe_gest_htn',
                               'ec_an_la': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
                               'ec_pn': ['iv_htns_pn_eclampsia', 'mag_sulph_pn_eclampsia'],
-                              'obs_labour_other': 'avd_ol'}
+                              'obs_labour_other': 'avd_ol',
+                              'neo_resp_distress': 'neo_resus',
+                              'neo_sepsis':'neo_sep_treat'}
 
         for k in comp_and_treatment:
             if not isinstance(comp_and_treatment[k], list):

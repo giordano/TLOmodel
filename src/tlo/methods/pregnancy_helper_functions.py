@@ -35,13 +35,8 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
     :return: BOOL
     """
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
-    # conducted
-    if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
-        params = self.sim.modules['PregnancySupervisor'].current_parameters
-    else:
-        params = self.sim.modules['Labour'].current_parameters
+    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
+    la_params = self.sim.modules['Labour'].current_parameters
 
     # If 'number' is passed as an optional argument then a predetermined number of consumables will be requested
     if 'number' in info.keys():  # todo: will only work if the 'core' package contains only 1 IC
@@ -56,26 +51,44 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
         opt_cons = []
 
     # Determine availability via the health system
-    available = hsi_event.get_consumables(item_codes=core_cons,
-                                          optional_item_codes=opt_cons)
 
-    # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
-    analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
-                     'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
-                     'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
-                     'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
-                     'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
-                     'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
+    # todo: should i link this again below
+    if not ps_params['ps_analysis_in_progress'] and not la_params['la_analysis_in_progress']:
+        available = hsi_event.get_consumables(item_codes=core_cons,
+                                              optional_item_codes=opt_cons)
 
-    # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
-    # the simulation date is greater than the predetermined analysis date, then a random draw against a probability of
-    # consumable availability is used
-    for k in analysis_dict:
-        if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]] and (self.sim.date > params['analysis_date']):
-            if self.rng.random_sample() < params[analysis_dict[k][1]]:
-                available = True
-            else:
-                available = False
+        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
+            mni[hsi_event.target]['cons_not_avail'] = True
+
+        return available
+
+    else:
+        available = hsi_event.get_consumables(item_codes=core_cons, optional_item_codes=opt_cons)
+
+        # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
+        # conducted
+        if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
+            params = self.sim.modules['PregnancySupervisor'].current_parameters
+        else:
+            params = self.sim.modules['Labour'].current_parameters
+
+        # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
+        analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+                         'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
+
+        # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
+        # the simulation date is greater than the predetermined analysis date, then a random draw against a probability
+        # of consumable availability is used
+        for k in analysis_dict:
+            if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
+                if self.rng.random_sample() < params[analysis_dict[k][1]]:
+                    available = True
+                else:
+                    available = False
 
     # If the consumable is not available this is stored in the MNI dictionary
     if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
@@ -94,6 +107,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     :return: BOOL
     """
     params = self.current_parameters
+    la_params = self.sim.modules['Labour'].current_parameters
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     def see_if_sf_will_run():
@@ -118,25 +132,29 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
 
         return False
 
-    # Define HSIs and analysis parameters of interest
-    analysis_dict = {'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
-                     'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
-                     'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
-                     'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
-                     'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
+    if not la_params['la_analysis_in_progress']:
+        return see_if_sf_will_run()
 
-    for k in analysis_dict:
-        # If analysis is running, the analysis date has passed and an appropriate HSI has called this function then
-        # probability of intervention delivery is deterined by an analysis parameter
-        if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]] and (self.sim.date > params['analysis_date']):
-            if self.rng.random_sample() < params[analysis_dict[k][1]]:
-                return True
+    else:
+        # Define HSIs and analysis parameters of interest
+        analysis_dict = {'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+                         'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
-            # If the event wont run it is stored in the HSI for the relevant woman
-            elif hsi_event.target in mni:
-                barrier = self.rng.choice(['comp_not_avail', 'hcw_not_avail'])
-                mni[hsi_event.target][barrier] = True
-                return False
+        for k in analysis_dict:
+            # If analysis is running, the analysis date has passed and an appropriate HSI has called this function then
+            # probability of intervention delivery is determined by an analysis parameter
+            if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
+                if self.rng.random_sample() < params[analysis_dict[k][1]]:
+                    return True
+
+                # If the event wont run it is stored in the HSI for the relevant woman
+                elif hsi_event.target in mni:
+                    barrier = self.rng.choice(['comp_not_avail', 'hcw_not_avail'])
+                    mni[hsi_event.target][barrier] = True
+                    return False
 
     return see_if_sf_will_run()
 
