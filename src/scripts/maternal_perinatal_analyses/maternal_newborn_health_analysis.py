@@ -35,8 +35,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     # Save the file path
     plot_destination_folder = path
 
-    intervention_years = list(range(2010, 2025))
-
     # ========================================= BIRTHs PER SCENARIO ==================================================
     # Access birth data for each scenario (used as a denominator in some parts of the script)
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
@@ -499,9 +497,10 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Number of Women Receiving ART per Year Per Scenario',
             plot_destination_folder, 'hiv_women_art')
 
+    """
     if service_of_interest != 'sba':
         def get_depression_info_in_pregnancy(folder):
-            # todo: when depression logged...
+            # todo: when depression logged...#
 
             # Diagnosis of depression in ever depressed people
             depression__diag_dates = extract_results(
@@ -510,7 +509,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                 key="summary_stats",
                 column='p_ever_diagnosed_depression_if_ever_depressed',
                 index='date',
-                do_scaling=True
+               do_scaling=True
             )
             depression__diag_dates = extract_results(
                 folder,
@@ -535,3 +534,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
 
         # todo: depression
+
+        """
+

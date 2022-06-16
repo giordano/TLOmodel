@@ -92,9 +92,7 @@ class TestScenario(BaseScenario):
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
-                                    'anc_availability_probability': 0.9},
-            'CareOfWomenDuringPregnancy': {'squeeze_factor_threshold_anc': 10_000}
-        }
+                                    'anc_availability_probability': 0.9}}
 
 
 if __name__ == '__main__':

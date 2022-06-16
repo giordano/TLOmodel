@@ -2131,6 +2131,9 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 params['ps_analysis_in_progress'] = True
 
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
                 target = params['anc_availability_odds']
                 params['odds_early_init_anc4'] = 1
                 mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
