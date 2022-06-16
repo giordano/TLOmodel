@@ -232,13 +232,14 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                                                       intervention_years) for k in results_folders}
 
     def get_cs_indication_counts(folder):
-        cs_results = extract_results(
+        cs_df = extract_results(
            folder,
            module="tlo.methods.labour",
            key="cs_indications",
            custom_generate_series=(
                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'indication'])['id'].count()),
            do_scaling=True)
+        cs_results = cs_df.fillna(0)
 
         cs_id_counts = dict()
         for indication in ['ol', 'ur']:  # 'spe_ec', 'other', 'previous_scar'
@@ -270,9 +271,10 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                 iv = ints
 
             mean_met_need = [(x / y) * 100 for x, y in zip(iv[treatment][0], crude_comps[comp][0])]
-            lq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][1], crude_comps[comp][1])]
-            uq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][2], crude_comps[comp][2])]
-            met_need_dict.update({treatment: [mean_met_need, lq_mn, uq_mn]})
+            # Quantiles not used due to lots of 0 values for some treatments
+            # lq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][1], crude_comps[comp][1])]
+            # uq_mn = [(x / y) * 100 for x, y in zip(iv[treatment][2], crude_comps[comp][2])]
+            met_need_dict.update({treatment: mean_met_need})
 
         met_need_dict = dict()
         comp_and_treatment = {'ectopic': 'ep_case_mang',
@@ -314,8 +316,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
     for t in treatments:
         fig, ax = plt.subplots()
         for k, colour in zip(met_need, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
-            ax.plot(intervention_years, met_need[k][t][0], label=k, color=colour)
-            ax.fill_between(intervention_years, met_need[k][t][1], met_need[k][t][2], color=colour, alpha=.1)
+            ax.plot(intervention_years, met_need[k][t], label=k, color=colour)
 
         plt.ylabel('% of Cases Receiving Treatment')
         plt.xlabel('Year')

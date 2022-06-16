@@ -10,22 +10,21 @@ from scripts.maternal_perinatal_analyses.maternal_newborn_health_analysis import
     run_maternal_newborn_health_analysis
 
 
-run_maternal_newborn_health_analysis(scenario_file_dict={'Status Quo': 'baseline_anc_scenario',
-                                                         'Increased Coverage and Quality': 'anc_plus_cons_and_qual'},
-                                     outputspath='./outputs/sejjj49@ucl.ac.uk/',
-                                    intervention_years=list(range(2010, 2021)),
-                                    service_of_interest='anc',
-                                     show_all_results=False)
+#run_maternal_newborn_health_analysis(scenario_file_dict={'Status Quo': 'baseline_anc_scenario',
+#                                                         'Increased Coverage and Quality': 'anc_plus_cons_and_qual'},
+#                                     outputspath='./outputs/sejjj49@ucl.ac.uk/',
+#                                    intervention_years=list(range(2010, 2021)),
+#                                    service_of_interest='anc',
+#                                     show_all_results=False)
 
-met_need_and_contributing_factors_for_deaths(scenario_file_dict={'Status Quo': 'baseline_anc_scenario',
-                                                         'Increased Coverage and Quality': 'anc_plus_cons_and_qual'},
+met_need_and_contributing_factors_for_deaths(scenario_file_dict={'Status Quo': 'standard_mph_calibration'},
                                      outputspath='./outputs/sejjj49@ucl.ac.uk/',
                                      intervention_years=list(range(2010, 2021)))
 
-compare_key_rates_between_multiple_scenarios(scenario_file_dict={'Status Quo': 'baseline_anc_scenario',
-                                                                 'Increased Coverage and Quality':
-                                                                     'anc_plus_cons_and_qual'},
-                                              service_of_interest='anc',
-                                              outputspath='./outputs/sejjj49@ucl.ac.uk/',
-                                              intervention_years=list(range(2010, 2021)))
+#compare_key_rates_between_multiple_scenarios(scenario_file_dict={'Status Quo': 'baseline_anc_scenario',
+#                                                                 'Increased Coverage and Quality':
+#                                                                     'anc_plus_cons_and_qual'},
+#                                              service_of_interest='anc',
+#                                              outputspath='./outputs/sejjj49@ucl.ac.uk/',
+#                                              intervention_years=list(range(2010, 2021)))
 

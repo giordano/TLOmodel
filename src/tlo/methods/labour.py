@@ -3193,18 +3193,19 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             # further checks and surgical repair is assume to have occurred during their caesarean surgery
             if mni[person_id]['mode_of_delivery'] == 'caesarean_section':
 
+                # log treatment is delivered
+                pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
+
                 # Determine if the uterus can be repaired
                 treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
                 if treatment_success_ur:
                     df.at[person_id, 'la_uterine_rupture_treatment'] = True
-                    pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
                 # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
                 # risk of death from uterine rupture but leads to permanent infertility in the simulation
                 else:
                     df.at[person_id, 'la_has_had_hysterectomy'] = True
-                    pregnancy_helper_functions.log_met_need(self.module, 'ur_surg', self)
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding

@@ -2614,20 +2614,21 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_core',
             optional='post_abortion_care_optional')
 
-        # Check HCW availability
+        # Check HCW availability to deliver surgical removal of retained products
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='retained_prod',
                                                                                    hsi_event=self)
 
         # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
-        # consumables plus additional consumables required for management of her specific complication
+        # consumables (misoprostol) or a HCW who can conduct MVA/DC (we dont model equipment) and additional
+        # consumables for management of her specific complication
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
 
             cons_for_sepsis_pac = pregnancy_helper_functions.return_cons_avail(
                 self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_sepsis_core',
                 optional='post_abortion_care_sepsis_optional')
 
-            if cons_for_sepsis_pac and baseline_cons and sf_check:
+            if cons_for_sepsis_pac and (baseline_cons or sf_check):
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
@@ -2640,7 +2641,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                 self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_shock',
                 optional='post_abortion_care_shock_optional')
 
-            if cons_for_haemorrhage and cons_for_shock and baseline_cons and sf_check:
+            if cons_for_haemorrhage and cons_for_shock and (baseline_cons or sf_check):
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'injury', first=True):
@@ -2648,10 +2649,10 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                 self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_shock',
                 optional='post_abortion_care_shock_optional')
 
-            if cons_for_shock and baseline_cons and sf_check:
+            if cons_for_shock and (baseline_cons or sf_check):
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
-        elif abortion_complications.has_any([person_id], 'other', first=True) and baseline_cons:
+        elif abortion_complications.has_any([person_id], 'other', first=True) and (baseline_cons or sf_check):
             df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         if df.at[person_id, 'ac_received_post_abortion_care']:
