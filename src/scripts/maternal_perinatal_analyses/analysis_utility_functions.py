@@ -394,7 +394,7 @@ def return_birth_data_from_multiple_scenarios(results_folders, intervention_year
         """
 
         def extract_births(folder):
-            births_results = extract_results(
+            br = extract_results(
                 folder,
                 module="tlo.methods.demography",
                 key="on_birth",
@@ -402,6 +402,7 @@ def return_birth_data_from_multiple_scenarios(results_folders, intervention_year
                     lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
                 do_scaling=True
             )
+            births_results = br.fillna(0)
             total_births_per_year = get_mean_and_quants(births_results, intervention_years)
             return total_births_per_year
 
@@ -413,7 +414,7 @@ def return_pregnancy_data_from_multiple_scenarios(results_folders, intervention_
     """
 
     def extract_pregnancies(folder):
-        preg_results = extract_results(
+        pr = extract_results(
             folder,
             module="tlo.methods.contraception",
             key="pregnancy",
@@ -421,6 +422,7 @@ def return_pregnancy_data_from_multiple_scenarios(results_folders, intervention_
                 lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=True
         )
+        preg_results = pr.fillna(0)
         total_pregnancies_per_year = get_mean_and_quants(preg_results, intervention_years)
         return total_pregnancies_per_year
 

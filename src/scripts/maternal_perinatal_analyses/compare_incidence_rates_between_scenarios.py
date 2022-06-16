@@ -38,7 +38,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     def get_neonatal_comp_dfs(results_folder):
         nb_comp_dfs = dict()
-        nb_comp_dfs['newborn_outcomes'] = extract_results(
+        nb_df = extract_results(
                 results_folder,
                 module="tlo.methods.newborn_outcomes",
                 key="newborn_complication",
@@ -46,8 +46,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                     lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
                 do_scaling=True
             )
+        nb_comp_dfs['newborn_outcomes'] = nb_df.fillna(0)
 
-        nb_comp_dfs['newborn_postnatal'] = extract_results(
+        nb_pn_df = extract_results(
                 results_folder,
                 module="tlo.methods.postnatal_supervisor",
                 key="newborn_complication",
@@ -55,14 +56,15 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                     lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
                 do_scaling=True
             )
+        nb_comp_dfs['newborn_postnatal'] = nb_pn_df.fillna(0)
 
         return nb_comp_dfs
 
     neo_comp_dfs = {k: get_neonatal_comp_dfs(results_folders[k]) for k in results_folders}
 
     # ------------------------------------ PREGNANCIES AND BIRTHS ----------------------------------------------------
-    preg_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
-                                                                                     intervention_years)
+    preg_dict = analysis_utility_functions.return_pregnancy_data_from_multiple_scenarios(results_folders,
+                                                                                         intervention_years)
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        intervention_years)
 
@@ -87,7 +89,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         sa_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
             comps_df['pregnancy_supervisor'], 'spontaneous_abortion', intervention_years)[0]
 
-        an_stillbirth_results = extract_results(
+        ansb_df = extract_results(
             results_folder,
             module="tlo.methods.pregnancy_supervisor",
             key="antenatal_stillbirth",
@@ -95,6 +97,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                 lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=True
         )
+        an_stillbirth_results = ansb_df.fillna(0)
+
         an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, intervention_years)
 
         total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in
@@ -108,7 +112,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                   results_folders}
 
     def get_twin_data(results_folder, total_births_per_year):
-        twins_results = extract_results(
+        t_df = extract_results(
             results_folder,
             module="tlo.methods.newborn_outcomes",
             key="twin_birth",
@@ -116,6 +120,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                 lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=True
         )
+        twins_results = t_df.fillna(0)
 
         twin_data = analysis_utility_functions.get_mean_and_quants(twins_results, intervention_years)
 
@@ -597,7 +602,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     def get_death_data(results_folder, total_births):
 
-        direct_death_results = extract_results(
+        dd_df = extract_results(
             results_folder,
             module="tlo.methods.demography",
             key="death",
@@ -606,6 +611,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
             ),
             do_scaling=True
         )
+        direct_death_results = dd_df.fillna(0)
         mmr_dict = dict()
         crude_deaths = dict()
 
@@ -717,7 +723,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     def get_neo_death_data(results_folder, births):
 
-        direct_death_results = extract_results(
+        dd_df = extract_results(
             results_folder,
             module="tlo.methods.demography",
             key="death",
@@ -726,6 +732,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
             ),
             do_scaling=True
         )
+        direct_death_results = dd_df.fillna(0)
 
         nmr_dict = dict()
 

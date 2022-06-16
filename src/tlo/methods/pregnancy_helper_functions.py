@@ -90,11 +90,11 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
                 else:
                     available = False
 
-    # If the consumable is not available this is stored in the MNI dictionary
-    if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
-        mni[hsi_event.target]['cons_not_avail'] = True
+        # If the consumable is not available this is stored in the MNI dictionary
+        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
+            mni[hsi_event.target]['cons_not_avail'] = True
 
-    return available
+        return available
 
 
 def check_emonc_signal_function_will_run(self, sf, hsi_event):
@@ -156,7 +156,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
                     mni[hsi_event.target][barrier] = True
                     return False
 
-    return see_if_sf_will_run()
+        return see_if_sf_will_run()
 
 
 def log_met_need(self, intervention, hsi):

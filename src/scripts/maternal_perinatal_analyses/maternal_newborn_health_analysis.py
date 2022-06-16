@@ -336,6 +336,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         # todo: what else? (proportion of infected women receiving iptp)
         def get_malaria_incidence_in_pregnancy(folder):
             # Number of clinical episodes in pregnant women per year
+
             preg_clin_counter_dates = extract_results(
                 folder,
                 module="tlo.methods.malaria",
@@ -403,7 +404,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                 key="tb_treatment",
                 column='tbTreatmentCoverage',
                 index='date',
-                do_scaling=True
             )
 
             years = tb_treatment_dates.index.year
@@ -431,13 +431,13 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     if (service_of_interest != 'sba') or show_all_results:
         def get_hiv_information(folder):
             # Proportion of adult females tested in the last year
+
             hiv_tests_dates = extract_results(
                 folder,
                 module="tlo.methods.hiv",
                 key="hiv_program_coverage",
                 column='prop_tested_adult_female',
                 index='date',
-                do_scaling=True
             )
 
             years = hiv_tests_dates.index.year
@@ -451,7 +451,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                 key="hiv_program_coverage",
                 column='per_capita_testing_rate',
                 index='date',
-                do_scaling=True
             )
 
             years = hiv_tests_rate_dates.index.year
