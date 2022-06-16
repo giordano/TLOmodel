@@ -29,20 +29,21 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 444
+        self.seed = 555
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2016, 1, 1)
-        self.pop_size = 30_000
+        self.end_date = Date(2026, 1, 1)
+        self.pop_size = 90_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc4_scenario', 'directory': './outputs',
-            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            'filename': 'intervention90k', 'directory': './outputs',
+            "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
