@@ -21,6 +21,7 @@ from tlo.methods import (
     stunting,
     symptommanager,
     wasting,
+    tb,
 )
 
 from tlo.scenario import BaseScenario
