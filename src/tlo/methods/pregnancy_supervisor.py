@@ -2160,7 +2160,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                                   'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
                                   'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
                                   'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
-                    params[parameter] = params['anc_availability_probability']
+                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
+                        params['anc_availability_probability']
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
