@@ -29,28 +29,33 @@ from tlo.scenario import BaseScenario
 class IncreasedPNCScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 246
+        self.seed = 555
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 60_000
+        self.end_date = Date(2026, 1, 1)
+        self.pop_size = 90_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_pnc_coverage_60k', 'directory': './outputs',
-            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            'filename': 'increased_pnc_90k', 'directory': './outputs',
+            "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
+                "tlo.methods.labour.detail": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
             }
         }
 
@@ -74,6 +79,7 @@ class IncreasedPNCScenario(BaseScenario):
                 # dependencies)
                 alri.Alri(resourcefilepath=self.resources),
                 hiv.Hiv(resourcefilepath=self.resources),
+                tb.Tb(resourcefilepath=self.resources),
                 malaria.Malaria(resourcefilepath=self.resources),
                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
                 depression.Depression(resourcefilepath=self.resources),
