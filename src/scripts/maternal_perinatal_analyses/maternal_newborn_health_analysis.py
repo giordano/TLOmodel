@@ -260,10 +260,21 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             intervention_years, dalys_data, dict_key, axis, title, plot_destination_folder, save_name)
 
     # ========================================= DIFFERENCE IN OUTCOMES ===============================================
-    for output, data in zip(['direct_mmr', 'sbr', 'nmr'], [death_data, sbr_data, death_data]):
+    if service_of_interest == 'pnc':
+        output_list = ['direct_mmr', 'nmr']
+        data_list = [death_data, death_data]
+    else:
+        output_list = ['direct_mmr', 'sbr', 'nmr']
+        data_list = [death_data, sbr_data, death_data]
+
+    keys = results_folders.keys()
+    keys_list = list(keys)
+    keys_list.remove('Status Quo')
+
+    for output, data in zip(output_list, data_list):
         diff_data = {k: analysis_utility_functions.get_differences_between_two_outcomes(
             data['Status Quo'][output], data[k][output]) for k
-            in ['Increased Coverage and Quality']}  # todo: not ideal to have to change key names
+            in keys_list}  # todo: not ideal to have to change key names
 
         N = len(intervention_years)
         ind = np.arange(N)
@@ -286,42 +297,27 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plt.show()
 
     # ========================================= HEALTH SYSTEM OUTCOMES ================================================
-    if service_of_interest != 'sba':
+    if service_of_interest == 'anc':
 
-        def get_hsi_counts_from_summary_logger(folder, intervention_years):
-            # Todo think this is more interesting as difference from baseline i.e. number of additional HSIs required
-            #  or precentage change
+        def get_hsi_counts_from_cowdp_logger(folder, intervention_years):
 
-            TREATMENT_ID = 'AntenatalCare_Outpatient'
+            def get_counts_of_hsi_by_treatment_id(_df):
+                new_d = _df.assign(year=_df['date'].dt.year).drop(['date'], axis=1).set_index(['year'])
+                new_d['total'] = new_d[list(new_d.columns)].sum(axis=1)
+                return new_d['total']
+
             hsi = extract_results(
                 folder,
-                module="tlo.methods.healthsystem.summary",
-                key="HSI_Event",
-                custom_generate_series=(
-                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
-                        year=df['date'].dt.year).groupby(['year'])[TREATMENT_ID].sum()),
+                module="tlo.methods.care_of_women_during_pregnancy",
+                key="anc_visits_which_ran",
+                custom_generate_series=get_counts_of_hsi_by_treatment_id,
                 do_scaling=True)
-
-            #def get_counts_of_hsi_by_treatment_id(_df):
-            #    return _df \
-            #        .loc[pd.to_datetime(_df['date']).between(2010, 2025), 'TREATMENT_ID'] \
-            #        .apply(pd.Series) \
-            #        .sum() \
-            #        .astype(int)
-
-            #counts_of_hsi_by_treatment_id = extract_results(
-            #    folder,
-            #    module='tlo.methods.healthsystem.summary',
-            #    key='HSI_Event',
-            #    custom_generate_series=get_counts_of_hsi_by_treatment_id,
-            #    do_scaling=True
-            #).fillna(0.0).sort_index()
 
             hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
 
             return hsi_data
 
-        hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
+        hs_data = {k: get_hsi_counts_from_cowdp_logger(results_folders[k], intervention_years) for k in
                    results_folders}
 
         # Better as a rate?
@@ -329,6 +325,49 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             intervention_years, hs_data, 'Crude Number',
             'Total Number of Antenatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_visits')
+
+    if service_of_interest == 'pnc':
+
+        def get_hsi_counts_from_summary_logger(folder, intervention_years):
+            hsi = extract_results(
+                folder,
+                module="tlo.methods.healthsystem.summary",
+                key="HSI_Event",
+                custom_generate_series=(
+                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
+                do_scaling=True)
+
+            hsi_n = extract_results(
+                folder,
+                module="tlo.methods.healthsystem.summary",
+                key="HSI_Event",
+                custom_generate_series=(
+                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
+                do_scaling=True)
+
+            hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
+            hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, intervention_years)
+
+            return {'mat': hsi_data,
+                    'neo': hsi_data_neo}
+
+        hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
+                   results_folders}
+
+        # Better as a rate?
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, hs_data, 'mat',
+            'Crude Number',
+            'Total Number of Maternal Postnatal Care Visits per Year Per Scenario',
+            plot_destination_folder, f'{service_of_interest}_mat_visits')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, hs_data, 'neo',
+            'Crude Number',
+            'Total Number of Neonatal Postnatal Care Visits per Year Per Scenario',
+            plot_destination_folder, f'{service_of_interest}_neo_visits')
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
     # ------------------------------------------------ MALARIA ------------------------------------------------------
@@ -496,43 +535,70 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Number of Women Receiving ART per Year Per Scenario',
             plot_destination_folder, 'hiv_women_art')
 
-    """
     if service_of_interest != 'sba':
-        def get_depression_info_in_pregnancy(folder):
-            # todo: when depression logged...#
+        def get_depression_info_in_pregnancy(folder, intervention_years):
 
             # Diagnosis of depression in ever depressed people
-            depression__diag_dates = extract_results(
+            diag_prop = extract_results(
                 folder,
                 module="tlo.methods.depression",
                 key="summary_stats",
                 column='p_ever_diagnosed_depression_if_ever_depressed',
                 index='date',
-               do_scaling=True
             )
-            depression__diag_dates = extract_results(
+            diag_reindexed = diag_prop.set_index(diag_prop.index.year)
+            diag_data = diag_reindexed.groupby(diag_reindexed.index).mean()
+            diag_final = analysis_utility_functions.get_mean_and_quants(diag_data, intervention_years)
+
+            anti_depress = extract_results(
                 folder,
                 module="tlo.methods.depression",
                 key="summary_stats",
-                column='prop_antidepr_if_ever_depr',  # todo: consider other logging
+                column='prop_antidepr_if_ever_depr',
                 index='date',
-                do_scaling=True
             )
-            depression__diag_dates = extract_results(
+            anti_depress_reindexed = anti_depress.set_index(anti_depress.index.year)
+            ad_data = anti_depress_reindexed.groupby(anti_depress_reindexed.index).mean()
+            ad_final = analysis_utility_functions.get_mean_and_quants(ad_data, intervention_years)
+
+            tt = extract_results(
                 folder,
                 module="tlo.methods.depression",
                 key="summary_stats",
                 column='prop_ever_talk_ther_if_ever_depr',
                 index='date',
-                do_scaling=True
             )
 
-            return
+            tt_reindexed = tt.set_index(tt.index.year)
+            tt_data = tt_reindexed.groupby(tt_reindexed.index).mean()
+            tt_final = analysis_utility_functions.get_mean_and_quants(tt_data, intervention_years)
 
-        depression_data = {k: get_depression_info_in_pregnancy(results_folders[k]) for k in results_folders}
+            return {'diag': diag_final,
+                    'ad': ad_final,
+                    'tt': tt_final}
 
+        depression_data = {k: get_depression_info_in_pregnancy(results_folders[k], intervention_years) for k in
+                           results_folders}
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, depression_data, 'diag',
+            'Proportion (%)',
+            'Proportion of Ever Depressed Individuals Diagnosed with Depression',
+            plot_destination_folder, 'depression_diag')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, depression_data, 'ad',
+            'Proportion (%)',
+            'Proportion of Ever Depressed Individuals Started on Antidepressants',
+            plot_destination_folder, 'depression_ad')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, depression_data, 'tt',
+            'Proportion (%)',
+            'Proportion of Ever Depressed Individuals Started on Talking Therapy',
+            plot_destination_folder, 'depression_tt')
 
         # todo: depression
 
-        """
+
 

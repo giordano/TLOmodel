@@ -10,16 +10,18 @@ from tlo.analysis.utils import (
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
 
 
-def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath, intervention_years):
+def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath, intervention_years,
+                                                 service_of_interest):
     """
     """
 
     # Find results folder (most recent run generated using that scenario_filename)
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
 
-    path = f'{outputspath}/met_need_{results_folders["Status Quo"].name}'
+    path = f'{outputspath}/met_need_{results_folders["Status Quo"].name}_{service_of_interest}'
     if not os.path.isdir(path):
-        os.makedirs(f'{outputspath}/met_need_{results_folders["Status Quo"].name}')
+        os.makedirs(
+            f'{outputspath}/met_need_{results_folders["Status Quo"].name}_{service_of_interest}')
 
     plot_destination_folder = path
 
