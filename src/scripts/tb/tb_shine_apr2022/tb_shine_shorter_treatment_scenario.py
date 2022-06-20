@@ -27,7 +27,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
         self.end_date = Date(2036, 1, 1)
         self.pop_size = 175_000
         self.number_of_draws = 2
-        self.runs_per_draw = 5
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
@@ -38,6 +38,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
                 'tlo.methods.hiv': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
+                'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
             }

@@ -2390,14 +2390,14 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         treatment_regimen = self.select_treatment(person_id)
         # todo remove
-        logger.info(
-            key="tb_debug",
-            description="debug",
-            data={
-                "person": person_id,
-                "treatment": treatment_regimen,
-            },
-        )
+        # logger.info(
+        #     key="tb_debug",
+        #     description="debug",
+        #     data={
+        #         "person": person_id,
+        #         "treatment": treatment_regimen,
+        #     },
+        # )
 
         treatment_available = self.get_consumables(
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]

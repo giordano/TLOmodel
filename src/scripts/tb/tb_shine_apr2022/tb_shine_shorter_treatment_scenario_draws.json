@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py",
-  "scenario_seed": 4214,
-  "runs_per_draw": 5,
+  "scenario_seed": 4469,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1668614709,
+      "draw_seed": 337008749,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 451249184,
+      "draw_seed": 1627153939,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
