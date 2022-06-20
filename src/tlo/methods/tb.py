@@ -407,18 +407,6 @@ class Tb(Module):
             Types.DATE,
             "date from which different scenarios are run"
         ),
-        "scenario_4_dx_test": Parameter(
-            Types.INT,
-            "diagnostic test selected for reinvestment of scenario 4 cost savings"
-        ),
-        "scenario_4_dx_test_new_availability": Parameter(
-            Types.INT,
-            "new availability of selected diagnostic test"
-        ),
-        "scenario_4_dx_test_date": Parameter(
-            Types.DATE,
-            "date from which reinvestment of scenario 4 cost savings begins"
-        ),
         "first_line_test": Parameter(
             Types.STRING,
             "name of first test to be used for TB diagnosis"
@@ -1016,7 +1004,6 @@ class Tb(Module):
 
         # 2) Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
-        sim.schedule_event(TbMonthlyLoggingEvent(self), sim.date)
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
@@ -1369,15 +1356,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
-        if (scenario == 4) & (self.sim.date >= self.module.parameters["scenario_4_dx_test_date"]):
-            # increase the availability of selected diagnostic test
 
-            item_code = self.sim.modules["Tb"].parameters["scenario_4_dx_test"]
-            # item_code_availability = self.sim.modules["HealthSystem"].override_availability_of_consumables({item_code: })
-            item_code_new_availability = self.sim.modules["Tb"].parameters["scenario_4_dx_test_new_availability"]
 
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({
-                item_code: item_code_new_availability})
+
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2510,9 +2491,10 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if (self.module.parameters["scenario"] == 4) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
-            & ~(person["tb_smear"]) \
-            & ~person["tb_ever_treated"] \
-            & ~person["tb_diagnosed_mdr"]:
+            & (not person["tb_smear"]) \
+            & (not person["tb_ever_treated"]) \
+            & (not person["tb_diagnosed_mdr"]) \
+            & (not person["is_pregnant"]):
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2857,7 +2839,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
-            ]
+                ]
         )
 
         # number of new active cases in HIV+ children
@@ -2967,7 +2949,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_strain == "mdr")
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         if new_mdr_cases:
@@ -2981,7 +2963,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.tb_strain == "mdr")
                 & (df.age_years <= 16)
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         if new_mdr_cases_child:
@@ -3018,7 +3000,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod
@@ -3034,7 +3016,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years <= 16)
-            ]
+                ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod for children aged 0-16 years
@@ -3056,7 +3038,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ipt_coverage = new_tb_ipt / len(df[df.is_alive])
         else:
             ipt_coverage = 0
-
 
         logger.info(
             key="tb_treatment",
@@ -3087,7 +3068,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.age_years <= 16)
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & df.tb_treatment_failure
-            ]
+                ]
         )
 
         logger.info(
@@ -3099,18 +3080,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             }
         )
 
-
-class TbMonthlyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """produce some outputs to check"""
-        # run this event every month
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        # get some summary statistics
-        df = population.props
-        now = self.sim.date
 
         # ------------------------------------ TREATMENT ------------------------------------
 
@@ -3130,7 +3099,7 @@ class TbMonthlyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years <= 16)
-            ]
+                ]
         )
 
         # (3) number of children initiated on standard treatment
@@ -3198,7 +3167,7 @@ class TbMonthlyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & ~df.tb_smear
                 & ~df.tb_ever_treated
                 & ~df.tb_diagnosed_mdr
-            ]
+                ]
         )
 
         # (2) proportion of children diagnosed with active tb who are eligible for shorter treatment
@@ -3209,8 +3178,8 @@ class TbMonthlyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         logger.info(
-            key="tb_treatment_monthly_stats",
-            description="TB treatment coverage (monthly stats)",
+            key="tb_treatment_breakdown",
+            description="Breakdown of each type of TB treatment used",
             data={
                 "tbNewTreatmentAdult": new_tb_tx_adult,
                 "tbNewTreatmentChild": new_tb_tx_child,
