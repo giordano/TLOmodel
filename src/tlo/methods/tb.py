@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from collections import defaultdict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -869,7 +870,7 @@ class Tb(Module):
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
                                           (
-                                                  active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
+                                              active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
                                           0] / 100
         current_active_testing_rate = current_active_testing_rate * p["adjusted_active_testing_rate"]
         current_active_testing_rate = current_active_testing_rate / 12  # adjusted for monthly poll
@@ -1004,6 +1005,7 @@ class Tb(Module):
 
         # 2) Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbTreatmentLoggingEvent(self), sim.date)
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
@@ -1355,10 +1357,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # increase coverage of IPT
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
-
-
-
-
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2945,113 +2943,113 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ MDR ------------------------------------
         # number new mdr tb cases
-        new_mdr_cases = len(
-            df[
-                (df.tb_strain == "mdr")
-                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
+        # new_mdr_cases = len(
+        #     df[
+        #         (df.tb_strain == "mdr")
+        #         & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
 
-        if new_mdr_cases:
-            prop_mdr = new_mdr_cases / new_tb_cases
-        else:
-            prop_mdr = 0
+        # if new_mdr_cases:
+        #     prop_mdr = new_mdr_cases / new_tb_cases
+        # else:
+        #     prop_mdr = 0
 
         # number new mdr cases (0 - 16 years)
-        new_mdr_cases_child = len(
-            df[
-                (df.tb_strain == "mdr")
-                & (df.age_years <= 16)
-                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
+        # new_mdr_cases_child = len(
+        #     df[
+        #         (df.tb_strain == "mdr")
+        #         & (df.age_years <= 16)
+        #         & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
 
-        if new_mdr_cases_child:
-            prop_mdr_child = new_mdr_cases_child / new_tb_cases_child
-        else:
-            prop_mdr_child = 0
+        # if new_mdr_cases_child:
+        #     prop_mdr_child = new_mdr_cases_child / new_tb_cases_child
+        # else:
+        #     prop_mdr_child = 0
 
-        logger.info(
-            key="tb_mdr",
-            description="Incidence of new active MDR cases and the proportion of TB cases that are MDR",
-            data={
-                "tbNewActiveMdrCases": new_mdr_cases,
-                "tbPropActiveCasesMdr": prop_mdr,
-                "tbNewActiveMdrCasesChild": new_mdr_cases_child,
-                "tbPropActiveCasesMdrChild": prop_mdr_child,
-            },
-        )
+        # logger.info(
+        #     key="tb_mdr",
+        #     description="Incidence of new active MDR cases and the proportion of TB cases that are MDR",
+        #     data={
+        #         "tbNewActiveMdrCases": new_mdr_cases,
+        #         "tbPropActiveCasesMdr": prop_mdr,
+        #         "tbNewActiveMdrCasesChild": new_mdr_cases_child,
+        #         "tbPropActiveCasesMdrChild": prop_mdr_child,
+        #     },
+        # )
 
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
-        new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
-        )
+        # new_tb_diagnosis = len(
+        #     df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
+        # )
 
         # number diagnoses (new, relapse, reinfection) in last timeperiod for children aged 0-16 years
-        new_tb_diagnosis_child = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-               & (df.age_years <= 16)]
-        )
+        # new_tb_diagnosis_child = len(
+        #     df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
+        #        & (df.age_years <= 16)]
+        # )
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
-        new_tb_tx = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
+        # new_tb_tx = len(
+        #     df[
+        #         (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+        #         & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
 
         # treatment coverage: if became active and was treated in last timeperiod
-        if new_tb_cases:
-            tx_coverage = new_tb_tx / new_tb_cases
-            # assert tx_coverage <= 1
-        else:
-            tx_coverage = 0
+        # if new_tb_cases:
+        #     tx_coverage = new_tb_tx / new_tb_cases
+        #     # assert tx_coverage <= 1
+        # else:
+        #     tx_coverage = 0
 
         # number of tb cases who became active in last timeperiod and initiated treatment for children aged 0-16 years
-        new_tb_tx_child = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
-                ]
-        )
+        # new_tb_tx_child = len(
+        #     df[
+        #         (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+        #         & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+        #         & (df.age_years <= 16)
+        #         ]
+        # )
 
         # treatment coverage: if became active and was treated in last timeperiod for children aged 0-16 years
-        if new_tb_cases_child:
-            tx_coverage_child = new_tb_tx_child / new_tb_cases_child
-            # assert tx_coverage <= 1
-        else:
-            tx_coverage = 0
+        # if new_tb_cases_child:
+        #     tx_coverage_child = new_tb_tx_child / new_tb_cases_child
+        #     # assert tx_coverage <= 1
+        # else:
+        #     tx_coverage = 0
 
         # ipt coverage
-        new_tb_ipt = len(
-            df[
-                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
-            ]
-        )
+        # new_tb_ipt = len(
+        #     df[
+        #         (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
+        #     ]
+        # )
 
         # this will give ipt among whole population - not just eligible pop
-        if new_tb_ipt:
-            ipt_coverage = new_tb_ipt / len(df[df.is_alive])
-        else:
-            ipt_coverage = 0
+        # if new_tb_ipt:
+        #     ipt_coverage = new_tb_ipt / len(df[df.is_alive])
+        # else:
+        #     ipt_coverage = 0
 
-        logger.info(
-            key="tb_treatment",
-            description="TB treatment coverage",
-            data={
-                "tbNewDiagnosis": new_tb_diagnosis,
-                "tbNewDiagnosisChild": new_tb_diagnosis_child,
-                "tbNewTreatment": new_tb_tx,
-                "tbNewTreatmentChild": new_tb_tx_child,
-                "tbTreatmentCoverage": tx_coverage,
-                "tbTreatmentCoverageChild": tx_coverage_child,
-                "tbIptCoverage": ipt_coverage,
-            },
-        )
+        # logger.info(
+        #     key="tb_treatment",
+        #     description="TB treatment coverage",
+        #     data={
+        #         "tbNewDiagnosis": new_tb_diagnosis,
+        #         "tbNewDiagnosisChild": new_tb_diagnosis_child,
+        #         "tbNewTreatment": new_tb_tx,
+        #         "tbNewTreatmentChild": new_tb_tx_child,
+        #         "tbTreatmentCoverage": tx_coverage,
+        #         "tbTreatmentCoverageChild": tx_coverage_child,
+        #         "tbIptCoverage": ipt_coverage,
+        #     },
+        # )
 
         # ------------------------------------ TREATMENT FAILURE ------------------------------------
         # Number of people that failed treatment
@@ -3080,117 +3078,166 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             }
         )
 
+        # ---------------------------------- SCENARIO 4: SHINE TRIAL ---------------------------------
 
-        # ------------------------------------ TREATMENT ------------------------------------
+        # (1) Number of new active TB cases (0-16 years)
 
-        # ------------------ number of new patients initiated on treatment ------------------
-
-        # (1) number of adults initiated on treatment
-        new_tb_tx_adult = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years > 16)
-                ]
-        )
-        # (2) number of children initiated on treatment
-        new_tb_tx_child = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
-                ]
+        num_new_active_tb_cases_child = len(
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
         )
 
-        # (3) number of children initiated on standard treatment
-        new_tb_tx_child_standard = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
-                & (df.tb_treatment_regimen == "tb_tx_child")
-                ]
+        # (2) Number of new active TB cases eligible for shorter treatment
+
+        num_eligible_shorter_tx = len(
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)
+               & ~df.tb_smear
+               & ~df.tb_ever_treated
+               & ~df.tb_diagnosed_mdr
+               & ~df.is_pregnant]
         )
 
-        # (4) number of children initiated on shorter treatment
-        new_tb_tx_child_shorter = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
-                & (df.tb_treatment_regimen == "tb_tx_child_shorter")
-                ]
-        )
+        # (3) Proportion of new active TB cases eligible for shorter treatment
 
-        # (5) number of children initiated on re-treatment
-        new_tb_retx_child = len(
-            df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                & (df.age_years <= 16)
-                & (df.tb_treatment_regimen == "tb_retx_child")
-                ]
-        )
-
-        # ------------------------------- treatment coverage -------------------------------
-        # (1) number of new active tb diagnoses in children
-        new_tb_diagnosis_adult = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-               & (df.age_years > 16)]
-        )
-
-        # (2) treatment coverage in children
-        if new_tb_diagnosis_adult:
-            tx_coverage_adult = new_tb_tx_adult / new_tb_diagnosis_adult
+        if num_new_active_tb_cases_child:
+            prop_eligible_shorter_tx = num_eligible_shorter_tx / num_new_active_tb_cases_child
         else:
-            tx_coverage_adult = 0
+            prop_eligible_shorter_tx = 0
 
-        # (3) number of new active tb diagnoses in children
-        new_tb_diagnosis_child = len(
+        # (4) Number of new diagnosed TB cases (0 - 16 years)
+
+        num_new_diagnosed_tb_cases_child = len(
             df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
 
-        # (4) treatment coverage in children
-        if new_tb_diagnosis_child:
-            tx_coverage_child = new_tb_tx_child / new_tb_diagnosis_child
+        # (5) Proportion of new active TB cases diagnosed
+
+        if num_new_active_tb_cases_child:
+            prop_diagnosed_tb_cases_child = num_new_diagnosed_tb_cases_child / num_new_active_tb_cases_child
         else:
-            tx_coverage_child = 0
+            prop_diagnosed_tb_cases_child = 0
 
-        # -------------------------- shorter treatment eligibility --------------------------
+        # (6) Number of new diagnosed TB cases eligible for shorter treatment
 
-        # (1) number of children diagnosed with active tb who are eligible for shorter treatment
-        num_elig_child_tx_shorter = len(
+        num_eligible_shorter_tx_2 = len(
+            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)
+               & ~df.tb_smear
+               & ~df.tb_ever_treated
+               & ~df.tb_diagnosed_mdr
+               & ~df.is_pregnant]
+        )
+
+        # (7) Proportion of new diagnosed TB cases eligible for shorter treatment
+
+        if num_new_diagnosed_tb_cases_child:
+            prop_eligible_shorter_tx_2 = num_eligible_shorter_tx_2 / num_new_diagnosed_tb_cases_child
+        else:
+            prop_eligible_shorter_tx_2 = 0
+
+        # (8) Number of new treated TB cases (0 - 16 years)
+
+        num_new_tb_treated = len(
             df[
-                (df.age_years <= 16)
-                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-                & ~df.tb_smear
-                & ~df.tb_ever_treated
-                & ~df.tb_diagnosed_mdr
+                (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years <= 16)
                 ]
         )
 
-        # (2) proportion of children diagnosed with active tb who are eligible for shorter treatment
-        if new_tb_diagnosis_child:
-            prop_elig_child_tx_shorter = num_elig_child_tx_shorter / new_tb_diagnosis_child
-        else:
-            prop_elig_child_tx_shorter = 0
+        # (9) Treatment coverage
 
+        if num_new_diagnosed_tb_cases_child:
+            treatment_coverage = num_new_tb_treated / num_new_diagnosed_tb_cases_child
+        else:
+            treatment_coverage = 0
 
         logger.info(
-            key="tb_treatment_breakdown",
+            key="tb_shine_data",
             description="Breakdown of each type of TB treatment used",
             data={
-                "tbNewTreatmentAdult": new_tb_tx_adult,
-                "tbNewTreatmentChild": new_tb_tx_child,
-                "tbNewTreatmentChildStandard": new_tb_tx_child_standard,
-                "tbNewTreatmentChildShorter": new_tb_tx_child_shorter,
-                "tbNewTreatmentChildReTx": new_tb_retx_child,
-                "tbNewDiagnosisAdult": new_tb_diagnosis_adult,
-                "tbTreatmentCoverageAdult": tx_coverage_adult,
-                "tbNewDiagnosisChild": new_tb_diagnosis_child,
-                "tbTreatmentCoverageChild": tx_coverage_child,
-                "tbNumEligibleShorterTreatment": num_elig_child_tx_shorter,
-                "tbPropEligibleShorterTreatment": prop_elig_child_tx_shorter
+                "NewActiveTBCases": num_new_active_tb_cases_child,
+                "NewActiveTBCasesEligible": num_eligible_shorter_tx,
+                "PropActiveTBCasesEligible": prop_eligible_shorter_tx,
+                "NewDiagnosedTBCases": num_new_diagnosed_tb_cases_child,
+                "TBTestingCoverage": prop_diagnosed_tb_cases_child,
+                "NewDiagnosedTBCasesEligible": num_eligible_shorter_tx_2,
+                "PropDiagnosedTBCasesEligible": prop_eligible_shorter_tx_2,
+                "NewTreatedTBCases": num_new_tb_treated,
+                "TBTreatmentCoverage": treatment_coverage
             },
+        )
+
+class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """produce some outputs to check"""
+        # run this event every 4 months
+        self.repeat = 4
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+        now = self.sim.date
+
+        # (1) total number initiated on treatment
+
+        num_tb_tx = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))]
+        )
+
+        # (2) number initiated on child treatment
+
+        num_tb_tx_child = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_tx_child")]
+        )
+
+        # (3) number initiated on shorter child treatment
+
+        num_tb_tx_child_shorter = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_tx_child_shorter")]
+        )
+
+        # (4) number initiated on child retreatment
+
+        num_tb_retx_child = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_retx_child")]
+        )
+
+        # (5) number initiated on adult treatment
+
+        num_tb_tx_adult = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_tx_adult")]
+        )
+
+        # (6) number initiated on adult retreatment
+
+        num_tb_retx_adult = len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_retx_adult")]
+        )
+
+        # (6) number initiated on mdr treatment
+
+        num_mdr_tx= len(
+            df[(df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.tb_treatment_regimen == "tb_mdrtx")]
+        )
+
+        logger.info(
+            key="tb_treatment_regimen",
+            description="",
+            data={
+                "TBTxChild": num_tb_tx_child,
+                "TBTxChildShorter": num_tb_tx_child_shorter,
+                "TBRetxChild": num_tb_retx_child,
+                "TBTxAdult": num_tb_tx_adult,
+                "TBRetxAdult": num_tb_retx_adult,
+                "TBTxMdr": num_mdr_tx
+            }
         )
