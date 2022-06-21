@@ -39,6 +39,10 @@ class PregnancySupervisor(Module):
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
 
+        # todo: remove?
+        #self.ip_props = list()
+        self.ip_props = dict()
+
     INIT_DEPENDENCIES = {'Demography'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Malaria', 'CardioMetabolicDisorders', 'Hiv'}
@@ -490,6 +494,9 @@ class PregnancySupervisor(Module):
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+
+        # todo : ? remove
+        self.ip_props = {4: [], 8: [], 13: [], 17: [], 22: [], 27: [], 31: [], 35: [], 40: []}
 
         # self.current_parameters is used to store the module level parameters for this time period
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
@@ -1686,6 +1693,25 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.current_parameters
         mni = self.module.mother_and_newborn_info
 
+        # todo: ? remove ?
+        # pregnant = len(df.index[df.is_alive & df.is_pregnant])
+        #inpatients = len(df.index[df.is_alive & df.is_pregnant & df.hs_is_inpatient])
+        #if pregnant == 0:
+        #    ip_prop = 0
+        #else:
+        #    ip_prop = (inpatients/pregnant) * 100
+        #self.module.ip_props.append(ip_prop)
+
+        for ga in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
+            pregnant = len(df.index[df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == ga)])
+            inpatients = len(df.index[df.is_alive & df.is_pregnant & df.hs_is_inpatient &
+                                      (df.ps_gestational_age_in_weeks == ga)])
+            if pregnant == 0:
+                ip_prop = 0
+            else:
+                ip_prop = (inpatients / pregnant) * 100
+            self.module.ip_props[ga].append(ip_prop)
+
         # =================================== UPDATING LENGTH OF PREGNANCY ============================================
         # Length of pregnancy is commonly measured as gestational age which commences on the first day of a womans last
         # menstrual period (therefore including around 2 weeks in which a woman isnt pregnant)
@@ -1815,10 +1841,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_gestational_diabetes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
-            self.module.apply_risk_of_sepsis_post_prom(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
+            # Women who developed PROM are at risk of developing sepsis
+            self.module.apply_risk_of_sepsis_post_prom(gestation_of_interest=gestation_of_interest)
+
             # Women with hypertension are at risk of there condition progression, this risk is applied months 6-9
             self.module.apply_risk_of_progression_of_hypertension(gestation_of_interest=gestation_of_interest)
             # And of death...
@@ -2177,6 +2205,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         women_reproductive_age = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50))])
         pregnant_at_year_end = len(df.index[df.is_alive & df.is_pregnant])
+
         women_with_previous_sa = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50) & df.ps_prev_spont_abortion)])
         women_with_previous_pe = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
@@ -2200,6 +2229,9 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             yearly_prev = (par / women_reproductive_age) * 100
             parity_list.append(yearly_prev)
 
+        #prop_preg_ip = sum(self.module.ip_props)/len(self.module.ip_props)
+        #self.module.ip_props = []
+
         logger.info(key='preg_info',
                     data={'women_repro_age': women_reproductive_age,
                           'women_pregnant': pregnant_at_year_end,
@@ -2207,3 +2239,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'prev_pe': yearly_prev_pe,
                           'hysterectomy': yearly_prev_hysterectomy,
                           'parity': parity_list})
+
+        for k in self.module.ip_props:
+            self.module.ip_props[k] = sum(self.module.ip_props[k])/len(self.module.ip_props[k])
+        logger.info(key='avg_ip_props', data=self.module.ip_props)
+        self.module.ip_props = {4: [], 8: [], 13: [], 17: [], 22: [], 27: [], 31: [], 35: [], 40: []}

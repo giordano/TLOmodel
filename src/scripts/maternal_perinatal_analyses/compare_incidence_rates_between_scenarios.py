@@ -472,13 +472,28 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         an_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'clinical_chorioamnionitis', total_births_per_year, comps_df['pregnancy_supervisor'], 1000,
             intervention_years)
+        an_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['pregnancy_supervisor'],
+                                                                               'clinical_chorioamnionitis',
+                                                                               intervention_years)
+
         la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis', total_births_per_year, comps_df['labour'], 1000, intervention_years)
+        la_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['labour'],
+                                                                               'sepsis',
+                                                                               intervention_years)
 
         pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis_postnatal', total_births_per_year, comps_df['labour'], 1000, intervention_years)
+        pn_la_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['labour'],
+                                                                               'sepsis_postnatal',
+                                                                               intervention_years)
+
         pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, intervention_years)
+        pn_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['postnatal_supervisor'],
+                                                                                  'sepsis',
+                                                                                  intervention_years)
+
 
         complete_pn_sep_data = [x + y for x, y in zip(pn_la_sep_data[0], pn_sep_data[0])]
         complete_pn_sep_lq = [x + y for x, y in zip(pn_la_sep_data[1], pn_sep_data[1])]
@@ -488,14 +503,41 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         sep_lq = [x + y + z for x, y, z in zip(an_sep_data[1], la_sep_data[1], complete_pn_sep_lq)]
         sep_uq = [x + y + z for x, y, z in zip(an_sep_data[2], la_sep_data[2], complete_pn_sep_up)]
 
-        return [total_sep_rates, sep_lq, sep_uq]
+        return {'total': [total_sep_rates, sep_lq, sep_uq],
+                'an': an_sep_data,
+                'la': la_sep_data,
+                'postnatal': [complete_pn_sep_data, complete_pn_sep_lq, complete_pn_sep_up],
+                'an_number': an_number,
+                'la_number': la_number,
+                'pn_la_number': pn_la_number,
+                'pn_number': pn_number
+                }
 
     sep_data = {k: get_total_sepsis_rates(births_dict[k][0], comp_dfs[k]) for k in results_folders}
 
-    analysis_utility_functions.comparison_graph_multiple_scenarios(
-        intervention_years, sep_data, 'Rate per 1000 Births',
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, sep_data, 'total',
+        'Rate per 1000 Births',
         'Rate of Maternal Sepsis Per Year Per Scenario',
         plot_destination_folder, 'mat_sep')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, sep_data, 'an',
+        'Rate per 1000 Births',
+        'Rate of Antenatal Sepsis Per Year Per Scenario',
+        plot_destination_folder, 'an_sep')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, sep_data, 'la',
+        'Rate per 1000 Births',
+        'Rate of Intrapartum Sepsis Per Year Per Scenario',
+        plot_destination_folder, 'la_sep')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        intervention_years, sep_data, 'postnatal',
+        'Rate per 1000 Births',
+        'Rate of Postpartum Sepsis Per Year Per Scenario',
+        plot_destination_folder, 'pn_sep')
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
     def get_pph_data(total_births_per_year, comps_df):

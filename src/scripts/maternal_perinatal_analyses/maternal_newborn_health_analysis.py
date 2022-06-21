@@ -95,10 +95,77 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                 f'Proportion of women receiving {service_structure} (or more) ANC visits at birth',
                 plot_destination_folder, f'anc{service_structure}_cov')
 
-    elif service_of_interest == 'sba' or show_all_results:
-        pass  # todo: met need
+    if service_of_interest == 'sba' or show_all_results:
+        def get_delivery_place_info(folder, intervention_years):
+            """
+            """
+            deliver_setting_results = extract_results(
+                folder,
+                module="tlo.methods.labour",
+                key="delivery_setting_and_mode",
+                custom_generate_series=(
+                    lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'facility_type'])[
+                        'mother'].count()),
+                do_scaling=True
+            )
 
-    elif service_of_interest == 'pnc' or show_all_results:
+            hb_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                deliver_setting_results, 'home_birth', intervention_years)
+            hp_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                deliver_setting_results, 'hospital', intervention_years)
+            hc_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
+                deliver_setting_results, 'health_centre', intervention_years)
+
+            mean_total_deliveries = [x + y + z for x, y, z in zip(hb_data[0], hc_data[0], hp_data[0])]
+
+            home_birth_rate = [(x / y) * 100 for x, y in zip(hb_data[0], mean_total_deliveries)]
+            home_birth_lq = [(x / y) * 100 for x, y in zip(hb_data[1], mean_total_deliveries)]
+            home_birth_uq = [(x / y) * 100 for x, y in zip(hb_data[2], mean_total_deliveries)]
+
+            health_centre_rate = [(x / y) * 100 for x, y in zip(hc_data[0], mean_total_deliveries)]
+            health_centre_lq = [(x / y) * 100 for x, y in zip(hc_data[1], mean_total_deliveries)]
+            health_centre_uq = [(x / y) * 100 for x, y in zip(hc_data[2], mean_total_deliveries)]
+
+            hospital_rate = [(x / y) * 100 for x, y in zip(hp_data[0], mean_total_deliveries)]
+            hospital_lq = [(x / y) * 100 for x, y in zip(hp_data[1], mean_total_deliveries)]
+            hospital_uq = [(x / y) * 100 for x, y in zip(hp_data[2], mean_total_deliveries)]
+
+            total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
+            fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
+            fd_uqs = [x + y for x, y in zip(health_centre_uq, hospital_uq)]
+
+            return {'hb': [home_birth_rate, home_birth_lq, home_birth_uq],
+                    'hc': [health_centre_rate, health_centre_lq, health_centre_uq],
+                    'hp': [hospital_rate, hospital_lq, home_birth_uq],
+                    'fd': [total_fd_rate, fd_lqs, fd_uqs]}
+
+        delivery_data = {k: get_delivery_place_info(results_folders[k], intervention_years) for k in results_folders}
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, delivery_data, 'fd',
+            '% Total Births',
+            'Facility Delivery Rate per Year Per Scenario',
+            plot_destination_folder, 'fd_rate')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, delivery_data, 'hb',
+            '% Total Births',
+            'Home birth Rate per Year Per Scenario',
+            plot_destination_folder, 'hb_rate')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, delivery_data, 'hp',
+            '% Total Births',
+            'Hospital birth Rate per Year Per Scenario',
+            plot_destination_folder, 'hp_rate')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            intervention_years, delivery_data, 'hc',
+            '% Total Births',
+            'Health Centre Birth Rate per Year Per Scenario',
+            plot_destination_folder, 'hc_rate')
+
+    if service_of_interest == 'pnc' or show_all_results:
         def get_pnc_coverage(folder, birth_data):
             """
             Returns the mean, lower quantile, upper quantile proportion of women and neonates who received at least 1
@@ -297,7 +364,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plt.show()
 
     # ========================================= HEALTH SYSTEM OUTCOMES ================================================
-    if service_of_interest == 'anc':
+    if service_of_interest == 'anc' or show_all_results:
 
         def get_hsi_counts_from_cowdp_logger(folder, intervention_years):
 
@@ -326,7 +393,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Total Number of Antenatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_visits')
 
-    if service_of_interest == 'pnc':
+    if service_of_interest == 'pnc' or show_all_results:
 
         def get_hsi_counts_from_summary_logger(folder, intervention_years):
             hsi = extract_results(
@@ -371,7 +438,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
     # ------------------------------------------------ MALARIA ------------------------------------------------------
-    if service_of_interest == 'anc':
+    if service_of_interest == 'anc' or show_all_results:
         # todo: what else? (proportion of infected women receiving iptp)
         def get_malaria_incidence_in_pregnancy(folder):
             # Number of clinical episodes in pregnant women per year
@@ -535,7 +602,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Number of Women Receiving ART per Year Per Scenario',
             plot_destination_folder, 'hiv_women_art')
 
-    if service_of_interest != 'sba':
+    if service_of_interest != 'sba' or show_all_results:
         def get_depression_info_in_pregnancy(folder, intervention_years):
 
             # Diagnosis of depression in ever depressed people
