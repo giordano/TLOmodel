@@ -1,5 +1,6 @@
 
 # todo set off small runs for each scenario
+# todo changed scenario start date in resourcefile
 # check cons used and children infected
 # tlo scenario-run --draw-only src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
 # tlo batch-submit src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
@@ -78,8 +79,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Demography': {'max_age_initial': 16},
-            'Tb': {'scenario': [0, 4][draw_number]}
-
+            'Tb': {'scenario': [0, 4][draw_number]},
         }
 
 
