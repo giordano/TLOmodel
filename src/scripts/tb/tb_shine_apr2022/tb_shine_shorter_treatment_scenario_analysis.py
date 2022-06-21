@@ -59,7 +59,6 @@ def extract_healthsystem_summary(results_folder: Path, module: str, key: str, co
 # ---------------------------------------- ANALYSIS PLOTS ---------------------------------------- #
 
 # -----------------------------------------  TB INCIDENCE ----------------------------------------- #
-
 new_active_tb = summarize(extract_results(
     results_folder,
     module="tlo.methods.tb",
@@ -144,15 +143,32 @@ cons_treatment = extract_healthsystem_summary(
 
 
 fig, ax = plt.subplots()
-plt.plot(cons_treatment.index, cons_treatment[0]["178"], label="Scenario 0: Child Tx", color="b")
-plt.plot(cons_treatment.index, cons_treatment[0]["179"], label="Scenario 0: Child Re-tx", color="r")
-plt.plot(cons_treatment.index, cons_treatment[1]["178"], label="Scenario 4: Child Tx", color="b", linestyle="dashed")
-plt.plot(cons_treatment.index, cons_treatment[1]["179"], label="Scenario 4: Child Re-tx", color="r", linestyle="dashed")
-plt.plot(cons_treatment.index, cons_treatment[1]["2675"], label="Scenario 4: Child Tx Shorter", color="g", linestyle="dashed")
+plt.plot(cons_treatment.index, cons_treatment['0']['178'], label="Scenario 0: Child Tx", color="b")
+plt.plot(cons_treatment.index, cons_treatment['0']['179'], label="Scenario 0: Child Re-tx", color="r")
+plt.plot(cons_treatment.index, cons_treatment['1']['178'], label="Scenario 4: Child Tx", color="b", linestyle="dashed")
+plt.plot(cons_treatment.index, cons_treatment['1']['179'], label="Scenario 4: Child Re-tx", color="r", linestyle="dashed")
+plt.plot(cons_treatment.index, cons_treatment['1']['2675'], label="Scenario 4: Child Tx Shorter", color="g", linestyle="dashed")
 plt.title("Treatment Use Over Time")
 plt.xlabel("Year")
 plt.ylabel("Quantity")
+plt.legend()
 plt.show()
+
+# -----------------------------------------  CONSUMABLES - DIAGNOSTIC TESTS ----------------------------------------- #
+
+fig, ax = plt.subplots()
+plt.plot(cons_treatment.index, cons_treatment['0']['175'], label="Scenario 0: X-ray", color="b")
+plt.plot(cons_treatment.index, cons_treatment['0']['184'], label="Scenario 0: Microscopy", color="r")
+plt.plot(cons_treatment.index, cons_treatment['0']['187'], label="Scenario 0: Xpert", color="g")
+plt.plot(cons_treatment.index, cons_treatment['1']['175'], label="Scenario 4: X-ray", color="b", linestyle="dashed")
+plt.plot(cons_treatment.index, cons_treatment['1']['184'], label="Scenario 4: Microscopy", color="r", linestyle="dashed")
+plt.plot(cons_treatment.index, cons_treatment['1']['187'], label="Scenario 4: Xpert", color="g", linestyle="dashed")
+plt.title("Diagnostic Test Use Over Time")
+plt.xlabel("Year")
+plt.ylabel("Quantity")
+plt.legend()
+plt.show()
+
 
 
 
