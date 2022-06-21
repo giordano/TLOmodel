@@ -2,6 +2,7 @@
 # todo set off small runs for each scenario
 # check cons used and children infected
 # tlo scenario-run --draw-only src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
+# tlo batch-submit src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
 
 
 from random import randint
