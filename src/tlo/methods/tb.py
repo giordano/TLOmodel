@@ -1563,13 +1563,18 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
         # scale risk
         risk_of_progression = risk_of_progression / sum(risk_of_progression)  # must sum to 1
         new_active = rng.choice(df.loc[eligible].index, size=number_active_tb, replace=False, p=risk_of_progression)
+
+        # todo remove
+        print("new_active scheduled")
+        print(len(new_active))
+
         df.loc[new_active, "tb_strain"] = strain
 
         # schedule onset of active tb
-        # schedule for time now up to 1 year
+        # schedule for time now up to 1 month
         for person_id in new_active:
             date_progression = now + pd.DateOffset(
-                days=rng.randint(0, 365)
+                days=rng.randint(0, 30)
             )
 
             # set date of active tb - properties will be updated at TbActiveEvent every month
@@ -1668,6 +1673,10 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
             ].index
+
+        # todo remove
+        print("active")
+        print(len(active_idx))
 
         # -------- 1) change individual properties for active disease --------
         df.loc[active_idx, "tb_inf"] = "active"
@@ -2004,6 +2013,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             return
 
         if person["tb_diagnosed"]:
+            return
+
+        if person["age_years"] > 16:
             return
 
         logger.debug(
@@ -2387,6 +2399,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return
 
         if person["tb_on_treatment"]:
+            return
+
+        if person["age_years"] > 16:
             return
 
         treatment_regimen = self.select_treatment(person_id)

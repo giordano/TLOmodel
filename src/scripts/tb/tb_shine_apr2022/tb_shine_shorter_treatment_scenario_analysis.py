@@ -14,7 +14,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path("./outputs/lmu17@ic.ac.uk")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 rfp = Path('./resources')
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
@@ -99,7 +99,30 @@ plt.ylabel("Quantity")
 plt.show()
 
 
+cons_by_type = extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem.summary",
+    key="Consumables",
+    column="Item_Available"
+)
 
 
+hsi_by_type = extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem",
+    key="HSI_Event",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'TREATMENT_ID'])['TREATMENT_ID'].count()),
+    do_scaling=True
+)
+
+tb_inc = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb_child",
+        index="date",
+        do_scaling=False,
+)
 
 

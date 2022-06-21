@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py",
-  "scenario_seed": 32,
+  "scenario_seed": 3397,
   "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1541417687,
+      "draw_seed": 1619139313,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 256222763,
+      "draw_seed": 584069341,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
@@ -27,5 +27,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "af17baed61512f25af9b15cdd4d73690269c0707",
+  "github": "https://github.com/UCL/TLOmodel/blob/af17baed61512f25af9b15cdd4d73690269c0707/src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py"
 }
