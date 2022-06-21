@@ -1,3 +1,9 @@
+
+# todo set off small runs for each scenario
+# check cons used and children infected
+# tlo scenario-run --draw-only src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
+
+
 from random import randint
 
 from tlo import Date, logging
@@ -22,8 +28,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        # self.seed = randint(0, 5000)
-        self.seed = 32
+        self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2016, 1, 1)
         self.pop_size = 175_000

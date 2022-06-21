@@ -1004,7 +1004,7 @@ class Tb(Module):
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbTreatmentLoggingEvent(self), sim.date)
 
         # 3) -------- Define the DxTests and get the consumables required --------
@@ -2798,8 +2798,8 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """produce some outputs to check"""
-        # run this event every 12 months
-        self.repeat = 12
+        # run this event every 1 month
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
