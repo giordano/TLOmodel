@@ -31,8 +31,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2036, 1, 1)
-popsize = 50000
+end_date = Date(2015, 1, 1)
+popsize = 5000
 
 # set up the log config
 log_config = {
@@ -44,6 +44,7 @@ log_config = {
         "tlo.methods.tb": logging.DEBUG,
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem": logging.INFO,
     },
 }
 
@@ -75,8 +76,8 @@ sim.register(
 )
 
 # choose the scenario, 0=baseline, 4=shorter paediatric treatment
-sim.modules["Tb"].parameters["scenario"] = 4
-sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+sim.modules["Tb"].parameters["scenario"] = 0
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 sim.modules["Demography"].parameters["max_age_initial"] = 16
 
 # Run the simulation and flush the logger

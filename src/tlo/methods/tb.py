@@ -1097,11 +1097,9 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
-        # todo these packages all include an x-ray with availability 0.85 (consumables sheet)
-
         # adult treatment - primary
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
 
         # child treatment - primary
         self.item_codes_for_consumables_required['tb_tx_child'] = \
@@ -1113,19 +1111,19 @@ class Tb(Module):
 
         # adult treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
-            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for adults")
+            hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
 
         # child treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_child'] = \
-            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
+            hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = \
-            hs.get_item_codes_from_package_name("Case management of MDR cases")
+        self.item_codes_for_consumables_required['tb_mdrtx'] = {
+            hs.get_item_code_from_item_name("Category IV"): 1}
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
-            hs.get_item_code_from_item_name("Isoniazid Preventive Therapy"): 1}
+            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -2005,6 +2003,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        if person["tb_diagnosed"]:
+            return
+
         logger.debug(
             key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
         )
@@ -2447,7 +2448,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         helper function to select appropriate treatment and check whether
         consumables are available to start drug course
         treatment will always be for ds-tb unless mdr has been identified
-        :return: drug_available [BOOL]
+        :return: treatment_regimen[STR]
         """
         df = self.sim.population.props
         person = df.loc[person_id]
