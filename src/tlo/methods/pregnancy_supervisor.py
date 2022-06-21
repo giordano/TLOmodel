@@ -349,8 +349,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
         # ANALYSIS PARAMETERS...
-        'analysis_date': Parameter(
-            Types.DATE, 'Date on which analysis event is scheduled to update parameters'),
+        'analysis_year': Parameter(
+            Types.INT, 'Year on which analysis event is scheduled to update parameters (1st day 1st month)'),
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
                        ' scripts to change ANC structure'),
@@ -517,7 +517,7 @@ class PregnancySupervisor(Module):
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period
-        sim.schedule_event(PregnancyAnalysisEvent(self), params['analysis_date'])
+        sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
