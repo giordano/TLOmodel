@@ -18,6 +18,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 rfp = Path('./resources')
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
+# todo change name
 results_folder = get_scenario_outputs("tb_shine_shorter_treatment_scenario.py", outputspath)[-1]
 
 # get basic information about the results

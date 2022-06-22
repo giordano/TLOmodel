@@ -39,7 +39,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'tb_shine_shorter_treatment_scenario',
+            'filename': 'tb_shine_tests',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,

@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 175000
 
 # set up the log config
@@ -76,7 +76,7 @@ sim.register(
 )
 
 # choose the scenario, 0=baseline, 4=shorter paediatric treatment
-sim.modules["Tb"].parameters["scenario"] = 0
+sim.modules["Tb"].parameters["scenario"] = 4
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 sim.modules["Demography"].parameters["max_age_initial"] = 16
 
