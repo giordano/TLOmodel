@@ -1143,7 +1143,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # -------- 3) if HIV+ assign smear status and schedule AIDS onset --------
         active_and_hiv = df.loc[
             df.is_alive
-            & (df.tb_scheduled_date_active > (now - DateOffset(months=self.repeat)))
+            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
             & (df.tb_scheduled_date_active <= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
@@ -1649,15 +1649,13 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        if df.at[person_id, "tb_diagnosed"]:
+        # if person not alive or already diagnosed, do nothing
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         smear_status = df.at[person_id, "tb_smear"]
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
-
-        if not df.at[person_id, "is_alive"]:
-            return
 
         # select sensitivity/specificity of test based on smear status
         if smear_status:
@@ -1734,16 +1732,13 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        # if already diagnosed, do not use resources
-        if df.at[person_id, "tb_diagnosed"]:
+        # if person not alive or already diagnosed, do nothing
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         smear_status = df.at[person_id, "tb_smear"]
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
-
-        if not df.at[person_id, "is_alive"]:
-            return
 
         # select sensitivity/specificity of test based on smear status
         if smear_status:
