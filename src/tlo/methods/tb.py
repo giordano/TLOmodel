@@ -659,12 +659,10 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-
         sim.schedule_event(TbChildrensPoll(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
 
-        sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
-
+        sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
@@ -1115,7 +1113,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # if on IPT or treatment - do nothing
         active_idx = df.loc[
             df.is_alive
-            & (df.tb_scheduled_date_active > (now - DateOffset(months=self.repeat)))
+            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
             & (df.tb_scheduled_date_active <= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
@@ -2138,19 +2136,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # number of new active cases
         new_tb_cases = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
         )
 
         # number of new active cases (0 - 16 years)
         new_tb_cases_child = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
 
         # number of new active cases in HIV+
         inc_active_hiv = len(
             df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
                 ]
         )
@@ -2158,7 +2156,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # number of new active cases in HIV+ children
         inc_active_hiv_child = len(
             df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
                 & (df.age_years <= 16)
                 ]
@@ -2353,7 +2351,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # (1) Number of new active TB cases (0-16 years)
 
         num_new_active_tb_cases_child = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
 
@@ -2363,7 +2361,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #  on and off treatment currently
 
         num_eligible_shorter_tx = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)
                & ~df.tb_smear
                & ~df.tb_ever_treated
