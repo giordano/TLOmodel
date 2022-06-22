@@ -35,7 +35,7 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
         self.end_date = Date(2016, 1, 1)
         self.pop_size = 175_000
         self.number_of_draws = 2
-        self.runs_per_draw = 1
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {

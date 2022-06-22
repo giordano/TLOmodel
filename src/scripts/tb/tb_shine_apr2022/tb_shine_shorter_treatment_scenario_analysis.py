@@ -102,7 +102,7 @@ plt.show()
 
 cons_by_type = extract_results(
     results_folder,
-    module="tlo.methods.healthsystem.summary",
+    module="tlo.methods.healthsystem",
     key="Consumables",
     column="Item_Available"
 )
@@ -114,7 +114,7 @@ hsi_by_type = extract_results(
     key="HSI_Event",
     custom_generate_series=(
         lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'TREATMENT_ID'])['TREATMENT_ID'].count()),
-    do_scaling=True
+    do_scaling=False
 )
 
 tb_inc = extract_results(
