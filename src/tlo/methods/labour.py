@@ -1227,32 +1227,22 @@ class Labour(Module):
         # First we run check to ensure only women who have started the labour process are passed to this function
         if mni[individual_id]['delivery_setting'] == 'none':
             logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
-                                           f'delivery setting')
+                                          f'delivery setting')
             return
 
         # Then we check that only complications from the master complication list are passed to the function (to ensure
         # any typos for string variables are caught)
         if complication not in self.possible_intrapartum_complications:
             logger.info(key='error', data=f'A complication ("{complication}") was passed to '
-                                           f'set_intrapartum_complications')
+                                          f'set_intrapartum_complications')
             return
 
-        # Women may have been admitted for delivery from the antenatal ward because they have developed a complication
-        # in pregnancy requiring delivery. Here we make sure women admitted due to these complications do not experience
+        # Here we make sure women who have experienced complications antenatally cant experience
         # the same complication again when this code runs
-        if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none':
-
-            # Both 'la_antepartum_haem' and 'ps_antepartum_haem' will trigger treatment if identified
-            if (complication == 'antepartum_haem') and (df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none'):
-                return
-
-            # Onset of placental abruption antenatally or intrapartum can lead to APH in linear model
-            if (complication == 'placental_abruption') and df.at[individual_id, 'ps_placental_abruption']:
-                return
-
-            # Women admitted with clinical chorioamnionitis from the community are assumed to be septic in labour
-            if (complication == 'sepsis_chorioamnionitis') and df.at[individual_id, 'ps_chorioamnionitis']:
-                return
+        if ((complication == 'antepartum_haem') and (df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none') or
+            ((complication == 'placental_abruption') and df.at[individual_id, 'ps_placental_abruption']) or
+           ((complication == 'sepsis_chorioamnionitis') and df.at[individual_id, 'ps_chorioamnionitis'])):
+            return
 
         # For the preceding complications that can cause obstructed labour, we apply risk using a set probability
         if complication in ('obstruction_malpos_malpres', 'obstruction_other'):
@@ -1643,7 +1633,6 @@ class Labour(Module):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
-        cons = self.item_codes_lab_consumables
 
         # params['allowed_interventions'] contains a list of interventions delivered in this module. Removal of
         # interventions from this list within test/analysis will stop this intervention from running
@@ -1874,12 +1863,12 @@ class Labour(Module):
                                                                                            hsi_event=hsi_event)
 
                 if avail and sf_check:
+                    pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
                     # risk of intrapartum still birth when applying risk in the death event
                     if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
-                        pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
                     else:
                         # If unsuccessful, this woman will require a caesarean section
                         refer_for_cs()

@@ -618,23 +618,13 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'rd')
 
     # ----------------------------------------- Respiratory Distress Syndrome -----------------------------------------
-    def get_rds(neo_comp_dfs, comp_dfs):
-        ept = analysis_utility_functions.get_mean_and_quants_from_str_df(comp_dfs['labour'], 'early_preterm_labour',
-                                                                         intervention_years)[0]
-        # todo: should be live births
-        lpt = analysis_utility_functions.get_mean_and_quants_from_str_df(comp_dfs['labour'], 'late_preterm_labour',
-                                                                         intervention_years)[0]
-        total_ptbs = [x + y for x, y in zip(ept, lpt)]
-
-        rds_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'respiratory_distress_syndrome', total_ptbs, neo_comp_dfs['newborn_outcomes'], 1000, intervention_years)
-
-        return rds_data
-
-    rds_data = {k: get_rds(neo_comp_dfs[k], comp_dfs[k]) for k in results_folders}
+    rds_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
+        'respiratory_distress_syndrome', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 1000,
+        intervention_years)
+        for k in results_folders}
 
     analysis_utility_functions.comparison_graph_multiple_scenarios(
-        intervention_years, rds_data, 'Rate per 1000 Preterm Births',
+        intervention_years, rds_data, 'Rate per 1000 Births',
         'Rate of Preterm Respiratory Distress Syndrome Per Year Per Scenario',
         plot_destination_folder, 'rds')
 

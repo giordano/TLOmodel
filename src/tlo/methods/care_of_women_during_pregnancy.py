@@ -1341,6 +1341,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If they are available then the woman is started on treatment
         if avail:
+            pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
+
             # We assume women treated with antihypertensives would no longer be severely hypertensive- meaning they
             # are not at risk of death from severe gestational hypertension in the PregnancySupervisor event
             if df.at[individual_id, 'ps_htn_disorders'] == 'severe_gest_htn':
@@ -1353,7 +1355,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                            'ps_htn_disorders'] ==
                                                                                      'eclampsia'):
                 df.at[individual_id, 'ac_iv_anti_htn_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
 
     def treatment_for_severe_pre_eclampsia_or_eclampsia(self, individual_id, hsi_event):
         """

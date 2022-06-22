@@ -58,7 +58,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
                                               optional_item_codes=opt_cons)
 
         if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
-            mni[hsi_event.target]['cons_not_avail'] = True
+            mni[hsi_event.target]['cons_not_avail'] = True  # todo: delivery kit doesnt make sense here?
 
         return available
 
