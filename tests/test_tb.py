@@ -1182,3 +1182,4 @@ def test_cons_for_shorter_paediatric_treatment():
     assert df.at[person_id_0, 'tb_ever_treated']
     assert not df.at[person_id_0, 'tb_on_treatment']
     assert not df.at[person_id_0, 'tb_treated_mdr']
+

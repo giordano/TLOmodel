@@ -1069,10 +1069,6 @@ class TbChildrensPoll(RegularEvent, PopulationScopeEventMixin):
         risk_of_progression = risk_of_progression / sum(risk_of_progression)  # must sum to 1
         new_active = rng.choice(df.loc[eligible].index, size=number_active_tb, replace=False, p=risk_of_progression)
 
-        # todo remove
-        tmp = len(new_active)
-        print("poll: new_active scheduled", tmp)
-
         df.loc[new_active, "tb_strain"] = strain
 
         # schedule onset of active tb
@@ -1118,11 +1114,6 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
             ].index
-
-        # todo remove
-        print("active onset")
-        tmp = len(active_idx)
-        print(tmp)
 
         # -------- 1) change individual properties for active disease --------
         df.loc[active_idx, "tb_inf"] = "active"
