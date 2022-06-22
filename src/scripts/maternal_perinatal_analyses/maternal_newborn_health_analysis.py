@@ -40,6 +40,45 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        intervention_years)
 
+    """
+    # TESTING INPATIENT PROPORTION  # TODO: DELETE
+    def get_ip_coverage(folder, intervention_years):
+
+        def get_mean_availability(_df):
+            new_d = _df.assign(year=_df['date'].dt.year).drop(['date'], axis=1).set_index(['year'])
+            new_d['mean'] = new_d.mean(axis=1)
+            return new_d['mean']
+
+        ip_prop = extract_results(
+            folder,
+            module="tlo.methods.pregnancy_supervisor",
+            key="avg_ip_props",
+            custom_generate_series=get_mean_availability,
+            do_scaling=False)
+
+        ip_data = analysis_utility_functions.get_mean_and_quants(ip_prop, intervention_years)
+
+        ip_analysis_dict = {}
+        for ga in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
+            ip = extract_results(
+                folder,
+                module="tlo.methods.pregnancy_supervisor",
+                key="avg_ip_props",
+                column=f'{ga}',
+                index='date',
+            )
+            years = ip.index.year
+            ip_years = ip.set_index(years)
+            ip_analysis = analysis_utility_functions.get_mean_and_quants(ip_years, intervention_years)
+            ip_analysis_dict.update({ga: ip_analysis})
+
+        return {'avg':ip_data,
+                'all': ip_analysis_dict}
+
+    ip_cov = {k: get_ip_coverage(results_folders[k], intervention_years) for k in
+               results_folders}
+    """
+
     # ===================================== INTERVENTION COVERAGE ====================================================
     if service_of_interest == 'anc' or show_all_results:
 
@@ -664,8 +703,5 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Proportion (%)',
             'Proportion of Ever Depressed Individuals Started on Talking Therapy',
             plot_destination_folder, 'depression_tt')
-
-        # todo: depression
-
 
 

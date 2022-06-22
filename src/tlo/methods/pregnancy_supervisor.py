@@ -1693,25 +1693,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.current_parameters
         mni = self.module.mother_and_newborn_info
 
-        # todo: ? remove ?
-        # pregnant = len(df.index[df.is_alive & df.is_pregnant])
-        #inpatients = len(df.index[df.is_alive & df.is_pregnant & df.hs_is_inpatient])
-        #if pregnant == 0:
-        #    ip_prop = 0
-        #else:
-        #    ip_prop = (inpatients/pregnant) * 100
-        #self.module.ip_props.append(ip_prop)
-
-        for ga in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
-            pregnant = len(df.index[df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == ga)])
-            inpatients = len(df.index[df.is_alive & df.is_pregnant & df.hs_is_inpatient &
-                                      (df.ps_gestational_age_in_weeks == ga)])
-            if pregnant == 0:
-                ip_prop = 0
-            else:
-                ip_prop = (inpatients / pregnant) * 100
-            self.module.ip_props[ga].append(ip_prop)
-
         # =================================== UPDATING LENGTH OF PREGNANCY ============================================
         # Length of pregnancy is commonly measured as gestational age which commences on the first day of a womans last
         # menstrual period (therefore including around 2 weeks in which a woman isnt pregnant)
@@ -1734,6 +1715,17 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         newly_pregnant = df.loc[alive_and_preg & (df['ps_gestational_age_in_weeks'] == 3)]
         for person in newly_pregnant.index:
             pregnancy_helper_functions.update_mni_dictionary(self.module, individual_id=person)
+
+        # todo: ? remove ?
+        for ga in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
+            pregnant = len(df.index[df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == ga)])
+            inpatients = len(df.index[df.is_alive & df.is_pregnant & df.hs_is_inpatient &
+                                          (df.ps_gestational_age_in_weeks == ga)])
+            if pregnant == 0:
+                ip_prop = 0
+            else:
+                ip_prop = (inpatients / pregnant) * 100
+            self.module.ip_props[ga].append(ip_prop)
 
         # =========================== APPLYING RISK OF ADVERSE PREGNANCY OUTCOMES =====================================
         # The aim of this event is to apply risk of certain outcomes of pregnancy at relevant points in a womans
