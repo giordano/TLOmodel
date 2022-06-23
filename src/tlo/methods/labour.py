@@ -1568,7 +1568,7 @@ class Labour(Module):
                     self.sim.date + DateOffset(days=day_for_event))
 
             elif mni[individual_id]['passed_through_week_one']:
-                if individual_id not in self.women_in_labour:
+                if individual_id in self.women_in_labour:
                     logger.info(key='error', data=f'Mother {individual_id} is still stored in self.women_in_labour')
 
                 if df.at[individual_id, 'la_currently_in_labour']:
