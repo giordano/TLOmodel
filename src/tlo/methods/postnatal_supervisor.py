@@ -717,11 +717,13 @@ class PostnatalSupervisor(Module):
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
         if week == 6:
-            # We call a function in the PregnancySupervisor module to reset the variables from pregnancy which are not
-            # longer needed
+            # Here we reset any remaining pregnancy variables (as some are used as predictors in models in the postnatal
+            # period)
             week_6_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 6)
 
             self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
+                id_or_index=week_6_women.loc[week_6_women].index)
+            self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
                 id_or_index=week_6_women.loc[week_6_women].index)
 
     def apply_risk_of_neonatal_complications_in_week_one(self, child_id, mother_id):

@@ -512,7 +512,7 @@ class CareOfWomenDuringPregnancy(Module):
 
             # We then reset all relevant variables pertaining to care received during the antenatal period to avoid
             # treatments remaining in place for future pregnancies
-            self.care_of_women_in_pregnancy_property_reset(id_or_index=mother_id)
+            # self.care_of_women_in_pregnancy_property_reset(id_or_index=mother_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is CareOfWomenDuringPregnancy, being alerted about a health system '
