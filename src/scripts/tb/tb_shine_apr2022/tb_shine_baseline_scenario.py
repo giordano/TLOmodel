@@ -1,7 +1,12 @@
+"""
+This file defines a batch run through which the TB Module is run through Scenario 4.
+- Scenario 4 = SHINE trial (from 2023, children diagnosed with smear-negative tb are placed on a shorter treatment)
+The parameter 'max_initial_age' is set to 16 to create a population of children only.
+"""
+
 from random import randint
 
 from tlo import Date, logging
-
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -14,7 +19,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-
 from tlo.scenario import BaseScenario
 
 
@@ -24,14 +28,14 @@ class TestTbShineBaselineScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 175_000
-        self.number_of_draws = 3
-        self.runs_per_draw = 3
+        self.end_date = Date(2036, 1, 1)
+        self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
+        self.number_of_draws = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'tb_shine_baseline_scenario',
+            'filename': 'test_tb_shine_baseline_scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
@@ -43,20 +47,19 @@ class TestTbShineBaselineScenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources, max_age_initial=16),
+            demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                service_availability=["*"],
-                mode_appt_constraints=0,
-                cons_availability="all",
-                ignore_priority=True,
-                capabilities_coefficient=1.0,
-                disable=False,
-                disable_and_reject_all=False,
-                store_hsi_events_that_have_run=False
-            ),
+            healthsystem.HealthSystem(resourcefilepath=self.resources,
+                                      service_availability=["*"],
+                                      mode_appt_constraints=0,
+                                      cons_availability="all",
+                                      ignore_priority=True,
+                                      capabilities_coefficient=1.0,
+                                      disable=False,
+                                      disable_and_reject_all=False,
+                                      store_hsi_events_that_have_run=False
+                                      ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
@@ -67,7 +70,9 @@ class TestTbShineBaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Tb': {'adjusted_active_testing_rate': [0.9, 0.8, 0.7][draw_number]}
+
+            'Demography': {'max_age_initial': 16},
+            'Tb': {'scenario': 4}
 
         }
 

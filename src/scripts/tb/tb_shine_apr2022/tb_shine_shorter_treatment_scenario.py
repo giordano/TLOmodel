@@ -1,15 +1,13 @@
-
-# todo set off small runs for each scenario
-# todo changed scenario start date in resourcefile
-# check cons used and children infected
-# tlo scenario-run --draw-only src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
-# tlo batch-submit src/scripts/tb/tb_shine_apr2022/tb_shine_shorter_treatment_scenario.py
-
+""""
+This file defines a batch run through which the TB Module is run across two scenarios:
+- Scenario 0 = baseline (default which uses baseline parameters)
+- Scenario 4 = SHINE trial (from 2023, children diagnosed with smear-negative tb are placed on a shorter treatment)
+The parameter 'max_initial_age' is set to 16 to create a population of children only.
+"""
 
 from random import randint
 
 from tlo import Date, logging
-
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -22,7 +20,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-
 from tlo.scenario import BaseScenario
 
 
@@ -32,21 +29,20 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2016, 1, 1)
-        self.pop_size = 175_000
+        self.end_date = Date(2036, 1, 1)
+        self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
         self.number_of_draws = 2
         self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
-            'filename': 'tb_shine_tests',
+            'filename': 'test_tb_shine_shorter_treatment_scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.hiv': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
             }
@@ -57,17 +53,16 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
             demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                service_availability=["*"],
-                mode_appt_constraints=0,
-                cons_availability="all",
-                ignore_priority=True,
-                capabilities_coefficient=1.0,
-                disable=False,
-                disable_and_reject_all=False,
-                store_hsi_events_that_have_run=False
-            ),
+            healthsystem.HealthSystem(resourcefilepath=self.resources,
+                                      service_availability=["*"],
+                                      mode_appt_constraints=0,
+                                      cons_availability="all",
+                                      ignore_priority=True,
+                                      capabilities_coefficient=1.0,
+                                      disable=False,
+                                      disable_and_reject_all=False,
+                                      store_hsi_events_that_have_run=False
+                                      ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
@@ -78,8 +73,10 @@ class TestTbShineShorterTreatmentScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+
             'Demography': {'max_age_initial': 16},
-            'Tb': {'scenario': [0, 4][draw_number]},
+            'Tb': {'scenario': [0, 4][draw_number]}
+
         }
 
 
