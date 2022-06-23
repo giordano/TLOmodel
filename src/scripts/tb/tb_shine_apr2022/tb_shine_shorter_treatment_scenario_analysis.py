@@ -14,10 +14,11 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path("./outputs/lmu17@ic.ac.uk")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 rfp = Path('./resources')
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
+# todo change name
 results_folder = get_scenario_outputs("tb_shine_shorter_treatment_scenario.py", outputspath)[-1]
 
 # get basic information about the results
@@ -35,29 +36,6 @@ def make_plot(model=None, model_low=None, model_high=None):
 
     if (model_low is not None) and (model_high is not None):
         ax.fill_between(model_low.index, model_low, model_high, color="r", alpha=0.2)
-
-
-# --------------------- AVERAGE WORKER TIME --------------------- #
-
-average_worker_time = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="Capacity",
-        column="average_Frac_Time_Used_Overall",
-        index="date",
-        do_scaling=False))
-
-make_plot(model=average_worker_time[0]["mean"],
-          model_low=average_worker_time[0]["lower"],
-          model_high=average_worker_time[0]["upper"])
-plt.plot(average_worker_time[1]["mean"])
-plt.title('Fraction of Health Worker Time Used')
-plt.xlabel('Year')
-plt.ylabel('Fraction of Health Worker Time Used (Averaged per year)')
-plt.legend(['Baseline Scenario', 'Shorter Treatment Scenario'])
-plt.show()
-
 
 # ------------------------------ EXTRACT HEALTHSYSTEM SUMMARY DATA  ------------------------------ #
 
@@ -99,7 +77,88 @@ plt.ylabel("Quantity")
 plt.show()
 
 
+cons_by_type = extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem.summary",
+    key="Consumables",
+    column="Item_Available"
+)
+
+from collections import defaultdict
+from tlo import Date
+
+
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2016, 1, 1))
+
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+
+    for _, row in _df.iterrows():
+        for item, num in eval(row['Item_Available']).items():
+            counts_of_available[item] += num
+        for item, num in eval(row['Item_NotAvailable']).items():
+            counts_of_not_available[item] += num
+
+    return pd.concat(
+        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
 
 
 
+cons_req = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=False
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
 
+
+hsi_by_type = extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem",
+    key="HSI_Event",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'TREATMENT_ID'])['TREATMENT_ID'].count()),
+    do_scaling=False
+)
+
+tb_inc = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb_child",
+        index="date",
+        do_scaling=False,
+)
+
+tb_standard = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment_regimen",
+        column="TBTxChild",
+        index="date",
+        do_scaling=False,
+)
+
+tb_shorter = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment_regimen",
+        column="TBTxChildShorter",
+        index="date",
+        do_scaling=False,
+)

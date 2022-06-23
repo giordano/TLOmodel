@@ -31,8 +31,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 500
+end_date = Date(2016, 1, 1)
+popsize = 1750
 
 # set up the log config
 log_config = {
@@ -44,12 +44,13 @@ log_config = {
         "tlo.methods.tb": logging.DEBUG,
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem": logging.INFO,
     },
 }
 
 # Register the appropriate modules
-# seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = random.randint(0, 50000)
+# seed = 0  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -92,12 +93,70 @@ with open(outputpath / "default_run.pickle", "wb") as f:
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 
-# check numbers of consumables used
-# should be same as tbShorterChildTreatment
-tmp=output['tlo.methods.healthsystem.summary']
-tmp2=output["tlo.methods.tb"]
 
-# (3) Number of Diagnosed TB Cases
-tb_treatment_children = output["tlo.methods.tb"]["tb_treatment"]
-tb_treatment_children.tbNewTreatmentChild
-tb_treatment_children.tbShorterChildTreatment
+# ---------------------------------- CONSUMABLES ANALYSIS ------------------------------------- #
+# Get consumables summary
+cons = output["tlo.methods.healthsystem.summary"]["Consumables"]
+cons = cons.set_index('date')
+cons = cons["Item_Available"].apply(pd.Series)
+
+# Plot TB treatment use
+fig, ax = plt.subplots()
+ax.plot(cons.index, cons['178'], label='Child Tx', color='r')
+ax.plot(cons.index, cons['179'], label='Child ReTx', color='g')
+# ax.plot(cons.index, cons['2675'], label='Child Tx (Shorter)', color='y')
+plt.xlabel('Year')
+plt.ylabel('Quantity')
+plt.title('TB Treatment Use')
+plt.legend()
+plt.show()
+
+# Plot TB diagnostic test use
+fig, ax = plt.subplots()
+ax.plot(cons.index, cons['175'], label='X-Ray', color='r')
+ax.plot(cons.index, cons['184'], label='Microscopy', color='g')
+ax.plot(cons.index, cons['187'], label='Xpert', color='y')
+plt.xlabel('Year')
+plt.ylabel('Quantity')
+plt.title('TB Diagnostic Test Use')
+plt.legend()
+plt.show()
+
+
+# ---------------------------------- HSI EVENT ANALYSIS ------------------------------------- #
+# Get HSI event summary
+hsi = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+hsi = hsi.set_index('date')
+hsi = hsi["TREATMENT_ID"].apply(pd.Series)
+
+# Plot HSI events
+fig, ax = plt.subplots()
+ax.plot(hsi.index, hsi['Tb_ScreeningAndRefer'], label='Screening and Refer', color='r')
+ax.plot(hsi.index, hsi['Tb_Xray'], label='X-Ray', color='g')
+ax.plot(hsi.index, hsi['Tb_Treatment_Initiation'], label='Treatment Initiation', color='y')
+ax.plot(hsi.index, hsi['Tb_FollowUp'], label='Follow Up', color='m')
+plt.xlabel('Year')
+plt.ylabel('Quantity')
+plt.title('HSI Event')
+plt.legend()
+plt.show()
+
+# Get Appointment Type summary
+appt_tpe = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+appt_tpe = appt_tpe.set_index('date')
+appt_tpe = appt_tpe["Number_By_Appt_Type_Code"].apply(pd.Series)
+
+# Plot Appointment Types
+fig, ax = plt.subplots()
+ax.plot(appt_tpe.index, appt_tpe['TBNew'], label='TBNew', color='r')
+ax.plot(appt_tpe.index, appt_tpe['DiagRadio'], label='DiagRadio', color='g')
+ax.plot(appt_tpe.index, appt_tpe['TBFollowUp'], label='TBFollowUp', color='y')
+ax.plot(appt_tpe.index, appt_tpe['LabTBMicro'], label='LabTBMicro', color='m')
+ax.plot(appt_tpe.index, appt_tpe['LabMolec'], label='LabMolec', color='c')
+ax.plot(appt_tpe.index, appt_tpe['Over5OPD'], label='Over5OPD', color='b')
+ax.plot(appt_tpe.index, appt_tpe['Under5OPD'], label='Under5OPD', color='k')
+plt.xlabel('Year')
+plt.ylabel('Quantity')
+plt.title('Appointment Types')
+plt.legend()
+plt.show()
