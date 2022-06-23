@@ -802,7 +802,6 @@ class NewbornOutcomes(Module):
         if individual_id not in nci:
             return
 
-        self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(

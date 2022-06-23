@@ -548,7 +548,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
 
     # Now check she also would receive antihypertensives
-    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event)
+    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event, labour_stage='ip')
     assert df.at[mother_id, 'la_maternal_hypertension_treatment']
 
     # Set disease status to eclampsia and run the appropriate intervention function, check treatment delivered

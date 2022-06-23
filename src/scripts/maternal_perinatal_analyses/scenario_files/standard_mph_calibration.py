@@ -30,16 +30,16 @@ from tlo.scenario import BaseScenario
 class Calibration(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 499
+        self.seed = 6742
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 1)
-        self.pop_size = 50000
+        self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'test_bug_fixes', 'directory': './outputs',
+            'filename': 'check_calibrations', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,

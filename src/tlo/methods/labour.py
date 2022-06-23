@@ -1710,17 +1710,17 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if (((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
-             df.at[person_id, 'ac_mag_sulph_treatment']) or
-            ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or
-           (df.at[person_id, 'la_severe_pre_eclampsia_treatment'] and (labour_stage == 'pp'))):
+        if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
+            ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
+            df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
-           (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
+            (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
 
             # Determine if this person will deliver vaginally or via caesarean
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
@@ -1741,22 +1741,21 @@ class Labour(Module):
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
                 pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
 
-    def assessment_and_treatment_of_hypertension(self, hsi_event):
+    def assessment_and_treatment_of_hypertension(self, hsi_event, labour_stage):
         """
         This function represents the diagnosis and management of hypertension during labour. This function
         defines the required consumable  and administers the intervention if available. The intervention is
         intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
         HSI_Labour_ReceivesPostnatalCheck
-        :param hsi_event: HSI event in which the function has been called:
-        (STR) 'hc' == health centre, 'hp' == hospital
+        :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
         person_id = hsi_event.target
         params = self.current_parameters
 
         # If the treatment is not allowed to be delivered or it has already been delivered the function won't run
-        if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or \
-           df.at[person_id, 'ac_iv_anti_htn_treatment'] or df.at[person_id, 'la_maternal_hypertension_treatment']:
+        if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or\
+           (df.at[person_id, 'ac_iv_anti_htn_treatment'] and (labour_stage == 'ip')):
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
@@ -2622,7 +2621,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Check the correct amount of time has passed between labour onset and this event event
         if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):
             logger.info(key='error', data=f'Mother {individual_id} arrived at LabourDeathAndStillBirthEvent at the '
-                                           f'wrong date')
+                                          f'wrong date')
 
         self.module.labour_characteristics_checker(individual_id)
 
@@ -2680,11 +2679,17 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.info(key='intrapartum_stillbirth', data={'mother_id': individual_id,
                                                             'date_of_ip_stillbirth': self.sim.date})
 
-        # Finally reset delay property
+        # Reset delay property
         if individual_id in mni:
             mni[individual_id]['delay_one_two'] = False
             mni[individual_id]['delay_three'] = False
             mni[individual_id]['didnt_seek_care'] = False
+
+        # Finally, reset some of the treatment variables
+        if not potential_cause_of_death:
+            df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'la_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
 
 
 class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
@@ -2710,7 +2715,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
         if not (self.sim.date - df.at[mother_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D'):
             logger.info(key='error', data=f'Mother {mother_id} arrived at BirthAndPostnatalOutcomesEvent at the '
-                                           f'wrong date')
+                                          f'wrong date')
 
         self.module.labour_characteristics_checker(mother_id)
 
@@ -2929,7 +2934,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         self.module.assessment_for_assisted_vaginal_delivery(self, indication='ol')
         self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
-        self.module.assessment_and_treatment_of_hypertension(self)
+        self.module.assessment_and_treatment_of_hypertension(self, labour_stage='ip')
         self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
         self.module.assessment_and_treatment_of_eclampsia(self, 'ip')
         self.module.assessment_for_referral_uterine_rupture(self)
@@ -3055,7 +3060,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.assessment_and_treatment_of_maternal_sepsis(self, 'pp')
 
         self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'pp')
-        self.module.assessment_and_treatment_of_hypertension(self)
+        self.module.assessment_and_treatment_of_hypertension(self, 'pp')
 
         if self.module.rng.random_sample() < params['prob_intervention_delivered_anaemia_assessment_pnc']:
             self.module.assessment_and_treatment_of_anaemia(self)
@@ -3338,22 +3343,19 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
                 params['odds_will_attend_pnc'] = scaled_intercept
 
-                # todo: for loop was being weird...
                 params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                params['prob_timings_pnc'] = [1.0, 0]
+
                 nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
                 nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
+
                 pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
                 pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
-                params['prob_timings_pnc'] = [params['pnc_availability_probability'],
-                                              (1 - params['pnc_availability_probability'])]
 
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
-
-                # todo: turn of effect of risk factors?
-                # todo: set careseeking param to same as coverage...
-                # todo: consumables
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
