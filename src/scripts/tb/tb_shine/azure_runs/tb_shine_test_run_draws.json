@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine/azure_runs/tb_shine_test_run.py",
-  "scenario_seed": 3911,
-  "runs_per_draw": 1,
+  "scenario_seed": 762,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 392829472,
+      "draw_seed": 773358646,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 1996512961,
+      "draw_seed": 835587720,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
