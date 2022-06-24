@@ -2053,6 +2053,114 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         return ACTUAL_APPT_FOOTPRINT
 
+# ---------------------------------------------------------------------------
+#   IPT
+# ---------------------------------------------------------------------------
+class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event - give ipt to reduce risk of active TB
+    It can be scheduled by:
+    * HIV.HSI_Hiv_StartOrContinueTreatment for PLHIV, diagnosed and on ART
+    * Tb.HSI_Tb_StartTreatment for up to 5 contacts of diagnosed active TB case
+
+    if person referred by ART initiation (HIV+), IPT given for 36 months
+    paediatric IPT is 6-9 months
+     """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        self.TREATMENT_ID = "Tb_Ipt"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.debug(key="message", data=f"Starting IPT for person {person_id}")
+
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        person = df.loc[person_id]
+
+        # Do not run if the person is not alive or already on IPT or diagnosed active infection
+        if (
+            (not person["is_alive"])
+            or person["tb_on_ipt"]
+            or person["tb_diagnosed"]
+        ):
+            return
+
+        # if currently have symptoms of TB, refer for screening/testing
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if any(x in self.module.symptom_list for x in persons_symptoms):
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=14),
+                priority=0,
+            )
+
+        else:
+            # Check/log use of consumables, and give IPT if available
+            # if not available, reschedule IPT start
+            if self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
+            ):
+                # Update properties
+                df.at[person_id, "tb_on_ipt"] = True
+                df.at[person_id, "tb_date_ipt"] = self.sim.date
+
+                # schedule decision to continue or end IPT after 6 months
+                self.sim.schedule_event(
+                    Tb_DecisionToContinueIPT(self.module, person_id),
+                    self.sim.date + DateOffset(months=6),
+                )
+            else:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=14),
+                    priority=0,
+                )
+
+
+class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
+    """Helper event that is used to 'decide' if someone on IPT should continue or end
+    This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
+
+    * end IPT for all
+    * schedule further IPT for HIV+ if still eligible (no active TB diagnosed, <36 months IPT)
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        m = self.module
+
+        if not (person["is_alive"]):
+            return
+
+        # default update properties for all
+        df.at[person_id, "tb_on_ipt"] = False
+
+        # decide whether PLHIV will continue
+        if (
+            (not person["tb_diagnosed"])
+            and (
+            person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))
+        )
+            and (m.rng.random_sample() < m.parameters["prob_retained_ipt_6_months"])
+        ):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=14),
+                priority=0,
+            )
 
 # ---------------------------------------------------------------------------
 #   Deaths
