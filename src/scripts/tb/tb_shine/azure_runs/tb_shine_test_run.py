@@ -26,7 +26,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class TestTbShineShorterTreatmentScenario(BaseScenario):
+class TestTbShineTestRun(BaseScenario):
 
     def __init__(self):
         super().__init__()
