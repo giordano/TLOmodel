@@ -603,11 +603,11 @@ print(consumables_posttb.item.nunique(),
 
 # --- 5.3 Iron and folic acid --- #
 # Component 1: Iron
-cond1 = consumables_posttb['item'].isin(['Iron tablets',
+cond1 = consumables_posttb['item'].isin(['Iron tablet',
                             'Iron and folic combined tablets'])
 
 # Component 2: Folic Acid
-cond2 = consumables_posttb['item'].isin(['Folic acid tablets',
+cond2 = consumables_posttb['item'].isin(['Folic acid tablet',
                             'Iron and folic combined tablets'])
 
 # Component 1
