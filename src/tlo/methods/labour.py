@@ -861,7 +861,7 @@ class Labour(Module):
 
         # Schedule analysis event
         sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
-                           Date(self.current_parameters['analysis_year']), 1, 1)
+                           Date(self.current_parameters['analysis_year'], 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
