@@ -30,16 +30,16 @@ from tlo.scenario import BaseScenario
 class IncreasedPNCScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 555
+        self.seed = 55447
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2026, 1, 1)
-        self.pop_size = 90_000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_pnc_90k', 'directory': './outputs',
+            'filename': 'increased_pnc_cov_200k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -92,7 +92,7 @@ class IncreasedPNCScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Labour': {'alternative_pnc_coverage': True,
-                       'pnc_availability_odds': 11.5,
+                       'pnc_availability_odds': 11,
                        'pnc_availability_probability': 0.9},
             }
 

@@ -30,20 +30,21 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 444
+        self.seed = 55447
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 2)
-        self.pop_size = 60_000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc4_coverage_scenario', 'directory': './outputs',
-            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            'filename': 'increased_anc_cov_200k', 'directory': './outputs',
+            "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
@@ -58,7 +59,6 @@ class TestScenario(BaseScenario):
                 "tlo.methods.tb": logging.INFO,
             }
         }
-
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
                 contraception.Contraception(resourcefilepath=self.resources),
@@ -92,9 +92,6 @@ class TestScenario(BaseScenario):
         return {
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'anc_availability_odds': 9.0},
-                                    #  'anc_availability_probability': 0.9},
-
-            'CareOfWomenDuringPregnancy': {'squeeze_factor_threshold_anc': 10_000}
         }
 
 
