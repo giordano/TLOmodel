@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -544,8 +544,9 @@ class Labour(Module):
                         'and the consumables are available (proxy for clinical quality)'),
 
         # ANALYSIS PARAMETERS
-        'analysis_date': Parameter(
-            Types.DATE, 'Date after which changes in parameters as part of analysis should be enacted'),
+        'analysis_year': Parameter(
+            Types.INT, 'Year on which which changes in parameters as part of analysis should be enacted (1st day, '
+                        '1st month)'),
         'la_analysis_in_progress': Parameter(
             Types.BOOL, ''),
         'alternative_bemonc_availability': Parameter(
@@ -859,7 +860,8 @@ class Labour(Module):
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule analysis event
-        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self), self.current_parameters['analysis_date'])
+        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
+                           Date(self.current_parameters['analysis_year']), 1, 1)
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
