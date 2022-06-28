@@ -91,7 +91,8 @@ class SBAPerfectEMONC(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Labour': {'alternative_bemonc_availability': True,
-                       'bemonc_availability': 0.9}
+                       'bemonc_availability': 0.9,
+                       'analysis_year': 2021}
         }
 
 

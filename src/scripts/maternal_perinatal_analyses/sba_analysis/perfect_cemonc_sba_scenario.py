@@ -95,6 +95,7 @@ class SBAPerfectCEMONC(BaseScenario):
                        'alternative_cemonc_availability': True,
                        'bemonc_availability': 0.9,
                        'cemonc_availability': 0.9,
+                       'analysis_year': 2021
                        }
         }
 

@@ -98,13 +98,15 @@ class SBAPerfectCEMONC(BaseScenario):
                        'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
                        'pnc_availability_odds': 11,
-                       'pnc_availability_probability': 0.9
+                       'pnc_availability_probability': 0.9,
+                       'analysis_year': 2021
                        },
 
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
-                                    'anc_availability_probability': 0.9}
+                                    'anc_availability_probability': 0.9,
+                                    'analysis_year': 2021}
         }
 
 

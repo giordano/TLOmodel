@@ -91,7 +91,8 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'PregnancySupervisor': {'alternative_anc_coverage': True,
-                                    'anc_availability_odds': 9.0},
+                                    'anc_availability_odds': 9.0,
+                                    'analysis_year': 2021},
         }
 
 
