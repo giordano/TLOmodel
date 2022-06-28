@@ -93,7 +93,7 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
         return {
             'Labour': {'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 11,
+                       'pnc_availability_odds': 11.0,
                        'pnc_availability_probability': 0.9,
                        'analysis_year': 2021},
         }
