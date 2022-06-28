@@ -7,7 +7,9 @@ import pytest
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods import (labour, pregnancy_supervisor, care_of_women_during_pregnancy, pregnancy_helper_functions)
+from tlo.methods.healthsystem import FacilityInfo
+from tlo.methods import (labour, pregnancy_supervisor, care_of_women_during_pregnancy, newborn_outcomes,
+                         pregnancy_helper_functions)
 
 
 start_date = Date(2010, 1, 1)
@@ -20,6 +22,33 @@ except NameError:
     resourcefilepath = 'resources'
 
 
+def get_dummy_hsi(sim, mother_id, id, fl):
+    # create dummy HSI to test that consumables truly are unavailable when using standard method
+    from tlo.events import IndividualScopeEventMixin
+    from tlo.methods.healthsystem import HSI_Event
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = fl
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    hsi_event = HSI_Dummy(module=sim.modules['CareOfWomenDuringPregnancy'], person_id=mother_id)
+    hsi_event.facility_info = FacilityInfo(id=id,
+                                           name=f'Facility_Level_{fl}_Balaka',
+                                           level=fl,
+                                           region='Southern')
+
+
+    return hsi_event
+
+
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
@@ -27,8 +56,8 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
-    lparams['analysis_date'] = Date(2010, 1, 2)
-    pparams['analysis_date'] = Date(2010, 1, 2)
+    lparams['analysis_year'] = 2010
+    pparams['analysis_year'] = 2010
 
     new_avail_prob = 0.5
 
@@ -48,7 +77,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     unchanged_odds_anc = pparams['odds_early_init_anc4'][0]
     unchanged_odds_pnc = lparams['odds_will_attend_pnc'][0]
 
-    sim.simulate(end_date=Date(2010, 1, 3))
+    sim.simulate(end_date=Date(2010, 1, 2))
 
     # Check antenatal parameters correctly updated
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
@@ -91,11 +120,13 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     sim.make_initial_population(n=100)
 
     pparams = sim.modules['PregnancySupervisor'].parameters
-    pparams['analysis_date'] = Date(2010, 1, 1)
+    pparams['analysis_year'] = 2010
     pparams['alternative_anc_quality'] = True
     pparams['anc_availability_probability'] = 1.0
 
     sim.simulate(end_date=Date(2010, 1, 2))
+
+    assert pparams['ps_analysis_in_progress']
 
     df = sim.population.props
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
@@ -125,14 +156,24 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
         sim.modules['HealthSystem'].override_availability_of_consumables(
             {cons[0]: 0.0})
 
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
 
-    # todo: make dummy HSI event and check that the consumables are truely not available
-    #available = hsi_event.get_consumables(item_codes=core_cons,
-    #                                          optional_item_codes=opt_cons)
+    # create dummy HSI to test that consumables truly are unavailable when using standard method
+    hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
-    # override the availability of the malaria
+    # check that none of the consumables are availble
+    for cons in iron, protein, calcium, syph_test, syph_treat:
+        available = hsi_event.get_consumables(item_codes=cons)
+        assert not available
+
+    # Then run normal ANC event in which the consumable log is managed through pregnancy_helper_functions
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=mother_id)
+    first_anc.facility_info = FacilityInfo(id=1,
+                                           name='Facility_Level_1a_Balaka',
+                                           level='1a',
+                                           region='Southern')
     first_anc.apply(person_id=mother_id, squeeze_factor=0.0)
 
     # Check that the function in pregnancy_helper_functions has correctly circumnavigated the availability of the
@@ -143,26 +184,351 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     assert not df.at[mother_id, 'ps_syphilis']
 
 
-test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc(0)
-
-
-
-def test_analysis_events_force_availability_of_signal_function_interventions(seed):
-    pass
-
-
-def test_logic_of_mni_intervention_logging(seed, ):
-    # check all deaths being counted
-    pass
-
-
-def test_logic_of_met_need_logging(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.make_initial_population(n=100)
 
-    pass
+    # Set the analysis event to run at simulation start
+    lparams = sim.modules['Labour'].parameters
+    lparams['analysis_date'] = Date(2010, 1, 1)
+    lparams['alternative_bemonc_availability'] = True
+    lparams['alternative_cemonc_availability'] = True
 
+    # Set availabili
+    lparams['bemonc_availability'] = 1.0
+    lparams['cemonc_availability'] = 1.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    params = sim.modules['Labour'].current_parameters
+    assert params['la_analysis_in_progress']
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    # Set key pregnancy variables so SBA will run
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'la_currently_in_labour'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date - pd.DateOffset(weeks=33)
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 35
+
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
+    # Add some complications so that treatment should be delivered
+    df.at[mother_id, 'ps_premature_rupture_of_membranes'] = True
+    df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+    df.at[mother_id, 'la_obstructed_labour'] = True
+    df.at[mother_id, 'la_sepsis'] = True
+
+    mni[mother_id]['cpd'] = False
+    mni[mother_id]['new_onset_spe'] = True
+    mni[mother_id]['labour_state'] = 'late_preterm_labour'
+
+    params['prob_progression_severe_pre_eclamp'] = 0.0
+
+    # Override the availability of the consumables within the health system. set to 0.
+    module = sim.modules['Labour']
+    abx_prom = module.item_codes_lab_consumables['abx_for_prom']
+    steroids = module.item_codes_lab_consumables['antenatal_steroids']
+    cbp = module.item_codes_lab_consumables['delivery_core']
+    ol = module.item_codes_lab_consumables['vacuum']
+    mag_sulf = module.item_codes_lab_consumables['magnesium_sulfate']
+    htns = module.item_codes_lab_consumables['iv_antihypertensives']
+    seps = module.item_codes_lab_consumables['maternal_sepsis_core']
+
+    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps:
+        for item in cons:
+            sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    # create dummy HSI to test that consumables truly are unavailable when using standard method
+    hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
+    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps:
+        available = hsi_event.get_consumables(item_codes=cons)
+        assert not available
+
+    # Next define the actual HSI of interest
+    sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
+        module=sim.modules['Labour'], person_id=mother_id, facility_level_of_this_hsi=2)
+    sba.facility_info = FacilityInfo(id=3,
+                                     name='Facility_Level_2_Balaka',
+                                     level='2',
+                                     region='Southern')
+
+    sba.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert mni[mother_id]['abx_for_prom_given']
+    assert mni[mother_id]['corticosteroids_given']
+    assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
+    assert df.at[mother_id, 'la_maternal_hypertension_treatment']
+    assert mni[mother_id]['mode_of_delivery'] == 'instrumental'
+    assert df.at[mother_id, 'la_sepsis_treatment']
+    assert mni[mother_id]['clean_birth_practices']
+
+    # Now test CEmONC event
+    params['success_rate_uterine_repair'] = 1.0
+
+    df.at[mother_id, 'la_uterine_rupture'] = True
+    mni[mother_id]['referred_for_blood'] = True
+    mni[mother_id]['referred_for_cs'] = True
+    mni[mother_id]['cs_indication'] = 'ur'
+
+    cs = module.item_codes_lab_consumables['caesarean_delivery_core']
+    blood = module.item_codes_lab_consumables['blood_transfusion']
+
+    for cons in cs, blood:
+        for item in cons:
+            sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    for cons in cs, blood:
+        available = hsi_event.get_consumables(item_codes=cons)
+        assert not available
+
+    cemonc = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
+        module=sim.modules['Labour'], person_id=mother_id, timing='intrapartum')
+    cemonc.facility_info = FacilityInfo(id=3,
+                                        name='Facility_Level_2_Balaka',
+                                        level='2',
+                                        region='Southern')
+
+    cemonc.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert mni[mother_id]['mode_of_delivery'] == 'caesarean_section'
+    assert df.at[mother_id, 'la_uterine_rupture_treatment']
+    assert mni[mother_id]['received_blood_transfusion']
+
+
+def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    # Set the analysis event to run at simulation start
+    lparams = sim.modules['Labour'].parameters
+    lparams['analysis_date'] = Date(2010, 1, 1)
+    lparams['alternative_pnc_coverage'] = True
+    lparams['alternative_pnc_quality'] = True
+
+    # Set availability
+    lparams['pnc_availability_probability'] = 1.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    params = sim.modules['Labour'].current_parameters
+    assert params['la_analysis_in_progress']
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    # Set key pregnancy variables so SBA will run
+    df.at[mother_id, 'la_is_postpartum'] = True
+    df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date
+    mni[mother_id]['will_receive_pnc'] = 'early'
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
+    # set some complications
+    df.at[mother_id, 'la_postpartum_haem'] = True
+    mni[mother_id]['uterine_atony'] = True
+    params['prob_haemostatis_uterotonics'] = 1.0
+
+    module = sim.modules['Labour']
+    pph = module.item_codes_lab_consumables['pph_core']
+
+    for item in pph:
+        sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
+    for cons in pph:
+        available = hsi_event.get_consumables(item_codes=cons)
+        assert not available
+
+    # Next define the actual HSI of interest
+    pnc = labour.HSI_Labour_ReceivesPostnatalCheck(
+            module=sim.modules['Labour'], person_id=mother_id)
+    pnc.facility_info = FacilityInfo(id=3,
+                                     name='Facility_Level_2_Balaka',
+                                     level='2',
+                                     region='Southern')
+
+    pnc.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert not df.at[mother_id, 'la_postpartum_haem']
+    assert not mni[mother_id]['uterine_atony']
+
+
+def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    # Set the analysis event to run at simulation start
+    lparams = sim.modules['Labour'].parameters
+    lparams['analysis_date'] = Date(2010, 1, 1)
+    lparams['alternative_bemonc_availability'] = True
+    lparams['alternative_pnc_coverage'] = True
+    lparams['alternative_pnc_quality'] = True
+
+    # Set availability
+    lparams['pnc_availability_probability'] = 1.0
+    lparams['bemonc_availability'] = 1.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
+    df.at[mother_id, 'is_pregnant'] = True
+
+    # Populate the minimum set of keys within the mni dict so the on_birth function will run
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
+    # Set the variable that the mother has delivered at home
+    mni[mother_id]['delivery_setting'] = 'hospital'
+    child_id = sim.do_birth(mother_id)
+    sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
+
+    # set comps
+    df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
+
+    # set consumables to 0
+    resus = sim.modules['NewbornOutcomes'].item_codes_nb_consumables['resuscitation']
+    for item in resus:
+        sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
+    available = hsi_event.get_consumables(item_codes=resus)
+    assert not available
+
+    # Next define the actual HSI of interest
+    nb_sba = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi=2)
+    nb_sba.facility_info = FacilityInfo(id=3,
+                                        name='Facility_Level_2_Balaka',
+                                        level='2',
+                                        region='Southern')
+
+    nb_sba.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert df.at[child_id, 'nb_received_neonatal_resus']
+
+    # set postnatal comps
+    df.at[child_id, 'pn_sepsis_early_neonatal'] = True
+
+    sepsis_care = sim.modules['NewbornOutcomes'].item_codes_nb_consumables['sepsis_supportive_care_core']
+    for item in sepsis_care:
+        sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
+
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    available = hsi_event.get_consumables(item_codes=sepsis_care)
+    assert not available
+
+    # Next define the actual HSI of interest
+    nb_pnc = newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id)
+    nb_pnc.facility_info = FacilityInfo(id=3,
+                                        name='Facility_Level_2_Balaka',
+                                        level='2',
+                                        region='Southern')
+
+    nb_pnc.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert df.at[child_id, 'nb_supp_care_neonatal_sepsis']
+
+def test_analysis_events_circumnavigates_SF_and_competnency_parameters(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    # Set the analysis event to run at simulation start
+    lparams = sim.modules['Labour'].parameters
+    lparams['analysis_date'] = Date(2010, 1, 1)
+    lparams['alternative_bemonc_availability'] = True
+    lparams['alternative_cemonc_availability'] = True
+
+    # Set availability
+    lparams['bemonc_availability'] = 1.0
+    lparams['cemonc_availability'] = 1.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    params = sim.modules['Labour'].current_parameters
+    assert params['la_analysis_in_progress']
+
+    df = sim.population.props
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    # Set key pregnancy variables so SBA will run
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'la_currently_in_labour'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date - pd.DateOffset(weeks=33)
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 35
+
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
+    # Add some complications so that treatment should be delivered
+    df.at[mother_id, 'ps_premature_rupture_of_membranes'] = True
+    df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+    df.at[mother_id, 'la_obstructed_labour'] = True
+    df.at[mother_id, 'la_sepsis'] = True
+
+    mni[mother_id]['cpd'] = False
+    mni[mother_id]['new_onset_spe'] = True
+    mni[mother_id]['labour_state'] = 'late_preterm_labour'
+
+    params['prob_progression_severe_pre_eclamp'] = 0.0
+
+    # Override sf parameters which would block intervention delivery if analysis wasnt being conducted
+    params['prob_hcw_avail_iv_abx'] = 0.0
+    params['prob_hcw_avail_anticonvulsant'] = 0.0
+    params['prob_hcw_avail_avd'] = 0.0
+    params['mean_hcw_competence_hp'] = 0.0
+    params['mean_hcw_competence_hc'] = 0.0
+
+    # Next define the actual HSI of interest
+    from tlo.methods.healthsystem import FacilityInfo
+
+    sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
+        module=sim.modules['Labour'], person_id=mother_id, facility_level_of_this_hsi=2)
+    sba.facility_info = FacilityInfo(id=3,
+                                     name='Facility_Level_2_Balaka',
+                                     level='2',
+                                     region='Southern')
+
+    sba.apply(person_id=mother_id, squeeze_factor=0.0)
+
+    assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
+    assert mni[mother_id]['mode_of_delivery'] == 'instrumental'
+    assert df.at[mother_id, 'la_sepsis_treatment']
 
 

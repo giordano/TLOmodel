@@ -676,6 +676,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # Test uterine rupture surgery
     # Set variables showing woman has been referred to surgery due to uterine rupture
     mni[mother_id]['referred_for_surgery'] = True
+    mni[mother_id]['referred_for_cs'] = True
     df.at[mother_id, 'la_uterine_rupture'] = True
 
     # Force success rate of surgery to 1
