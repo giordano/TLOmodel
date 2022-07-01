@@ -257,53 +257,8 @@ hhfa.loc[cond2, 'fac_urban'] = 'Yes'
 cond = hhfa['water_disruption_last_3mts'] == "No"
 hhfa.loc[cond, 'water_disruption_duration'] = 0
 
-## 3. CREATE CONSUMABLE AVAILABILITY DATAFRAME ##
-#########################################################################################
-# --- 3.1 Extract dataframe containing consumable availability from the raw HHFA dataframe --- #
-# Rename columns variable name mapping in loaded .csv
-consumables = copy.deepcopy(raw_hhfa)
-for i in range(len(varnames['var'])):
-    # if HHFA variable has been mapped to a consumable and is not an equipment
-    if pd.notna(varnames['item'][i]) and pd.isna(varnames['equipment'][i]):
-        consumables.rename(columns={varnames['var'][i]: varnames['availability_metric'][i] + '_' + varnames['item'][i]},
-                           inplace=True)
-    elif varnames['var'][i] == 'Fcode':  # keep facility code variable
-        consumables.rename(columns={varnames['var'][i]: varnames['new_var_name'][i]},
-                           inplace=True)
-
-    # Mark all other unmapped variables to be dropped
-    else:
-        consumables.rename(columns={varnames['var'][i]: 'Drop'},
-                           inplace=True)
-
-consumables = consumables.drop(columns='Drop')
-
-# Check that there are no duplicate consumable + metric entries
-assert len(consumables.columns[consumables.columns.duplicated(keep='last')]) == 0
-
-## 3. CREATE CONSUMABLE AVAILABILITY DATAFRAME ##
-#########################################################################################
-# --- 3.1 Extract dataframe containing consumable availability from the raw HHFA dataframe --- #
-# Rename columns variable name mapping in loaded .csv
-consumables = copy.deepcopy(raw_hhfa)
-for i in range(len(varnames['var'])):
-    # if HHFA variable has been mapped to a consumable and is not an equipment
-    if pd.notna(varnames['item'][i]) and pd.isna(varnames['equipment'][i]):
-        consumables.rename(columns={varnames['var'][i]: varnames['availability_metric'][i] + '_' + varnames['item'][i]},
-                           inplace=True)
-    elif varnames['var'][i] == 'Fcode':  # keep facility code variable
-        consumables.rename(columns={varnames['var'][i]: varnames['new_var_name'][i]},
-                           inplace=True)
-
-    # Mark all other unmapped variables to be dropped
-    else:
-        consumables.rename(columns={varnames['var'][i]: 'Drop'},
-                           inplace=True)
-
-consumables = consumables.drop(columns='Drop')
-
-# Check that there are no duplicate consumable + metric entries
-assert len(consumables.columns[consumables.columns.duplicated(keep='last')]) == 0
+# Change incharge_drugs to lower case
+hhfa.incharge_drug_orders = hhfa.incharge_drug_orders.str.lower()
 
 ## 3. CREATE CONSUMABLE AVAILABILITY DATAFRAME ##
 #########################################################################################
@@ -762,6 +717,10 @@ df_for_regression.loc[cond_mvit, 'program'] = 'general'
 
 cond_rutf = df_for_regression.item == 'Ready to use therapeutic food(RUTF)'
 df_for_regression.loc[cond_rutf, 'program'] = 'child health'
+
+# Reduce the number of categories in mode_administration
+cond = df_for_regression['mode_administration'] == "implant"
+df_for_regression.loc[cond, 'mode_administration'] = "other"
 
 # Clean facility type
 df_for_regression = df_for_regression.rename(columns = {'fac_type': 'fac_type_original'})
