@@ -74,6 +74,10 @@ hhfa.loc[cond, 'district'] = 'Nkhata Bay'
 cond = hhfa.fac_code == 5067
 hhfa.loc[cond, 'fac_type'] = 'Other Hospital'
 
+# Clean fac_owner
+cond = hhfa.fac_owner == 'Private non profit'
+hhfa.loc[cond, 'fac_owner'] = 'NGO'
+
 # Bed count = 0 if outpatient only
 for var in ['bed_count', 'inpatient_visit_count', 'inpatient_days_count']:
     cond = hhfa['outpatient_only'] == "Yes"
