@@ -366,6 +366,8 @@ class PregnancySupervisor(Module):
         'anc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_anc_quality is true'),
+        'full_service_availability':Parameter(
+            Types.BOOL, ''),
 
     }
 
@@ -2112,7 +2114,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # Check if either of the analysis parameters are set to True
-        if params['alternative_anc_coverage'] or params['alternative_anc_quality']:
+        if params['alternative_anc_coverage'] or params['alternative_anc_quality'] or\
+            params['full_service_availability']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is
@@ -2141,7 +2144,7 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
                 # coverage can  be reached with current logic
                 self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
+                    1_000_000
 
             if params['alternative_anc_quality']:
 
@@ -2160,6 +2163,19 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                                   'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
                         params['anc_availability_probability']
+
+            if params['full_service_availability']:
+                params['prob_seek_care_pregnancy_complication'] = 1.0
+                params['prob_seek_care_induction'] = 1.0
+                params['prob_glycaemic_control_diet_exercise'] = 1.0  # todo: easier that setting cons avail
+
+                cparams = self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+                cparams['prob_seek_anc5'] = 1.0
+                cparams['prob_seek_anc6'] = 1.0
+                cparams['prob_seek_anc7'] = 1.0
+                cparams['prob_seek_anc8'] = 1.0
+                cparams['prob_adherent_ifa'] = 1.0
+                cparams['squeeze_threshold_for_delay_three_an'] = 1_000_000
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

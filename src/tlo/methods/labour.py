@@ -850,7 +850,7 @@ class Labour(Module):
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_lab_consumables['iron_folic_acid'] = \
-            get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
+            get_list_of_items(self, ['Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg'])
 
     def initialise_simulation(self, sim):
         # Update self.current_parameters
@@ -2193,8 +2193,12 @@ class Labour(Module):
             if not mother.la_iron_folic_acid_postnatal:
 
                 days = int((6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7)
-                cons = {_i: days for _i in self.item_codes_lab_consumables['iron_folic_acid']}
-                avail = hsi_event.get_consumables(item_codes=cons)
+                # cons = {_i: days for _i in self.item_codes_lab_consumables['iron_folic_acid']}
+                # avail = hsi_event.get_consumables(item_codes=cons)
+
+                avail = pregnancy_helper_functions.return_cons_avail(
+                    self, hsi_event, self.item_codes_lab_consumables, core='iron_folic_acid',
+                    number=days)
 
                 # Start iron and folic acid treatment
                 if avail:
@@ -2246,9 +2250,13 @@ class Labour(Module):
                     priority=0)
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
-        cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in
-                self.item_codes_lab_consumables['iron_folic_acid']}
-        avail = hsi_event.get_consumables(item_codes=cons)
+        # cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in
+        #        self.item_codes_lab_consumables['iron_folic_acid']}
+        # avail = hsi_event.get_consumables(item_codes=cons)
+
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_lab_consumables, core='iron_folic_acid',
+            number=params['number_ifa_tablets_required_postnatally'])
 
         # Women are started on iron and folic acid for the next three months which reduces risk of anaemia in the
         # postnatal period
@@ -3302,20 +3310,22 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
         mni_df = pd.DataFrame.from_dict(mni, orient='index')
         pn_params = self.sim.modules['PostnatalSupervisor'].current_parameters
         nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
+        ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
 
         # Check to see if analysis is being conducted when this event runs
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or \
+            ps_params['full_service_availability']:\
 
             params['la_analysis_in_progress'] = True
 
             # Remove squeeze thresholds which impact effectiveness of the interventions
             if params['alternative_bemonc_availability']:
-                params['squeeze_threshold_for_delay_three_bemonc'] = 10_000
-                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
+                params['squeeze_threshold_for_delay_three_bemonc'] = 1_000_000
+                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 1_000_000
 
             if params['alternative_cemonc_availability']:
-                params['squeeze_threshold_for_delay_three_cemonc'] = 10_000
+                params['squeeze_threshold_for_delay_three_cemonc'] = 1_000_000
 
             # If PNC analysis is being conducted we reset the intercept parameter of the equation determining care
             # seeking for PNC and scale the model
@@ -3354,8 +3364,23 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
 
             if params['alternative_pnc_quality']:
-                params['squeeze_threshold_for_delay_three_pn'] = 10_000
+                params['squeeze_threshold_for_delay_three_pn'] = 1_000_000
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
+                params['prob_adherent_ifa'] = 1.0
+
+            if ps_params['full_service_availability']:
+                params['prob_delay_one_two_fd'] = 0.0
+                params['prob_careseeking_for_complication'] = 1.0
+
+                target = 0.001
+                params['odds_deliver_at_home'] = 1
+                mean = self.module.la_linear_models['probability_delivery_at_home'].predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year).mean()
+
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+                params['odds_deliver_at_home'] = scaled_intercept
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

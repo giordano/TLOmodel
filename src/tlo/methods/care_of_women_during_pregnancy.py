@@ -1305,9 +1305,12 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         # Calculate the approximate dose for the remainder of pregnancy and check availability
-        dose = self.get_approx_days_of_pregnancy(individual_id) * 4
-        cons = {_i: dose for _i in self.item_codes_preg_consumables['oral_antihypertensives']}
-        avail = hsi_event.get_consumables(item_codes=cons)
+        # dose = self.get_approx_days_of_pregnancy(individual_id) * 4
+        # cons = {_i: dose for _i in self.item_codes_preg_consumables['oral_antihypertensives']}
+        # avail = hsi_event.get_consumables(item_codes=cons)
+        dose = self.get_approx_days_of_pregnancy(hsi_event.target) * 4
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='oral_antihypertensives', number=dose)
 
         # If the consumables are available then the woman is started on treatment
         if avail:
@@ -1326,8 +1329,12 @@ class CareOfWomenDuringPregnancy(Module):
         cons = self.item_codes_preg_consumables
 
         # Define the consumables and check their availability
-        avail = hsi_event.get_consumables(item_codes=cons['iv_antihypertensives'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+        # avail = hsi_event.get_consumables(item_codes=cons['iv_antihypertensives'],
+        #                                  optional_item_codes=cons['iv_drug_equipment'])
+
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='iv_antihypertensives',
+            optional='iv_drug_equipment')
 
         # If they are available then the woman is started on treatment
         if avail:
@@ -1381,8 +1388,11 @@ class CareOfWomenDuringPregnancy(Module):
         cons = self.item_codes_preg_consumables
 
         # check consumables and whether HCW are available to deliver the intervention
-        avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='abx_for_prom',
+            optional='iv_drug_equipment')
+        # avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
+        #                                   optional_item_codes=cons['iv_drug_equipment'])
 
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='iv_abx',
