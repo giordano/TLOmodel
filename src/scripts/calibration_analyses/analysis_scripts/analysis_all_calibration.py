@@ -6,6 +6,7 @@ from pathlib import Path
 import analysis_cause_of_death_and_disability_calibrations
 import analysis_demography_calibrations
 import analysis_hsi_descriptions
+import analysis_compare_appt_usage_real_and_simulation
 
 from tlo.analysis.utils import get_scenario_outputs
 
@@ -14,13 +15,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """Run all the calibration analyses (demographic, epidemiological & descriptions of healthcare system usage) on
     the results of running `long_run_all_diseases.py`."""
 
-    analysis_demography_calibrations.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+    # analysis_demography_calibrations.apply(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+    #
+    # analysis_cause_of_death_and_disability_calibrations.apply(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+    #
+    # analysis_hsi_descriptions.apply(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
-    analysis_cause_of_death_and_disability_calibrations.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
-
-    analysis_hsi_descriptions.apply(
+    analysis_compare_appt_usage_real_and_simulation.apply(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     # make html page to present results
@@ -45,7 +49,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    outputspath = Path('./outputs/bshe@ic.ac.uk')  # tbh03@ic.ac.uk
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)

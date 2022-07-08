@@ -19,9 +19,9 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
                 {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
-                 }
-             ).unstack().fillna(0.0).astype(int)
+                    idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
+                }
+            ).unstack().fillna(0.0).astype(int)
 
         return _df \
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
@@ -30,15 +30,15 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
 
     return summarize(
         extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_appts,
-                do_scaling=True
-            ),
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_counts_of_appts,
+            do_scaling=True
+        ),
         only_mean=True,
         collapse_columns=True,
-        ).unstack().astype(int)
+    ).unstack().astype(int)
 
 
 def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
@@ -124,9 +124,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _ax.set_xlabel('Appointment Type')
         _ax.tick_params(axis='x', labelrotation=90)
         _ax.grid(axis='both', which='both')
-        _ax.legend(loc='upper left')
+        _ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
         _fig.tight_layout()
-        _fig.savefig(make_graph_file_name(_name_of_plot.replace(' ', '_')))
+        _fig.savefig(make_graph_file_name(_name_of_plot.replace('\n', '_').replace(' ', '_')))
         _fig.show()
 
     make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
@@ -150,7 +150,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (simulation_usage - real_usage) / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
 
-    name_of_plot = 'Relative difference of model and real average annual usage by appt type\n[By Facility Level]'
+    name_of_plot = 'Model vs Real average annual usage by appt type\n[By Facility Level]'
     fig, ax = plt.subplots()
     for _level, _results in rel_diff_by_levels.iterrows():
         ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker='*')
