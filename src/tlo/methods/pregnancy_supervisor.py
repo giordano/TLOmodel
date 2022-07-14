@@ -368,6 +368,8 @@ class PregnancySupervisor(Module):
                         'alternative_anc_quality is true'),
         'full_service_availability':Parameter(
             Types.BOOL, ''),
+        'set_all_pregnant': Parameter(
+            Types.BOOL, ''),
 
     }
 
@@ -2112,6 +2114,20 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
         df = self.sim.population.props
+
+        if params['set_all_pregnant']:
+            all = df.loc[df.is_alive]
+            df.loc[all.index, 'sex'] = 'F'
+            df.loc[all.index, 'is_pregnant'] = True
+            for person in all.index:
+                age = self.module.rng.randint(16, 49)
+                df.at[person, 'age_years'] = age
+                df.at[person, 'age_exact_years'] = float(age)
+                df.at[person, 'age_days'] = age * 365
+                df.at[person, 'date_of_birth'] = self.sim.date - pd.DateOffset(days=(age * 365))
+                df.at[person, 'date_of_last_pregnancy'] = self.sim.date
+
+                self.sim.modules['Labour'].set_date_of_labour(person)
 
         # Check if either of the analysis parameters are set to True
         if params['alternative_anc_coverage'] or params['alternative_anc_quality'] or\
