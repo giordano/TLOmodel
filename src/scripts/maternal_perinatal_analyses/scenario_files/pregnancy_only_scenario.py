@@ -24,13 +24,13 @@ class MaxPregnancyRun(BaseScenario):
         self.seed = 123
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
-        self.pop_size = 1000
+        self.pop_size = 100_000
         self.number_of_draws = 3
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'max_pregnancy_run_250k', 'directory': './outputs',
+            'filename': 'max_pregnancy_run_100k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
