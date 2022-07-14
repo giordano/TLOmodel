@@ -73,12 +73,14 @@ class MaxPregnancyRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
 
         grid = self.make_grid(
-            {'prob_delay_one_two_fd': [[0.0, 0.0], [1.0, 1.0], [0.38, 0.38]]})
+            {'prob_delay_one_two_fd': [0.0, 1.0, 0.38]})
 
         return {'PregnancySupervisor': {'analysis_year': 2010,
                                         'set_all_pregnant': True},
 
-                'Labour': {'prob_delay_one_two_fd': grid['prob_delay_one_two_fd'][draw_number]}
+                'Labour': {'prob_delay_one_two_fd': [grid['prob_delay_one_two_fd'][draw_number],
+                                                     grid['prob_delay_one_two_fd'][draw_number]
+                                                     ]}
 
         }
 
