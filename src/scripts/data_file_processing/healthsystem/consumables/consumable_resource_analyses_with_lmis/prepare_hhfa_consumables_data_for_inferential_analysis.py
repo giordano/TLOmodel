@@ -260,6 +260,15 @@ hhfa.loc[cond, 'water_disruption_duration'] = 0
 # Change incharge_drugs to lower case
 hhfa.incharge_drug_orders = hhfa.incharge_drug_orders.str.lower()
 
+# Clean other category for incharge_drug_orders
+incharge_drug_orders_other_mapping = pd.read_csv(path_to_files_in_the_tlo_dropbox / '1 processing/incharge_drug_orders_other_mapping.csv')
+hhfa = pd.merge(hhfa, incharge_drug_orders_other_mapping[['incharge_drug_orders_other_spec',
+                                                          'cleaned_incharge_drug_orders']],
+                on = 'incharge_drug_orders_other_spec',
+                how = 'left')
+cond = hhfa.incharge_drug_orders == 'other'
+hhfa.loc[cond, 'incharge_drug_orders'] = hhfa['cleaned_incharge_drug_orders']
+
 ## 3. CREATE CONSUMABLE AVAILABILITY DATAFRAME ##
 #########################################################################################
 # --- 3.1 Extract dataframe containing consumable availability from the raw HHFA dataframe --- #
@@ -670,7 +679,11 @@ feature_cols = ['fac_code', 'fac_name',
             'transport_to_district_hq','travel_time_to_district_hq',
 
             # referral system
-            'referral_system_from_community','referrals_to_other_facs']
+            'referral_system_from_community','referrals_to_other_facs',
+
+            # Drug management
+            'mathealth_label_and_expdate_visible', 'mathealth_expdate_fefo',
+            'childhealth_label_and_expdate_visible', 'childhealth_expdate_fefo']
 
 # Merge consumable availability data
 merged_df1 = pd.merge(consumables_final,hhfa[feature_cols], how = 'left', on = 'fac_code')
@@ -777,7 +790,9 @@ fac_vars_binary = ['outpatient_only', 'fac_urban',
                 'vaccine_storage','functional_refrigerator',
                 'source_drugs_cmst','source_drugs_local_warehouse','source_drugs_ngo','source_drugs_donor','source_drugs_pvt',
                 'drug_transport_local_supplier','drug_transport_higher_level_supplier','drug_transport_self','drug_transport_other',
-                'referral_system_from_community','referrals_to_other_facs']
+                'referral_system_from_community','referrals_to_other_facs',
+                'mathealth_label_and_expdate_visible', 'mathealth_expdate_fefo',
+                'childhealth_label_and_expdate_visible', 'childhealth_expdate_fefo']
 
 binary_dict = {'yes': 1, 'no': 0}
 
