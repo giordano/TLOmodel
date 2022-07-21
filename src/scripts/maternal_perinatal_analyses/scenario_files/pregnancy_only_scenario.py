@@ -21,7 +21,7 @@ from tlo.scenario import BaseScenario
 class UnivariateSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 123
+        self.seed = 555
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
@@ -137,8 +137,15 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         # a new row from the parameter dictionary
 
         df = self.param_df
-        new_row = {df.at[draw_number, 'parameter']: [df.at[draw_number, 'value'],
-                                                     df.at[draw_number, 'value']]}
+
+        # todo: fix
+        if 'mean_hcw_competence' in df.at[draw_number, 'parameter']:
+            p_value = [[df.at[draw_number, 'value'], df.at[draw_number, 'value']],
+                       [df.at[draw_number, 'value'], df.at[draw_number, 'value']]]
+        else:
+            p_value = [df.at[draw_number, 'value'], df.at[draw_number, 'value']]
+
+        new_row = {df.at[draw_number, 'parameter']: p_value}
 
         if df.at[draw_number, 'module'] in param_dict.keys():
             param_dict[df.at[draw_number, 'module']].update(new_row)
