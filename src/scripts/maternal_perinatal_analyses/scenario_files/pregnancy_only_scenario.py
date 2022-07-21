@@ -47,6 +47,8 @@ class UnivariateSensitivityAnalysis(BaseScenario):
                                               'aph_bt_treatment_effect_md',
                                               'aph_cs_treatment_effect_md']}
 
+        # Three draws per parameter for a low, medium, high value plus and additional draw with no parameter changes for
+        # comparison
         self.number_of_draws = (sum(len(l) for l in self.params_of_interest.values()) * 3) + 1
         self.runs_per_draw = 5
         self.param_df = self._get_param_df()
@@ -94,6 +96,9 @@ class UnivariateSensitivityAnalysis(BaseScenario):
                 ]
 
     def _get_param_df(self):
+
+        # create DF with the draw number as the index and the row containing the module, parameter and value to be
+        # changed for that run
         df = pd.DataFrame(columns=['module', 'parameter', 'value'], index=list(range(self.number_of_draws - 1)))
         df['value'] = [0.0, 0.5, 1.0] * int(((self.number_of_draws - 1) / 3))
 
@@ -114,6 +119,9 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         return df
 
     def _update_parameter_dictionary(self, param_dict, draw_number):
+        # Update the dictionary of parameters to be returned in draw_parameters. Use the draw number to create
+        # a new row from the parameter dictionary
+
         df = self.param_df
         new_row = {df.at[draw_number, 'parameter']: [df.at[draw_number, 'value'],
                                                      df.at[draw_number, 'value']]}
@@ -124,9 +132,11 @@ class UnivariateSensitivityAnalysis(BaseScenario):
             param_dict.update({df.at[draw_number, 'module']: new_row})
 
     def draw_parameters(self, draw_number, rng):
-
+        # For all draws set these parameters so that all women are set to being pregnant from the first day of the sim
         param_dict = {'PregnancySupervisor': {'analysis_year': 2010,
                                               'set_all_pregnant': True}}
+
+        # then for all draws, apart from the last, update the dictionary with the parameter to be changed and its value
         if not draw_number == list(range(self.number_of_draws))[-1]:
             self._update_parameter_dictionary(param_dict, draw_number)
 
