@@ -25,31 +25,45 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
-        self.params_of_interest = {'PregnancySupervisor': ['treatment_effect_ectopic_pregnancy_treatment',
-                                                           'treatment_effect_post_abortion_care'],
+        self.params_of_interest = {'PregnancySupervisor': ['treatment_effect_modifier_all_delays',
+                                                           'treatment_effect_modifier_one_delay'],
 
                                    'Labour': ['prob_haemostatis_uterotonics',
-                                              'pph_treatment_effect_uterotonics_md',
                                               'prob_successful_manual_removal_placenta',
                                               'pph_treatment_effect_mrp_md',
                                               'success_rate_pph_surgery',
                                               'pph_treatment_effect_surg_md',
                                               'pph_treatment_effect_hyst_md',
                                               'pph_bt_treatment_effect_md',
+
                                               'sepsis_treatment_effect_md',
-                                              'success_rate_uterine_repair',
-                                              'ur_repair_treatment_effect_md',
-                                              'ur_treatment_effect_bt_md',
-                                              'ur_hysterectomy_treatment_effect_md',
+
                                               'eclampsia_treatment_effect_severe_pe',
                                               'eclampsia_treatment_effect_md',
                                               'anti_htns_treatment_effect_md',
-                                              'aph_bt_treatment_effect_md',
-                                              'aph_cs_treatment_effect_md']}
+
+                                              'prob_hcw_avail_uterotonic',
+                                              'prob_hcw_avail_man_r_placenta',
+                                              'prob_hcw_avail_blood_tran',
+
+                                              'prob_hcw_avail_iv_abx',
+
+                                              'prob_hcw_avail_anticonvulsant',
+
+                                              'treatment_effect_modifier_one_delay',
+                                              'treatment_effect_modifier_all_delays',
+                                              'mean_hcw_competence_hc',
+                                              'mean_hcw_competence_hp']}
+
+        # Each parameter in turn will be set each of these values sequentially for a given draw. Any number of values
+        # can be set here
+        self.values_for_params = [0.0, 0.5, 1.0]
 
         # Three draws per parameter for a low, medium, high value plus and additional draw with no parameter changes for
         # comparison
-        self.number_of_draws = (sum(len(l) for l in self.params_of_interest.values()) * 3) + 1
+        self.number_of_draws = \
+            (sum(len(l) for l in self.params_of_interest.values()) * (len(self.values_for_params))) + 1
+
         self.runs_per_draw = 5
         self.param_df = self._get_param_df()
 
@@ -100,18 +114,18 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         # create DF with the draw number as the index and the row containing the module, parameter and value to be
         # changed for that run
         df = pd.DataFrame(columns=['module', 'parameter', 'value'], index=list(range(self.number_of_draws - 1)))
-        df['value'] = [0.0, 0.5, 1.0] * int(((self.number_of_draws - 1) / 3))
+        df['value'] = self.values_for_params * int(((self.number_of_draws - 1) / (len(self.values_for_params))))
 
         pvals = list(self.params_of_interest.values())
         new_list = list()
         for l in range(len(pvals)):
             new_list += pvals[l]
 
-        df['parameter'] = [p for p in new_list for k in range(3)]
+        df['parameter'] = [p for p in new_list for k in range((len(self.values_for_params)))]
 
         mod_list = list()
         for k in self.params_of_interest:
-            for l in range(len(self.params_of_interest[k] * 3)):
+            for l in range(len(self.params_of_interest[k] * (len(self.values_for_params)))):
                 mod_list.append(k)
 
         df['module'] = mod_list
