@@ -1,4 +1,4 @@
-import numpy as np
+import pandas as pd
 from tlo import Date, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -18,15 +18,38 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class MaxPregnancyRun(BaseScenario):
+class UnivariateSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 123
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
-        self.number_of_draws = 3
+        self.params_of_interest = {'PregnancySupervisor': ['treatment_effect_ectopic_pregnancy_treatment',
+                                                           'treatment_effect_post_abortion_care'],
+
+                                   'Labour': ['prob_haemostatis_uterotonics',
+                                              'pph_treatment_effect_uterotonics_md',
+                                              'prob_successful_manual_removal_placenta',
+                                              'pph_treatment_effect_mrp_md',
+                                              'success_rate_pph_surgery',
+                                              'pph_treatment_effect_surg_md',
+                                              'pph_treatment_effect_hyst_md',
+                                              'pph_bt_treatment_effect_md',
+                                              'sepsis_treatment_effect_md',
+                                              'success_rate_uterine_repair',
+                                              'ur_repair_treatment_effect_md',
+                                              'ur_treatment_effect_bt_md',
+                                              'ur_hysterectomy_treatment_effect_md',
+                                              'eclampsia_treatment_effect_severe_pe',
+                                              'eclampsia_treatment_effect_md',
+                                              'anti_htns_treatment_effect_md',
+                                              'aph_bt_treatment_effect_md',
+                                              'aph_cs_treatment_effect_md']}
+
+        self.number_of_draws = (sum(len(l) for l in self.params_of_interest.values()) * 3) + 1
         self.runs_per_draw = 5
+        self.param_df = self._get_param_df()
 
     def log_configuration(self):
         return {
@@ -70,19 +93,44 @@ class MaxPregnancyRun(BaseScenario):
 
                 ]
 
+    def _get_param_df(self):
+        df = pd.DataFrame(columns=['module', 'parameter', 'value'], index=list(range(self.number_of_draws - 1)))
+        df['value'] = [0.0, 0.5, 1.0] * int(((self.number_of_draws - 1) / 3))
+
+        pvals = list(self.params_of_interest.values())
+        new_list = list()
+        for l in range(len(pvals)):
+            new_list += pvals[l]
+
+        df['parameter'] = [p for p in new_list for k in range(3)]
+
+        mod_list = list()
+        for k in self.params_of_interest:
+            for l in range(len(self.params_of_interest[k] * 3)):
+                mod_list.append(k)
+
+        df['module'] = mod_list
+
+        return df
+
+    def _update_parameter_dictionary(self, param_dict, draw_number):
+        df = self.param_df
+        new_row = {df.at[draw_number, 'parameter']: [df.at[draw_number, 'value'],
+                                                     df.at[draw_number, 'value']]}
+
+        if df.at[draw_number, 'module'] in param_dict.keys():
+            param_dict[df.at[draw_number, 'module']].update(new_row)
+        else:
+            param_dict.update({df.at[draw_number, 'module']: new_row})
+
     def draw_parameters(self, draw_number, rng):
 
-        grid = self.make_grid(
-            {'prob_delay_one_two_fd': [0.0, 1.0, 0.38]})
+        param_dict = {'PregnancySupervisor': {'analysis_year': 2010,
+                                              'set_all_pregnant': True}}
+        if not draw_number == list(range(self.number_of_draws))[-1]:
+            self._update_parameter_dictionary(param_dict, draw_number)
 
-        return {'PregnancySupervisor': {'analysis_year': 2010,
-                                        'set_all_pregnant': True},
-
-                'Labour': {'prob_delay_one_two_fd': [grid['prob_delay_one_two_fd'][draw_number],
-                                                     grid['prob_delay_one_two_fd'][draw_number]
-                                                     ]}
-
-        }
+        return param_dict
 
 
 if __name__ == '__main__':

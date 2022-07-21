@@ -2120,11 +2120,10 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
             df.loc[all.index, 'sex'] = 'F'
             df.loc[all.index, 'is_pregnant'] = True
             for person in all.index:
-                age = self.module.rng.randint(16, 49)
-                df.at[person, 'age_years'] = age
-                df.at[person, 'age_exact_years'] = float(age)
-                df.at[person, 'age_days'] = age * 365
-                df.at[person, 'date_of_birth'] = self.sim.date - pd.DateOffset(days=(age * 365))
+                df.at[person, 'age_years'] = 25
+                df.at[person, 'age_exact_years'] = float(25)
+                df.at[person, 'age_days'] = 25 * 365
+                df.at[person, 'date_of_birth'] = self.sim.date - pd.DateOffset(days=(25 * 365))
                 df.at[person, 'date_of_last_pregnancy'] = self.sim.date
 
                 self.sim.modules['Labour'].set_date_of_labour(person)
