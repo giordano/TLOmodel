@@ -38,14 +38,9 @@ class UnivariateSensitivityAnalysis(BaseScenario):
                                               'pph_treatment_effect_hyst_md': 0.25,
                                               'pph_bt_treatment_effect_md': 0.4,
                                               'eclampsia_treatment_effect_md': 0.4,
-                                              'anti_htns_treatment_effect_md': 0.5,
-                                              'prob_hcw_avail_man_r_placenta': 0.82,
-                                              'prob_hcw_avail_blood_tran': 0.86,
-                                              'prob_hcw_avail_anticonvulsant': 0.93,
-                                              'treatment_effect_modifier_one_delay': 0.75,
-                                              'treatment_effect_modifier_all_delays': 0.5,
-                                              'mean_hcw_competence_hp': 0.662}}
-        self.number_of_params = 16
+                                              'anti_htns_treatment_effect_md': 0.5}}
+
+        self.number_of_params = 10
 
         # Each parameter in turn will be set each of these values sequentially for a given draw. Any number of values
         # can be set here
@@ -123,7 +118,12 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         val_column = list()
         for p in new_list:
             nl = [i for i in self.values_for_params]
-            nl.append(self.params_of_interest['Labour'][p])
+
+            if p in self.params_of_interest['Labour']:
+                nl.append(self.params_of_interest['Labour'][p])
+            else:
+                nl.append(self.params_of_interest['PregnancySupervisor'][p])
+
             nl.sort()
             for i in nl:
                 val_column.append(i)

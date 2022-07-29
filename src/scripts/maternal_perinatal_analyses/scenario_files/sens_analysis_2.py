@@ -28,24 +28,13 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
 
-        self.params_of_interest = {'PregnancySupervisor': {'treatment_effect_modifier_all_delays': 0.5,
-                                                           'treatment_effect_modifier_one_delay': 0.75},
-
-                                   'Labour': {'prob_haemostatis_uterotonics': 0.57,
-                                              'pph_treatment_effect_mrp_md': 0.7,
-                                              'success_rate_pph_surgery': 0.79,
-                                              'pph_treatment_effect_surg_md': 0.25,
-                                              'pph_treatment_effect_hyst_md': 0.25,
-                                              'pph_bt_treatment_effect_md': 0.4,
-                                              'eclampsia_treatment_effect_md': 0.4,
-                                              'anti_htns_treatment_effect_md': 0.5,
-                                              'prob_hcw_avail_man_r_placenta': 0.82,
+        self.params_of_interest = {'Labour': {'prob_hcw_avail_man_r_placenta': 0.82,
                                               'prob_hcw_avail_blood_tran': 0.86,
                                               'prob_hcw_avail_anticonvulsant': 0.93,
                                               'treatment_effect_modifier_one_delay': 0.75,
                                               'treatment_effect_modifier_all_delays': 0.5,
                                               'mean_hcw_competence_hp': 0.662}}
-        self.number_of_params = 16
+        self.number_of_params = 6
 
         # Each parameter in turn will be set each of these values sequentially for a given draw. Any number of values
         # can be set here
