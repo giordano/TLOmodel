@@ -1991,7 +1991,8 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
             treatment_length = p["child_shorter_treatment_length"]
 
         # check schedule for sputum test and perform if necessary
-        if months_since_tx in sputum_fup:
+        # note: sputum test monitoring is conducted in smear-positive patients only
+        if (person["tb_smear"]) and (months_since_tx in sputum_fup):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"TBFollowUp": 1, "LabTBMicro": 1}
             )
