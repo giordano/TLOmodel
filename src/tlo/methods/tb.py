@@ -648,7 +648,6 @@ class Tb(Module):
         df["tb_on_ipt"] = False
         df["tb_date_ipt"] = pd.NaT
 
-
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
@@ -1968,9 +1967,49 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # default clinical monitoring schedule for first infection ds-tb
         xperttest_result = None
         follow_up_times = p["followup_times"]
+        clinical_fup = follow_up_times["ds_clinical_monitor"].dropna()
         sputum_fup = follow_up_times["ds_sputum"].dropna()
         treatment_length = p["ds_treatment_length"]
 
+        # assign clinical monitoring schedule to each treatment regimen:
+        if ((person["tb_treatment_regimen"] == "tb_tx_adult") or
+            (person["tb_treatment_regimen"] == "tb_tx_child")):
+
+            # if hiv+:
+            if person["hv_inf"]:
+                clinical_fup = follow_up_times["ds_clinical_monitor_hiv_positive"].dropna()
+
+            # if hiv-:
+            else:
+                clinical_fup = follow_up_times["ds_clinical_monitor_hiv_negative"].dropna()
+
+        # if previously treated:
+        elif ((person["tb_treatment_regimen"] == "tb_retx_adult") or
+              (person["tb_treatment_regimen"] == "tb_retx_child")):
+
+            clinical_fup = follow_up_times["ds_retreatment_clinical"].dropna()
+
+        # if person diagnosed with mdr - this treatment schedule takes precedence
+        elif person["tb_treatment_regimen"] == "tb_mdrtx":
+
+            clinical_fup = follow_up_times["mdr_clinical_monitor"].dropna()
+
+        # if person on shorter paediatric regimen
+        elif person["tb_treatment_regimen"] == "tb_tx_child_shorter":
+
+            # if hiv+:
+            if person["hv_inf"]:
+                clinical_fup = follow_up_times["shine_clinical_monitor_hiv_positive"].dropna()
+
+            # if hiv-:
+            else:
+                clinical_fup = follow_up_times["shine_clinical_monitor_hiv_negative"].dropna()
+
+        # return a blank footprint if no clinical monitoring is scheduled for this month
+        if months_since_tx not in clinical_fup:
+            ACTUAL_APPT_FOOTPRINT = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # assign sputum monitoring follow up schedule to each treatment regimen:
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
             (person["tb_treatment_regimen"] == "tb_retx_child")):
@@ -1992,7 +2031,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # check schedule for sputum test and perform if necessary
         # note: sputum test monitoring is conducted in smear-positive patients only
-        if (person["tb_smear"]) and (months_since_tx in sputum_fup):
+        if ((person["tb_smear"]) and (months_since_tx in sputum_fup)):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"TBFollowUp": 1, "LabTBMicro": 1}
             )
@@ -2162,6 +2201,7 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0,
             )
+
 
 # ---------------------------------------------------------------------------
 #   Deaths
@@ -2399,7 +2439,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             tx_coverage_child = 0
 
-
         logger.info(
             key="tb_treatment",
             description="TB treatment coverage",
@@ -2539,10 +2578,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
+
 class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """produce outputs on the number of patients initiated in each tb treatment regimen"""
-        self.repeat = 4 # run this event every 4 months to capture patient initiated on all treatment regimens
+        self.repeat = 4  # run this event every 4 months to capture patient initiated on all treatment regimens
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -2611,4 +2651,3 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "TBTxMdr": num_mdr_tx
             }
         )
-
