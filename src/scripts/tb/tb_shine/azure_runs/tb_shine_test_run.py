@@ -60,7 +60,7 @@ class TestTbShineTestRun(BaseScenario):
                 resourcefilepath=self.resources,
                 service_availability=["*"],
                 mode_appt_constraints=0,
-                cons_availability="all",
+                cons_availability="default",
                 ignore_priority=True,
                 capabilities_coefficient=1.0,
                 disable=False,
@@ -79,7 +79,7 @@ class TestTbShineTestRun(BaseScenario):
         return {
 
             'Demography': {'max_age_initial': 16},
-            'Tb': {'scenario': [0, 4][draw_number]}
+            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14, 'scenario': [0, 4][draw_number]}
 
         }
 

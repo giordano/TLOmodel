@@ -29,8 +29,8 @@ class TestTbShineBaselineScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2036, 1, 1)
         self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
-        self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.number_of_draws = 2
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
@@ -71,7 +71,7 @@ class TestTbShineBaselineScenario(BaseScenario):
         return {
 
             'Demography': {'max_age_initial': 16},
-            'Tb': {'scenario': 0}
+            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14, 'scenario': [0, 4][draw_number]}
 
         }
 

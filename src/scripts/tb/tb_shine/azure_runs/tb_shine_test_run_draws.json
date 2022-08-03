@@ -1,28 +1,32 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine/azure_runs/tb_shine_test_run.py",
-  "scenario_seed": 3422,
+  "scenario_seed": 2414,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1500698649,
+      "draw_seed": 389642300,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
         },
         "Tb": {
+          "prop_smear_positive": 0.14,
+          "prop_smear_positive_hiv": 0.14,
           "scenario": 0
         }
       }
     },
     {
       "draw_number": 1,
-      "draw_seed": 255450851,
+      "draw_seed": 1651312941,
       "parameters": {
         "Demography": {
           "max_age_initial": 16
         },
         "Tb": {
+          "prop_smear_positive": 0.14,
+          "prop_smear_positive_hiv": 0.14,
           "scenario": 4
         }
       }
