@@ -298,7 +298,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-            ),
+                ),
 
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx':
                 treatment_efficacy(
@@ -314,7 +314,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-            ),
+                ),
 
             # Treatment Efficacy with * IMPERFECT HW Diangosis *
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx':
@@ -331,7 +331,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-            ),
+                ),
 
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx':
                 treatment_efficacy(
@@ -347,7 +347,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-            ),
+                ),
 
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx':
                 treatment_efficacy(
@@ -363,7 +363,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-            ),
+                ),
 
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx':
                 treatment_efficacy(
@@ -379,7 +379,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-            ),
+                ),
 
             # Classifications
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy':
@@ -389,7 +389,7 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     facility_level=_facility_level,
                     use_oximeter=True,
-            ),
+                ),
 
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
@@ -398,7 +398,7 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     facility_level=_facility_level,
                     use_oximeter=False,
-            ),
+                ),
 
             'classification_for_treatment_decision_with_oximeter_imperfect_accuracy':
                 hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
@@ -407,7 +407,7 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     facility_level=_facility_level,
                     use_oximeter=True,
-            ),
+                ),
 
             'classification_for_treatment_decision_without_oximeter_imperfect_accuracy':
                 hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
@@ -416,7 +416,7 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     facility_level=_facility_level,
                     use_oximeter=False,
-            ),
+                ),
 
         })
     return df.join(pd.DataFrame(risk_of_death))
@@ -541,7 +541,9 @@ if __name__ == "__main__":
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
         ]
-    ).assign(fraction_of_deaths=lambda df: (df['fraction'] * df['prob_die_if_no_treatment']) / (df['fraction'] * df['prob_die_if_no_treatment']).sum())
+    ).assign(fraction_of_deaths=lambda df: (
+         df['fraction'] * df['prob_die_if_no_treatment']) / (df['fraction'] * df['prob_die_if_no_treatment']).sum()
+             )
     print(f"{treatment_effectiveness}")
 
     # Examine risk of death and treatment effectiveness for "danger_signs_pneumonia" & SpO2<90%

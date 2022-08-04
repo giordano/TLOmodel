@@ -1445,7 +1445,6 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
             'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
         }
 
-
         true_classification = chars['imci_symptom_based_classification']
         true_treatment = alri_module._ultimate_treatment_indicated_for_patient(
             classification_for_treatment_decision=true_classification, age_exact_years=age_exact_years
@@ -1455,7 +1454,10 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
                     **chars,
                     **{
                         'antibiotic_provided': true_treatment['antibiotic_indicated'][0],
-                        'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is always/not-used in both true and wrong treatments (the effect of treatment is considered below)
+                        'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is
+                        #                                              always/not-used in both true and wrong
+                        #                                              treatments (the effect of treatment is considered
+                        #                                              below)
                     }
                 }
             )
@@ -1581,12 +1583,15 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
 
             if chars['SpO2_level'] == '<90%':
                 # Oxygen is needed --> provision should increase success of treatment
-                assert (prob_treatment_success_with_oxygen > prob_treatment_success_without_oxygen) \
-                       or (0.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen) \
-                       or (1.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen), \
+                assert (
+                    (prob_treatment_success_with_oxygen > prob_treatment_success_without_oxygen)
+                    or (0.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen)
+                    or (1.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen)
+                ),\
                     f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
                     f"{chars['SpO2_level']}, provision of oxygen does not have expected effect." \
                     f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
+
             else:
                 # Oxygen is not needed --> provision should have no effect on success of treatment
                 assert prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen, \

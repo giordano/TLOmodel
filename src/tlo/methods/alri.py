@@ -1846,7 +1846,8 @@ class Models:
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             if not needs_oxygen:
-                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_3days', '1st_line_IV_antibiotics'):  # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
+                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_3days', '1st_line_IV_antibiotics'):
+                    # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
                     return p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']
                 elif antibiotic_provided in ('Amoxicillin_tablet_or_suspension_7days', '1st_line_IV_antibiotics'):
                     return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
@@ -1866,7 +1867,8 @@ class Models:
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             if not needs_oxygen:
-                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_5days', '1st_line_IV_antibiotics'): # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
+                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_5days', '1st_line_IV_antibiotics'):
+                    # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
                     return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
                 elif antibiotic_provided in ('Amoxicillin_tablet_or_suspension_3days', '1st_line_IV_antibiotics'):
                     return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
