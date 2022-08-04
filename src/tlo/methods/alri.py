@@ -1883,6 +1883,20 @@ class Models:
         def _prob_treatment_fails_when_cough_or_cold():
             """Return probability treatment fails when the true classification is cough_or_cold."""
             return 0.0  # Treatment cannot 'fail' for a cough_or_cold
+            # if not needs_oxygen:
+            #     if not any_complications:
+            #         return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
+            #         #             oxygen
+            #     else:
+            #         return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
+            #
+            # else:
+            #     # Non-severe classifications given oral antibiotics that do need oxygen -----
+            #     if oxygen_provided:
+            #         return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%']
+            #     else:
+            #         return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
+            #             p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
         if imci_symptom_based_classification == 'danger_signs_pneumonia':
             return min(1.0, _prob_treatment_fails_when_danger_signs_pneumonia())
@@ -2541,7 +2555,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             classification = _classification_at_facility_level_0(imci_classification_based_on_symptoms)
         elif facility_level in ("1a", "1b"):
             classification = _classification_at_facility_level_1(imci_classification_based_on_symptoms)
-        elif facility_level in ("2"):
+        elif facility_level == "2":
             classification = _classification_at_facility_level_2(imci_classification_based_on_symptoms)
         else:
             raise ValueError(f"Facility Level not recognised: {facility_level}")
