@@ -32,7 +32,7 @@ def run_scenario(**kwargs):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
-    popsize = 100_000
+    popsize = 20_000
 
     log_config = {
         "filename": "alri",
@@ -41,6 +41,7 @@ def run_scenario(**kwargs):
             "*": logging.WARNING,
             "tlo.methods.alri": logging.INFO,
             "tlo.methods.demography": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
         }
     }
 

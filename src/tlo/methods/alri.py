@@ -123,8 +123,8 @@ class Alri(Module):
         'other_alri'
     })
 
-    classifications = {'danger_signs_pneumonia', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
-                       'cough_or_cold'}
+    classifications = ['danger_signs_pneumonia', 'chest_indrawing_pneumonia', 'fast_breathing_pneumonia',
+                       'cough_or_cold']
 
     all_symptoms = {
         'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
@@ -2562,7 +2562,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             raise ValueError(f"Facility Level not recognised: {facility_level}")
 
-        assert classification in self.module.classifications
+        assert classification in self.module.classifications, f"Classification not recognised: {classification=}"
         return classification
 
     def _get_disease_classification_for_treatment_decision(self,

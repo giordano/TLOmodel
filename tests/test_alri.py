@@ -1177,6 +1177,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
     def get_number_of_deaths_from_cohort_of_children_with_alri(
         force_any_symptom_to_lead_to_healthcareseeking=False,
         do_make_treatment_perfect=False,
+        do_make_hw_diagnosis_perfect=False,
         disable_and_reject_all=False
     ) -> int:
         """Run a cohort of children all with newly onset Alri and return number of them that die from Alri (excluding
@@ -1235,7 +1236,10 @@ def test_impact_of_all_hsi(seed, tmpdir):
         _make_high_risk_of_death(sim.modules['Alri'])
 
         if do_make_treatment_perfect:
-            _make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
+            _make_treatment_perfect(sim.modules['Alri'])
+
+        if do_make_hw_diagnosis_perfect:
+            _make_hw_diagnosis_perfect(sim.modules['Alri'])
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date + pd.DateOffset(months=1))
@@ -1260,18 +1264,28 @@ def test_impact_of_all_hsi(seed, tmpdir):
     assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
         force_any_symptom_to_lead_to_healthcareseeking=False,
         do_make_treatment_perfect=False,
+        do_make_hw_diagnosis_perfect=True,
     )
 
     # Some deaths with imperfect treatment and perfect healthcare seeking
     assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
         force_any_symptom_to_lead_to_healthcareseeking=True,
         do_make_treatment_perfect=False,
+        do_make_hw_diagnosis_perfect=True,
     )
 
-    # No deaths with perfect healthcare seeking and perfect treatment
+    # No deaths with perfect healthcare seeking and perfect treatment - with perfect hw diagnosis
     assert 0 == get_number_of_deaths_from_cohort_of_children_with_alri(
         force_any_symptom_to_lead_to_healthcareseeking=True,
         do_make_treatment_perfect=True,
+        do_make_hw_diagnosis_perfect=True,
+    )
+
+    # No deaths with perfect healthcare seeking and perfect treatment - even with imperfect hw diagnosis
+    assert 0 == get_number_of_deaths_from_cohort_of_children_with_alri(
+        force_any_symptom_to_lead_to_healthcareseeking=True,
+        do_make_treatment_perfect=True,
+        do_make_hw_diagnosis_perfect=False,
     )
 
 
@@ -1598,3 +1612,12 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
                     f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
                     f"{chars['SpO2_level']}, provision of oxygen has an effect but it should not." \
                     f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
+
+
+# todo
+#  1) Create all possible cases... record the care they get.... the treatment efficacy received eventually when
+#     using the oximeter versus not.
+#  2) Check that the diagnosis change for all those persons for whom it should, and that it in each case treatment improves
+#  3) Check that the diagnosis does not change for all those persons for whom it should not, and that treatment efficacy is not affected.
+#  4) Count, in a normal simulation, the number of people for whom the diagnosis would be expectd to change due to the oximeter.
+
