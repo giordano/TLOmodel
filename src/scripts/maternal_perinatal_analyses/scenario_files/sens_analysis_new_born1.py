@@ -23,24 +23,17 @@ from tlo.scenario import BaseScenario
 class UnivariateSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 666
+        self.seed = 777
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
 
-        self.params_of_interest = {'PregnancySupervisor': {'treatment_effect_modifier_all_delays': 0.5,
-                                                           'treatment_effect_modifier_one_delay': 0.75},
-
-                                   'Labour': {'prob_haemostatis_uterotonics': 0.57,
-                                              'pph_treatment_effect_mrp_md': 0.7,
-                                              'success_rate_pph_surgery': 0.79,
-                                              'pph_treatment_effect_surg_md': 0.25,
-                                              'pph_treatment_effect_hyst_md': 0.25,
-                                              'pph_bt_treatment_effect_md': 0.4,
-                                              'eclampsia_treatment_effect_md': 0.4,
-                                              'anti_htns_treatment_effect_md': 0.5}}
-
-        self.number_of_params = 10
+        self.params_of_interest = {'NewbornOutcomes': {'treatment_effect_inj_abx_sep': 0.35,
+                                                       'treatment_effect_supp_care_sep': 0.2,
+                                                       'treatment_effect_resuscitation': 0.6,
+                                                       'treatment_effect_resuscitation_preterm': 0.8,
+                                                       'treatment_effect_kmc': 0.49}}
+        self.number_of_params = 5
 
         # Each parameter in turn will be set each of these values sequentially for a given draw. Any number of values
         # can be set here
@@ -114,12 +107,7 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         val_column = list()
         for p in new_list:
             nl = [i for i in self.values_for_params]
-
-            if p in self.params_of_interest['Labour']:
-                nl.append(self.params_of_interest['Labour'][p])
-            else:
-                nl.append(self.params_of_interest['PregnancySupervisor'][p])
-
+            nl.append(self.params_of_interest['Labour'][p])
             nl.sort()
             for i in nl:
                 val_column.append(i)
@@ -134,13 +122,7 @@ class UnivariateSensitivityAnalysis(BaseScenario):
 
         df = self.param_df
 
-        # todo: fix
-        if 'mean_hcw_competence' in df.at[draw_number, 'parameter']:
-            p_value = [[df.at[draw_number, 'value'], df.at[draw_number, 'value']],
-                       [df.at[draw_number, 'value'], df.at[draw_number, 'value']]]
-        else:
-            p_value = [df.at[draw_number, 'value'], df.at[draw_number, 'value']]
-
+        p_value = [df.at[draw_number, 'value'], df.at[draw_number, 'value']]
         new_row = {df.at[draw_number, 'parameter']: p_value}
 
         if df.at[draw_number, 'module'] in param_dict.keys():
