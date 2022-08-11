@@ -107,7 +107,7 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         val_column = list()
         for p in new_list:
             nl = [i for i in self.values_for_params]
-            nl.append(self.params_of_interest['Labour'][p])
+            nl.append(self.params_of_interest['NewbornOutcomes'][p])
             nl.sort()
             for i in nl:
                 val_column.append(i)
