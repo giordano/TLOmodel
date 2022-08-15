@@ -23,16 +23,19 @@ from tlo.scenario import BaseScenario
 class UnivariateSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 777
+        self.seed = 888
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 100_000
 
-        self.params_of_interest = {'NewbornOutcomes': {'treatment_effect_inj_abx_sep': 0.35,
-                                                       'treatment_effect_supp_care_sep': 0.2,
-                                                       'treatment_effect_resuscitation': 0.6,
-                                                       'treatment_effect_resuscitation_preterm': 0.8,
-                                                       'treatment_effect_kmc': 0.49}}
+        self.params_of_interest = {'NewbornOutcomes': {'treatment_effect_steroid_preterm': 0.71,
+                                                       'treatment_effect_modifier_one_delay': 0.75},
+
+                                   'Labour': {'prob_successful_manual_removal_placenta': 0.7,
+                                              'prob_hcw_avail_neo_resus': 0.98,
+                                              'prob_hcw_avail_iv_abx': 0.99,
+                                              }}
+
         self.number_of_params = 5
 
         # Each parameter in turn will be set each of these values sequentially for a given draw. Any number of values
@@ -107,7 +110,11 @@ class UnivariateSensitivityAnalysis(BaseScenario):
         val_column = list()
         for p in new_list:
             nl = [i for i in self.values_for_params]
-            nl.append(self.params_of_interest['NewbornOutcomes'][p])
+            if p in ['treatment_effect_steroid_preterm', 'treatment_effect_modifier_one_delay']:
+                mod = 'NewbornOutcomes'
+            else:
+                mod = 'Labour'
+            nl.append(self.params_of_interest[mod][p])
             nl.sort()
             for i in nl:
                 val_column.append(i)
