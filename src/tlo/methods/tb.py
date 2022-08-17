@@ -765,11 +765,11 @@ class Tb(Module):
 
         # child treatment - primary
         self.item_codes_for_consumables_required['tb_tx_child'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # child treatment - primary, shorter regimen
         self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children shorter regimen")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B shorter")
 
         # adult treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
@@ -786,6 +786,10 @@ class Tb(Module):
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
+
+        # chest x-rays
+        self.item_codes_for_consumables_required['chest_xray_2'] = {
+            hs.get_item_code_from_item_name("X-ray"): 2}
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -1818,7 +1822,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # )
 
         treatment_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
+            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen],
+            optional_item_codes=self.module.item_codes_for_consumables_required['chest_xray_2']
         )
 
         logger.debug(
