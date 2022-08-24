@@ -2583,6 +2583,25 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
+        # ------------------------------------ TREATMENT DELAYS ------------------------------------
+        # for every person initiated on treatment, record time from onset to treatment
+        # each year a series of intervals in days (treatment date - onset date) are recorded
+        # convert to list
+
+        # children
+        child_tx_idx = df.loc[(df.age_years < 16) &
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
+        child_tx_delays = child_tx_delays.tolist()
+
+        logger.info(
+            key="tb_treatment_delays",
+            description="TB time from onset to treatment",
+            data={
+                "tbTreatmentDelayChildren": child_tx_delays,
+            },
+        )
+
 
 class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
