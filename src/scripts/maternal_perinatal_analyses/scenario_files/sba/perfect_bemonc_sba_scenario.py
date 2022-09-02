@@ -29,9 +29,9 @@ from tlo.scenario import BaseScenario
 class SBAPerfectEMONC(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 55447
+        self.seed = 123
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2015, 1, 1)
         self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
@@ -92,7 +92,7 @@ class SBAPerfectEMONC(BaseScenario):
         return {
             'Labour': {'alternative_bemonc_availability': True,
                        'bemonc_availability': 0.9,
-                       'analysis_year': 2021}
+                       'analysis_year': 2010}
         }
 
 

@@ -29,9 +29,9 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 55447
+        self.seed = 123
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2015, 1, 1)
         self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
@@ -94,7 +94,7 @@ class TestScenario(BaseScenario):
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
                                     'anc_availability_probability': 0.9,
-                                    'analysis_year': 2021}}
+                                    'analysis_year': 2010}}
 
 
 if __name__ == '__main__':
