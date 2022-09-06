@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results
@@ -440,6 +441,10 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
     """
 
     def extract_deaths(folder, births):
+
+        agg_births = [sum(births[0]), sum(births[1]), sum(births[2])]
+
+        # Get full death dataframe
         death_results_labels = extract_results(
             folder,
             module="tlo.methods.demography",
@@ -461,9 +466,14 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
         # Extract maternal mortality ratio from direct maternal causes
         mmr = get_comp_mean_and_rate('Maternal Disorders', births[0], death_results_labels, 100000, intervention_years)
 
-        # Extract crude deaths due to direct maternal disorders
+        # Extract crude deaths due to direct maternal disorders as both trend and aggregate
         crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders', intervention_years)
+        agg_dir_m_deaths = [sum(crude_m_deaths[0]), sum(crude_m_deaths[1]), sum(crude_m_deaths[2])]
+        agg_dir_mr = [((agg_dir_m_deaths[0] / agg_births[0]) * 100_000),
+                      ((agg_dir_m_deaths[1] / agg_births[1]) * 100_000),
+                      ((agg_dir_m_deaths[2] / agg_births[2]) * 100_000)]
 
+        # If detail logging is used then can extract the total number of indirect deaths
         if detailed_log:
             indirect_deaths = extract_results(
                 folder,
@@ -479,6 +489,7 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
             )
 
             indirect_deaths = get_mean_and_quants(indirect_deaths, intervention_years)
+            agg_ind_m_deaths = [sum(indirect_deaths[0]), sum(indirect_deaths[1]), sum(indirect_deaths[2])]
 
         else:
             # Extract crude deaths due to indirect causes in pregnant women
@@ -504,24 +515,39 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
                 id_uq.append(id_uq_pu)
 
             indirect_deaths = [indirect_deaths, id_lq, id_uq]
+            agg_ind_m_deaths = [sum(indirect_deaths[0]), sum(indirect_deaths[1]), sum(indirect_deaths[2])]
 
         # Calculate total MMR (direct + indirect deaths)
         total_mmr = [[((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[0], crude_m_deaths[0], births[0])],
                      [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[1], crude_m_deaths[1], births[1])],
                      [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[2], crude_m_deaths[2], births[2])]
                      ]
+        agg_ind_mr = [((agg_ind_m_deaths[0] / agg_births[0]) * 100_000),
+                      ((agg_ind_m_deaths[1] / agg_births[1]) * 100_000),
+                      ((agg_ind_m_deaths[2] / agg_births[2]) * 100_000)]
 
         # Extract NMR
         nmr = get_comp_mean_and_rate('Neonatal Disorders', births[0], death_results_labels, 1000, intervention_years)
 
         # And crude neonatal deaths
         crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders', intervention_years)
+        agg_n_deaths = [sum(crude_n_deaths[0]), sum(crude_n_deaths[1]), sum(crude_n_deaths[2])]
+        agg_nm = [((agg_n_deaths[0] / agg_births[0]) * 1000),
+                      ((agg_n_deaths[1] / agg_births[1]) * 1000),
+                      ((agg_n_deaths[2] / agg_births[2]) * 1000)]
 
         return {'direct_mmr': mmr,
                 'total_mmr': total_mmr,
+                'crude_dir_m_deaths': crude_m_deaths,
+                'agg_dir_m_deaths': agg_dir_m_deaths,
+                'agg_dir_mr': agg_dir_mr,
+                'crude_ind_m_deaths': indirect_deaths,
+                'agg_ind_m_deaths': agg_ind_m_deaths,
+                'agg_ind_mr': agg_ind_mr,
                 'nmr': nmr,
-                'crude_m_deaths': crude_m_deaths,  # TODO: THIS EXLUDES INDIRECT CRUDE DEATHS....
-                'crude_n_deaths': crude_n_deaths}
+                'crude_n_deaths': crude_n_deaths,
+                'agg_n_deaths': agg_n_deaths,
+                'agg_nmr': agg_nm}
 
     # Extract data from scenarios
     return {k: extract_deaths(results_folders[k], births_dict[k]) for k in results_folders}
@@ -596,7 +622,11 @@ def return_stillbirth_data_from_multiple_scenarios(results_folders, births_dict,
         return {'an_sbr': an_sbr,
                 'ip_sbr': ip_sbr,
                 'sbr': total_sbr,
-                'crude_sb': crude_sb}
+                'crude_sb': crude_sb,
+                'agg_sb': [sum(crude_sb[0]), sum(crude_sb[1]), sum(crude_sb[2])],
+                'agg_an_sb': [sum(an_still_birth_data[0]), sum(an_still_birth_data[1]), sum(an_still_birth_data[2])],
+                'agg_ip_sb': [sum(ip_still_birth_data[0]), sum(ip_still_birth_data[1]), sum(ip_still_birth_data[2])],
+                }
 
     return {k: extract_stillbirths(results_folders[k], births_dict[k]) for k in results_folders}
 
@@ -634,7 +664,10 @@ def return_dalys_from_multiple_scenarios(results_folders, intervention_years):
         denom = get_mean_and_quants(person_years_total, intervention_years)
 
         dalys_mat = get_comp_mean_and_rate('Maternal Disorders', denom[0], dalys_stacked, 100000, intervention_years)
+        dalys_mat_agg = [sum(dalys_mat[0]), sum(dalys_mat[1]), sum(dalys_mat[2])]
+
         dalys_neo = get_comp_mean_and_rate('Neonatal Disorders', denom[0], dalys_stacked, 100000, intervention_years)
+        dalys_neo_agg = [sum(dalys_neo[0]), sum(dalys_neo[1]), sum(dalys_neo[2])]
 
         mat_causes_death = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                             'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
@@ -718,14 +751,19 @@ def return_dalys_from_multiple_scenarios(results_folders, intervention_years):
 
             return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
-        return {'maternal_dalys_crude': extract_dalys_tlo_model('Maternal'),
+        crude_m_dalys = extract_dalys_tlo_model('Maternal')
+        crude_n_dalys = extract_dalys_tlo_model('Neonatal')
+
+        return {'maternal_dalys_crude': crude_m_dalys,
                 'maternal_dalys_rate': dalys_mat,
+                'agg_mat_dalys': [sum(crude_m_dalys[0]), sum(crude_m_dalys[1]), sum(crude_m_dalys[2])],
                 'maternal_yll_crude': mat_yll,
                 'maternal_yll_rate': mat_yll_rate,
                 'maternal_yld_crude': mat_yld,
                 'maternal_yld_rate': mat_yld_rate,
-                'neonatal_dalys_crude': extract_dalys_tlo_model('Neonatal'),
+                'neonatal_dalys_crude': crude_n_dalys,
                 'neonatal_dalys_rate': dalys_neo,
+                'agg_neo_dalys': [sum(crude_n_dalys[0]), sum(crude_n_dalys[1]), sum(crude_n_dalys[2])],
                 'neonatal_yll_crude': neo_yll,
                 'neonatal_yll_rate': neo_yll_rate,
                 'neonatal_yld_crude': neo_yld,
