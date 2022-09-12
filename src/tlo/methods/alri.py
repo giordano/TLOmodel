@@ -778,12 +778,13 @@ class Alri(Module):
                                               ' episodes interfering with one another.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
+    def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False, no_new_alri_cases=False):
         super().__init__(name)
 
         # Store arguments provided
         self.resourcefilepath = resourcefilepath
         self.do_checks = do_checks
+        self.no_new_alri_cases = no_new_alri_cases  # For testing, stops new Alri cases from occuring
 
         assert (log_indivdual is None or isinstance(log_indivdual, int)) and (not isinstance(log_indivdual, bool))
         self.log_individual = log_indivdual
@@ -884,7 +885,8 @@ class Alri(Module):
         p = self.parameters
 
         # Schedule the main polling event (to first occur immediately)
-        sim.schedule_event(AlriPollingEvent(self), sim.date)
+        if not self.no_new_alri_cases:
+            sim.schedule_event(AlriPollingEvent(self), sim.date)
 
         # Schedule the main logging event (to first occur in one year)
         self.logging_event = AlriLoggingEvent(self)
@@ -1275,6 +1277,24 @@ class Alri(Module):
         assert (df.loc[df.is_alive & df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
         assert (df.loc[df.is_alive & ~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
 
+    def treatment_fails(self, person_id, **kwargs) -> bool:
+        """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
+        p_fail = self.models._prob_treatment_fails(**kwargs)
+
+        # Log this case to the treatment_outcomes key (coercing everything strings to enable logger to work)
+        logger.info(key='treatment_outcomes',
+                    data={
+                        **{
+                            'person_id': person_id,
+                            'prob_treatment_fails': p_fail
+                        },
+                        **{str(k): str(v) for k, v in kwargs.items()},
+                        }
+                    )
+
+        assert p_fail is not None, f"no probability of failure is recorded, {kwargs=}"
+        return p_fail > self.rng.random_sample()
+
     def do_effects_of_treatment_and_return_outcome(self, person_id, antibiotic_provided: str, oxygen_provided: bool):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
@@ -1303,7 +1323,8 @@ class Alri(Module):
         complications = [_c for _c in self.complications if person[f"ri_complication_{_c}"]]
 
         # Will the treatment fail:
-        treatment_fails = self.models.treatment_fails(
+        treatment_fails = self.treatment_fails(
+            person_id=person_id,
             imci_symptom_based_classification=imci_symptom_based_classification,
             SpO2_level=SpO2_level,
             disease_type=disease_type,
@@ -1341,6 +1362,7 @@ class Alri(Module):
     def record_sought_care_for_alri(self):
         """Count that the person is seeking care"""
         self.logging_event.new_seeking_care()
+
 
     @staticmethod
     def get_imci_classification_based_on_symptoms(child_is_younger_than_2_months: bool, symptoms: list) -> str:
@@ -1744,11 +1766,7 @@ class Models:
         return min(1.0, p['scaler_on_risk_of_death'] * to_prob(odds_death))  # Return the probability of death,
         #                                                                      with scaling.
 
-    def treatment_fails(self, **kwargs) -> bool:
-        """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
-        p_fail = self._prob_treatment_fails(**kwargs)
-        assert p_fail is not None, f"no probability of failure is recorded, {kwargs=}"
-        return p_fail > self.rng.random_sample()
+
 
     def _prob_treatment_fails(self,
                               imci_symptom_based_classification: str,
@@ -1764,6 +1782,7 @@ class Models:
         """Returns the probability of treatment failure. Treatment failures are dependent on the underlying IMCI
         classification by symptom, the need for oxygen (if SpO2 < 90%), and the type of antibiotic therapy (oral vs.
          IV/IM). NB. antibiotic_provided = '' means no antibiotic provided."""
+        # todo - refactor to remove "_" prefix.
 
         assert antibiotic_provided in self.module.antibiotics + [''], f"Not recognised {antibiotic_provided=}"
 
@@ -2130,7 +2149,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = \
                 [chars['date_of_outcome'], pd.NaT]
 
-        # Log the incident case:
+        # Log the incident case
         self.module.logging_event.new_case(age=df.at[person_id, "age_years"], pathogen=self.pathogen)
 
         # Log the complications to the tracker
@@ -2142,7 +2161,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             self.module.logging_event.new_hypoxaemic_case()
 
     def apply(self, person_id):
-        """Determines and enacts all the characteristics of the case (symotoms, complications, outcome)"""
+        """Determines and enacts all the characteristics of the case (symptoms, complications, outcome)"""
         df = self.sim.population.props
         person = df.loc[person_id]
 
@@ -2162,6 +2181,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # Apply the characteristics to this case:
         self.apply_characteristics_of_the_case(person_id=person_id, chars=chars)
+
+        # Log this case to the 'chars_of_case' key (coercing everything strings to enable logger to work)
+        logger.info(key='chars_of_case',
+                    data={
+                            **{'person_id': person_id},
+                            **{str(k): str(v) for k, v in chars.items()},
+                        }
+                    )
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
@@ -2470,7 +2497,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'fast_breathing_pneumonia',
              'chest_indrawing_pneumonia'
         }."""
-
+        print(self.module.rng.random_sample())
         rand = self.module.rng.random_sample
         rand_choice = self.module.rng.choice
         p = self.module.parameters
@@ -2725,6 +2752,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
+        logger.info(key='hsi',
+                    data={
+                        'person_id': person_id,
+                        'treatment_id': self.TREATMENT_ID,
+                        }
+                    )
 
         if not self.is_followup_following_treatment_failure:
 

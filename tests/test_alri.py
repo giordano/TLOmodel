@@ -38,6 +38,7 @@ from tlo.methods.alri import (
     _make_treatment_and_diagnosis_perfect,
     _make_treatment_ineffective,
     _make_treatment_perfect,
+    Alri,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
@@ -1108,7 +1109,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
-                                      ),\
+                                      ), \
         "Problem when child is younger than 2months old and treatment does not work"
 
     # If the child is younger than 2 months
@@ -1120,7 +1121,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
-                                      treatment_effect='perfectly_effective',), \
+                                      treatment_effect='perfectly_effective', ), \
         "Problem when child is older than 2months old and treatment does work"
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
@@ -1132,7 +1133,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
-                                      treatment_effect='perfectly_ineffective',), \
+                                      treatment_effect='perfectly_ineffective', ), \
         "Problem when child is older than 2months old and treatment does not work"
 
 
@@ -1420,13 +1421,13 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
         """Return the classifications that are more severe than the classification argument."""
         for i, _c in enumerate(classifications):
             if c == _c:
-                return classifications[(i+1):]
+                return classifications[(i + 1):]
 
     def find_lower_classification(c):
         """Return the classifications that are less severe than the classification argument."""
         for i, _c in enumerate(reversed(classifications)):
             if c == _c:
-                return list(reversed(classifications))[(i+1):]
+                return list(reversed(classifications))[(i + 1):]
 
     for (
         imci_symptom_based_classification,
@@ -1464,17 +1465,17 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
             classification_for_treatment_decision=true_classification, age_exact_years=age_exact_years
         )
         true_treatment_prob_treatment_success = 1.0 - models._prob_treatment_fails(
+            **{
+                **chars,
                 **{
-                    **chars,
-                    **{
-                        'antibiotic_provided': true_treatment['antibiotic_indicated'][0],
-                        'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is
-                        #                                              always/not-used in both true and wrong
-                        #                                              treatments (the effect of treatment is considered
-                        #                                              below)
-                    }
+                    'antibiotic_provided': true_treatment['antibiotic_indicated'][0],
+                    'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is
+                    #                                              always/not-used in both true and wrong
+                    #                                              treatments (the effect of treatment is considered
+                    #                                              below)
                 }
-            )
+            }
+        )
 
         # * Under-diagnosis
         # Get wrong classification that would be considered an "under-diagnosis", i.e. the mistake is to not recognise
@@ -1527,9 +1528,9 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
 
 def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
     """Check that the provision of oxygen...
-        * makes no effect when oxygen is not needed
-        * increases chance of treatment success whe oxygen is needed and provided compared to needed and not provided
-        * That this holds irrespective of any mis-diagnosis.
+        * makes no effect when oxygen is not needed;
+        * increases chance of treatment success whe oxygen is needed and provided, compared to needed and not provided;
+        * that this holds irrespective of any mis-diagnosis;
     """
 
     sim = sim_hs_all_consumables
@@ -1601,7 +1602,7 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
                     (prob_treatment_success_with_oxygen > prob_treatment_success_without_oxygen)
                     or (0.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen)
                     or (1.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen)
-                ),\
+                ), \
                     f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
                     f"{chars['SpO2_level']}, provision of oxygen does not have expected effect." \
                     f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
@@ -1614,9 +1615,130 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
                     f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
 
 
+def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter_and_oxygen(seed, tmpdir):
+    """Check that the probability of treatment failure ascribed to the case, following
+     all referrals etc, is lower when pulse oximetry and oxygen are available. Do this for a large sample of real
+     cases (i.e., those created endogenously by `Alri_IncidentCase`."""
+
+    # todo - use the debug logging level.
+
+    sim_start_date = Date(2010, 1, 1)
+
+    def get_case_histories(
+        pulse_oximeter_and_oxygen_is_available=False,
+        n=1_000,
+    ):
+        """Run a cohort of children all with newly onset Alri and return summary of the case history for each."""
+
+        class DummyModule(Module):
+            """Dummy module that will cause all persons to have a case of Alri from the first day of the simulation"""
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                alri_module = sim.modules['Alri']
+                pathogens = list(itertools.chain.from_iterable(alri_module.pathogens.values()))
+                df = sim.population.props
+                for idx in df[df.is_alive].index:
+                    sim.schedule_event(
+                        event=AlriIncidentCase(
+                            module=alri_module, person_id=idx, pathogen=self.rng.choice(pathogens)),
+                        date=sim.date
+                    )
+
+        log_config = {
+            'filename': 'tmp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.DEBUG,
+            },
+        }
+        sim = Simulation(start_date=sim_start_date, seed=seed, log_config=log_config)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=resourcefilepath,
+            ),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                      cons_availability='all',
+                                      ),
+            alri.Alri(resourcefilepath=resourcefilepath, no_new_alri_cases=True),  # Stop new cases occurring
+            AlriPropertiesOfOtherModules(),
+            DummyModule(),
+        )
+
+        # Make entire population under five years old
+        sim.modules['Demography'].parameters['max_age_initial'] = 5
+
+        if pulse_oximeter_and_oxygen_is_available:
+            sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
+        else:
+            sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'No'
+
+        sim.make_initial_population(n=1_000)
+        sim.simulate(end_date=start_date + pd.DateOffset(months=3))
+
+        # Get log of the treatment pathways
+        log = parse_log_file(sim.log_filepath)['tlo.methods.alri']
+        chars_of_case = log['chars_of_case'].set_index('person_id').drop(columns=['date'])
+        hsi = log['hsi'].set_index('person_id')
+        treatment_outcomes = log['treatment_outcomes'].set_index('person_id')
+
+        # Check that there is not more than one log for a treatment effect for any person
+        assert not treatment_outcomes.index.duplicated().any()
+
+        cases = dict()
+        for _id in range(n):
+            print(_id)
+            cases[_id] = {
+                    'chars_of_case': chars_of_case.loc[_id].to_dict(),
+                    'hsi': (hsi.loc[[_id]].reset_index(drop=True).to_dict() if _id in hsi.index else None),
+                    'treatment': (treatment_outcomes.loc[_id].to_dict() if _id in treatment_outcomes.index else None),
+                }
+        return cases
+
+    # With pulse oximeter and oxygen available
+    cases_with_po_and_ox = get_case_histories(pulse_oximeter_and_oxygen_is_available=True)
+
+    # Without pulse oximeter and oxygen
+    cases_without_po_and_ox = get_case_histories(pulse_oximeter_and_oxygen_is_available=False)
+
+    # Check that the characteristics of the cases are the same between the two simulations
+    for _id in cases_with_po_and_ox.keys():
+        assert cases_with_po_and_ox[_id]['chars_of_case'] == cases_without_po_and_ox[_id]['chars_of_case']
+
+    # Check that oxygen and pulse oximeter lead to lower risk of treatment failure in each case
+    for _id in cases_with_po_and_ox.keys():
+        print(_id)
+        if cases_with_po_and_ox[_id]['treatment']:
+            assert cases_without_po_and_ox[_id]['treatment'], f"There is no treatment provided in one scenario but not the other"
+
+            # # Check same antibiotic provided
+            # assert cases_with_po_and_ox[_id]['treatment']['antibiotic_provided'] == cases_without_po_and_ox[_id]['treatment']['antibiotic_provided'], \
+            #     f"Different antibiotics provided: {cases_with_po_and_ox[_id]['treatment']['antibiotic_provided']} vs " \
+            #     f"{cases_without_po_and_ox[_id]['treatment']['antibiotic_provided']}"
+
+            # Check that probability of treatment failure is not greater when pulse-oximter / oxygen used
+            assert cases_with_po_and_ox[_id]['treatment']['prob_treatment_fails'] <= cases_without_po_and_ox[_id]['treatment']['prob_treatment_fails'], "Pulse-Oximeter/Oxygen leads to higher risk of treatment failure"
+
+            cases_with_po_and_ox[5]['treatment']
+            cases_without_po_and_ox[5]['treatment']
+
+
+        # todo - Check that for specific cases, the reduction in treatment failure is grater
+        # todo - Check
 
 
 
+    print(cases_with_po_and_ox)
 
 
 
@@ -1630,4 +1752,3 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
 #  2) Check that the diagnosis change for all those persons for whom it should, and that it in each case treatment improves
 #  3) Check that the diagnosis does not change for all those persons for whom it should not, and that treatment efficacy is not affected.
 #  4) Count, in a normal simulation, the number of people for whom the diagnosis would be expectd to change due to the oximeter.
-
