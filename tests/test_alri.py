@@ -1470,7 +1470,7 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
                 **{
                     'antibiotic_provided': true_treatment['antibiotic_indicated'][0],
                     'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is
-                    #                                              always/not-used in both true and wrong
+                    #                                              consistently used/not used in both true and wrong
                     #                                              treatments (the effect of treatment is considered
                     #                                              below)
                 }
@@ -1617,21 +1617,23 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
 
 def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter_and_oxygen(seed, tmpdir):
     """Check that the probability of treatment failure ascribed to the case, following
-     all referrals etc, is lower when pulse oximetry and oxygen are available. Do this for a large sample of real
-     cases (i.e., those created endogenously by `Alri_IncidentCase`."""
+     all referrals etc., is lower when pulse oximetry and oxygen are available. Do this for a large sample of real
+     cases (i.e., those created endogenously by `Alri_IncidentCase`)."""
 
-    # todo - use the debug logging level.
+    # todo - Would like for the new logging keys to only be operative on the "debug" logging level but this didn't work
+    #  as there were errors from the logging module.
 
+    # todo Reduce repeats! Generate loads of AlriIncidentCases But Don't Schedule Them All and then run non-duplicates!
+    #  (Although this would then mean that the sample is not representative).
+
+    num_cases = 100
     sim_start_date = Date(2010, 1, 1)
 
-    def get_case_histories(
-        pulse_oximeter_and_oxygen_is_available=False,
-        n=1_000,
-    ):
-        """Run a cohort of children all with newly onset Alri and return summary of the case history for each."""
+    def get_case_history(simulation_seed, pulse_oximeter_and_oxygen_is_available):
+        """Run a simulation with one child with newly onset Alri and return summary of the case history."""
 
         class DummyModule(Module):
-            """Dummy module that will cause all persons to have a case of Alri from the first day of the simulation"""
+            """Dummy module that will cause person_id=0 to have a case of Alri from the first day of the simulation."""
             METADATA = {Metadata.DISEASE_MODULE}
 
             def read_parameters(self, data_folder):
@@ -1643,13 +1645,12 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
             def initialise_simulation(self, sim):
                 alri_module = sim.modules['Alri']
                 pathogens = list(itertools.chain.from_iterable(alri_module.pathogens.values()))
-                df = sim.population.props
-                for idx in df[df.is_alive].index:
-                    sim.schedule_event(
-                        event=AlriIncidentCase(
-                            module=alri_module, person_id=idx, pathogen=self.rng.choice(pathogens)),
-                        date=sim.date
-                    )
+                _person_id = 0
+                sim.schedule_event(
+                    event=AlriIncidentCase(
+                        module=alri_module, person_id=_person_id, pathogen=self.rng.choice(pathogens)),
+                    date=sim.date
+                )
 
         log_config = {
             'filename': 'tmp',
@@ -1658,7 +1659,7 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
                 "*": logging.DEBUG,
             },
         }
-        sim = Simulation(start_date=sim_start_date, seed=seed, log_config=log_config)
+        sim = Simulation(start_date=sim_start_date, seed=simulation_seed, log_config=log_config)
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -1666,6 +1667,7 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(
                 resourcefilepath=resourcefilepath,
+                force_any_symptom_to_lead_to_healthcareseeking=True,
             ),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                       cons_availability='all',
@@ -1673,6 +1675,7 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
             alri.Alri(resourcefilepath=resourcefilepath, no_new_alri_cases=True),  # Stop new cases occurring
             AlriPropertiesOfOtherModules(),
             DummyModule(),
+            check_all_dependencies=False,
         )
 
         # Make entire population under five years old
@@ -1683,62 +1686,92 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
         else:
             sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'No'
 
-        sim.make_initial_population(n=1_000)
-        sim.simulate(end_date=start_date + pd.DateOffset(months=3))
+        sim.make_initial_population(n=1)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=20))
 
         # Get log of the treatment pathways
+        _id = 0  # person_id of the cases being examined
         log = parse_log_file(sim.log_filepath)['tlo.methods.alri']
-        chars_of_case = log['chars_of_case'].set_index('person_id').drop(columns=['date'])
-        hsi = log['hsi'].set_index('person_id')
-        treatment_outcomes = log['treatment_outcomes'].set_index('person_id')
+        chars_of_case = log['chars_of_case'].set_index('person_id').drop(columns=['date']).loc[0].to_dict()
+        hsi = log['hsi'].set_index('person_id').loc[[_id]].reset_index(drop=True).to_dict() if 'hsi' in log else None
+        treatment_outcomes = log['treatment_outcomes'].set_index('person_id').loc[_id].to_dict() if 'treatment_outcomes' in log else None
 
-        # Check that there is not more than one log for a treatment effect for any person
-        assert not treatment_outcomes.index.duplicated().any()
+        return {
+                'chars_of_case': chars_of_case,
+                'hsi': hsi,
+                'treatment': treatment_outcomes,
+            }
 
-        cases = dict()
-        for _id in range(n):
-            print(_id)
-            cases[_id] = {
-                    'chars_of_case': chars_of_case.loc[_id].to_dict(),
-                    'hsi': (hsi.loc[[_id]].reset_index(drop=True).to_dict() if _id in hsi.index else None),
-                    'treatment': (treatment_outcomes.loc[_id].to_dict() if _id in treatment_outcomes.index else None),
-                }
-        return cases
+    # Run simulations, each with one case of Alri.
+    cases_with_po_and_ox = dict()
+    cases_without_po_and_ox = dict()
+    for sim_num in range(num_cases):
 
-    # With pulse oximeter and oxygen available
-    cases_with_po_and_ox = get_case_histories(pulse_oximeter_and_oxygen_is_available=True)
+        simulation_seed = seed + sim_num   # Change seed for each new simulation
 
-    # Without pulse oximeter and oxygen
-    cases_without_po_and_ox = get_case_histories(pulse_oximeter_and_oxygen_is_available=False)
+        # With pulse oximeter and oxygen available
+        cases_with_po_and_ox[sim_num] = get_case_history(simulation_seed=simulation_seed,
+                                                         pulse_oximeter_and_oxygen_is_available=True)
+
+        # Without pulse oximeter and oxygen
+        cases_without_po_and_ox[sim_num] = get_case_history(simulation_seed=simulation_seed,
+                                                            pulse_oximeter_and_oxygen_is_available=False)
 
     # Check that the characteristics of the cases are the same between the two simulations
-    for _id in cases_with_po_and_ox.keys():
+    for _id in cases_with_po_and_ox:
         assert cases_with_po_and_ox[_id]['chars_of_case'] == cases_without_po_and_ox[_id]['chars_of_case']
 
     # Check that oxygen and pulse oximeter lead to lower risk of treatment failure in each case
-    for _id in cases_with_po_and_ox.keys():
-        print(_id)
+    for _id in cases_with_po_and_ox:
         if cases_with_po_and_ox[_id]['treatment']:
+
             assert cases_without_po_and_ox[_id]['treatment'], f"There is no treatment provided in one scenario but not the other"
 
-            # # Check same antibiotic provided
+            # # # Check same antibiotic provided
             # assert cases_with_po_and_ox[_id]['treatment']['antibiotic_provided'] == cases_without_po_and_ox[_id]['treatment']['antibiotic_provided'], \
-            #     f"Different antibiotics provided: {cases_with_po_and_ox[_id]['treatment']['antibiotic_provided']} vs " \
+            #     f"Different antibiotics provided: {_id=} -> {cases_with_po_and_ox[_id]['treatment']['antibiotic_provided']} vs " \
             #     f"{cases_without_po_and_ox[_id]['treatment']['antibiotic_provided']}"
 
-            # Check that probability of treatment failure is not greater when pulse-oximter / oxygen used
-            assert cases_with_po_and_ox[_id]['treatment']['prob_treatment_fails'] <= cases_without_po_and_ox[_id]['treatment']['prob_treatment_fails'], "Pulse-Oximeter/Oxygen leads to higher risk of treatment failure"
+            # Check that probability of treatment failure is not greater when pulse-oximeter / oxygen used
+            assert cases_with_po_and_ox[_id]['treatment']['prob_treatment_fails'] \
+                   <= cases_without_po_and_ox[_id]['treatment']['prob_treatment_fails'], \
+                f"Pulse-Oximeter/Oxygen leads to higher risk of treatment failure for {_id=}"
 
-            cases_with_po_and_ox[5]['treatment']
-            cases_without_po_and_ox[5]['treatment']
+    # Compute average difference in risk of treatment failure overall
+    def get_prob_tratment_failure(cases):
+        """Return list of probs of treatment failure from a dict of cases, preserving the order."""
+        return [
+            cases[_id]['treatment']['prob_treatment_fails'] if cases[_id]['treatment'] is not None else None
+            for _id in cases
+        ]
+
+    def get_will_die(cases):
+        """Return list of `will_die`  from a dict of cases, preserving the order."""
+        return [eval(cases[_id]['chars_of_case']['will_die']) for _id in cases]
 
 
-        # todo - Check that for specific cases, the reduction in treatment failure is grater
-        # todo - Check
+    # how often less and how often identical
+    probs = pd.concat({
+        'with_po_and_ox': pd.Series(get_prob_tratment_failure(cases_with_po_and_ox)),
+        'without_po_and_ox': pd.Series(get_prob_tratment_failure(cases_without_po_and_ox)),
+    }, axis=1)
+
+    same_prob = (
+        (probs['with_po_and_ox'] == probs['without_po_and_ox'])
+        | (probs['without_po_and_ox'].isna() & probs['without_po_and_ox'].isna())
+    )
+
+    # Compute average difference in risk of death overall and in some particular cases
+    will_die = pd.concat({
+        'with_po_and_ox': pd.Series(get_will_die(cases_with_po_and_ox)),
+        'without_po_and_ox': pd.Series(get_will_die(cases_without_po_and_ox)),
+    }, axis=1)
+
+    probs.mean()
+    same_prob.mean()
+    prob_treatment_saves_life = 1.0 - probs.loc[will_die.any(axis=1)].mean()
 
 
-
-    print(cases_with_po_and_ox)
 
 
 
