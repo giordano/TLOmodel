@@ -1171,7 +1171,7 @@ def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
 @pytest.mark.slow
 def test_impact_of_all_hsi(seed, tmpdir):
     """Test that when there are no HSI for ALRI allowed, or there is no healthcare seeking, that there are deaths to
-    Alri; but also that hen when HSI are allowed and treatment is perfect, that there are ZERO deaths among large
+    Alri; but also that when when HSI are allowed and treatment is perfect, that there are ZERO deaths among a _large_
     cohort of infected persons."""
 
     def get_number_of_deaths_from_cohort_of_children_with_alri(
@@ -1325,7 +1325,7 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
                     )
 
         start_date = Date(2010, 1, 1)
-        popsize = 1_000
+        popsize = 10_000
         sim = Simulation(start_date=start_date, seed=seed)
 
         sim.register(
@@ -1477,7 +1477,7 @@ def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
             )
 
         # * Under-diagnosis
-        # Get wrong classification that would be considered an "under-diangnosis", i.e. the mistake is to not recognise
+        # Get wrong classification that would be considered an "under-diagnosis", i.e. the mistake is to not recognise
         # how serious the case is --> the mistake should lead to low rates of treatment success than the ideal treatment
         # for the correct diagnosis.
         under_diagnosed_classifications = find_lower_classification(true_classification)
@@ -1612,6 +1612,16 @@ def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
                     f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
                     f"{chars['SpO2_level']}, provision of oxygen has an effect but it should not." \
                     f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
+
+
+
+
+
+
+
+
+
+
 
 
 # todo
