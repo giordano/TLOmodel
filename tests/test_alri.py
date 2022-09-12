@@ -1626,7 +1626,11 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
     # todo Reduce repeats! Generate loads of AlriIncidentCases But Don't Schedule Them All and then run non-duplicates!
     #  (Although this would then mean that the sample is not representative).
 
-    num_cases = 100
+    # todo Check that the benefit is for _all_ of the "right" people.
+
+    # todo Count the number of potential beneficiaries of the intervention.
+
+    num_cases = 500
     sim_start_date = Date(2010, 1, 1)
 
     def get_case_history(simulation_seed, pulse_oximeter_and_oxygen_is_available):
@@ -1671,6 +1675,7 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
             ),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                       cons_availability='all',
+                                      disable=True,
                                       ),
             alri.Alri(resourcefilepath=resourcefilepath, no_new_alri_cases=True),  # Stop new cases occurring
             AlriPropertiesOfOtherModules(),
@@ -1690,11 +1695,12 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
         sim.simulate(end_date=start_date + pd.DateOffset(days=20))
 
         # Get log of the treatment pathways
-        _id = 0  # person_id of the cases being examined
+        person_id = 0  # person_id of the cases being examined
         log = parse_log_file(sim.log_filepath)['tlo.methods.alri']
         chars_of_case = log['chars_of_case'].set_index('person_id').drop(columns=['date']).loc[0].to_dict()
-        hsi = log['hsi'].set_index('person_id').loc[[_id]].reset_index(drop=True).to_dict() if 'hsi' in log else None
-        treatment_outcomes = log['treatment_outcomes'].set_index('person_id').loc[_id].to_dict() if 'treatment_outcomes' in log else None
+        hsi = log['hsi'].set_index('person_id').loc[[person_id]].reset_index(drop=True).to_dict() if 'hsi' in log else None
+        treatment_outcomes = log['treatment_outcomes'].set_index('person_id').loc[person_id].to_dict() \
+            if 'treatment_outcomes' in log else None
 
         return {
                 'chars_of_case': chars_of_case,
@@ -1725,12 +1731,8 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
     for _id in cases_with_po_and_ox:
         if cases_with_po_and_ox[_id]['treatment']:
 
-            assert cases_without_po_and_ox[_id]['treatment'], f"There is no treatment provided in one scenario but not the other"
-
-            # # # Check same antibiotic provided
-            # assert cases_with_po_and_ox[_id]['treatment']['antibiotic_provided'] == cases_without_po_and_ox[_id]['treatment']['antibiotic_provided'], \
-            #     f"Different antibiotics provided: {_id=} -> {cases_with_po_and_ox[_id]['treatment']['antibiotic_provided']} vs " \
-            #     f"{cases_without_po_and_ox[_id]['treatment']['antibiotic_provided']}"
+            assert cases_without_po_and_ox[_id]['treatment'], f"There is no treatment provided in one scenario but " \
+                                                              f"not the other."
 
             # Check that probability of treatment failure is not greater when pulse-oximeter / oxygen used
             assert cases_with_po_and_ox[_id]['treatment']['prob_treatment_fails'] \
@@ -1767,6 +1769,7 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
         'without_po_and_ox': pd.Series(get_will_die(cases_without_po_and_ox)),
     }, axis=1)
 
-    probs.mean()
-    same_prob.mean()
-    # prob_treatment_saves_life = 1.0 - probs.loc[will_die.any(axis=1)].mean()
+    print(f"{probs.mean()=}"
+          f"\n{same_prob.mean()}"
+          f"\nprob_treatment_saves_life={1.0 - probs.loc[will_die.any(axis=1)].mean()}"
+          )
