@@ -1337,7 +1337,7 @@ class Alri(Module):
         )
 
         # Cancel death (if there is one) if the treatment does not fail (i.e. it works) and return indication of
-        # sucesss of failure.
+        # success of failure.
         if not treatment_fails:
             self.cancel_death_and_schedule_cure(person_id)
             return 'success'
@@ -2497,7 +2497,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'fast_breathing_pneumonia',
              'chest_indrawing_pneumonia'
         }."""
-        print(self.module.rng.random_sample())
         rand = self.module.rng.random_sample
         rand_choice = self.module.rng.choice
         p = self.module.parameters

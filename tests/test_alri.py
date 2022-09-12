@@ -1769,19 +1769,4 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
 
     probs.mean()
     same_prob.mean()
-    prob_treatment_saves_life = 1.0 - probs.loc[will_die.any(axis=1)].mean()
-
-
-
-
-
-
-
-
-
-# todo
-#  1) Create all possible cases... record the care they get.... the treatment efficacy received eventually when
-#     using the oximeter versus not.
-#  2) Check that the diagnosis change for all those persons for whom it should, and that it in each case treatment improves
-#  3) Check that the diagnosis does not change for all those persons for whom it should not, and that treatment efficacy is not affected.
-#  4) Count, in a normal simulation, the number of people for whom the diagnosis would be expectd to change due to the oximeter.
+    # prob_treatment_saves_life = 1.0 - probs.loc[will_die.any(axis=1)].mean()

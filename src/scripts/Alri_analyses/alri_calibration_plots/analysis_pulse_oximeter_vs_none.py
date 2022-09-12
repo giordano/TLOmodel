@@ -62,7 +62,7 @@ def run_scenario(**kwargs):
         alri.AlriPropertiesOfOtherModules()
     )
 
-    sim.modules['Demography'].parameters['max_age_initial'] = 5
+    sim.modules['Demography'].parameters['max_age_initial'] = 1
 
     if kwargs['do_make_treatment_and_diagnosis_perfect']:
         alri._make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
@@ -88,6 +88,16 @@ def get_death_numbers_from_logfile(logfile):
         'deaths': alri_event_counts['deaths'],
         'deaths_among_persons_with_SpO2<90%': alri_event_counts['deaths_among_persons_with_SpO2<90%']
     }
+
+
+def get_deaths_by_month(logfile):
+    """Returns counts of death due to ALRI by month"""
+    output = parse_log_file(logfile)
+    deaths = output['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths.date)
+    return deaths.loc[deaths.cause.str.startswith('ALRI')].groupby(by=[deaths.date.dt.month, deaths.date.dt.year]).size()
+
+
 
 
 def get_cfr_from_logfile(logfile):
@@ -143,3 +153,10 @@ ax.set_title('Case:Fatality Ratio')
 ax.set_xlabel('Deaths per 100k cases')
 fig.tight_layout()
 fig.show()
+
+
+# %% Look at time trend in number of deaths
+deaths_by_month = pd.DataFrame({_name: get_deaths_by_month(_logfile) for _name, _logfile in outputfiles.items()})
+
+deaths_by_month.plot()
+plt.show()
