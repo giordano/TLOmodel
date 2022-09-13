@@ -1626,9 +1626,9 @@ def test_effectiveness_of_eventual_treatment_when_with_and_without_pulse_oximter
     # todo Reduce repeats! Generate loads of AlriIncidentCases But Don't Schedule Them All and then run non-duplicates!
     #  (Although this would then mean that the sample is not representative).
 
-    # todo Check that the benefit is for _all_ of the "right" people.
-
-    # todo Count the number of potential beneficiaries of the intervention.
+    # todo *** Check that the benefit is for _all_ of the "right" people.
+    # todo *** New Test ... count the number of potential beneficiaries of the intervention.
+    # todo *** Check happy with age-specific CFR
 
     num_cases = 500
     sim_start_date = Date(2010, 1, 1)
