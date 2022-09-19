@@ -25,10 +25,10 @@ class TestTbShineBaselineScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = randint(0, 5000)
+        self.seed = 4567
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2036, 1, 1)
-        self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
+        self.pop_size = 250_000  # fixed transmission poll means 175k is enough to assign all active tb infections
         self.number_of_draws = 2
         self.runs_per_draw = 3
 
