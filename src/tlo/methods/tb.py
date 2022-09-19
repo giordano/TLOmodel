@@ -2594,11 +2594,25 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
+        # children
+        child_dx_idx = df.loc[(df.age_years < 16) &
+                              (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))].index
+        child_dx_delays = (df.loc[child_dx_idx, "tb_date_diagnosed"] - df.loc[child_dx_idx, "tb_date_active"]).dt.days
+        child_dx_delays = child_dx_delays.tolist()
+
+        # children
+        child_tx_dx_idx = df.loc[(df.age_years < 16) &
+                              (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_dx_delays = (df.loc[child_tx_dx_idx, "tb_date_treated"] - df.loc[child_tx_dx_idx, "tb_date_diagnosed"]).dt.days
+        child_tx_dx_delays = child_tx_dx_delays.tolist()
+
         logger.info(
             key="tb_treatment_delays",
             description="TB time from onset to treatment",
             data={
                 "tbTreatmentDelayChildren": child_tx_delays,
+                "tbDiagnosisDelayChildren": child_dx_delays,
+                "tbDiagnosistoTreatmentDelayChildren": child_tx_dx_delays,
             },
         )
 
@@ -2662,6 +2676,21 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & (df.tb_treatment_regimen == "tb_mdrtx")]
         )
 
+        # (8) number of false positive patients on treatment
+
+        num_false_pos = len(
+            df[(df.tb_strain == "latent")
+               & df.tb_diagnosed
+               & df.tb_date_diagnosed(now - DateOffset(months=self.repeat))]
+        )
+
+        num_false_pos_tx = len(
+            df[(df.tb_strain == "latent")
+               & df.tb_diagnosed
+               & df.tb_date_diagnosed(now - DateOffset(months=self.repeat))
+               & df.tb_on_treatment]
+        )
+
         logger.info(
             key="tb_treatment_regimen",
             description="",
@@ -2672,6 +2701,8 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "TBRetxChild": num_tb_retx_child,
                 "TBTxAdult": num_tb_tx_adult,
                 "TBRetxAdult": num_tb_retx_adult,
-                "TBTxMdr": num_mdr_tx
+                "TBTxMdr": num_mdr_tx,
+                "TBFalsePos": num_false_pos,
+                "TBFalsePosTx": num_false_pos_tx,
             }
         )
