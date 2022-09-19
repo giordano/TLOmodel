@@ -2681,13 +2681,13 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_false_pos = len(
             df[(df.tb_strain == "latent")
                & df.tb_diagnosed
-               & df.tb_date_diagnosed(now - DateOffset(months=self.repeat))]
+               & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
 
         num_false_pos_tx = len(
             df[(df.tb_strain == "latent")
                & df.tb_diagnosed
-               & df.tb_date_diagnosed(now - DateOffset(months=self.repeat))
+               & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & df.tb_on_treatment]
         )
 
