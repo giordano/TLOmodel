@@ -1319,12 +1319,23 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             ] = True  # ensure classed as retreatment case
 
             for person in tx_failure:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0,
-                )
+
+                if person in ds_tx_failure_shorter_idx:
+                    # schedule retesting/retreatment in 2 months (same as standard)
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
+                        topen=self.sim.date + DateOffset(months=2),
+                        tclose=None,
+                        priority=0,
+                    )
+
+                else:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
+                        topen=self.sim.date,
+                        tclose=None,
+                        priority=0,
+                    )
 
         # remove any treatment failure indices from the treatment end indices
         cure_idx = list(set(end_tx_idx) - set(tx_failure))
@@ -1341,8 +1352,13 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # if cured, move infection status back to latent
         # leave tb_strain property set in case of relapse
         df.loc[cure_idx, "tb_inf"] = "latent"
+        df.loc[cure_idx, "tb_date_latent"] = now
         df.loc[cure_idx, "tb_smear"] = False
 
+        # this will clear all tb symptoms
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=cure_idx, disease_module=self.module
+        )
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """annual event which allows some individuals to self-cure
