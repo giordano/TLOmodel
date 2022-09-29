@@ -2550,15 +2550,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             tb_treatment_coverage_2 = 0
 
-        # (8) Number of New False Treated TB Cases (0 - 16 years)
-        new_false_tx_tb_cases = len(
-            df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent'))
-               & (df.tb_on_treatment)
-               & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-               & (df.age_years <= 16)]
-        )
-
-        # (9) Number of Cases that Failed Treatment
+        # (8) Number of Cases that Failed Treatment
         new_tx_failure = len(
             df[
                 (df.age_years <= 16)
@@ -2567,7 +2559,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
 
-        # (10) Number of New Active TB Cases Eligible for Shorter Treatment
+        # (9) Number of New Active TB Cases Eligible for Shorter Treatment
         num_shorter_tx = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)
@@ -2577,13 +2569,13 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & ~df.is_pregnant]
         )
 
-        # (11) Proportion of new active TB cases eligible for shorter treatment
+        # (10) Proportion of new active TB cases eligible for shorter treatment
         if new_active_tb_cases:
             prop_elig_shorter_tx = (num_shorter_tx / new_active_tb_cases) * 100
         else:
             prop_elig_shorter_tx = 0
 
-        # (12) Number of new diagnosed TB cases eligible for shorter treatment
+        # (11) Number of new diagnosed TB cases eligible for shorter treatment
         num_shorter_tx_2 = len(
             df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)
@@ -2593,7 +2585,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & ~df.is_pregnant]
         )
 
-        # (13) Proportion of new diagnosed TB cases eligible for shorter treatment
+        # (12) Proportion of new diagnosed TB cases eligible for shorter treatment
         if new_diagnosed_tb_cases:
             prop_elig_shorter_tx_2 = (num_shorter_tx_2 / new_diagnosed_tb_cases) * 100
         else:
@@ -2610,7 +2602,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "NewTreatedTBCases": new_treated_tb_cases,
                 "TreatmentCoverage": tb_treatment_coverage,
                 "TreatmentCoverage2": tb_treatment_coverage_2,
-                "NewFalsePosTreatedCases": new_false_tx_tb_cases,
                 "NewTreatmentFailure": new_tx_failure,
                 "NewEligCases": num_shorter_tx,
                 "PropEligCases": prop_elig_shorter_tx,
@@ -2712,19 +2703,12 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & (df.tb_treatment_regimen == "tb_mdrtx")]
         )
 
-        # (8) number of false positive patients on treatment
-
-        num_false_pos = len(
-            df[(df.tb_strain == "latent")
-               & df.tb_diagnosed
-               & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
-        )
-
-        num_false_pos_tx = len(
-            df[(df.tb_strain == "latent")
-               & df.tb_diagnosed
-               & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-               & df.tb_on_treatment]
+        # (8) Number of New False Treated TB Cases (0 - 16 years)
+        new_false_tx_tb_cases = len(
+            df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent'))
+               & (df.tb_on_treatment)
+               & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
         )
 
         logger.info(
@@ -2738,7 +2722,6 @@ class TbTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "TBTxAdult": num_tb_tx_adult,
                 "TBRetxAdult": num_tb_retx_adult,
                 "TBTxMdr": num_mdr_tx,
-                "TBFalsePos": num_false_pos,
-                "TBFalsePosTx": num_false_pos_tx,
+                "NewFalsePos": new_false_tx_tb_cases,
             }
         )
