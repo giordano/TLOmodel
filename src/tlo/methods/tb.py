@@ -2504,51 +2504,71 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # This logger provides all the summary statistics needed to analyse the SHINE Trial health outcomes.
         # Comment out if not running scenario 4, as some statistics are repeated above.
 
-        # (1) Number of new active TB cases (0-16 years)
-
-        num_new_active_tb_cases_child = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+        # (1) Number of New Active TB Cases (0 - 16 years)
+        new_active_tb_cases = len(
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
 
-        # (2) Number of new diagnosed TB cases (0 - 16 years)
-
-        num_new_diagnosed_tb_cases_child = len(
+        # (2) Number of New Diagnosed TB Cases (0 - 16 years)
+        new_diagnosed_tb_cases = len(
             df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)]
         )
 
-        # (3) Number of new treated TB cases (0 - 16 years)
+        # (3) Case Notification Rate
+        if new_active_tb_cases:
+            case_notification_rate = (new_diagnosed_tb_cases / new_active_tb_cases ) * 100
+        else:
+            case_notification_rate = 0
 
-        num_new_treated_tb_cases_child = len(
+        # (4) Number of New False Positive TB Cases (0 - 16 years)
+        new_false_pos_tb_cases = len(
+            df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent'))
+               & (df.tb_diagnosed)
+               & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
+        )
+
+        # (5) Number of New Treated TB Cases (0 - 16 years)
+        new_treated_tb_cases = len(
             df[
                 (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years <= 16)
                 ]
         )
 
-        # (4) Cases detection rate (proportion of new active TB cases that were diagnosed)
-
-        if num_new_active_tb_cases_child:
-            case_detection_rate = (num_new_diagnosed_tb_cases_child / num_new_active_tb_cases_child) * 100
+        # (6) TB Treatment Coverage (from new active cases)
+        if new_active_tb_cases:
+            tb_treatment_coverage = (new_treated_tb_cases / new_active_tb_cases) * 100
         else:
-            case_detection_rate = 0
+            tb_treatment_coverage = 0
 
-        # (5) Treatment coverage (proportion of new diagnosed TB cases that were treated)
-
-        if num_new_diagnosed_tb_cases_child:
-            treatment_coverage = (num_new_treated_tb_cases_child / num_new_diagnosed_tb_cases_child) * 100
+        # (7) TB Treatment Coverage (from new diagnosed cases)
+        if new_diagnosed_tb_cases:
+            tb_treatment_coverage_2 = (new_treated_tb_cases / new_diagnosed_tb_cases) * 100
         else:
-            treatment_coverage = 0
+            tb_treatment_coverage_2 = 0
 
-        # The following statistics look at how many patients are eligible for the SHINE trial shorter treatment option.
-        # First, we look at the number and proportion of patients who are eligible at the infection stage.
-        # Then, we look at how these statistics change at the diagnosis stage.
-        # These statistics are for interest, to give an indication as to how well smear-negative cases are identified.
+        # (8) Number of New False Treated TB Cases (0 - 16 years)
+        new_false_tx_tb_cases = len(
+            df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent'))
+               & (df.tb_on_treatment)
+               & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
+        )
 
-        # (6) Number of new active TB cases eligible for shorter treatment
+        # (9) Number of Cases that Failed Treatment
+        new_tx_failure = len(
+            df[
+                (df.age_years <= 16)
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & df.tb_treatment_failure
+                ]
+        )
 
-        num_elig_shorter_tx = len(
+        # (10) Number of New Active TB Cases Eligible for Shorter Treatment
+        num_shorter_tx = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)
                & ~df.tb_smear
@@ -2557,16 +2577,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & ~df.is_pregnant]
         )
 
-        # (7) Proportion of new active TB cases eligible for shorter treatment
-
-        if num_new_active_tb_cases_child:
-            prop_elig_shorter_tx = (num_elig_shorter_tx / num_new_active_tb_cases_child) * 100
+        # (11) Proportion of new active TB cases eligible for shorter treatment
+        if new_active_tb_cases:
+            prop_elig_shorter_tx = (num_shorter_tx / new_active_tb_cases) * 100
         else:
             prop_elig_shorter_tx = 0
 
-        # (8) Number of new diagnosed TB cases eligible for shorter treatment
-
-        num_elig_shorter_tx_diagnosed_cases = len(
+        # (12) Number of new diagnosed TB cases eligible for shorter treatment
+        num_shorter_tx_2 = len(
             df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
                & (df.age_years <= 16)
                & ~df.tb_smear
@@ -2575,27 +2593,29 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                & ~df.is_pregnant]
         )
 
-        # (9) Proportion of new diagnosed TB cases eligible for shorter treatment
-
-        if num_new_diagnosed_tb_cases_child:
-            prop_elig_shorter_tx_diagnosed_cases = (num_elig_shorter_tx_diagnosed_cases /
-                                                    num_new_diagnosed_tb_cases_child) * 100
+        # (13) Proportion of new diagnosed TB cases eligible for shorter treatment
+        if new_diagnosed_tb_cases:
+            prop_elig_shorter_tx_2 = (num_shorter_tx_2 / new_diagnosed_tb_cases) * 100
         else:
-            prop_elig_shorter_tx_diagnosed_cases = 0
+            prop_elig_shorter_tx_2 = 0
 
         logger.info(
             key="tb_shine_data",
             description="Scenario 4:SHINE Trial summary statistics",
             data={
-                "NewActiveTBCases": num_new_active_tb_cases_child,
-                "NewDiagnosedTBCases": num_new_diagnosed_tb_cases_child,
-                "NewTreatedTBCases": num_new_treated_tb_cases_child,
-                "TBCaseDetection": case_detection_rate,
-                "TBTreatmentCoverage": treatment_coverage,
-                "NewActiveTBCasesEligibleShorterTx": num_elig_shorter_tx,
-                "PropActiveTBCasesEligibleShorterTx": prop_elig_shorter_tx,
-                "NewDiagnosedTBCasesEligibleShorterTx": num_elig_shorter_tx_diagnosed_cases,
-                "PropDiagnosedTBCasesEligibleShorterTx": prop_elig_shorter_tx_diagnosed_cases,
+                "NewActiveTBCases": new_active_tb_cases,
+                "NewDiagnosedTBCases": new_diagnosed_tb_cases,
+                "CaseNotificationRate": case_notification_rate,
+                "NewFalsePosCases": new_false_pos_tb_cases,
+                "NewTreatedTBCases": new_treated_tb_cases,
+                "TreatmentCoverage": tb_treatment_coverage,
+                "TreatmentCoverage2": tb_treatment_coverage_2,
+                "NewFalsePosTreatedCases": new_false_tx_tb_cases,
+                "NewTreatmentFailure": new_tx_failure,
+                "NewEligCases": num_shorter_tx,
+                "PropEligCases": prop_elig_shorter_tx,
+                "NewEligCases2": num_shorter_tx_2,
+                "PropEligCases2": prop_elig_shorter_tx_2,
             },
         )
 
