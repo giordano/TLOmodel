@@ -79,7 +79,7 @@ class TestTbShineTestRun(BaseScenario):
         return {
 
             'Demography': {'max_age_initial': 16},
-            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14, 'sens_clinical': 0.68,
+            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14, 'sens_clinical': 0.33,
                    'scenario': [0, 4][draw_number]}
 
         }
