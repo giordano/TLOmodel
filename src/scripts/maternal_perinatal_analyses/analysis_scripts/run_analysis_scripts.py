@@ -1,4 +1,4 @@
-import compare_incidence_rates_between_scenarios
+import compare_incidence_rates_between_scenarios_v2
 import maternal_newborn_health_analysis_v2
 import met_need
 
@@ -13,11 +13,19 @@ output_path = './outputs/sejjj49@ucl.ac.uk/'
 service_of_interest = 'anc'
 
 maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
-    scenario_file_dict=scenario_dict,
-    outputspath=output_path,
-    intervention_years=intervention_years,
-    service_of_interest=service_of_interest,
-    show_all_results=True)
+     scenario_file_dict=scenario_dict,
+     outputspath=output_path,
+     intervention_years=intervention_years,
+     service_of_interest=service_of_interest,
+     show_all_results=True)
+
+# compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
+#     scenario_file_dict=scenario_dict,
+#     outputspath=output_path,
+#     intervention_years=intervention_years,
+#     service_of_interest=service_of_interest)
+
+
 
 #compare_incidence_rates_between_scenarios.compare_key_rates_between_multiple_scenarios(
 #    scenario_file_dict=scenario_dict,

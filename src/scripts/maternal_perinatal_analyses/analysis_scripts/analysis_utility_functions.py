@@ -331,10 +331,10 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
                               f'prop_sf_{hsi_string}', graph_location)
 
 
-def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, title, graph_location, save_name):
+def comparison_graph_multiple_scenarios(colours, intervention_years, data_dict, y_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
 
-    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'orchid']):
+    for k, colour in zip(data_dict, colours):
         ax.plot(intervention_years, data_dict[k][0], label=k, color=colour)
         ax.fill_between(intervention_years, data_dict[k][1], data_dict[k][2], color=colour, alpha=.1)
 
@@ -347,11 +347,11 @@ def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, 
     plt.show()
 
 
-def comparison_graph_multiple_scenarios_multi_level_dict(intervention_years, data_dict, key, y_label, title,
+def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_years, data_dict, key, y_label, title,
                                                          graph_location, save_name):
     fig, ax = plt.subplots()
 
-    for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
+    for k, colour in zip(data_dict, colours):
         ax.plot(intervention_years, data_dict[k][key][0], label=k, color=colour)
         ax.fill_between(intervention_years, data_dict[k][key][1], data_dict[k][key][2], color=colour, alpha=.1)
 
@@ -364,7 +364,7 @@ def comparison_graph_multiple_scenarios_multi_level_dict(intervention_years, dat
     plt.show()
 
 
-def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_title, title,
+def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colours, y_title, title,
                                        plot_destination_folder, save_name):
 
     N = len(intervention_years)
@@ -375,7 +375,7 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_ti
         x_ticks.append(x)
 
     for k, position, colour in zip(data, [ind - width, ind, ind + width, ind + width * 2],
-                                   ['bisque', 'powderblue', 'mistyrose', 'thistle']):
+                                   colours):
         ci = [(x - y) / 2 for x, y in zip(data[k][dict_name][2], data[k][dict_name][1])]
         plt.bar(position, data[k][dict_name][0], width, label=k, yerr=ci, color=colour)
 
@@ -526,6 +526,14 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
                       ((agg_ind_m_deaths[1] / agg_births[1]) * 100_000),
                       ((agg_ind_m_deaths[2] / agg_births[2]) * 100_000)]
 
+        agg_total = [agg_dir_m_deaths[0] + agg_ind_m_deaths[0],
+                     agg_dir_m_deaths[1] + agg_ind_m_deaths[1],
+                     agg_dir_m_deaths[2] + agg_ind_m_deaths[2]]
+
+        agg_total_mr = [((agg_total[0] / agg_births[0]) * 100_000),
+                      ((agg_total[1] / agg_births[1]) * 100_000),
+                      ((agg_total[2] / agg_births[2]) * 100_000)]
+
         # Extract NMR
         nmr = get_comp_mean_and_rate('Neonatal Disorders', births[0], death_results_labels, 1000, intervention_years)
 
@@ -538,12 +546,14 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
 
         return {'direct_mmr': mmr,
                 'total_mmr': total_mmr,
+                'agg_total_mr': agg_total_mr,
                 'crude_dir_m_deaths': crude_m_deaths,
                 'agg_dir_m_deaths': agg_dir_m_deaths,
                 'agg_dir_mr': agg_dir_mr,
                 'crude_ind_m_deaths': indirect_deaths,
                 'agg_ind_m_deaths': agg_ind_m_deaths,
                 'agg_ind_mr': agg_ind_mr,
+                'agg_total': agg_total,
                 'nmr': nmr,
                 'crude_n_deaths': crude_n_deaths,
                 'agg_n_deaths': agg_n_deaths,
