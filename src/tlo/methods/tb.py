@@ -127,7 +127,9 @@ class Tb(Module):
             description="current tb treatment regimen",
         ),
         "tb_ever_treated": Property(Types.BOOL, "if ever treated for active tb"),
+        "tb_date_end_treatment": Property(Types.DATE, "date treatment ended"),
         "tb_treatment_failure": Property(Types.BOOL, "failed first line tb treatment"),
+        "tb_date_treatment_failure": Property(Types.DATE, "date failed first line tb treatment"),
         "tb_treated_mdr": Property(Types.BOOL, "on tb treatment MDR regimen"),
         "tb_date_treated_mdr": Property(Types.DATE, "date tb MDR treatment started"),
         "tb_on_ipt": Property(Types.BOOL, "if currently on ipt"),
@@ -1274,11 +1276,25 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             & (random_var < (1 - p["prob_tx_success_5_14"]))
             ].index
 
-        # children aged <16 and on shorter regimen
-        ds_tx_failure_shorter_idx = df.loc[
+        # children aged 0-4 and on shorter regimen
+        ds_tx_failure0_4_shorter_idx = df.loc[
             (df.index.isin(end_tx_shorter_idx))
-            & (df.age_years < 16)
-            & (random_var < (1 - p["prob_tx_success_shorter"]))
+            & (df.age_years < 5)
+            & (random_var < (1 - p["prob_tx_success_0_4"]))
+            ].index
+
+        # children aged 5-14 and on shorter regimen
+        ds_tx_failure5_14_shorter_idx = df.loc[
+            (df.index.isin(end_tx_shorter_idx))
+            & (df.age_years.between(5, 14))
+            & (random_var < (1 - p["prob_tx_success_5_14"]))
+            ].index
+
+        # children aged >15 and on shorter regimen
+        ds_tx_failure15_shorter_idx = df.loc[
+            (df.index.isin(end_tx_shorter_idx))
+            & (df.age_years >= 15)
+            & (random_var < (1 - p["prob_tx_success_ds"]))
             ].index
 
         # adults ds-tb
@@ -1306,14 +1322,23 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         tx_failure = (
             list(ds_tx_failure0_4_idx)
             + list(ds_tx_failure5_14_idx)
-            + list(ds_tx_failure_shorter_idx)
+            + list(ds_tx_failure0_4_shorter_idx)
+            + list(ds_tx_failure5_14_shorter_idx)
+            + list(ds_tx_failure15_shorter_idx)
             + list(ds_tx_failure_adult_idx)
             + list(failure_in_mdr_with_ds_tx_idx)
             + list(failure_due_to_mdr_idx)
         )
 
+        ds_tx_failure_shorter_idx = (
+            list(ds_tx_failure0_4_shorter_idx)
+            + list(ds_tx_failure5_14_shorter_idx)
+            + list(ds_tx_failure15_shorter_idx)
+        )
+
         if tx_failure:
             df.loc[tx_failure, "tb_treatment_failure"] = True
+            df.loc[tx_failure, "tb_date_treatment_failure"] = now
             df.loc[
                 tx_failure, "tb_ever_treated"
             ] = True  # ensure classed as retreatment case
@@ -1348,6 +1373,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_idx, "tb_ever_treated"] = True
+        df.loc[end_tx_idx, "tb_date_end_treatment"] = now
 
         # if cured, move infection status back to latent
         # leave tb_strain property set in case of relapse
@@ -2477,7 +2503,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Number of people that failed treatment
         num_tx_failure = len(
             df[
-                (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_treatment_failure >= (now - DateOffset(months=self.repeat)))
                 & df.tb_treatment_failure
                 ]
         )
@@ -2486,10 +2512,25 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_child_tx_failure = len(
             df[
                 (df.age_years <= 16)
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_treatment_failure >= (now - DateOffset(months=self.repeat)))
                 & df.tb_treatment_failure
                 ]
         )
+
+        # Number of children that ended treatment
+        num_child_tx_end = len(
+            df[
+                (df.age_years <= 16)
+                & df.tb_ever_treated
+                & (df.tb_date_end_treatment >= (now - DateOffset(months=self.repeat)))
+            ]
+        )
+
+        # Proportion of children that failed treatment
+        if num_child_tx_end:
+            prop_tx_failure = (num_child_tx_failure / num_child_tx_end) * 100
+        else:
+            prop_tx_failure = 0
 
         logger.info(
             key="tb_treatment_failure",
@@ -2497,6 +2538,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data={
                 "tbNumTxFailure": num_tx_failure,
                 "tbNumTxFailureChild": num_child_tx_failure,
+                "tbEndTxChild": num_child_tx_end,
+                "tbPropTxFailure": prop_tx_failure,
             }
         )
 
