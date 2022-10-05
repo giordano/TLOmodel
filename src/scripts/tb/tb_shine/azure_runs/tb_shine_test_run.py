@@ -30,7 +30,7 @@ class TestTbShineTestRun(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = 3785
+        self.seed = 8629
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2036, 1, 1)
         self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
@@ -79,7 +79,7 @@ class TestTbShineTestRun(BaseScenario):
         return {
 
             'Demography': {'max_age_initial': 16},
-            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14, 'sens_clinical': 0.33,
+            'Tb': {'prop_smear_positive': 0.14, 'prop_smear_positive_hiv': 0.14,
                    'scenario': [0, 4][draw_number]}
 
         }

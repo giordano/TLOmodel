@@ -25,10 +25,10 @@ class TestTbShineBaselineScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = 3785
+        self.seed = 8629
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2036, 1, 1)
-        self.pop_size = 175_000  # fixed transmission poll means 175k is enough to assign all active tb infections
+        self.end_date = Date(2014, 1, 1)
+        self.pop_size = 1_000  # fixed transmission poll means 175k is enough to assign all active tb infections
         self.number_of_draws = 2
         self.runs_per_draw = 5
 
@@ -41,6 +41,8 @@ class TestTbShineBaselineScenario(BaseScenario):
                 'tlo.methods.hiv': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
+                'tlo.methods.healthsystem.summary': logging.INFO,
+                'tlo.methods.healthburden': logging.INFO,
             }
         }
 
