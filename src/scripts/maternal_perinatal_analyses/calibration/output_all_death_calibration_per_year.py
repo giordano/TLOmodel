@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from ..analysis_scripts import analysis_utility_functions
+#from ..analysis_scripts import analysis_utility_functions
+from src.scripts.maternal_perinatal_analyses.analysis_scripts import analysis_utility_functions
 
 plt.style.use('seaborn')
 
@@ -136,43 +137,40 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
                       [x + y for x, y in zip(id_mmr_data[1], mm[1])],
                       [x + y for x, y in zip(id_mmr_data[2], mm[2])]]
 
-    for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data],
-                                               ['Direct', 'Indirect', 'Total'],
-                                               ['deepskyblue', 'mediumpurple', 'coral'],
-                                               ['b', 'mediumslateblue', 'lightcoral']):
+    for data, title in zip([mm, id_mmr_data, total_mmr_data], ['(Direct)', '(Indirect)', '(Total)']):
 
-        if title == 'Direct':
+        if title == '(Direct)':
             mp = 0.7
-        elif title == 'Indirect':
+        elif title == '(Indirect)':
             mp = 0.3
         else:
             mp = 1
 
         fig, ax = plt.subplots()
-        ax.plot(sim_years, data[0], label="Model (mean)", color=l_colour)
-        ax.fill_between(sim_years, data[1], data[2], color=f_colour, alpha=.1)
-        plt.errorbar(2010, (675*mp), yerr=((780*mp)-(570*mp))/2, label='DHS 2010', fmt='o', color='green',
+        ax.plot(sim_years, data[0], label="Model", color='deepskyblue')
+        ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1)
+        plt.errorbar(2010, (675*mp), yerr=((780*mp)-(570*mp))/2, label='DHS (2010)', fmt='o', color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2015, (439*mp), yerr=((531*mp)-(348*mp))/2, label='DHS 2015', fmt='o', color='green',
+        plt.errorbar(2015, (439*mp), yerr=((531*mp)-(348*mp))/2, label='DHS (2015)', fmt='o', color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        ax.plot([2011, 2015, 2017], [(444*mp), (370*mp), (349*mp)], label="WHO MMEIG", color='red')
+        ax.plot([2011, 2015, 2017], [(444*mp), (370*mp), (349*mp)], label="UN MMEIG (2019)", color='cadetblue')
         ax.fill_between([2011, 2015, 2017], [(347*mp), (269*mp), (244*mp)], [(569*mp), (517*mp), (507*mp)],
-                        color='pink', alpha=.1)
+                        color='cadetblue', alpha=.1)
         ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                 [242*mp, 235*mp, 229*mp, 223*mp, 219*mp, 219*mp, 217*mp, 214*mp, 209*mp],
-                label="GBD (2019)", color='black')
+                label="GBD (2019)", color='darkslateblue')
         ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                         [168*mp, 165*mp, 158*mp, 151*mp, 150*mp, 146*mp, 141*mp, 141*mp, 134*mp],
-                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='grey',
+                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='slateblue',
                         alpha=.1)
-        if title == 'Direct':
-            ax.set(ylim=(0, 750))
+        if title == '(Total)':
+            ax.set(ylim=(0, 2000))
         else:
-            ax.set(ylim=(0, 2200))
+            ax.set(ylim=(0, 850))
         plt.xlabel('Year')
-        plt.ylabel("Deaths per 100,000 live births")
+        plt.ylabel("Deaths per 100 000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
         plt.legend()
         plt.savefig(f'{graph_location}/{title}_mmr.png')
@@ -301,10 +299,10 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
            color='slategrey')
     ax.bar(labels, indirect_deaths_means['AIDS_non_TB'], width, label='AIDS_non_TB', color='hotpink')
 
-    ax.set(ylim=(0, 1200))
+    ax.set(ylim=(0, 850))
     ax.set_ylabel('Deaths per 100,000 live births')
-    ax.set_ylabel('Year')
-    ax.set_title('Indirect Causes of Maternal Death During Pregnancy')
+    ax.set_xlabel('Year')
+    ax.set_title('Indirect causes of maternal death within the TLO model')
     ax.legend()
     plt.savefig(f'{graph_location}/indirect_death_mmr_cause.png')
     plt.show()
