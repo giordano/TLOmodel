@@ -29,7 +29,7 @@ from tlo.scenario import BaseScenario
 class IncreasedPNCandImprovedQualityScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 123
+        self.seed = 987
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
         self.pop_size = 200_000
