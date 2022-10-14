@@ -145,8 +145,8 @@ def get_modules_neonatal_complication_dataframes(results_folder):
 def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
                                        graph_location, file_name):
     fig, ax = plt.subplots()
-    ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
-    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1, label="UI (2.5-92.5)")
+    ax.plot(sim_years, mean_list, label="Model", color='deepskyblue')
+    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1)
 
     if target_data_dict['double']:
         plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
@@ -154,16 +154,22 @@ def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, t
                      fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
         plt.errorbar(target_data_dict['second']['year'], target_data_dict['second']['value'],
                      label=target_data_dict['second']['label'], yerr=target_data_dict['second']['ci'],
-                     fmt='o', color='red', ecolor='mistyrose', elinewidth=3, capsize=0)
+                     fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
 
     elif not target_data_dict['double']:
         plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
                      label=target_data_dict['first']['label'], yerr=target_data_dict['first']['ci'],
-                     fmt='o', color='red', ecolor='pink', elinewidth=3, capsize=0)
+                     fmt='o', color='darkseagreen', ecolor='green', elinewidth=3, capsize=0)
 
     plt.xlabel('Year')
     plt.ylabel(y_label)
     plt.title(title)
+
+    if ('anc_prop' in file_name) or ('sba' in file_name) or ('pnc' in file_name):
+        ax.set(ylim=(0,100))
+    if 'caesarean' in file_name:
+        ax.set(ylim=(0,10))
+
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
