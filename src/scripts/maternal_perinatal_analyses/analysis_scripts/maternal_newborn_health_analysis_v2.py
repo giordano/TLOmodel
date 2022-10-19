@@ -40,6 +40,34 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        intervention_years)
 
+    def print_diff_from_scenarios(outcome, data, multi_lvl_dict, *mdict_key):
+        int_names = list(data.keys())
+        if not multi_lvl_dict:
+            b_data = data[int_names[0]][0]
+            i1_data = data[int_names[1]][0]
+            i2_data = data[int_names[2]][0]
+
+        else:
+            b_data = data[int_names[0]][mdict_key[0]][0]
+            i1_data = data[int_names[1]][mdict_key[0]][0]
+            i2_data = data[int_names[2]][mdict_key[0]][0]
+
+        if type(b_data) == list:
+            c_diff_i1 = [x - y for x, y in zip(b_data, i1_data)]
+            c_diff_i2 = [x - y for x, y in zip(b_data, i2_data)]
+            p_diff_i1 = [((x-y) / x) * 100 for x, y in zip(b_data, i1_data)]
+            p_diff_i2 = [((x-y) / x) * 100 for x, y in zip(b_data, i2_data)]
+        else:
+            c_diff_i1 = b_data - i1_data
+            c_diff_i2 = b_data - i2_data
+            p_diff_i1 = ((b_data - i1_data) / b_data) * 100
+            p_diff_i2 = ((b_data - i1_data) / b_data) * 100
+
+        # todo: add in average reduction across years?
+
+        print(f' For intervention {outcome} : crude_diff BvsI1 {c_diff_i1}, percent_diff BvsI1 {p_diff_i1},'
+              f' crude_diff BvsI2 {c_diff_i2}, percent_diff BvsI2 {p_diff_i2},')
+
     #  CHECKING INTERVENTION COVERAGE IS AS EXPECTED...
     # Before outputting the results for a given set of scenarios we check the intervention coverage for the core
     # interventions
@@ -89,6 +117,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
         cov_data_4 = {k: get_anc_coverage(results_folders[k], 4) for k in results_folders}
         cov_data_8 = {k: get_anc_coverage(results_folders[k], 8) for k in results_folders}
+        #print_diff_from_scenarios('ANC4+', cov_data_4, False)
 
         # output graphs
         for service_structure, cov_data in zip([4, 8], [cov_data_4, cov_data_8]):
@@ -165,6 +194,10 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Health Centre Birth Rate per Year Per Scenario',
             plot_destination_folder, 'hc_rate')
 
+        for outcome, coverage in zip(['Home Birth Coverage', 'Health Centre Coverage', 'Hospital Coverage',
+                                      'Facility Delivery Coverage'], ['hb', 'hc', 'hp', 'fd']):
+            print_diff_from_scenarios(outcome, delivery_data, True, coverage)
+
     if service_of_interest == 'pnc' or show_all_results:
         def get_pnc_coverage(folder, birth_data):
             """
@@ -228,6 +261,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Proportion of Neonates Receiving PNC following Birth',
             plot_destination_folder, 'neo_pnc_coverage')
 
+        for outcome, coverage in zip(['Maternal PNC', 'Neonatal PNC'], ['maternal', 'neonatal']):
+            print_diff_from_scenarios(outcome, coverage_data, True, coverage)
+
     # --------------------------------------------PRIMARY OUTCOMES ----------------------------------------------------
     # ===================================== MATERNAL/NEONATAL DEATHS ==================================================
     # 1.) AGGREGATE DEATHS BY SCENARIO
@@ -245,7 +281,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             ['Total Direct Maternal Deaths', 'Total MMR', 'Total Indirect Maternal Deaths', 'Total MMR',
              'Total Maternal Deaths', 'Total MMR'
              'Total Neonatal Deaths', 'Total NMR']):
-
 
         labels = results_folders.keys()
 
@@ -289,6 +324,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
         plot_destination_folder, 'neonatal_mr_int')
 
+    for outcome, coverage in zip(['Direct MMR', 'Total MMR', 'NMR'], ['direct_mmr', 'total_mmr', 'nmr']):
+        print_diff_from_scenarios(outcome, death_data, True, coverage)
+
     for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
             death_data, f'crude_{l}_deaths', intervention_years, scen_colours,
@@ -330,7 +368,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             module="tlo.methods.demography.detail",
             key="properties_of_deceased_persons",
             custom_generate_series=(
-                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) & df['cause_of_death'].str.contains(
+                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
+                                  (df['date'].dt.year <= intervention_years[-1]) &
+                                  df['cause_of_death'].str.contains(
                                       'ectopic_pregnancy|spontaneous_abortion|induced_abortion|'
                                       'severe_gestational_hypertension|severe_pre_eclampsia|eclampsia|antenatal_sepsis|'
                                       'uterine_rupture|intrapartum_sepsis|postpartum_sepsis|postpartum_haemorrhage|'
@@ -345,6 +385,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             key="properties_of_deceased_persons",
             custom_generate_series=(
                 lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
+                                  (df['date'].dt.year <= intervention_years[-1]) &
                                   (df['is_pregnant'] | df['la_is_postpartum']) &
                                   df['cause_of_death'].str.contains(
                                       'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
@@ -367,19 +408,37 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
     # todo: THIS NEEDS TO BE NEATED/IMPROVED ON
     cause_df = pd.DataFrame(columns=['scenario', 'comp', 'value'])
-    sq_df = extract_deaths_by_cause(results_folders['Status Quo'], intervention_years, 'Status Quo', cause_df)
-    s2_df = extract_deaths_by_cause(results_folders['Increased ANC'], intervention_years, 'Increased ANC', cause_df)
-    s3_df = extract_deaths_by_cause(results_folders['Increased ANC Qual.'], intervention_years, 'Increased ANC Qual', cause_df)
+    scenario_titles = list(results_folders.keys())
+    sq_df = extract_deaths_by_cause(results_folders[scenario_titles[0]], intervention_years, scenario_titles[0],
+                                    cause_df)
+    s2_df = extract_deaths_by_cause(results_folders[scenario_titles[1]], intervention_years, scenario_titles[1],
+                                    cause_df)
+    s3_df = extract_deaths_by_cause(results_folders[scenario_titles[2]], intervention_years, scenario_titles[2],
+                                    cause_df)
 
     t = sq_df.append(s2_df).append(s3_df)
-    # t.reindex(index)
 
     import seaborn as sns
 
     g = sns.catplot(kind='bar', data=t, col='scenario', x='comp', y='value')
-    g.set_xticklabels(rotation=65, horizontalalignment='right')
+    g.set_xticklabels(rotation=90, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
+
+    for cause in list(sq_df['comp']):
+        if (not sq_df.loc[sq_df['comp'] == cause]['value'].empty) and \
+            (not s2_df.loc[s2_df['comp'] == cause]['value'].empty) and \
+           (not s3_df.loc[s3_df['comp'] == cause]['value'].empty):
+
+            b_val = float(sq_df.loc[sq_df['comp'] == cause]['value'])
+            i1_val = float(s2_df.loc[s2_df['comp'] == cause]['value'])
+            i2_val = float(s3_df.loc[s3_df['comp'] == cause]['value'])
+
+            p_diff_1 = ((b_val - i1_val) / b_val) * 100
+            p_diff_2 = ((b_val - i2_val) / b_val) * 100
+
+            print(f'Percentage difference between baseline and I1 for {cause}', p_diff_1)
+            print(f'Percentage difference between baseline and I2 for {cause}', p_diff_2)
 
     # NEONATAL DEATH BY CAUSE
     def extract_neo_deaths_by_cause(results_folder, intervention_years, scenario_name, final_df):
@@ -389,12 +448,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             module="tlo.methods.demography.detail",
             key="properties_of_deceased_persons",
             custom_generate_series=(
-                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) & (df['age_days'] < 29) &
-                                  df['cause_of_death'].str.contains(
-                                      'early_onset_sepsis|late_onset_sepsis|encephalopathy|'
-                                      'neonatal_respiratory_depression|preterm_other|respiratory_distress_syndrome|'
-                                      'congenital_heart_anomaly|limb_or_musculoskeletal_anomaly|urogenital_anomaly|'
-                                      'digestive_anomaly|other_anomaly')].assign(
+                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
+                                  (df['date'].dt.year <= intervention_years[-1]) &
+                                  (df['age_days'] < 29)].assign(
                     year=df['date'].dt.year).groupby(['cause_of_death'])['year'].count()),
             do_scaling=True)
         neo_deaths = nd.fillna(0)
@@ -410,41 +466,38 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         return df
 
     ncause_df = pd.DataFrame(columns=['scenario', 'comp', 'value'])
-    sq_df = extract_neo_deaths_by_cause(results_folders['Status Quo'], intervention_years, 'Status Quo', ncause_df)
-    s2_df = extract_neo_deaths_by_cause(results_folders['Increased ANC'], intervention_years, 'Increased ANC', ncause_df)
-    s3_df = extract_neo_deaths_by_cause(results_folders['Increased ANC Qual.'], intervention_years, 'Increased ANC Qual',
-                                    ncause_df)
+    sq_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[0]], intervention_years, scenario_titles[0],
+                                        ncause_df)
+    s2_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[1]], intervention_years, scenario_titles[1],
+                                        ncause_df)
+    s3_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[2]], intervention_years, scenario_titles[2],
+                                        ncause_df)
 
     t = sq_df.append(s2_df).append(s3_df)
     g = sns.catplot(kind='bar', data=t, col='scenario', x='comp', y='value')
-    g.set_xticklabels(rotation=65, horizontalalignment='right')
+    g.set_xticklabels(rotation=90, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/neo_deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
+
+    for cause in list(sq_df['comp']):
+        if (not sq_df.loc[sq_df['comp'] == cause]['value'].empty) and \
+            (not s2_df.loc[s2_df['comp'] == cause]['value'].empty) and \
+           (not s3_df.loc[s3_df['comp'] == cause]['value'].empty):
+
+            b_val = float(sq_df.loc[sq_df['comp'] == cause]['value'])
+            i1_val = float(s2_df.loc[s2_df['comp'] == cause]['value'])
+            i2_val = float(s3_df.loc[s3_df['comp'] == cause]['value'])
+
+            p_diff_1 = ((b_val - i1_val) / b_val) * 100
+            p_diff_2 = ((b_val - i2_val) / b_val) * 100
+
+            print(f'Percentage difference between baseline and I1 for {cause}', p_diff_1)
+            print(f'Percentage difference between baseline and I2 for {cause}', p_diff_2)
 
     # ===================================== MATERNAL/NEONATAL DALYS ===================================================
     # =================================================== DALYS =======================================================
     # Here we extract maternal and neonatal DALYs from each scenario to allow for comparison
     dalys_data = analysis_utility_functions.return_dalys_from_multiple_scenarios(results_folders, intervention_years)
-
-    labels = results_folders.keys()
-    dr_mr = list()
-    ind_mr = list()
-    for k in death_data:
-        dr_mr.append(death_data[k]['agg_dir_mr'][0])
-        ind_mr.append(death_data[k]['agg_ind_mr'][0])
-
-    width = 0.55  # the width of the bars: can also be len(x) sequence
-    fig, ax = plt.subplots()
-
-    ax.bar(labels, dr_mr, width, label='Direct MMR', color='steelblue')
-    ax.bar(labels, ind_mr, width, bottom=dr_mr, label='Indirect MMR', color='powderblue')
-
-    ax.set_ylabel('MMR')
-    ax.set_xlabel('Scenario')
-    ax.set_title('Aggregate Total MMR By Cause By Scenario')
-    ax.legend()
-    plt.savefig(f'{plot_destination_folder}/mmr_by_dir_v_ind.png')
-    plt.show()
 
     for data, title, y_lable in \
         zip(['agg_mat_dalys', 'agg_neo_dalys'],
@@ -506,6 +559,8 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                                                  'neonatal_dalys_stacked', 'neonatal_dalys_rate',
                                                  'neonatal_yll', 'neonatal_yll_rate',
                                                  'neonatal_yld', 'neonatal_yld_rate']):
+        print_diff_from_scenarios(title, dalys_data, True, dict_key)
+
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, intervention_years, dalys_data, dict_key, axis, title, plot_destination_folder, save_name)
 

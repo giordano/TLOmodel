@@ -488,8 +488,8 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
                 custom_generate_series=(
                     lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
                                       df['cause_of_death'].str.contains(
-                                          'AIDS|Malaria|TB|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
-                                          'ever_heart_attack|ever_stroke|chronic_kidney_disease')].assign(
+                                          'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|'
+                                          'chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease')].assign(
                         year=df['date'].dt.year).groupby(['year'])['year'].count()),
                 do_scaling=True
             )

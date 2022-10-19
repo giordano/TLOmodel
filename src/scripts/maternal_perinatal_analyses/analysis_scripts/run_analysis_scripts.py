@@ -3,12 +3,12 @@ import maternal_newborn_health_analysis_v2
 import met_need
 
 # create dict of some scenario 'title' and the filename of the associated title
-scenario_dict = {'Status Quo': 'baseline_anc_scenario',
+scenario_dict = {'Status Quo': 'baseline_scenario',
                  'Increased ANC': 'increased_anc_scenario',
-                 'Increased ANC Qual.': 'anc_scenario_plus_cons_and_qual'}
+                 'Increased ANC and Qual': 'anc_scenario_plus_cons_and_qual'}
 
 # define key variables used within the analysis scripts
-intervention_years = list(range(2020, 2026))
+intervention_years = list(range(2010, 2015))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 service_of_interest = 'anc'
 
