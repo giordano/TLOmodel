@@ -92,11 +92,10 @@ class SBAMaxSensitivityAnalysis(BaseScenario):
         return {
             'Labour': {'alternative_bemonc_availability': True,
                        'alternative_cemonc_availability': True,
-                       'bemonc_availability': 1.0,
-                       'cemonc_availability': 1.0,
-                       'bemonc_cons_availability': 1.0,
-                       'cemonc_cons_availability': 1.0,
-                       'sens_analysis_max': True,
+                       'bemonc_availability': 0.0,
+                       'cemonc_availability': 0.0,
+                       'bemonc_cons_availability': 0.0,
+                       'cemonc_cons_availability': 0.0,
                        'analysis_year': 2010
                        }
         }

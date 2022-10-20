@@ -570,6 +570,9 @@ class Labour(Module):
         'pnc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_pnc_coverage is true'),
+        'sens_analysis_max': Parameter(
+            Types.REAL, 'Signals that max coverage of SBA is being forced for sensitivity analysis'),
+
     }
 
     PROPERTIES = {
@@ -2450,7 +2453,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # Next we determine if women who are now in labour will seek care for delivery. We assume women who have
             # been admitted antenatally for delivery will be delivering in hospital and that is scheduled accordingly
 
-            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none' or ():
+            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
 
                 # Here we calculate this womans predicted risk of home birth and health centre birth
                 pred_hb_delivery = self.module.la_linear_models['probability_delivery_at_home'].predict(
@@ -3305,7 +3308,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
         # Check to see if analysis is being conducted when this event runs
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max']:\
 
             params['la_analysis_in_progress'] = True
 
@@ -3356,6 +3359,9 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
+
+            if params['sba_sens_analysis_max']:
+                params['odds_deliver_at_home'] = 0.0
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
