@@ -375,12 +375,16 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colo
 
     N = len(intervention_years)
     ind = np.arange(N)
-    width = 0.2
+    if len(data.keys()) > 3:
+        width = 0.15
+    else:
+        width = 0.2
+
     x_ticks = list()
     for x in range(len(intervention_years)):
         x_ticks.append(x)
 
-    for k, position, colour in zip(data, [ind - width, ind, ind + width, ind + width * 2],
+    for k, position, colour in zip(data, [ind - width, ind, ind + width, ind + width * 2, ind + width * 3],
                                    colours):
         ci = [(x - y) / 2 for x, y in zip(data[k][dict_name][2], data[k][dict_name][1])]
         plt.bar(position, data[k][dict_name][0], width, label=k, yerr=ci, color=colour)
@@ -437,7 +441,7 @@ def return_pregnancy_data_from_multiple_scenarios(results_folders, intervention_
     return {k: extract_pregnancies(results_folders[k]) for k in results_folders}
 
 
-def return_death_data_from_multiple_scenarios(results_folders, births_dict, intervention_years, detailed_log):
+def return_death_data_from_multiple_scenarios(results_folders, births_dict, intervention_years):
     """
     Extract mean, lower and upper quantile maternal mortality ratio, neonatal mortality ratio, crude maternal
     deaths and crude neonatal deaths per year for a given scenario
@@ -451,119 +455,114 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
         agg_births = [sum(births[0]), sum(births[1]), sum(births[2])]
 
         # Get full death dataframe
-        death_results_labels = extract_results(
+        direct_deaths = extract_results(
             folder,
             module="tlo.methods.demography",
             key="death",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
+                lambda df: df.loc[(df['label'] == 'Maternal Disorders')].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=True)
 
-        # TODO: if not using detailed logging we are only capturing indirect deaths during pregnancy and not postnatally
-        other_preg_deaths = extract_results(
+        indirect_deaths = extract_results(
             folder,
-            module="tlo.methods.demography",
-            key="death",
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label', 'pregnancy'])['year'].count()),
+                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                                  df['cause_of_death'].str.contains(
+                                      'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|'
+                                      'chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease')].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=True
         )
 
-        # Extract maternal mortality ratio from direct maternal causes
-        mmr = get_comp_mean_and_rate('Maternal Disorders', births[0], death_results_labels, 100000, intervention_years)
+        # TOTAL MATERNAL DEATHS
+        total_deaths = direct_deaths + indirect_deaths
+        mean_total_deaths_by_year = get_mean_and_quants(total_deaths, intervention_years)
 
-        # Extract crude deaths due to direct maternal disorders as both trend and aggregate
-        crude_m_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Maternal Disorders', intervention_years)
-        agg_dir_m_deaths = [sum(crude_m_deaths[0]), sum(crude_m_deaths[1]), sum(crude_m_deaths[2])]
-        agg_dir_mr = [((agg_dir_m_deaths[0] / agg_births[0]) * 100_000),
-                      ((agg_dir_m_deaths[1] / agg_births[1]) * 100_000),
-                      ((agg_dir_m_deaths[2] / agg_births[2]) * 100_000)]
+        total_deaths_by_scenario = [sum(mean_total_deaths_by_year[0]), sum(mean_total_deaths_by_year[1]),
+                                    sum(mean_total_deaths_by_year[2])]
 
-        # If detail logging is used then can extract the total number of indirect deaths
-        if detailed_log:
-            indirect_deaths = extract_results(
-                folder,
-                module="tlo.methods.demography.detail",
-                key="properties_of_deceased_persons",
-                custom_generate_series=(
-                    lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
-                                      df['cause_of_death'].str.contains(
-                                          'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|'
-                                          'chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease')].assign(
-                        year=df['date'].dt.year).groupby(['year'])['year'].count()),
-                do_scaling=True
-            )
+        total_mmr_by_year = [[(x / y) * 100000 for x, y in zip(mean_total_deaths_by_year[0],  births[0])],
+                             [(x / y) * 100000 for x, y in zip(mean_total_deaths_by_year[1], births[1])],
+                             [(x / y) * 100000 for x, y in zip(mean_total_deaths_by_year[2],  births[2])]]
 
-            indirect_deaths = get_mean_and_quants(indirect_deaths, intervention_years)
-            agg_ind_m_deaths = [sum(indirect_deaths[0]), sum(indirect_deaths[1]), sum(indirect_deaths[2])]
+        total_mmr_aggregated = [((total_deaths_by_scenario[0] / agg_births[0]) * 100_000),
+                                ((total_deaths_by_scenario[1] / agg_births[1]) * 100_000),
+                                ((total_deaths_by_scenario[2] / agg_births[2]) * 100_000)]
 
-        else:
-            # Extract crude deaths due to indirect causes in pregnant women
-            indirect_causes = ['AIDS', 'Malaria', 'TB', 'Suicide', 'Stroke', 'Depression / Self-harm', 'Heart Disease',
-                               'Kidney Disease']
+        # DIRECT MATERNAL DEATHS
+        mean_direct_deaths_by_year = get_mean_and_quants(direct_deaths, intervention_years)
 
-            indirect_deaths = list()
-            id_lq = list()
-            id_uq = list()
+        total_direct_deaths_by_scenario = [sum(mean_direct_deaths_by_year[0]), sum(mean_direct_deaths_by_year[1]),
+                                           sum(mean_direct_deaths_by_year[2])]
 
-            for year in intervention_years:
-                id_deaths_per_year = 0
-                id_lq_py = 0
-                id_uq_pu = 0
-                for cause in indirect_causes:
-                    if cause in other_preg_deaths.loc[year, :, True].index:
-                        id_deaths_per_year += other_preg_deaths.loc[year, cause, True].mean()
-                        id_lq_py += other_preg_deaths.loc[year, cause, True].quantile(0.025)
-                        id_uq_pu += other_preg_deaths.loc[year, cause, True].quantile(0.925)
+        total_direct_mmr_by_year = [[(x / y) * 100000 for x, y in zip(mean_direct_deaths_by_year[0], births[0])],
+                                    [(x / y) * 100000 for x, y in zip(mean_direct_deaths_by_year[1], births[1])],
+                                    [(x / y) * 100000 for x, y in zip(mean_direct_deaths_by_year[2], births[2])]]
 
-                indirect_deaths.append(id_deaths_per_year)
-                id_lq.append(id_lq_py)
-                id_uq.append(id_uq_pu)
+        total_direct_mmr_aggregated = [((total_direct_deaths_by_scenario[0] / agg_births[0]) * 100_000),
+                                       ((total_direct_deaths_by_scenario[1] / agg_births[1]) * 100_000),
+                                       ((total_direct_deaths_by_scenario[2] / agg_births[2]) * 100_000)]
 
-            indirect_deaths = [indirect_deaths, id_lq, id_uq]
-            agg_ind_m_deaths = [sum(indirect_deaths[0]), sum(indirect_deaths[1]), sum(indirect_deaths[2])]
+        # INDIRECT MATERNAL DEATHS
+        mean_indirect_deaths_by_year = get_mean_and_quants(indirect_deaths, intervention_years)
 
-        # Calculate total MMR (direct + indirect deaths)
-        total_mmr = [[((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[0], crude_m_deaths[0], births[0])],
-                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[1], crude_m_deaths[1], births[1])],
-                     [((x + y) / z) * 100000 for x, y, z in zip(indirect_deaths[2], crude_m_deaths[2], births[2])]
-                     ]
-        agg_ind_mr = [((agg_ind_m_deaths[0] / agg_births[0]) * 100_000),
-                      ((agg_ind_m_deaths[1] / agg_births[1]) * 100_000),
-                      ((agg_ind_m_deaths[2] / agg_births[2]) * 100_000)]
+        total_indirect_deaths_by_scenario = [sum(mean_indirect_deaths_by_year[0]), sum(mean_indirect_deaths_by_year[1]),
+                                             sum(mean_indirect_deaths_by_year[2])]
 
-        agg_total = [agg_dir_m_deaths[0] + agg_ind_m_deaths[0],
-                     agg_dir_m_deaths[1] + agg_ind_m_deaths[1],
-                     agg_dir_m_deaths[2] + agg_ind_m_deaths[2]]
+        total_indirect_mmr_by_year = [[(x / y) * 100000 for x, y in zip(mean_indirect_deaths_by_year[0], births[0])],
+                                      [(x / y) * 100000 for x, y in zip(mean_indirect_deaths_by_year[1], births[1])],
+                                      [(x / y) * 100000 for x, y in zip(mean_indirect_deaths_by_year[2], births[2])]]
 
-        agg_total_mr = [((agg_total[0] / agg_births[0]) * 100_000),
-                      ((agg_total[1] / agg_births[1]) * 100_000),
-                      ((agg_total[2] / agg_births[2]) * 100_000)]
+        total_indirect_mmr_aggregated = [((total_indirect_deaths_by_scenario[0] / agg_births[0]) * 100_000),
+                                         ((total_indirect_deaths_by_scenario[1] / agg_births[1]) * 100_000),
+                                         ((total_indirect_deaths_by_scenario[2] / agg_births[2]) * 100_000)]
 
-        # Extract NMR
-        nmr = get_comp_mean_and_rate('Neonatal Disorders', births[0], death_results_labels, 1000, intervention_years)
+        # NEONATAL DEATHS
+        nd = extract_results(
+            folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.loc[(df['age_days'] < 29)].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True)
+        neo_deaths = nd.fillna(0)
 
-        # And crude neonatal deaths
-        crude_n_deaths = get_mean_and_quants_from_str_df(death_results_labels, 'Neonatal Disorders', intervention_years)
-        agg_n_deaths = [sum(crude_n_deaths[0]), sum(crude_n_deaths[1]), sum(crude_n_deaths[2])]
-        agg_nm = [((agg_n_deaths[0] / agg_births[0]) * 1000),
-                      ((agg_n_deaths[1] / agg_births[1]) * 1000),
-                      ((agg_n_deaths[2] / agg_births[2]) * 1000)]
+        mean_neonatal_deaths_by_year = get_mean_and_quants(neo_deaths, intervention_years)
 
-        return {'direct_mmr': mmr,
-                'total_mmr': total_mmr,
-                'agg_total_mr': agg_total_mr,
-                'crude_dir_m_deaths': crude_m_deaths,
-                'agg_dir_m_deaths': agg_dir_m_deaths,
-                'agg_dir_mr': agg_dir_mr,
-                'crude_ind_m_deaths': indirect_deaths,
-                'agg_ind_m_deaths': agg_ind_m_deaths,
-                'agg_ind_mr': agg_ind_mr,
-                'agg_total': agg_total,
-                'nmr': nmr,
-                'crude_n_deaths': crude_n_deaths,
-                'agg_n_deaths': agg_n_deaths,
-                'agg_nmr': agg_nm}
+        total_neonatal_deaths_by_scenario = [sum(mean_neonatal_deaths_by_year[0]), sum(mean_indirect_deaths_by_year[1]),
+                                             sum(mean_indirect_deaths_by_year[2])]
+
+        total_nmr_by_year = [[(x / y) * 1000 for x, y in zip(mean_neonatal_deaths_by_year[0], births[0])],
+                             [(x / y) * 1000 for x, y in zip(mean_neonatal_deaths_by_year[1], births[1])],
+                             [(x / y) * 1000 for x, y in zip(mean_neonatal_deaths_by_year[2], births[2])]]
+
+        total_nmr_aggregated = [((total_neonatal_deaths_by_scenario[0] / agg_births[0]) * 100_000),
+                                ((total_neonatal_deaths_by_scenario[1] / agg_births[1]) * 100_000),
+                                ((total_neonatal_deaths_by_scenario[2] / agg_births[2]) * 100_000)]
+
+        return {'crude_t_deaths': mean_total_deaths_by_year,
+                'agg_total': total_deaths_by_scenario,
+                'total_mmr': total_mmr_by_year,
+                'agg_total_mr': total_mmr_aggregated,
+
+                'crude_dir_m_deaths': mean_direct_deaths_by_year,
+                'agg_dir_m_deaths': total_direct_deaths_by_scenario,
+                'direct_mmr': total_direct_mmr_by_year,
+                'agg_dir_mr': total_direct_mmr_aggregated,
+
+                'crude_ind_m_deaths': mean_indirect_deaths_by_year,
+                'agg_ind_m_deaths': total_indirect_deaths_by_scenario,
+                'indirect_mmr': total_indirect_mmr_by_year,
+                'agg_ind_mr': total_indirect_mmr_aggregated,
+
+                'crude_n_deaths': mean_neonatal_deaths_by_year,
+                'agg_n_deaths': total_neonatal_deaths_by_scenario,
+                'nmr': total_nmr_by_year,
+                'agg_nmr': total_nmr_aggregated}
 
     # Extract data from scenarios
     return {k: extract_deaths(results_folders[k], births_dict[k]) for k in results_folders}

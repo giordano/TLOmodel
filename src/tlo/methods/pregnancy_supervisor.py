@@ -1610,6 +1610,7 @@ class PregnancySupervisor(Module):
                               (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
                               (df['ps_ectopic_pregnancy'] == 'none')]
             for person in df_slice.index:
+                df.at[person, 'ps_anc4'] = True
                 self.schedule_anc_one(individual_id=person, anc_month=2)
 
         else:
