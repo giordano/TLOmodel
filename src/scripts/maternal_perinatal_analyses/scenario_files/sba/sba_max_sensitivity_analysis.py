@@ -26,7 +26,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class SBAPerfectCEMONC(BaseScenario):
+class SBAMaxSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 987
@@ -38,7 +38,7 @@ class SBAPerfectCEMONC(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'increased_cemonc_200k', 'directory': './outputs',
+            'filename': 'max_sens_analysis_200k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -92,8 +92,8 @@ class SBAPerfectCEMONC(BaseScenario):
         return {
             'Labour': {'alternative_bemonc_availability': True,
                        'alternative_cemonc_availability': True,
-                       'bemonc_availability': 0.9,
-                       'cemonc_availability': 0.9,
+                       'bemonc_availability': 1.0,
+                       'cemonc_availability': 1.0,
                        'bemonc_cons_availability': 1.0,
                        'cemonc_cons_availability': 1.0,
                        'analysis_year': 2010

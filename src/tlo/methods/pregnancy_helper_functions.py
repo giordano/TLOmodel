@@ -72,9 +72,9 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
 
         # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
         analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
-                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 

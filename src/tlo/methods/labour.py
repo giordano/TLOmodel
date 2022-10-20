@@ -554,6 +554,10 @@ class Labour(Module):
             Types.REAL, 'set probability of BEmONC intervention being delivered during analysis'),
         'cemonc_availability': Parameter(
             Types.REAL, 'set probability of CEmONC intervention being delivered during analysis'),
+        'bemonc_cons_availability': Parameter(
+            Types.REAL, 'set probability of BEmONC consumables being available'),
+        'cemonc_cons_availability': Parameter(
+            Types.REAL, 'set probability of CEmONC consumables being available'),
         'alternative_pnc_coverage': Parameter(
             Types.BOOL, 'Signals within the analysis event that an alternative level of PNC coverage has been '
                         'determined following the events run'),
@@ -2446,7 +2450,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # Next we determine if women who are now in labour will seek care for delivery. We assume women who have
             # been admitted antenatally for delivery will be delivering in hospital and that is scheduled accordingly
 
-            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none' or ():
 
                 # Here we calculate this womans predicted risk of home birth and health centre birth
                 pred_hb_delivery = self.module.la_linear_models['probability_delivery_at_home'].predict(

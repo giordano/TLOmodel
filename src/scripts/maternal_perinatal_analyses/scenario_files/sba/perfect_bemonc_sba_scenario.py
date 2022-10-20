@@ -92,6 +92,7 @@ class SBAPerfectEMONC(BaseScenario):
         return {
             'Labour': {'alternative_bemonc_availability': True,
                        'bemonc_availability': 0.9,
+                       'bemonc_cons_availability': 1.0,
                        'analysis_year': 2010}
         }
 
