@@ -38,16 +38,24 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'focused_anc_test_10k', 'directory': './outputs',
-            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            'filename': 'focused_anc_test_50k', 'directory': './outputs',
+            "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
+                "tlo.methods.labour.detail": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
             }
         }
 
