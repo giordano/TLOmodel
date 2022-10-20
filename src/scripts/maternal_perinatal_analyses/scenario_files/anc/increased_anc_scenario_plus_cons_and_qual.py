@@ -93,7 +93,7 @@ class TestScenario(BaseScenario):
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
                                     'anc_availability_odds': 9.0,
-                                    'anc_availability_probability': 0.9,
+                                    'anc_availability_probability': 1.0,
                                     'analysis_year': 2010}}
 
 
