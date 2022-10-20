@@ -24,6 +24,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
     # Create dictionary containing the results folder for each scenario
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
+    output_df = pd.DataFrame(columns=list(scenario_file_dict.keys()))
 
     # Create folder to store graphs (if it hasnt already been created when ran previously)
     path = f'{outputspath}/{service_of_interest}_analysis_output_graphs_{results_folders["Status Quo"].name}'
@@ -38,35 +39,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        intervention_years)
 
-    def print_diff_from_scenarios(outcome, data, multi_lvl_dict, *mdict_key):
-        # todo: this wont print comparisons for greater than 2 intervention scenarios
-        int_names = list(data.keys())
-        if not multi_lvl_dict:
-            b_data = data[int_names[0]][0]
-            i1_data = data[int_names[1]][0]
-            i2_data = data[int_names[2]][0]
-
-        else:
-            b_data = data[int_names[0]][mdict_key[0]][0]
-            i1_data = data[int_names[1]][mdict_key[0]][0]
-            i2_data = data[int_names[2]][mdict_key[0]][0]
-
-        if type(b_data) == list:
-            c_diff_i1 = [x - y for x, y in zip(b_data, i1_data)]
-            c_diff_i2 = [x - y for x, y in zip(b_data, i2_data)]
-            p_diff_i1 = [((x-y) / x) * 100 for x, y in zip(b_data, i1_data)]
-            p_diff_i2 = [((x-y) / x) * 100 for x, y in zip(b_data, i2_data)]
-        else:
-            c_diff_i1 = b_data - i1_data
-            c_diff_i2 = b_data - i2_data
-            p_diff_i1 = ((b_data - i1_data) / b_data) * 100
-            p_diff_i2 = ((b_data - i1_data) / b_data) * 100
-
-        # todo: add in average reduction across years?
-
-        print(f' For intervention {outcome} : crude_diff BvsI1 {c_diff_i1}, percent_diff BvsI1 {p_diff_i1},'
-              f' crude_diff BvsI2 {c_diff_i2}, percent_diff BvsI2 {p_diff_i2},')
-
     #  CHECKING INTERVENTION COVERAGE IS AS EXPECTED...
     # Before outputting the results for a given set of scenarios we check the intervention coverage for the core
     # interventions
@@ -79,9 +51,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             :param service_structure: 4/8
             :return: mean, lower quant, upper quant of coverage
             """
-
-            if folder.name == 'anc_max_sensitivity_scenario-2022-10-19T133721Z':
-                x='y'
 
             # Get DF with ANC counts of all women who have delivered
             anc_coverage = extract_results(
@@ -119,7 +88,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
         cov_data_4 = {k: get_anc_coverage(results_folders[k], 4) for k in results_folders}
         cov_data_8 = {k: get_anc_coverage(results_folders[k], 8) for k in results_folders}
-        #print_diff_from_scenarios('ANC4+', cov_data_4, False)
 
         # output graphs
         for service_structure, cov_data in zip([4, 8], [cov_data_4, cov_data_8]):
@@ -196,10 +164,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Health Centre Birth Rate per Year Per Scenario',
             plot_destination_folder, 'hc_rate')
 
-        for outcome, coverage in zip(['Home Birth Coverage', 'Health Centre Coverage', 'Hospital Coverage',
-                                      'Facility Delivery Coverage'], ['hb', 'hc', 'hp', 'fd']):
-            print_diff_from_scenarios(outcome, delivery_data, True, coverage)
-
     if service_of_interest == 'pnc' or show_all_results:
         def get_pnc_coverage(folder, birth_data):
             """
@@ -245,32 +209,31 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data[1])]
             pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data[2])]
 
-            return {'maternal': [pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
-                    'neonatal': [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]}
+            return {'maternal_pnc': [pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
+                    'neonatal_pnc': [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]}
 
         coverage_data = {k: get_pnc_coverage(results_folders[k], births_dict[k]) for k in results_folders}
+        output_df = output_df.append(pd.DataFrame.from_dict(coverage_data))
 
         # generate plots showing coverage of ANC intervention in the baseline and intervention scenarios
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, coverage_data, 'maternal',
+            scen_colours, intervention_years, coverage_data, 'maternal_pnc',
             '% Total Births',
             'Proportion of Mothers Receiving PNC following Birth',
             plot_destination_folder, 'mat_pnc_coverage')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, coverage_data, 'neonatal',
+            scen_colours, intervention_years, coverage_data, 'neonatal_pnc',
             '% Total Births',
             'Proportion of Neonates Receiving PNC following Birth',
             plot_destination_folder, 'neo_pnc_coverage')
-
-        for outcome, coverage in zip(['Maternal PNC', 'Neonatal PNC'], ['maternal', 'neonatal']):
-            print_diff_from_scenarios(outcome, coverage_data, True, coverage)
 
     # --------------------------------------------PRIMARY OUTCOMES ----------------------------------------------------
     # ===================================== MATERNAL/NEONATAL DEATHS ==================================================
     # 1.) AGGREGATE DEATHS BY SCENARIO
     death_data = analysis_utility_functions.return_death_data_from_multiple_scenarios(results_folders, births_dict,
                                                                                       intervention_years)
+    output_df = output_df.append(pd.DataFrame.from_dict(death_data))
 
     for data, title, y_lable in \
         zip(['agg_dir_m_deaths',
@@ -304,6 +267,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         lq_vals = list()
         uq_vals = list()
         for k in death_data:
+
             mean_vals.append(death_data[k][data][0])
             lq_vals.append(death_data[k][data][1])
             uq_vals.append(death_data[k][data][2])
@@ -339,9 +303,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         'Total Deaths per 1000 live births',
         'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
         plot_destination_folder, 'neonatal_mr_int')
-
-    for outcome, coverage in zip(['Direct MMR', 'Total MMR', 'NMR'], ['direct_mmr', 'total_mmr', 'nmr']):
-        print_diff_from_scenarios(outcome, death_data, True, coverage)
 
     for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
@@ -514,6 +475,8 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     # Here we extract maternal and neonatal DALYs from each scenario to allow for comparison
     dalys_data = analysis_utility_functions.return_dalys_from_multiple_scenarios(results_folders, intervention_years)
 
+    output_df = output_df.append(pd.DataFrame.from_dict(dalys_data))
+
     for data, title, y_lable in \
         zip(['agg_mat_dalys', 'agg_neo_dalys'],
             ['Mean Total Maternal DALYs (stacked) By Scenario', 'Mean Total Neonatal DALYs (stacked) By Scenario'],
@@ -574,7 +537,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                                                  'neonatal_dalys_stacked', 'neonatal_dalys_rate',
                                                  'neonatal_yll', 'neonatal_yll_rate',
                                                  'neonatal_yld', 'neonatal_yld_rate']):
-        print_diff_from_scenarios(title, dalys_data, True, dict_key)
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, intervention_years, dalys_data, dict_key, axis, title, plot_destination_folder, save_name)
@@ -584,6 +546,8 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     if (service_of_interest != 'pnc') or show_all_results:
         sbr_data = analysis_utility_functions.return_stillbirth_data_from_multiple_scenarios(
             results_folders, births_dict, intervention_years)
+
+        output_df = output_df.append(pd.DataFrame.from_dict(sbr_data))
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, intervention_years, sbr_data, 'an_sbr',
@@ -682,21 +646,23 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
             agg = [sum(hsi_data[0]), sum(hsi_data[1]), sum(hsi_data[2])]
 
-            return {'trend': hsi_data,
-                    'agg': agg}
+            return {'anc_contacts_trend': hsi_data,
+                    'agg_anc_contacts': agg}
 
         hs_data = {k: get_hsi_counts_from_cowdp_logger(results_folders[k], intervention_years) for k in
                    results_folders}
 
+        output_df = output_df.append(pd.DataFrame.from_dict(hs_data))
+
         # todo: Better as a rate?
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, hs_data, 'trend',
+            scen_colours, intervention_years, hs_data, 'anc_contacts_trend',
             'Number of Visits',
             'Total Number of Antenatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_visits')
 
-        plot_agg_graph(hs_data, 'agg', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',
-                       'agg_anc_visits')
+        plot_agg_graph(hs_data, 'agg_anc_contacts', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',
+                       'agg_anc_contacts')
 
     if service_of_interest == 'pnc' or show_all_results:
         def get_hsi_counts_from_summary_logger(folder, intervention_years):
@@ -724,29 +690,31 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, intervention_years)
             neo_agg = [sum(hsi_data_neo[0]), sum(hsi_data_neo[1]), sum(hsi_data_neo[2])]
 
-            return {'mat_trend': hsi_data,
-                    'mat_agg': mat_agg,
-                    'neo_trend': hsi_data_neo,
-                    'neo_agg':neo_agg}
+            return {'pnc_visits_mat_trend': hsi_data,
+                    'pnc_visits_mat_agg': mat_agg,
+                    'pnc_visits_neo_trend': hsi_data_neo,
+                    'pnc_visits_neo_agg':neo_agg}
 
         hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
                    results_folders}
 
+        output_df = output_df.append(pd.DataFrame.from_dict(hs_data))
+
         # todo: Better as a rate?
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, hs_data, 'mat_trend',
+            scen_colours, intervention_years, hs_data, 'pnc_visits_mat_trend',
             'Crude Number',
             'Total Number of Maternal Postnatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_mat_visits')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, hs_data, 'neo_trend',
+            scen_colours, intervention_years, hs_data, 'pnc_visits_neo_trend',
             'Crude Number',
             'Total Number of Neonatal Postnatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_neo_visits')
 
         for group, title in zip(['mat', 'neo'], ['Maternal', 'Neonatal']):
-            plot_agg_graph(hs_data, f'{group}_agg', 'Total PNC Visist',
+            plot_agg_graph(hs_data, f'pnc_visits_{group}_agg', 'Total PNC Visist',
                            f'Total Number of {title} PNC visits per Scenario',
                            f'agg_{group}_pnc_visits')
 
@@ -784,25 +752,27 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             incidence_years = incidence_dates.set_index(years)
             incidence = analysis_utility_functions.get_mean_and_quants(incidence_years, intervention_years)
 
-            return {'clin_counter': preg_clinical_counter,
-                    'clin_counter_agg': preg_clin_counter_agg,
-                    'incidence': incidence}
+            return {'mal_clin_counter': preg_clinical_counter,
+                    'mal_clin_counter_agg': preg_clin_counter_agg,
+                    'mal_incidence': incidence}
 
         mal_data = {k: get_malaria_incidence_in_pregnancy(results_folders[k]) for k in results_folders}
 
+        output_df = output_df.append(pd.DataFrame.from_dict(mal_data))
+
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, mal_data, 'clin_counter',
+            scen_colours, intervention_years, mal_data, 'mal_clin_counter',
             'Num. Clinical Cases',
             'Number of Clinical Cases of Malaria During Pregnancy Per Year Per Scenario',
             plot_destination_folder, 'mal_clinical_cases')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, mal_data, 'incidence',
+            scen_colours, intervention_years, mal_data, 'mal_incidence',
             'Incidence per 1000 person years',
             'Incidence of Malaria Per Year Per Scenario',
             plot_destination_folder, 'mal_incidence')
 
-        plot_agg_graph(mal_data, 'clin_counter_agg', 'Number of Clinical Cases',
+        plot_agg_graph(mal_data, 'mal_clin_counter_agg', 'Number of Clinical Cases',
                        'Total Clinical Cases of Malaria During Pregnancy Per Scenario', 'mal_agg_clin_cases')
 
         # ------------------------------------------------ TB ------------------------------------------------------
@@ -837,25 +807,27 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             tb_treatment_years = tb_treatment_dates.set_index(years)
             tb_treatment = analysis_utility_functions.get_mean_and_quants(tb_treatment_years, intervention_years)
 
-            return {'diagnosis': tb_diagnosis,
-                    'diagnosis_agg': tb_diagnosis_agg,
-                    'treatment': tb_treatment}
+            return {'tb_diagnosis': tb_diagnosis,
+                    'tb_diagnosis_agg': tb_diagnosis_agg,
+                    'tb_treatment': tb_treatment}
 
         tb_data = {k: get_tb_info_in_pregnancy(results_folders[k]) for k in results_folders}
 
+        output_df = output_df.append(pd.DataFrame.from_dict(tb_data))
+
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, tb_data, 'diagnosis',
+            scen_colours, intervention_years, tb_data, 'tb_diagnosis',
             'Number of Tb Diagnoses',
             'Number of New Tb Diagnoses Per Year Per Scenario',
             plot_destination_folder, 'tb_diagnoses')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, tb_data, 'treatment',
+            scen_colours, intervention_years, tb_data, 'tb_treatment',
             '% New Tb Cases Treated',
             'Proportion of New Cases of Tb Treated Per Year Per Scenario',
             plot_destination_folder, 'tb_treatment')
 
-        plot_agg_graph(tb_data, 'diagnosis_agg', 'Number of Tb Diagnoses',
+        plot_agg_graph(tb_data, 'tb_diagnosis_agg', 'Number of Tb Diagnoses',
                        'Total New Tb Cases Diagnosed per Scenario', 'tb_diagnoses_agg')
 
     # ------------------------------------------------ HIV ------------------------------------------------------
@@ -905,21 +877,22 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             art = analysis_utility_functions.get_mean_and_quants(art_years, intervention_years)
             art_agg = [sum(art[0]), sum(art[1]), sum(art[2])]
 
-            return {'testing_prop': hiv_tests,
-                    'testing_rate': hiv_test_rate,
+            return {'hiv_testing_prop': hiv_tests,
+                    'hiv_testing_rate': hiv_test_rate,
                     'art_number': art,
                     'art_number_agg': art_agg}
 
         hiv_data = {k: get_hiv_information(results_folders[k]) for k in results_folders}
+        output_df = output_df.append(pd.DataFrame.from_dict(hiv_data))
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, hiv_data, 'testing_prop',
+            scen_colours, intervention_years, hiv_data, 'hiv_testing_prop',
             '% Total Female Pop.',
             'Proportion of Female Population Who Received HIV test Per Year Per Scenario',
             plot_destination_folder, 'hiv_fem_testing_prop')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, hiv_data, 'testing_rate',
+            scen_colours, intervention_years, hiv_data, 'hiv_testing_rate',
             'Per Captia Rate',
             'Rate of HIV testing per capita per year per scenario',
             plot_destination_folder, 'hiv_pop_testing_rate')
@@ -975,27 +948,31 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             tt_data = tt_reindexed.groupby(tt_reindexed.index).mean()
             tt_final = analysis_utility_functions.get_mean_and_quants(tt_data, intervention_years)
 
-            return {'diag': diag_final,
-                    'ad': ad_final,
-                    'tt': tt_final}
+            return {'dep_diag': diag_final,
+                    'dep_anti_d': ad_final,
+                    'dep_talking_t': tt_final}
 
         depression_data = {k: get_depression_info_in_pregnancy(results_folders[k], intervention_years) for k in
                            results_folders}
 
+        output_df = output_df.append(pd.DataFrame.from_dict(depression_data))
+
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, depression_data, 'diag',
+            scen_colours, intervention_years, depression_data, 'dep_diag',
             'Proportion (%)',
             'Proportion of Ever Depressed Individuals Diagnosed with Depression',
             plot_destination_folder, 'depression_diag')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, depression_data, 'ad',
+            scen_colours, intervention_years, depression_data, 'dep_anti_d',
             'Proportion (%)',
             'Proportion of Ever Depressed Individuals Started on Antidepressants',
             plot_destination_folder, 'depression_ad')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, intervention_years, depression_data, 'tt',
+            scen_colours, intervention_years, depression_data, 'dep_talking_t',
             'Proportion (%)',
             'Proportion of Ever Depressed Individuals Started on Talking Therapy',
             plot_destination_folder, 'depression_tt')
+
+    output_df.to_csv(f'{plot_destination_folder}/outputs.csv')
