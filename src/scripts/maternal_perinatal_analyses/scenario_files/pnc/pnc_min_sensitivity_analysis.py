@@ -26,7 +26,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class IncreasedPNCandImprovedQualityScenario(BaseScenario):
+class PNCMinSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 987
@@ -38,7 +38,7 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_qual_200k', 'directory': './outputs',
+            'filename': 'pnc_min_sens_analysis_200k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -92,8 +92,8 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
         return {
             'Labour': {'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 11.0,
-                       'pnc_availability_probability': 1.0,
+                       'pnc_availability_odds': 0.0,
+                       'pnc_availability_probability': 0.0,
                        'analysis_year': 2010},
         }
 

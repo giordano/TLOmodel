@@ -3346,15 +3346,16 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 params['odds_will_attend_pnc'] = scaled_intercept
 
                 # Then override the parameters which control neonatal care seeking
-                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
+                params['prob_careseeking_for_complication_pn'] = cov_prob
                 params['prob_timings_pnc'] = [1.0, 0]
 
-                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
-                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                nb_params['prob_pnc_check_newborn'] = cov_prob
+                nb_params['prob_care_seeking_for_complication'] = cov_prob
                 nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
 
-                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
-                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency'] = cov_prob
+                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = cov_prob
 
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
