@@ -6,13 +6,15 @@ import met_need
 scenario_dict = {'Status Quo': 'baseline_scenario',
                  'Increased ANC': 'increased_anc_scenario',
                  'Increased ANC and Qual': 'anc_scenario_plus_cons_and_qual',
-                 'No ANC (sensitivity)': 'anc_min_sensitivity_scenario'}
+                 'No ANC (sensitivity)': 'min_sensitivity_anc_scenario',
+                 'Max ANC (sensitivity)': 'anc_max_sensitivity_scenario'
+                 }
 
 # define key variables used within the analysis scripts
 intervention_years = list(range(2010, 2015))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 service_of_interest = 'anc'
-scen_colours = ['darkseagreen', 'steelblue', 'lightslategrey', 'orange']
+scen_colours = ['darkseagreen', 'steelblue', 'lightslategrey', 'red', 'pink']
 
 maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
      scenario_file_dict=scenario_dict,
