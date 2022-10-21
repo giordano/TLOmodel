@@ -29,7 +29,7 @@ from tlo.scenario import BaseScenario
 class Calibration(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 6742
+        self.seed = 4567
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 1)
         self.pop_size = 100_000
@@ -38,7 +38,7 @@ class Calibration(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'check_calibrations', 'directory': './outputs',
+            'filename': 'calib_100k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
