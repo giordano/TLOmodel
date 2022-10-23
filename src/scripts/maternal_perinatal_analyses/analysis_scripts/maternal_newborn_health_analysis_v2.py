@@ -9,7 +9,6 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 plt.style.use('seaborn-darkgrid')
 
-
 def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, intervention_years, service_of_interest,
                                          show_all_results, scen_colours):
     """

@@ -540,9 +540,9 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
                              [(x / y) * 1000 for x, y in zip(mean_neonatal_deaths_by_year[1], births[1])],
                              [(x / y) * 1000 for x, y in zip(mean_neonatal_deaths_by_year[2], births[2])]]
 
-        total_nmr_aggregated = [((total_neonatal_deaths_by_scenario[0] / agg_births[0]) * 100_000),
-                                ((total_neonatal_deaths_by_scenario[1] / agg_births[1]) * 100_000),
-                                ((total_neonatal_deaths_by_scenario[2] / agg_births[2]) * 100_000)]
+        total_nmr_aggregated = [((total_neonatal_deaths_by_scenario[0] / agg_births[0]) * 1000),
+                                ((total_neonatal_deaths_by_scenario[1] / agg_births[1]) * 1000),
+                                ((total_neonatal_deaths_by_scenario[2] / agg_births[2]) * 1000)]
 
         return {'crude_t_deaths': mean_total_deaths_by_year,
                 'agg_total': total_deaths_by_scenario,
