@@ -92,7 +92,7 @@ class PNCMaxSensitivityAnalysis(BaseScenario):
         return {
             'Labour': {'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 100,
+                       'pnc_availability_odds': 100.0,
                        'pnc_availability_probability': 1.0,
                        'analysis_year': 2010},
         }
