@@ -38,7 +38,7 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_qual_200k', 'directory': './outputs',
+            'filename': 'increased_pnc_qual_200k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
