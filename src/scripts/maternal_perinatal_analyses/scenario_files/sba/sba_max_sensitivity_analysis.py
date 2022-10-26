@@ -96,7 +96,7 @@ class SBAMaxSensitivityAnalysis(BaseScenario):
                        'cemonc_availability': 1.0,
                        'bemonc_cons_availability': 1.0,
                        'cemonc_cons_availability': 1.0,
-                       'sens_analysis_max': True,
+                       'sba_sens_analysis_max': True,
                        'analysis_year': 2010
                        }
         }
