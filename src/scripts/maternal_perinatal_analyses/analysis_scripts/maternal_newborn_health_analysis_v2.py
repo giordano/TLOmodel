@@ -663,59 +663,59 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         plot_agg_graph(hs_data, 'agg_anc_contacts', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',
                        'agg_anc_contacts')
 
-    # if service_of_interest == 'pnc' or show_all_results:
-    #     def get_hsi_counts_from_summary_logger(folder, intervention_years):
-    #         hsi = extract_results(
-    #             folder,
-    #             module="tlo.methods.healthsystem.summary",
-    #             key="HSI_Event",
-    #             custom_generate_series=(
-    #                 lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
-    #                     year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
-    #             do_scaling=True)
-    #
-    #         hsi_n = extract_results(
-    #             folder,
-    #             module="tlo.methods.healthsystem.summary",
-    #             key="HSI_Event",
-    #             custom_generate_series=(
-    #                 lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
-    #                     year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
-    #             do_scaling=True)
-    #
-    #         hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
-    #         mat_agg = [sum(hsi_data[0]), sum(hsi_data[1]), sum(hsi_data[2])]
-    #
-    #         hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, intervention_years)
-    #         neo_agg = [sum(hsi_data_neo[0]), sum(hsi_data_neo[1]), sum(hsi_data_neo[2])]
-    #
-    #         return {'pnc_visits_mat_trend': hsi_data,
-    #                 'pnc_visits_mat_agg': mat_agg,
-    #                 'pnc_visits_neo_trend': hsi_data_neo,
-    #                 'pnc_visits_neo_agg':neo_agg}
-    #
-    #     hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
-    #                results_folders}
-    #
-    #     output_df = output_df.append(pd.DataFrame.from_dict(hs_data))
-    #
-    #     # todo: Better as a rate?
-    #     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-    #         scen_colours, intervention_years, hs_data, 'pnc_visits_mat_trend',
-    #         'Crude Number',
-    #         'Total Number of Maternal Postnatal Care Visits per Year Per Scenario',
-    #         plot_destination_folder, f'{service_of_interest}_mat_visits')
-    #
-    #     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-    #         scen_colours, intervention_years, hs_data, 'pnc_visits_neo_trend',
-    #         'Crude Number',
-    #         'Total Number of Neonatal Postnatal Care Visits per Year Per Scenario',
-    #         plot_destination_folder, f'{service_of_interest}_neo_visits')
-    #
-    #     for group, title in zip(['mat', 'neo'], ['Maternal', 'Neonatal']):
-    #         plot_agg_graph(hs_data, f'pnc_visits_{group}_agg', 'Total PNC Visist',
-    #                        f'Total Number of {title} PNC visits per Scenario',
-    #                        f'agg_{group}_pnc_visits')
+    if service_of_interest == 'pnc' or show_all_results:
+        def get_hsi_counts_from_summary_logger(folder, intervention_years):
+            hsi = extract_results(
+                folder,
+                module="tlo.methods.healthsystem.summary",
+                key="HSI_Event",
+                custom_generate_series=(
+                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
+                do_scaling=True)
+
+            hsi_n = extract_results(
+                folder,
+                module="tlo.methods.healthsystem.summary",
+                key="HSI_Event",
+                custom_generate_series=(
+                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
+                do_scaling=True)
+
+            hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, intervention_years)
+            mat_agg = [sum(hsi_data[0]), sum(hsi_data[1]), sum(hsi_data[2])]
+
+            hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, intervention_years)
+            neo_agg = [sum(hsi_data_neo[0]), sum(hsi_data_neo[1]), sum(hsi_data_neo[2])]
+
+            return {'pnc_visits_mat_trend': hsi_data,
+                    'pnc_visits_mat_agg': mat_agg,
+                    'pnc_visits_neo_trend': hsi_data_neo,
+                    'pnc_visits_neo_agg':neo_agg}
+
+        hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
+                   results_folders}
+
+        output_df = output_df.append(pd.DataFrame.from_dict(hs_data))
+
+        # todo: Better as a rate?
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, intervention_years, hs_data, 'pnc_visits_mat_trend',
+            'Crude Number',
+            'Total Number of Maternal Postnatal Care Visits per Year Per Scenario',
+            plot_destination_folder, f'{service_of_interest}_mat_visits')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, intervention_years, hs_data, 'pnc_visits_neo_trend',
+            'Crude Number',
+            'Total Number of Neonatal Postnatal Care Visits per Year Per Scenario',
+            plot_destination_folder, f'{service_of_interest}_neo_visits')
+
+        for group, title in zip(['mat', 'neo'], ['Maternal', 'Neonatal']):
+            plot_agg_graph(hs_data, f'pnc_visits_{group}_agg', 'Total PNC Visist',
+                           f'Total Number of {title} PNC visits per Scenario',
+                           f'agg_{group}_pnc_visits')
 
     # ------------------------------------------------ MALARIA ------------------------------------------------------
     # Output malaria total incidence and clinical cases  during pregnancy
