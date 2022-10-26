@@ -4,17 +4,16 @@ import met_need
 
 # create dict of some scenario 'title' and the filename of the associated title
 scenario_dict = {'Status Quo': 'baseline_scenario',
-                 'Increased ANC': 'increased_anc_scenario',
-                 'Increased ANC and Qual': 'anc_scenario_plus_cons_and_qual',
-                 'No ANC (sensitivity)': 'min_sensitivity_anc_scenario',
-                 'Max ANC (sensitivity)': 'anc_max_sensitivity_scenario'
+                 '90% BEmONC': 'bemonc',
+                 '90% CEmONC': 'cemonc',
+                 'No EmONC (sens. analysis)': 'sba_min_sensitivity_analysis-2022-10-24T075448Z',
                  }
 
 # define key variables used within the analysis scripts
 intervention_years = list(range(2010, 2015))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
-service_of_interest = 'anc'
-scen_colours = ['darkseagreen', 'steelblue', 'lightslategrey', 'red', 'pink']
+service_of_interest = 'sba'
+scen_colours = ['rosybrown', 'lightcoral', 'pink', 'red']
 
 maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
      scenario_file_dict=scenario_dict,

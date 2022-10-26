@@ -1306,9 +1306,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         # Calculate the approximate dose for the remainder of pregnancy and check availability
-        dose = self.get_approx_days_of_pregnancy(individual_id) * 4
-        cons = {_i: dose for _i in self.item_codes_preg_consumables['oral_antihypertensives']}
-        avail = hsi_event.get_consumables(item_codes=cons)
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='oral_antihypertensives',
+            number=(self.get_approx_days_of_pregnancy(individual_id) * 4))
 
         # If the consumables are available then the woman is started on treatment
         if avail:
@@ -2556,9 +2556,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # Women for whom diet and exercise was not effective in controlling hyperglycemia are started on oral
                 # meds
                 if mother.ac_gest_diab_on_treatment == 'diet_exercise':
-                    dose = self.module.get_approx_days_of_pregnancy(person_id) * 2
-                    cons = {_i: dose for _i in self.module.item_codes_preg_consumables['oral_diabetic_treatment']}
-                    avail = self.get_consumables(item_codes=cons)
+
+                    avail = pregnancy_helper_functions.return_cons_avail(
+                        self.module, self, self.module.item_codes_preg_consumables, core='oral_diabetic_treatment',
+                        number=(self.module.get_approx_days_of_pregnancy(person_id) * 2))
 
                     # If the meds are available women are started on that treatment
                     if avail:
@@ -2573,8 +2574,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # This process is repeated for mothers for whom oral medication is not effectively controlling their
                 # blood sugar- they are started on insulin
                 if mother.ac_gest_diab_on_treatment == 'orals':
-                    cons = {_i: 5 for _i in self.module.item_codes_preg_consumables['insulin_treatment']}
-                    avail = self.get_consumables(item_codes=cons)
+
+                    avail = pregnancy_helper_functions.return_cons_avail(
+                        self.module, self, self.module.item_codes_preg_consumables, core='insulin_treatment',
+                        number=5)
 
                     if avail:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'

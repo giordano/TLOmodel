@@ -366,6 +366,12 @@ class PregnancySupervisor(Module):
         'anc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_anc_quality is true'),
+        'alternative_ip_anc_quality': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of inpatient ANC quality has been '
+                        'determined following the events run'),
+        'ip_anc_availability_probability': Parameter(
+            Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
+                        'alternative_ip_anc_quality is true'),
         'sens_analysis_min': Parameter(
             Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
                         'which ANC is blocked from occurring'),
@@ -2128,8 +2134,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # Check if either of the analysis parameters are set to True
-        if params['alternative_anc_coverage'] or params['alternative_anc_quality'] or params['sens_analysis_max'] or \
-           params['sens_analysis_min']:
+        if params['alternative_anc_coverage'] or params['alternative_anc_quality'] or \
+            params['alternative_ip_anc_quality'] or params['sens_analysis_max'] or params['sens_analysis_min']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is

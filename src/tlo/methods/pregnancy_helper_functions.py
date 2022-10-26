@@ -65,13 +65,15 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
 
         # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
         # conducted
-        if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID :
             params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
             params = self.sim.modules['Labour'].current_parameters
 
         # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
         analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
+                         'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
                          'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
@@ -134,8 +136,14 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
         return see_if_sf_will_run()
 
     else:
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
+            params = self.sim.modules['PregnancySupervisor'].current_parameters
+        else:
+            params = self.sim.modules['Labour'].current_parameters
+
         # Define HSIs and analysis parameters of interest
-        analysis_dict = {'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+        analysis_dict = {'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
