@@ -65,7 +65,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
 
         # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
         # conducted
-        if 'AntenatalCare' in hsi_event.TREATMENT_ID :
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
             params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
             params = self.sim.modules['Labour'].current_parameters
@@ -106,19 +106,20 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     :param hsi_event: hsi_event calling the intervention
     :return: BOOL
     """
-    params = self.current_parameters
+    # params = self.current_parameters
     la_params = self.sim.modules['Labour'].current_parameters
+    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     def see_if_sf_will_run():
         # Determine competence parameter to use (higher presumed competence in hospitals)
         if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
-            competence = params['mean_hcw_competence_hc'][0]
+            competence = la_params['mean_hcw_competence_hc'][0]
         else:
-            competence = params['mean_hcw_competence_hp'][1]
+            competence = la_params['mean_hcw_competence_hp'][1]
 
         comp_result = self.rng.random_sample() < competence
-        hcw_result = self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']
+        hcw_result = self.rng.random_sample() < la_params[f'prob_hcw_avail_{sf}']
 
         # If HCW is available and staff are competent at delivering the intervention then it will be delivered
         if comp_result and hcw_result:
@@ -132,7 +133,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
 
         return False
 
-    if not la_params['la_analysis_in_progress']:
+    if not la_params['la_analysis_in_progress'] and not ps_params['ps_analysis_in_progress']:
         return see_if_sf_will_run()
 
     else:

@@ -2512,7 +2512,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
             # Determine if the labouring woman will be delayed in attending for facility delivery
-            pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
