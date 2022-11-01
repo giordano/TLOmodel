@@ -93,6 +93,7 @@ class TestScenario(BaseScenario):
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'anc_availability_odds': 9.0,
                                     'analysis_year': 2022},
+            'Labour': {'analysis_year': 2022},
         }
 
 
