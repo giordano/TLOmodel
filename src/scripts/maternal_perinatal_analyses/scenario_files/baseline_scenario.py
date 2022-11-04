@@ -90,8 +90,6 @@ class BaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'analysis_year': 2022},
-            'Labour': {'analysis_year': 2022},
 
         }
 
