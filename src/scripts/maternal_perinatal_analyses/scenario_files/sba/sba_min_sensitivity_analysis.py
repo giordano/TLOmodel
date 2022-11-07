@@ -26,19 +26,19 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class TestScenario(BaseScenario):
+class SBAMaxSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 562661
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_cov_200k', 'directory': './outputs',
+            'filename': 'max_sens_analysis_200k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -90,9 +90,14 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'alternative_anc_coverage': True,
-                                    'anc_availability_odds': 9.0,
-                                    'analysis_year': 2022},
+            'Labour': {'alternative_bemonc_availability': True,
+                       'alternative_cemonc_availability': True,
+                       'bemonc_availability': 0.0,
+                       'cemonc_availability': 0.0,
+                       'bemonc_cons_availability': 0.0,
+                       'cemonc_cons_availability': 0.0},
+
+            'PregnancySupervisor': {'analysis_year': 2022}
         }
 
 
