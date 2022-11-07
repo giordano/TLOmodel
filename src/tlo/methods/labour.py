@@ -571,7 +571,7 @@ class Labour(Module):
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_pnc_coverage is true'),
         'sba_sens_analysis_max': Parameter(
-            Types.REAL, 'Signals that max coverage of SBA is being forced for sensitivity analysis'),
+            Types.BOOL, 'Signals that max coverage of SBA is being forced for sensitivity analysis'),
 
     }
 
