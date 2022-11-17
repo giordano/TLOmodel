@@ -1337,6 +1337,8 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
 
+        # Todo - should be logged in the postnatal logger?
+
         # This function follows a roughly similar pattern as set_intrapartum_complications
         if mni[individual_id]['delivery_setting'] == 'none':
             logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
@@ -1434,6 +1436,8 @@ class Labour(Module):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'eclampsia'
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'eclampsia_onset',
                                                               self.sim.date)
+
+                # todo: POSTNATAL CASES SHOULD BE LOGGED IN THE PN LOGGER
 
                 logger.info(key='maternal_complication', data={'person': individual_id,
                                                                'type': 'eclampsia',

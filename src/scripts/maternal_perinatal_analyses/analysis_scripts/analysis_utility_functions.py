@@ -740,8 +740,13 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
         dalys_neo_i = get_comp_mean_and_rate('Neonatal Disorders', denom_int[0], dalys_stacked_int, 100000,
                                              intervention_years)
 
-        dalys_mat_agg = [sum(dalys_mat_i[0]), sum(dalys_mat_i[1]), sum(dalys_mat_i[2])]
-        dalys_neo_agg = [sum(dalys_neo_i[0]), sum(dalys_neo_i[1]), sum(dalys_neo_i[2])]
+        dalys_mat_agg = [(sum(dalys_mat_i[0])/len(intervention_years)),
+                         (sum(dalys_mat_i[1])/len(intervention_years)),
+                         (sum(dalys_mat_i[2])/len(intervention_years))]
+
+        dalys_neo_agg = [(sum(dalys_neo_i[0])/len(intervention_years)),
+                         (sum(dalys_neo_i[1])/len(intervention_years)),
+                         (sum(dalys_neo_i[2])/len(intervention_years))]
 
         mat_causes_death = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                             'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',

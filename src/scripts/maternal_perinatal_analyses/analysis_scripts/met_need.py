@@ -335,6 +335,31 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         plt.savefig(f'{plot_destination_folder}/{t}.png')
         plt.show()
 
+    met_need_avg = dict()
+    for k in met_need:
+        met_need_avg.update({k:{}})
+        for v in met_need[k]:
+            met_need_avg[k][v] = sum(met_need[k][v]) / len(intervention_years)
+
+    labels = results_folders.keys()
+
+    for v in met_need_avg[list(labels)[0]]:
+
+        mean_vals = list()
+        for k in met_need_avg:
+            mean_vals.append(met_need_avg[k][v])
+
+        width = 0.55  # the width of the bars: can also be len(x) sequence
+        fig, ax = plt.subplots()
+        ax.bar(labels, mean_vals, width=width)
+        ax.tick_params(axis='x', which='major', labelsize=8)
+        ax.set_ylabel('Met need%')
+        ax.set_xlabel('Scenario')
+        ax.set_title(f'Average Met Need for {v}')
+        plt.savefig(f'{plot_destination_folder}/{v}_avg.png')
+        plt.show()
+
+
 # ===================================== CONTRIBUTION TO DEATH ========================================================
     factors = ['delay_one_two', 'delay_three', 'didnt_seek_care', 'cons_not_avail', 'comp_not_avail',
                'hcw_not_avail']

@@ -188,16 +188,16 @@ def log_met_need(self, intervention, hsi):
     # For interventions with multiple indications the HSI and properties of the individual are used to determine the
     # correct name for the logged intervention.
     elif (intervention == 'mag_sulph') or (intervention == 'iv_htns'):
-        if ((hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient')) and \
-          not person.la_is_postpartum:
-            logger.info(key='intervention',
-                        data={'person_id': person_id,
-                              'int': f'{intervention}_an_{df.at[person_id, "ps_htn_disorders"]}'})
+        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
+            tp = ['an', 'ps']
+        elif hsi.TREATMENT_ID == 'DeliveryCare_Basic':
+            tp = ['la', 'ps']
+        else:
+            tp = ['pn', 'pn']
 
-        elif (hsi.TREATMENT_ID == 'PostnatalCare_Maternal') and person.la_is_postpartum:
-            logger.info(key='intervention',
-                        data={'person_id': person_id,
-                              'int': f'{intervention}_pn_{df.at[person_id, "pn_htn_disorders"]}'})
+        logger.info(key='intervention',
+                    data={'person_id': person_id,
+                          'int': f'{intervention}_{tp[0]}_{df.at[person_id, f"{tp[1]}_htn_disorders"]}'})
 
     elif intervention == 'sepsis_abx':
         if (hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient'):

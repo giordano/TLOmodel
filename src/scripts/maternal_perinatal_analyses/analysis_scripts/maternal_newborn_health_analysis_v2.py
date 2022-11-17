@@ -340,7 +340,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
     plt.show()
 
     # 4.b) Total deaths by cause (aggregate)
-    def extract_deaths_by_cause(results_folder, intervention_years, scenario_name, final_df):
+    def extract_deaths_by_cause(results_folder, births, intervention_years, scenario_name, final_df):
 
         dd = extract_results(
             results_folder,
@@ -377,49 +377,42 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         total = direct_deaths.append(indirect_deaths)
         df_index = list(range(0, len(total.index)))
         df = final_df.reindex(df_index)
+        births_agg = sum(births[0])
 
         for comp, v in zip(total.index, df_index):
             df.update(
-                pd.DataFrame({'scenario': scenario_name, 'comp': comp, 'value': total.loc[comp].mean()},
+                pd.DataFrame({'Scenario': scenario_name,
+                              'Complication/Disease': comp,
+                              'MMR': (total.loc[comp].mean()/births_agg) * 100_000},
                              index=[v]))
 
         return df
 
-    cause_df = pd.DataFrame(columns=['scenario', 'comp', 'value'])
+    cause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'MMR'])
     scenario_titles = list(results_folders.keys())
-    sq_df = extract_deaths_by_cause(results_folders[scenario_titles[0]], intervention_years, scenario_titles[0],
+    sq_df = extract_deaths_by_cause(results_folders[scenario_titles[0]], births_dict[scenario_titles[0]]['int_births'],
+                                    intervention_years, scenario_titles[0],
                                     cause_df)
-    s2_df = extract_deaths_by_cause(results_folders[scenario_titles[1]], intervention_years, scenario_titles[1],
+    s2_df = extract_deaths_by_cause(results_folders[scenario_titles[1]], births_dict[scenario_titles[1]]['int_births'],
+                                    intervention_years, scenario_titles[1],
                                     cause_df)
-    s3_df = extract_deaths_by_cause(results_folders[scenario_titles[2]], intervention_years, scenario_titles[2],
+    s3_df = extract_deaths_by_cause(results_folders[scenario_titles[2]], births_dict[scenario_titles[2]]['int_births'],
+                                    intervention_years, scenario_titles[2],
                                     cause_df)
 
     t = sq_df.append(s2_df).append(s3_df)
 
     import seaborn as sns
 
-    g = sns.catplot(kind='bar', data=t, col='scenario', x='comp', y='value')
-    g.set_xticklabels(rotation=90, horizontalalignment='right')
+    g = sns.catplot(kind='bar', data=t, col='Scenario', x='Complication/Disease', y='MMR')
+    g.set_xticklabels(rotation=75, fontdict={'fontsize': 7}, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
 
-    for cause in list(sq_df['comp']):
-        if (not sq_df.loc[sq_df['comp'] == cause]['value'].empty) and \
-            (not s2_df.loc[s2_df['comp'] == cause]['value'].empty) and \
-           (not s3_df.loc[s3_df['comp'] == cause]['value'].empty):
-
-            b_val = float(sq_df.loc[sq_df['comp'] == cause]['value'])
-            i1_val = float(s2_df.loc[s2_df['comp'] == cause]['value'])
-            i2_val = float(s3_df.loc[s3_df['comp'] == cause]['value'])
-
-            p_diff_1 = ((b_val - i1_val) / b_val) * 100
-            p_diff_2 = ((b_val - i2_val) / b_val) * 100
-
-            print(f'Percentage difference between baseline and I1 for {cause}', p_diff_1)
-            print(f'Percentage difference between baseline and I2 for {cause}', p_diff_2)
+    t.to_csv(f'{plot_destination_folder}/mmrs_by_cause.csv')
 
     # NEONATAL DEATH BY CAUSE
-    def extract_neo_deaths_by_cause(results_folder, intervention_years, scenario_name, final_df):
+    def extract_neo_deaths_by_cause(results_folder, births, intervention_years, scenario_name, final_df):
 
         nd = extract_results(
             results_folder,
@@ -432,45 +425,41 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
                     year=df['date'].dt.year).groupby(['cause_of_death'])['year'].count()),
             do_scaling=True)
         neo_deaths = nd.fillna(0)
+        births_agg = sum(births[0])
 
         df_index = list(range(0, len(neo_deaths.index)))
         df = final_df.reindex(df_index)
 
         for comp, v in zip(neo_deaths.index, df_index):
             df.update(
-                pd.DataFrame({'scenario': scenario_name, 'comp': comp, 'value': neo_deaths.loc[comp].mean()},
+                pd.DataFrame({'Scenario': scenario_name,
+                              'Complication/Disease': comp,
+                              'NMR': (neo_deaths.loc[comp].mean()/births_agg) * 1000},
                              index=[v]))
 
         return df
 
-    ncause_df = pd.DataFrame(columns=['scenario', 'comp', 'value'])
-    sq_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[0]], intervention_years, scenario_titles[0],
+    ncause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'NMR'])
+    sq_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[0]],
+                                        births_dict[scenario_titles[0]]['int_births'], intervention_years,
+                                        scenario_titles[0],
                                         ncause_df)
-    s2_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[1]], intervention_years, scenario_titles[1],
+    s2_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[1]],
+                                        births_dict[scenario_titles[1]]['int_births'], intervention_years,
+                                        scenario_titles[1],
                                         ncause_df)
-    s3_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[2]], intervention_years, scenario_titles[2],
+    s3_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[2]],
+                                        births_dict[scenario_titles[2]]['int_births'], intervention_years,
+                                        scenario_titles[2],
                                         ncause_df)
 
     t = sq_df.append(s2_df).append(s3_df)
-    g = sns.catplot(kind='bar', data=t, col='scenario', x='comp', y='value')
-    g.set_xticklabels(rotation=90, horizontalalignment='right')
+    g = sns.catplot(kind='bar', data=t, col='Scenario', x='Complication/Disease', y='NMR')
+    g.set_xticklabels(rotation=75, fontdict={'fontsize': 6}, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/neo_deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
 
-    for cause in list(sq_df['comp']):
-        if (not sq_df.loc[sq_df['comp'] == cause]['value'].empty) and \
-            (not s2_df.loc[s2_df['comp'] == cause]['value'].empty) and \
-           (not s3_df.loc[s3_df['comp'] == cause]['value'].empty):
-
-            b_val = float(sq_df.loc[sq_df['comp'] == cause]['value'])
-            i1_val = float(s2_df.loc[s2_df['comp'] == cause]['value'])
-            i2_val = float(s3_df.loc[s3_df['comp'] == cause]['value'])
-
-            p_diff_1 = ((b_val - i1_val) / b_val) * 100
-            p_diff_2 = ((b_val - i2_val) / b_val) * 100
-
-            print(f'Percentage difference between baseline and I1 for {cause}', p_diff_1)
-            print(f'Percentage difference between baseline and I2 for {cause}', p_diff_2)
+    t.to_csv(f'{plot_destination_folder}/nmrs_by_cause.csv')
 
     # ===================================== MATERNAL/NEONATAL DALYS ===================================================
     # =================================================== DALYS =======================================================
@@ -490,7 +479,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
              'Average Total Maternal DALYs per 100k PY by Scenario',
              'Average Total Neonatal DALYs per 100k PY by Scenario'],
             ['DALYs',
-             'DALYs'
+             'DALYs',
              'DALYs per 100k PY',
              'DALYs per 100k PY']):
         labels = results_folders.keys()

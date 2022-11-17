@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 import numpy as np
 
 import analysis_utility_functions
@@ -19,6 +20,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     :param intervention_years: years of interest for the analysis
     :return:
     """
+    output_df = pd.DataFrame(columns=list(scenario_file_dict.keys()))
 
     # HELPER FUNCTIONS (TODO: MOVE/COMBINE WITH ONE USED IN OTHER FILE)
     def bar_chart_from_dict(dict, y_title, title,plot_destination_folder, file_name):
@@ -45,12 +47,13 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     def get_agg_values(yr_dict, key):
         agg_dict = dict()
+
         for k in yr_dict:
             agg_dict.update({k: [sum(yr_dict[k][key][0]), sum(yr_dict[k][key][1]), sum(yr_dict[k][key][2])]})
 
         return agg_dict
 
-    def get_avg_rate_per_scenario(rate_dict, multi_level, *key):
+    def get_avg_rate_per_scenario(rate_dict, multi_level,  *key):
         avg_dict = dict()
         for k in rate_dict:
             if not multi_level:
@@ -61,7 +64,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                 avg_dict.update({k: [sum(rate_dict[k][key[0]][0]) / len(rate_dict[k][key[0]][0]),
                                      sum(rate_dict[k][key[0]][1]) / len(rate_dict[k][key[0]][0]),
                                      sum(rate_dict[k][key[0]][2]) / len(rate_dict[k][key[0]][0])]})
-
         return avg_dict
 
     # Find results folder (most recent run generated using that scenario_filename)
@@ -119,7 +121,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        sim_years, intervention_years)
-    agg_births = get_agg_values(births_dict, 'int_births')
+    agg_births = get_agg_values(births_dict,  'int_births')
 
     bar_chart_from_dict(agg_births, 'Births', 'Total Births by Scenario', plot_destination_folder, 'agg_births')
 
@@ -1051,3 +1053,15 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
             'NMR',
             f'NMR due to {condition} Per Year Per Scenario',
             nmr_destination, f'{cause}_nmr')
+
+    for data, key in zip([avg_abruption, avg_anaemia_birth_data, avg_anaemia_delivery_data, avg_aph_data,
+                          avg_gdm_data, avg_ia_data, avg_lbw, avg_macro, avg_neo_enceph_data, avg_neo_sep_data,
+                          avg_ol, avg_potl, avg_pph, avg_praevia_data, avg_prom_data, avg_ptl_data, avg_rd, avg_rds_data,
+                          avg_sa_data, avg_sga, avg_syph_data, avg_twin_data, avg_ur],
+                         ['abruption', 'anaemia_birth', 'anaemia_delivery', 'aph', 'gdm', 'abortion', 'lbw',
+                          'macrosomia', 'enceph', 'neo_sepsis', 'ol', 'potl', 'pph', 'praevia', 'prom', 'ptl',
+                          'resp_d', 'rds', 'miscarriage', 'sga', 'syphilis', 'twins', 'ur']):
+        d = {key: data}
+        output_df = output_df.append(pd.DataFrame.from_dict(d, orient='index'))
+
+    output_df.to_csv(f'{plot_destination_folder}/avg_inc_outputs.csv')
