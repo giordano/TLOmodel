@@ -582,6 +582,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                                 'Mild Pre-eclampsia', 'Severe pre-eclampsia', 'Eclampsia']):
 
         avg_data = get_avg_rate_per_scenario(htn_data_int, True, key)
+        d = {key: avg_data}
+        output_df = output_df.append(pd.DataFrame.from_dict(d, orient='index'))
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, sim_years, htn_data, key,
@@ -683,7 +685,11 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                          for k in results_folders}
 
     for key, intervention in zip(['cs', 'avd'], ['Caesarean Section', 'Assisted Vaginal Delivery']):
+
         avg = get_avg_rate_per_scenario(delivery_data_int, True, key)
+        d = {key: avg}
+        output_df = output_df.append(pd.DataFrame.from_dict(d, orient='index'))
+
         bar_chart_from_dict(avg, 'Avg. % of Total Births',
                             f'Average Rate of Delivery via {intervention} by Scenario',
                             plot_destination_folder, f'avg_{key}')
@@ -745,6 +751,10 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     for key, condition in zip(['total_sep', 'an_sep', 'la_sep', 'pn_sep'],
                               ['Maternal Sepsis', 'Antenatal Sepsis', 'Intrapartum Sepsis', 'Postnatal Sepsis']):
         avg = get_avg_rate_per_scenario(sep_data_int, True, key)
+
+        d = {key: avg}
+        output_df = output_df.append(pd.DataFrame.from_dict(d, orient='index'))
+
         bar_chart_from_dict(avg, 'Avg. Rate per 1000 Births',
                             f'Average Rate of {condition} by Scenario',
                             plot_destination_folder, f'avg_{key}')

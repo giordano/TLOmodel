@@ -420,22 +420,22 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     width = 0.35  # the width of the bars: can also be len(x) sequence
     x = np.arange(len(labels))
 
-    fig, ax = plt.subplots()
-    ax.bar(labels, anc_before_eight_plus_months, width, label='>8m',
-           bottom=[x + y + z for x, y, z in zip(anc_before_four_months, anc_before_four_five_months,
-                                                anc_before_six_seven_months)])
-    ax.bar(labels, anc_before_six_seven_months, width, label='6-7m',
-           bottom=[x + y for x, y in zip(anc_before_four_months, anc_before_four_five_months)])
-    ax.bar(labels, anc_before_four_five_months, width, label='4-5m',
-           bottom=anc_before_four_months)
-    ax.bar(labels, anc_before_four_months, width, label='<4m')
-    plt.xticks(rotation=45, ha='right')
-    # Put a legend to the right of the current axis
-    ax.legend(bbox_to_anchor=(1.2, 1.1))
-    ax.set_ylabel('% of first ANC contacts')
-    ax.set_title('Maternal gestational age at first ANC contact by year')
-    plt.savefig(f'{graph_location}/anc_ga_first_visit_update.png', bbox_inches="tight")
-    plt.show()
+    # fig, ax = plt.subplots()
+    # ax.bar(labels, anc_before_eight_plus_months, width, label='>8m',
+    #        bottom=[x + y + z for x, y, z in zip(anc_before_four_months, anc_before_four_five_months,
+    #                                             anc_before_six_seven_months)])
+    # ax.bar(labels, anc_before_six_seven_months, width, label='6-7m',
+    #        bottom=[x + y for x, y in zip(anc_before_four_months, anc_before_four_five_months)])
+    # ax.bar(labels, anc_before_four_five_months, width, label='4-5m',
+    #        bottom=anc_before_four_months)
+    # ax.bar(labels, anc_before_four_months, width, label='<4m')
+    # plt.xticks(rotation=45, ha='right')
+    # # Put a legend to the right of the current axis
+    # ax.legend(bbox_to_anchor=(1.2, 1.1))
+    # ax.set_ylabel('% of first ANC contacts')
+    # ax.set_title('Maternal gestational age at first ANC contact by year')
+    # plt.savefig(f'{graph_location}/anc_ga_first_visit_update.png', bbox_inches="tight")
+    # plt.show()
 
     target_rate_eanc4 = list()
     for year in sim_years:
@@ -848,7 +848,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                                                                sim_years)
     sgh_pn = analysis_utility_functions.get_comp_mean_and_rate('severe_gest_htn', birth_data_ex2010[0], pn_comps, 1000,
                                                                sim_years)
-    sgh_an = analysis_utility_functions.get_comp_mean_and_rate('mild_pre_eclamp', birth_data_ex2010[0], an_comps, 1000,
+    sgh_an = analysis_utility_functions.get_comp_mean_and_rate('severe_gest_htn', birth_data_ex2010[0], an_comps, 1000,
                                                                sim_years)
 
     mpe_an = analysis_utility_functions.get_comp_mean_and_rate('mild_pre_eclamp', birth_data_ex2010[0], an_comps, 1000,
@@ -859,7 +859,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     spe_an = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], an_comps,
                                                                1000,
                                                                sim_years)
-    spe_la  = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], la_comps,
+    spe_la = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], la_comps,
                                                                 1000,
                                                             sim_years)
     spe_pn = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], pn_comps, 1000,
