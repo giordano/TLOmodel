@@ -844,6 +844,34 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ec_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
         'eclampsia', birth_data_ex2010[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
 
+    sgh_ip = analysis_utility_functions.get_comp_mean_and_rate('severe_gest_htn', birth_data_ex2010[0], la_comps, 1000,
+                                                               sim_years)
+    sgh_pn = analysis_utility_functions.get_comp_mean_and_rate('severe_gest_htn', birth_data_ex2010[0], pn_comps, 1000,
+                                                               sim_years)
+    sgh_an = analysis_utility_functions.get_comp_mean_and_rate('mild_pre_eclamp', birth_data_ex2010[0], an_comps, 1000,
+                                                               sim_years)
+
+    mpe_an = analysis_utility_functions.get_comp_mean_and_rate('mild_pre_eclamp', birth_data_ex2010[0], an_comps, 1000,
+                                                               sim_years)
+    mpe_pn = analysis_utility_functions.get_comp_mean_and_rate('mild_pre_eclamp', birth_data_ex2010[0], pn_comps, 1000,
+                                                               sim_years)
+
+    spe_an = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], an_comps,
+                                                               1000,
+                                                               sim_years)
+    spe_la  = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], la_comps,
+                                                                1000,
+                                                            sim_years)
+    spe_pn = analysis_utility_functions.get_comp_mean_and_rate('severe_pre_eclamp', birth_data_ex2010[0], pn_comps, 1000,
+                                                            sim_years)
+
+    ec_an = analysis_utility_functions.get_comp_mean_and_rate('eclampsia', birth_data_ex2010[0], an_comps, 1000,
+                                                              sim_years)
+    ec_la = analysis_utility_functions.get_comp_mean_and_rate('eclampsia', birth_data_ex2010[0], la_comps, 1000,
+                                                              sim_years)
+    ec_pn = analysis_utility_functions.get_comp_mean_and_rate('eclampsia', birth_data_ex2010[0], pn_comps, 1000,
+                                                              sim_years)
+
     target_gh_dict = {'double': False,
                       'first': {'year': 2019, 'value': 36.8, 'label': 'Noubiap et al.', 'ci': 0},
                       }
