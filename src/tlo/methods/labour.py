@@ -23,6 +23,10 @@ logger.setLevel(logging.INFO)
 logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
 
+# Postnatal logger
+logger_pn = logging.getLogger("tlo.methods.postnatal_supervisor")
+logger_pn.setLevel(logging.INFO)
+
 
 class Labour(Module):
     """This is module is responsible for the the process of labour, birth and the immediate postnatal period (up until
@@ -1330,8 +1334,6 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
 
-        # Todo - should be logged in the postnatal logger?
-
         # This function follows a roughly similar pattern as set_intrapartum_complications
         if mni[individual_id]['delivery_setting'] == 'none':
             logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
@@ -1367,9 +1369,9 @@ class Labour(Module):
                 # Set primary complication to true
                 df.at[individual_id, 'la_postpartum_haem'] = True
 
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{complication}',
-                                                               'timing': 'intrapartum'})
+                logger_pn.info(key='maternal_complication', data={'person': individual_id,
+                                                                  'type': f'{complication}',
+                                                                  'timing': 'postnatal'})
 
                 # Store mni variables used during treatment
                 if complication == 'pph_uterine_atony':
@@ -1405,6 +1407,13 @@ class Labour(Module):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        if property_prefix == 'ps':
+            timing = 'intrapartum'
+            current_log = logger
+        else:
+            timing = 'postnatal'
+            current_log = logger_pn
+
         # n.b. on birth women whose hypertension will continue into the postnatal period have their disease state stored
         # in a new property therefore antenatal/intrapartum hypertension is 'ps_htn_disorders' and postnatal is
         # 'pn_htn_disorders' hence the use of property prefix variable (as this function is called before and after
@@ -1430,11 +1439,9 @@ class Labour(Module):
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'eclampsia_onset',
                                                               self.sim.date)
 
-                # todo: POSTNATAL CASES SHOULD BE LOGGED IN THE PN LOGGER
-
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'eclampsia',
-                                                               'timing': 'intrapartum'})
+                current_log.info(key='maternal_complication', data={'person': individual_id,
+                                                                    'type': 'eclampsia',
+                                                                    'timing': timing})
 
         # Or from mild to severe gestational hypertension, risk reduced by treatment
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'gest_htn':
@@ -1447,9 +1454,9 @@ class Labour(Module):
             if risk_prog_gh_sgh > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
 
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'severe_gest_htn',
-                                                               'timing': 'intrapartum'})
+                current_log.info(key='maternal_complication', data={'person': individual_id,
+                                                                    'type': 'severe_gest_htn',
+                                                                    'timing': timing})
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'severe_gest_htn':
@@ -1457,9 +1464,9 @@ class Labour(Module):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 mni[individual_id]['new_onset_spe'] = True
 
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'severe_pre_eclamp',
-                                                               'timing': 'intrapartum'})
+                current_log.info(key='maternal_complication', data={'person': individual_id,
+                                                                    'type': 'severe_pre_eclamp',
+                                                                    'timing': timing})
 
         # Or from mild pre-eclampsia to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'mild_pre_eclamp':
@@ -1467,9 +1474,9 @@ class Labour(Module):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 mni[individual_id]['new_onset_spe'] = True
 
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'severe_pre_eclamp',
-                                                               'timing': 'intrapartum'})
+                current_log.info(key='maternal_complication', data={'person': individual_id,
+                                                                    'type': 'severe_pre_eclamp',
+                                                                    'timing': timing})
 
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
@@ -2770,13 +2777,13 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                 self.module.set_postpartum_complications(mother_id, complication=complication)
 
             if df.at[mother_id, 'la_sepsis_pp']:
-                logger.info(key='maternal_complication', data={'person': mother_id,
-                                                               'type': 'sepsis_postnatal',
-                                                               'timing': 'postnatal'})
+                logger_pn.info(key='maternal_complication', data={'person': mother_id,
+                                                                  'type': 'sepsis_postnatal',
+                                                                  'timing': 'postnatal'})
             if df.at[mother_id, 'la_postpartum_haem']:
-                logger.info(key='maternal_complication', data={'person': mother_id,
-                                                               'type': 'primary_postpartum_haemorrhage',
-                                                               'timing': 'postnatal'})
+                logger_pn.info(key='maternal_complication', data={'person': mother_id,
+                                                                  'type': 'primary_postpartum_haemorrhage',
+                                                                  'timing': 'postnatal'})
 
             self.module.progression_of_hypertensive_disorders(mother_id, property_prefix='pn')
 
