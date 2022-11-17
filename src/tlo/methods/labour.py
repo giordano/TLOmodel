@@ -583,15 +583,12 @@ class Labour(Module):
                                                            'in a stillbirth'),
         'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
         'la_previous_cs_delivery': Property(Types.INT, 'total number of previous deliveries'),
-        'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
-                                                                    'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
         'la_placental_abruption': Property(Types.BOOL, 'whether the woman has experienced placental abruption'),
         'la_antepartum_haem': Property(Types.CATEGORICAL, 'whether the woman has experienced an antepartum haemorrhage'
                                                           ' in this delivery and it severity',
                                        categories=['none', 'mild_moderate', 'severe']),
-        'la_antepartum_haem_treatment': Property(Types.BOOL, 'whether this womans antepartum haemorrhage has been '
-                                                             'treated'),
+
         'la_uterine_rupture': Property(Types.BOOL, 'whether the woman has experienced uterine rupture in this '
                                                    'delivery'),
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
@@ -639,12 +636,10 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False
         df.loc[df.is_alive, 'la_parity'] = 0
         df.loc[df.is_alive, 'la_previous_cs_delivery'] = 0
-        df.loc[df.is_alive, 'la_has_previously_delivered_preterm'] = False
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
         df.loc[df.is_alive, 'la_placental_abruption'] = False
         df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
-        df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
         df.loc[df.is_alive, 'la_uterine_rupture'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
         df.loc[df.is_alive, 'la_sepsis'] = False
@@ -1010,11 +1005,9 @@ class Labour(Module):
         df.at[child_id, 'la_intrapartum_still_birth'] = False
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs_delivery'] = 0
-        df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
         df.at[child_id, 'la_placental_abruption'] = False
         df.at[child_id, 'la_antepartum_haem'] = 'none'
-        df.at[child_id, 'la_antepartum_haem_treatment'] = False
         df.at[child_id, 'la_uterine_rupture'] = False
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
@@ -2373,7 +2366,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                                         'defining_term_status'][3]:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
-                df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                 logger.info(key='maternal_complication', data={'person': individual_id,
                                                                'type': 'early_preterm_labour',
@@ -2385,7 +2377,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                                                         'status'][5]:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
-                df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                 logger.info(key='maternal_complication', data={'person': individual_id,
                                                                'type': 'late_preterm_labour',
