@@ -9,10 +9,9 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # for the output figures
-datestamp_without = '2022_11_10'  # TODO: update with final sim
-datestamp_with = '2022_11_10'  # TODO: update with final sim
-datestamp_without_log = '2022-11-14T223821'  # TODO: update with final sim
-datestamp_with_log = '2022-11-14T223541'  # TODO: update with final sim
+suffix = "20K_TimsCode" # "50K_TimsCode"
+datestamp_without_log = '2022-11-07T144634' #50K: '2022-11-08T165333'  # TODO: update with final sim
+datestamp_with_log = '2022-11-04T175536' #50K: '2022-11-13T180430'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -22,7 +21,7 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # Do you want prints to see costs, use, percentage use and table?
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
-print_bool = True
+print_bool = False
 # parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
 # needs to be True for the final run
 do_interv_analysis = True
@@ -49,9 +48,10 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 print()
 print("analysis without interventions in progress")
 print('--------------------')
+ID_without = datestamp_without_log + "_without" + suffix
 use_without_df, percentage_use_without_df, costs_without_df =\
     a_co.analyse_contraception(
-        datestamp_without, logFile_without,
+        ID_without, logFile_without,
         # %% Plot Contraception Pop and PPFP Intervention Costs over time?
         True,
         # %% Plot Contraception Use Over time?
@@ -74,9 +74,10 @@ if do_interv_analysis:
     print()
     print("analysis with interventions in progress")
     print('--------------------')
+    ID_with = datestamp_with_log + "_with" + suffix
     use_with_df, percentage_use_with_df, costs_with_df =\
         a_co.analyse_contraception(
-            datestamp_with, logFile_with,
+            datestamp_with_log, logFile_with,
             # %% Plot Contraception Pop and PPFP Intervention Costs over time?
             True,
             # %% Plot Contraception Use Over time?
@@ -95,7 +96,7 @@ else:
     use_with_df = use_without_df
     percentage_use_with_df = percentage_use_without_df
     costs_with_df = costs_without_df
-
+    ID_with = ID_without + "_again"
 if print_bool:
     print("\n")
     print("COSTS WITHOUT")
@@ -149,7 +150,6 @@ def combine_use_costs_with_without_interv(
             l_tp_costs = []
             for meth in in_df_use.columns:
                 if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
-                    print(in_df_costs)
                     l_tp_costs.append(round(float(in_df_costs.loc[(tp, meth), :]), 2))
                 else:
                     if meth == 'co_modern_total':
@@ -191,7 +191,7 @@ if print_bool:
     fullprint(use_costs_table_df)
 
 output_table_file = r"outputs/output_table_" + use_output + "-use_costs" +\
-                    "__" + datestamp_without_log + "_" + datestamp_with_log +\
+                    "__" + ID_without + "_" + ID_with +\
                     ".xlsx"
 writer = pd.ExcelWriter(output_table_file)
 # Mean use rounded to two decimals for the table

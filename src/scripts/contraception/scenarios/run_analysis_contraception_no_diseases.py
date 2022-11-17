@@ -1,9 +1,9 @@
 """
 This file defines a batch run to get sims results to be used by the analysis_contraception_plot_table.
 Run on the remote batch system using:
-```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception.py```
+```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 or locally using:
-```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception.py```
+```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 """
 
 from tlo import Date, logging
@@ -15,16 +15,16 @@ from tlo.scenario import BaseScenario
 class RunAnalysisCo(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2022
+        self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2050, 12, 31)
-        self.pop_size = 50000  # <- recommended population size for the runs is 50k
+        self.pop_size = 20000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'run_analysis_contraception',  # <- (specified only for local running)
+            'filename': 'run_analysis_contraception_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -48,7 +48,7 @@ class RunAnalysisCo(BaseScenario):
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
                                         use_interventions=False,
-                                        interventions_start_date=Date(2023, 1, 1),  # if needs to be changed
+                                        # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True),  # <-- using HealthSystem
             contraception.SimplifiedPregnancyAndLabour(),
