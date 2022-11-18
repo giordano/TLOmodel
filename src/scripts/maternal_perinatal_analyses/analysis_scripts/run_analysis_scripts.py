@@ -15,7 +15,7 @@ intervention_years = list(range(2022, 2031))
 sim_years = list(range(2010, 2031))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 service_of_interest = 'sba'
-scen_colours = ['rosybrown', 'lightcoral', 'pink', 'sandybrown', 'maroon']
+scen_colours = ['forestgreen', 'teal', 'blue', 'mediumpurple', 'plum']
 
 # met_need.met_need_and_contributing_factors_for_deaths(scenario_dict, output_path, intervention_years,
 #                                                       service_of_interest)

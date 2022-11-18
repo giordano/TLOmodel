@@ -6,7 +6,7 @@ import output_all_death_calibration_per_year, output_all_key_outcomes_per_year
 for file in ['standard_mph_calibration']:
     output_all_key_outcomes_per_year.output_incidence_for_calibration(
        scenario_filename=f'{file}.py',
-       pop_size='200k',
+       pop_size='100k',
        outputspath='./outputs/sejjj49@ucl.ac.uk/',
        sim_years=list(range(2010, 2016)))
 

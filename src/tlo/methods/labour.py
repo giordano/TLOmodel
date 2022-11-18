@@ -3176,7 +3176,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
                                                                                        hsi_event=self)
 
-            if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
+            if (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other' and
+                                        params['cemonc_availability'] != 0.0):
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,

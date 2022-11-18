@@ -1157,10 +1157,9 @@ class PregnancySupervisor(Module):
             risk_ghtn_remains_mild = 1.0 - (risk_of_gest_htn_progression + params['probs_for_mgh_matrix'][2])
 
             # We reset the parameter here to allow for testing with the original parameter
-            params['probs_for_mgh_matrix'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
-                                              params['probs_for_mgh_matrix'][2], 0.0, 0.0]
 
-            prob_matrix['gest_htn'] = params['probs_for_mgh_matrix']
+            prob_matrix['gest_htn'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
+                                              params['probs_for_mgh_matrix'][2], 0.0, 0.0]
             prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix']
             prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix']
             prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix']
