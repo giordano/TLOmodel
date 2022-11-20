@@ -93,7 +93,7 @@ class ANCMaxSensitivityAnalysis(BaseScenario):
             'PregnancySupervisor': {'sens_analysis_max': True,
                                     'alternative_anc_quality': True,
                                     'anc_availability_probability': 1.0,
-                                    'analysis_year': 2022},
+                                    'analysis_year': 2010},
         }
 
 
