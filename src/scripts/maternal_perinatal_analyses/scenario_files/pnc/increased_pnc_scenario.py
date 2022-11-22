@@ -29,10 +29,10 @@ from tlo.scenario import BaseScenario
 class IncreasedPNCScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 987
+        self.seed = 537184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
-        self.pop_size = 200_000
+        self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
