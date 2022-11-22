@@ -390,26 +390,23 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
 
     cause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'MMR'])
     scenario_titles = list(results_folders.keys())
-    sq_df = extract_deaths_by_cause(results_folders[scenario_titles[0]], births_dict[scenario_titles[0]]['int_births'],
-                                    intervention_years, scenario_titles[0],
-                                    cause_df)
-    s2_df = extract_deaths_by_cause(results_folders[scenario_titles[1]], births_dict[scenario_titles[1]]['int_births'],
-                                    intervention_years, scenario_titles[1],
-                                    cause_df)
-    s3_df = extract_deaths_by_cause(results_folders[scenario_titles[2]], births_dict[scenario_titles[2]]['int_births'],
-                                    intervention_years, scenario_titles[2],
-                                    cause_df)
+    t = []
+    for k in scenario_titles:
+        sq_df = extract_deaths_by_cause(results_folders[k], births_dict[k]['int_births'],
+                                        intervention_years, k,
+                                        cause_df)
+        t.append(sq_df)
 
-    t = sq_df.append(s2_df).append(s3_df)
+    final_df = pd.concat(t)
 
     import seaborn as sns
 
-    g = sns.catplot(kind='bar', data=t, col='Scenario', x='Complication/Disease', y='MMR')
+    g = sns.catplot(kind='bar', data=final_df, col='Scenario', x='Complication/Disease', y='MMR')
     g.set_xticklabels(rotation=75, fontdict={'fontsize': 7}, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
 
-    t.to_csv(f'{plot_destination_folder}/mmrs_by_cause.csv')
+    final_df.to_csv(f'{plot_destination_folder}/mmrs_by_cause.csv')
 
     # NEONATAL DEATH BY CAUSE
     def extract_neo_deaths_by_cause(results_folder, births, intervention_years, scenario_name, final_df):
@@ -440,26 +437,19 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         return df
 
     ncause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'NMR'])
-    sq_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[0]],
-                                        births_dict[scenario_titles[0]]['int_births'], intervention_years,
-                                        scenario_titles[0],
-                                        ncause_df)
-    s2_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[1]],
-                                        births_dict[scenario_titles[1]]['int_births'], intervention_years,
-                                        scenario_titles[1],
-                                        ncause_df)
-    s3_df = extract_neo_deaths_by_cause(results_folders[scenario_titles[2]],
-                                        births_dict[scenario_titles[2]]['int_births'], intervention_years,
-                                        scenario_titles[2],
-                                        ncause_df)
+    t = []
+    for k in scenario_titles:
+        sq_df = extract_neo_deaths_by_cause(results_folders[k], births_dict[k]['int_births'],
+                                            intervention_years, k, ncause_df)
+        t.append(sq_df)
+    final_df_n = pd.concat(t)
 
-    t = sq_df.append(s2_df).append(s3_df)
-    g = sns.catplot(kind='bar', data=t, col='Scenario', x='Complication/Disease', y='NMR')
+    g = sns.catplot(kind='bar', data=final_df_n, col='Scenario', x='Complication/Disease', y='NMR')
     g.set_xticklabels(rotation=75, fontdict={'fontsize': 6}, horizontalalignment='right')
     plt.savefig(f'{plot_destination_folder}/neo_deaths_by_cause_by_scenario.png', bbox_inches='tight')
     plt.show()
 
-    t.to_csv(f'{plot_destination_folder}/nmrs_by_cause.csv')
+    final_df_n.to_csv(f'{plot_destination_folder}/nmrs_by_cause.csv')
 
     # ===================================== MATERNAL/NEONATAL DALYS ===================================================
     # =================================================== DALYS =======================================================

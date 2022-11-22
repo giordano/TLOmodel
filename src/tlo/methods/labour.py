@@ -1727,10 +1727,12 @@ class Labour(Module):
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
-            ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
-           df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
+        if 'assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']:
             return
+
+        # elif ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
+        #    df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
+        #     return
 
         if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
            (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
@@ -1767,9 +1769,11 @@ class Labour(Module):
         params = self.current_parameters
 
         # If the treatment is not allowed to be delivered or it has already been delivered the function won't run
-        if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or\
-           (df.at[person_id, 'ac_iv_anti_htn_treatment'] and (labour_stage == 'ip')):
+        if 'assessment_and_treatment_of_hypertension' not in params['allowed_interventions']:
             return
+
+        # elif df.at[person_id, 'ac_iv_anti_htn_treatment'] and (labour_stage == 'ip'):
+        #     return
 
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
 
@@ -1778,12 +1782,25 @@ class Labour(Module):
                 self, hsi_event, self.item_codes_lab_consumables, core='iv_antihypertensives',
                 optional='iv_drug_equipment')
 
+            # TODO: REMOVE
+            if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or\
+                (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn'):
+                logger.info(key='iv_htns_treatment_check', data={'mother_id': person_id,
+                                                                 'avail': avail,
+                                                                 'condition': df.at[person_id, 'ps_htn_disorders'],
+                                                                 'hsi_level': hsi_event.ACCEPTED_FACILITY_LEVEL})
+
             # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
             # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
             # women with severe pre-eclampsia and eclampsia
             if avail:
                 df.at[person_id, 'la_maternal_hypertension_treatment'] = True
                 pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
+
+                if (labour_stage == 'ip') and (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn'):
+                    df.at[person_id, 'ps_htn_disorders'] = 'gest_htn'
+                elif(labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
+                    df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
                 avail = hsi_event.get_consumables(
                     item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
@@ -1822,6 +1839,12 @@ class Labour(Module):
 
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
+
+            # TODO: REMOVE
+            logger.info(key='mg_sulph_treatment_check', data={'mother_id': person_id,
+                                                               'sf_check': sf_check,
+                                                               'avail': avail,
+                                                               'hsi_level': hsi_event.ACCEPTED_FACILITY_LEVEL})
 
             if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
@@ -2506,7 +2529,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
-                facility_level = self.module.rng.choice(['1a', '1b'])
+                facility_level = self.module.rng.choice(['1b', '2'])
                 hospital_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
