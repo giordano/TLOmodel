@@ -95,6 +95,9 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
                        'pnc_availability_odds': 15.0,
                        'pnc_availability_probability': 1.0,
                        'analysis_year': 2010},
+
+            'PregnancySupervisor': {'analysis_year': 2010},
+
         }
 
 

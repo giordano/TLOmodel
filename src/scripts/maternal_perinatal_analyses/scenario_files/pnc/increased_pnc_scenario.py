@@ -93,6 +93,9 @@ class IncreasedPNCScenario(BaseScenario):
             'Labour': {'alternative_pnc_coverage': True,
                        'pnc_availability_odds': 15.0,
                        'analysis_year': 2010},
+
+            'PregnancySupervisor': {'analysis_year': 2010},
+
             }
 
 

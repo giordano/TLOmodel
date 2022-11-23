@@ -29,35 +29,35 @@ from tlo.scenario import BaseScenario
 class SBAMaxSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562661
+        self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.end_date = Date(2015, 1, 1)
+        self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
-        return {
-            'filename': 'max_sens_analysis_200k', 'directory': './outputs',
-            "custom_levels": {
-                "*": logging.WARNING,
-                "tlo.methods.demography": logging.INFO,
-                "tlo.methods.demography.detail": logging.INFO,
-                "tlo.methods.depression": logging.INFO,
-                "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
-                "tlo.methods.healthburden": logging.INFO,
-                "tlo.methods.hiv": logging.INFO,
-                "tlo.methods.labour": logging.INFO,
-                "tlo.methods.labour.detail": logging.INFO,
-                "tlo.methods.malaria": logging.INFO,
-                "tlo.methods.newborn_outcomes": logging.INFO,
-                "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
-                "tlo.methods.pregnancy_supervisor": logging.INFO,
-                "tlo.methods.postnatal_supervisor": logging.INFO,
-                "tlo.methods.tb": logging.INFO,
+            return {
+                'filename': 'max_sens_analysis_200k', 'directory': './outputs',
+                "custom_levels": {
+                    "*": logging.WARNING,
+                    "tlo.methods.demography": logging.INFO,
+                    "tlo.methods.demography.detail": logging.INFO,
+                    "tlo.methods.depression": logging.INFO,
+                    "tlo.methods.contraception": logging.INFO,
+                    "tlo.methods.healthsystem.summary": logging.INFO,
+                    "tlo.methods.healthburden": logging.INFO,
+                    "tlo.methods.hiv": logging.INFO,
+                    "tlo.methods.labour": logging.INFO,
+                    "tlo.methods.labour.detail": logging.INFO,
+                    "tlo.methods.malaria": logging.INFO,
+                    "tlo.methods.newborn_outcomes": logging.INFO,
+                    "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
+                    "tlo.methods.pregnancy_supervisor": logging.INFO,
+                    "tlo.methods.postnatal_supervisor": logging.INFO,
+                    "tlo.methods.tb": logging.INFO,
+                }
             }
-        }
 
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
@@ -96,9 +96,10 @@ class SBAMaxSensitivityAnalysis(BaseScenario):
                        'cemonc_availability': 1.0,
                        'bemonc_cons_availability': 1.0,
                        'cemonc_cons_availability': 1.0,
-                       'sba_sens_analysis_max': True},
+                       'sba_sens_analysis_max': True,
+                       'analysis_year': 2010},
 
-            'PregnancySupervisor': {'analysis_year': 2022}
+            'PregnancySupervisor': {'analysis_year': 2010}
         }
 
 

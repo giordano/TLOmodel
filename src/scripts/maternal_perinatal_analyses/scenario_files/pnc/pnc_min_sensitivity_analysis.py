@@ -94,6 +94,9 @@ class PNCMinSensitivityAnalysis(BaseScenario):
                        'alternative_pnc_quality': True,
                        'pnc_availability_probability': 0.0,
                        'analysis_year': 2010},
+
+            'PregnancySupervisor': {'analysis_year': 2010},
+
         }
 
 

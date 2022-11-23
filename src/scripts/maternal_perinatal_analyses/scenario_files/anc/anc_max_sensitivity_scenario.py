@@ -95,7 +95,10 @@ class ANCMaxSensitivityAnalysis(BaseScenario):
                                     'alternative_ip_anc_quality': True,
                                     'anc_availability_probability': 1.0,
                                     'ip_anc_availability_probability': 1.0,
-                                    'analysis_year': 2010}}
+                                    'analysis_year': 2010},
+
+            'Labour': {'analysis_year': 2010},
+        }
 
 
 if __name__ == '__main__':
