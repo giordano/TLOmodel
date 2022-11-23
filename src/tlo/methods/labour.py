@@ -1758,7 +1758,7 @@ class Labour(Module):
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
             if avail and sf_check:
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
-                pregnancy_helper_functions.log_malternative_pnc_coverageet_need(self, 'mag_sulph', hsi_event)
+                pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
 
     def assessment_and_treatment_of_hypertension(self, hsi_event, labour_stage):
         """
