@@ -3350,8 +3350,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
         nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
 
         # Check to see if analysis is being conducted when this event runs
+        # todo: tidy
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max']:\
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max'] \
+            or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
 
             params['la_analysis_in_progress'] = True
 
