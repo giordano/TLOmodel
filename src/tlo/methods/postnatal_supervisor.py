@@ -1186,7 +1186,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
                 # If care will be sought, check if they experience delay seeking care
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='postnatal')
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))

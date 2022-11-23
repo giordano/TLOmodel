@@ -32,6 +32,72 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
     plot_destination_folder = path
 
+    # def get_int_info(folder, intervention, intervention_years):
+    #
+    #     data = dict()
+    #     total = extract_results(
+    #         folder,
+    #         module="tlo.methods.labour",
+    #         key=intervention,
+    #         custom_generate_series=(
+    #             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['mother_id'].count()),
+    #         do_scaling=True
+    #     )
+    #     total_mean = analysis_utility_functions.get_mean_and_quants(total, intervention_years)
+    #
+    #     #for check in ['sf_check', 'avail']:
+    #     for check in ['avail']:
+    #         c_df = extract_results(
+    #             folder,
+    #             module="tlo.methods.labour",
+    #             key=intervention,
+    #             custom_generate_series=(
+    #                 lambda df: df.assign(year=df['date'].dt.year).groupby([check, 'year'])['mother_id'].count()),
+    #             do_scaling=True
+    #         )
+    #         check_df = c_df.fillna(0)
+    #         failed_check = check_df.loc[False]
+    #         failed_mean = analysis_utility_functions.get_mean_and_quants(failed_check, intervention_years)
+    #         prop_failed = [(x / y) * 100 for x, y in zip(failed_mean[0], total_mean[0])]
+    #         data.update({f'prop_failed_{check}': prop_failed})
+    #
+    #     for level in ['1a', '1b', '2']:
+    #         c_df = extract_results(
+    #             folder,
+    #             module="tlo.methods.labour",
+    #             key=intervention,
+    #             custom_generate_series=(
+    #                 lambda df: df.assign(year=df['date'].dt.year).groupby(['hsi_level', 'year'])['mother_id'].count()),
+    #             do_scaling=True
+    #         )
+    #         check_df = c_df.fillna(0)
+    #         lvl = check_df.loc[level]
+    #         lvl_mean = analysis_utility_functions.get_mean_and_quants(lvl, intervention_years)
+    #         prop_lvl = [(x / y) * 100 for x, y in zip(lvl_mean[0], total_mean[0])]
+    #         data.update({f'prop_at_{level}': prop_lvl})
+    #
+    #     for condition in ['severe_gest_htn', 'eclampsia']:
+    #         final_check = extract_results(
+    #             folder,
+    #             module="tlo.methods.labour",
+    #             key=intervention,
+    #             custom_generate_series=(
+    #                 lambda df: df.assign(year=df['date'].dt.year).groupby(['avail', 'condition', 'year'])[
+    #                     'mother_id'].count()),
+    #             do_scaling=True
+    #         )
+    #         test = final_check.loc[True, condition]
+    #         t = test.fillna(0)
+    #         t_mean = analysis_utility_functions.get_mean_and_quants(t, intervention_years)
+    #         data.update({f'{condition}_ints_delivered': sum(t_mean[0]) / len(intervention_years)})
+    #
+    #     return data
+    #
+    # #checking_spe = {k: get_int_info(results_folders[k], 'mg_sulph_treatment_check', intervention_years) for
+    # #                k in results_folders}
+    # checking_htn = {k: get_int_info(results_folders[k], 'iv_htns_treatment_check', intervention_years) for
+    #                 k in results_folders}
+
     # Get complication dataframes
     comp_dfs = {k: analysis_utility_functions.get_modules_maternal_complication_dataframes(results_folders[k]) for
                 k in results_folders}

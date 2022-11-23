@@ -90,9 +90,8 @@ class PNCMinSensitivityAnalysis(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Labour': {'alternative_pnc_coverage': True,
+            'Labour': {'pnc_sens_analysis_min': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 0.0,
                        'pnc_availability_probability': 0.0,
                        'analysis_year': 2010},
         }

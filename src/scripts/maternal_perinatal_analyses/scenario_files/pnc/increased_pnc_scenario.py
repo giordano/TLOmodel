@@ -91,8 +91,7 @@ class IncreasedPNCScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Labour': {'alternative_pnc_coverage': True,
-                       'pnc_availability_odds': 11.0,
-                       'pnc_availability_probability': 0.9,
+                       'pnc_availability_odds': 15.0,
                        'analysis_year': 2010},
             }
 

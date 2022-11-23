@@ -94,7 +94,6 @@ class SBAPerfectEMONC(BaseScenario):
                        'bemonc_availability': 0.9,
                        'bemonc_cons_availability': 1.0},
 
-            'PregnancySupervisor': {'analysis_year': 2022}
         }
 
 

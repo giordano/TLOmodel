@@ -665,36 +665,48 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         plot_agg_graph(hs_data, 'agg_anc_contacts', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',
                        'agg_anc_contacts')
 
+    # TODO: FIX
     if service_of_interest == 'pnc' or show_all_results:
         def get_hsi_counts_from_summary_logger(folder, sim_years, intervention_years):
-            hsi = extract_results(
-                folder,
-                module="tlo.methods.healthsystem.summary",
-                key="HSI_Event",
-                custom_generate_series=(
-                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
-                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
-                do_scaling=True)
 
-            hsi_n = extract_results(
-                folder,
-                module="tlo.methods.healthsystem.summary",
-                key="HSI_Event",
-                custom_generate_series=(
-                    lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
-                        year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
-                do_scaling=True)
+            # TODO: this is hacky - have to check that there actually are no visits
+            if 'min' in folder.name:
+                empty = [[0 for y in intervention_years],
+                         [0 for y in intervention_years],
+                         [0 for y in intervention_years]]
+                hsi_data = empty
+                mat_agg = [0, 0, 0]
+                hsi_data_neo = empty
+                neo_agg = [0, 0,0]
+            else:
+                hsi = extract_results(
+                    folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="HSI_Event",
+                    custom_generate_series=(
+                        lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                            year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
+                    do_scaling=True)
 
-            hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, sim_years)
-            hsi_data_int = analysis_utility_functions.get_mean_and_quants(
-                hsi.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
+                hsi_n = extract_results(
+                    folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="HSI_Event",
+                    custom_generate_series=(
+                        lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                            year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
+                    do_scaling=True)
 
-            mat_agg = [sum(hsi_data_int[0]), sum(hsi_data_int[1]), sum(hsi_data_int[2])]
+                hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, sim_years)
+                hsi_data_int = analysis_utility_functions.get_mean_and_quants(
+                    hsi.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
 
-            hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, sim_years)
-            hsi_data_neo_int = analysis_utility_functions.get_mean_and_quants(
-                hsi_n.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
-            neo_agg = [sum(hsi_data_neo_int[0]), sum(hsi_data_neo_int[1]), sum(hsi_data_neo_int[2])]
+                mat_agg = [sum(hsi_data_int[0]), sum(hsi_data_int[1]), sum(hsi_data_int[2])]
+
+                hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, sim_years)
+                hsi_data_neo_int = analysis_utility_functions.get_mean_and_quants(
+                    hsi_n.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
+                neo_agg = [sum(hsi_data_neo_int[0]), sum(hsi_data_neo_int[1]), sum(hsi_data_neo_int[2])]
 
             return {'pnc_visits_mat_trend': hsi_data,
                     'pnc_visits_mat_agg': mat_agg,

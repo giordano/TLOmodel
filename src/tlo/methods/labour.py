@@ -6,7 +6,7 @@ import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -576,6 +576,10 @@ class Labour(Module):
                         'alternative_pnc_coverage is true'),
         'sba_sens_analysis_max': Parameter(
             Types.BOOL, 'Signals that max coverage of SBA is being forced for sensitivity analysis'),
+        'pnc_sens_analysis_max': Parameter(
+            Types.BOOL, 'Signals that max coverage of PNC is being forced for sensitivity analysis'),
+        'pnc_sens_analysis_min': Parameter(
+            Types.BOOL, 'Signals that min coverage of SBA is being forced for sensitivity analysis'),
 
     }
 
@@ -1754,7 +1758,7 @@ class Labour(Module):
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
             if avail and sf_check:
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
-                pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
+                pregnancy_helper_functions.log_malternative_pnc_coverageet_need(self, 'mag_sulph', hsi_event)
 
     def assessment_and_treatment_of_hypertension(self, hsi_event, labour_stage):
         """
@@ -1782,9 +1786,11 @@ class Labour(Module):
                 self, hsi_event, self.item_codes_lab_consumables, core='iv_antihypertensives',
                 optional='iv_drug_equipment')
 
-            # TODO: REMOVE
-            if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or\
-                (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn'):
+            # TODO: ======================= REMOVE THIS LOGGING ============================================
+            if ((df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or
+                (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn')) and\
+                hsi_event.TREATMENT_ID == 'DeliveryCare_Basic':
+
                 logger.info(key='iv_htns_treatment_check', data={'mother_id': person_id,
                                                                  'avail': avail,
                                                                  'condition': df.at[person_id, 'ps_htn_disorders'],
@@ -1840,11 +1846,12 @@ class Labour(Module):
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
 
-            # TODO: REMOVE
-            logger.info(key='mg_sulph_treatment_check', data={'mother_id': person_id,
-                                                               'sf_check': sf_check,
-                                                               'avail': avail,
-                                                               'hsi_level': hsi_event.ACCEPTED_FACILITY_LEVEL})
+            # TODO: ======================= REMOVE THIS LOGGING ============================================
+            if (labour_stage == 'ip') and (hsi_event.TREATMENT_ID == 'DeliveryCare_Basic'):
+                logger.info(key='mg_sulph_treatment_check', data={'mother_id': person_id,
+                                                                  'sf_check': sf_check,
+                                                                  'avail': avail,
+                                                                  'hsi_level': hsi_event.ACCEPTED_FACILITY_LEVEL})
 
             if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
@@ -2538,7 +2545,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # Determine if the labouring woman will be delayed in attending for facility delivery
             if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='delivery')
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
@@ -3166,7 +3173,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'DeliveryCare_Comprehensive'
+        if timing == 'intrapartum':
+            t_id = 'DeliveryCare_Comprehensive'
+        else:
+            t_id = 'PostnatalCare_Comprehensive'
+
+        self.TREATMENT_ID = t_id
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.timing = timing
@@ -3178,8 +3190,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
+        if self.timing == 'intrapartum':
+            hsi = 'cemonc'
+        else:
+            hsi = 'pn'
         pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                  hsi_type='cemonc')
+                                                                  hsi_type=hsi)
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3266,7 +3282,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         # Women who delivered via caesarean have the appropriate footprint applied
-        if mni[person_id]['mode_of_delivery'] == 'caesarean_section':
+        if (self.timing == 'intrapartum') and (mni[person_id]['mode_of_delivery'] == 'caesarean_section'):
             return self.make_appt_footprint({'Csection': 1})
 
         # And those who didnt have surgery had the expected footprint overwritten
@@ -3370,23 +3386,36 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 mean = mean / (1.0 - mean)
                 scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+
                 params['odds_will_attend_pnc'] = scaled_intercept
 
                 # Then override the parameters which control neonatal care seeking
                 cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
-                params['prob_careseeking_for_complication_pn'] = cov_prob
                 params['prob_timings_pnc'] = [1.0, 0]
 
                 nb_params['prob_pnc_check_newborn'] = cov_prob
-                nb_params['prob_care_seeking_for_complication'] = cov_prob
                 nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
-
-                pn_params['prob_care_seeking_postnatal_emergency'] = cov_prob
-                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = cov_prob
 
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
+                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
+
+            if params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
+
+                self.module.la_linear_models['postnatal_check'] = LinearModel(
+                         LinearModelType.MULTIPLICATIVE,
+                         params['pnc_availability_probability'])
+                params['prob_timings_pnc'] = [params['pnc_availability_probability'],
+                                              1 - params['pnc_availability_probability']]
+                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
+
+                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
+                nb_params['prob_timings_pnc_newborns'] = [params['pnc_availability_probability'],
+                                                          1 - params['pnc_availability_probability']]
+                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
 
             if params['sba_sens_analysis_max']:
                 params['odds_deliver_at_home'] = 0.0

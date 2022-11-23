@@ -1538,7 +1538,7 @@ class PregnancySupervisor(Module):
 
         if care_seeking:
             # check for delay
-            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
+            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id, timing='preg_loss')
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
@@ -1861,7 +1861,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             if not df.at[person, 'hs_is_inpatient']:
 
                 # Determine if care seeking is delayed
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person, timing='preg_emerg')
 
                 from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
@@ -2183,12 +2183,21 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
                         params['anc_availability_probability']
 
+            if params['alternative_ip_anc_quality']:
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_an'] = \
+                    10_000
+
             if params['sens_analysis_max']:
                 for parameter in ['prob_seek_anc5', 'prob_seek_anc6', 'prob_seek_anc7', 'prob_seek_anc8']:
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = 1.0
 
                 self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
                     10_000
+
+                params['prob_seek_care_pregnancy_complication'] = 1.0
+
+            if params['sens_analysis_min']:
+                params['prob_seek_care_pregnancy_complication'] = 0.0
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

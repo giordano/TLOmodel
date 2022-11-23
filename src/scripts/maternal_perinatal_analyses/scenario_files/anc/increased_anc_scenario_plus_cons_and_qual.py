@@ -92,8 +92,10 @@ class TestScenario(BaseScenario):
         return {
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
+                                    'alternative_ip_anc_quality': True,
                                     'anc_availability_odds': 9.0,
                                     'anc_availability_probability': 1.0,
+                                    'ip_anc_availability_probability': 1.0,
                                     'analysis_year': 2022}}
 
 

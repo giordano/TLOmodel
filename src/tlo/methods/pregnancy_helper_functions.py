@@ -78,6 +78,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
         # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
@@ -148,6 +149,7 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
         for k in analysis_dict:
@@ -312,7 +314,7 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     mni[individual_id][mni_variable] = date
 
 
-def check_if_delayed_careseeking(self, individual_id):
+def check_if_delayed_careseeking(self, individual_id, timing):
     """
     This function checks if a woman who is seeking care for treatment of a pregnancy/postnatal related emergency will
     experience either a type 1 or type 2 delay
@@ -324,7 +326,13 @@ def check_if_delayed_careseeking(self, individual_id):
     if individual_id not in mni or mni[individual_id]['delay_one_two']:
         return
 
-    if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
+    if ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].params['sens_analysis_max']) or \
+       ((timing == 'postnatal') and self.sim.modules['Labour'].params['pnc_sens_analysis_max']) or \
+       ((timing == 'delivery') and self.sim.modules['Labour'].params['sba_sens_analysis_max']):
+        mni[individual_id]['delay_one_two'] = False
+        return
+
+    elif self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
         mni[individual_id]['delay_one_two'] = True
 
 
