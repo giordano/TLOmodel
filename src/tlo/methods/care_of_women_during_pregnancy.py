@@ -1431,7 +1431,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Similarly more mild bleeding or PROM without infection occuring prior to 37 weeks will not be delivered until
         # they have reached that gestation
-        elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage != 'severe')) or
+        elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate')) or
               (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis)) and \
             (mother.ps_gestational_age_in_weeks < 37):
             beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))

@@ -494,6 +494,9 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risks.update(risk)
 
             elif self == self.sim.modules['Labour']:
+                if cause == 'antenatal_sepsis':
+                    cause = 'intrapartum_sepsis'
+
                 if cause == 'secondary_postpartum_haemorrhage':
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
@@ -501,6 +504,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
+
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
                         df.loc[[individual_id]],
