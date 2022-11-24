@@ -769,9 +769,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Only women who are not on treatment OR are determined to have severe disease whilst on treatment are admitted
         if hypertension_diagnosed or proteinuria_diagnosed:
-            if (((df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') and mni[person_id]['new_onset_spe']) or
-                (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or
-               not df.at[person_id, 'ac_gest_htn_on_treatment']):
+            if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or\
+                (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or \
+               not df.at[person_id, 'ac_gest_htn_on_treatment']:
 
                 df.at[person_id, 'ac_to_be_admitted'] = True
 
@@ -1422,27 +1422,18 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         mother = df.loc[individual_id]
 
-        # Women with severe pre-eclampsia/eclampsia, severe haemorrhage, moderate haemorrhage at later gestation,
-        # premature rupture of membranes complicated by chorioamnionitis, or at later gestation can be delivered
-        # immediately and will only require a day in the antenatal ward for treatment before being admitted for
-        # delivery
-        if (mother.ps_htn_disorders == 'severe_pre_eclamp') or \
-            (mother.ps_htn_disorders == 'eclampsia') or \
-            mother.ps_placental_abruption or \
-            (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or \
-            (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
-             (mother.ps_gestational_age_in_weeks >= 37)) or\
-            (mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis) or \
-            (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis and
-             (mother.ps_gestational_age_in_weeks >= 34)):
-            beddays = 1
+        # Women with abruption, praevia or chorioamnionitis prior to 28 weeks will not be delivered until they have
+        # reached that gestation
+        if (mother.ps_placental_abruption or
+            ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or
+             mother.ps_chorioamnionitis)) and (mother.ps_gestational_age_in_weeks < 28):
+            beddays = int((28 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
-        # Otherwise women will remain as an inpatient until their gestation is greater, to improve newborn outcomes
-        elif (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
-              (mother.ps_gestational_age_in_weeks < 37)) or (mother.ps_premature_rupture_of_membranes and
-                                                             not mother.ps_chorioamnionitis and
-                                                             (mother.ps_gestational_age_in_weeks < 34)):
-
+        # Similarly more mild bleeding or PROM without infection occuring prior to 37 weeks will not be delivered until
+        # they have reached that gestation
+        elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage != 'severe')) or
+              (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis)) and \
+            (mother.ps_gestational_age_in_weeks < 37):
             beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         else:
@@ -2230,6 +2221,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # check if she will experience delayed care
         pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='an')
 
+        # store the GA at which CS will most likely be scheduled for in those for which it is indicated
+        assumed_weeks_till_delivery = 37
+
         # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
         # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
 
@@ -2356,39 +2350,40 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         if mother.ps_antepartum_haemorrhage != 'none':
             # ---------------------- APH SECONDARY TO PLACENTAL ABRUPTION -----------------------------------------
-            if mother.ps_placental_abruption:
+            if mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks >= 28:
                 # Women experiencing placenta abruption at are admitted for immediate
                 # caesarean delivery due to high risk of mortality/morbidity
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                 mni[person_id]['cs_indication'] = 'an_aph_pa'
+
+            elif mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks < 28:
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
+                mni[person_id]['cs_indication'] = 'an_aph_pa'
+                assumed_weeks_till_delivery = 28
 
             # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
             if mother.ps_placenta_praevia:
                 # The treatment plan for a woman with placenta praevia is dependent on both the severity of the
                 # bleed and her current gestation at the time of bleeding
 
-                if mother.ps_antepartum_haemorrhage == 'severe':
-
+                if ((mother.ps_antepartum_haemorrhage == 'severe') and mother.ps_gestational_age_in_weeks >= 28) or \
+                   (mother.ps_gestational_age_in_weeks >= 37):
                     # Women experiencing severe bleeding are admitted immediately for caesarean section
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                     mni[person_id]['cs_indication'] = 'an_aph_pp'
 
-                elif mother.ps_gestational_age_in_weeks >= 37:
-                    # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
-                    # for caesarean
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
-                    mni[person_id]['cs_indication'] = 'an_aph_pp'
-
-                elif mother.ps_gestational_age_in_weeks < 37:
-                    # Women with more mild bleeding remain as inpatients until their gestation has increased and
-                    # then will be delivered by caesarean - (no risk of death associated with mild/moderate bleeds)
+                elif (mother.ps_antepartum_haemorrhage == 'severe') and (mother.ps_gestational_age_in_weeks <= 28):
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                     mni[person_id]['cs_indication'] = 'an_aph_pp'
+                    assumed_weeks_till_delivery = 28
 
-                    # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
+                elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
+                    mni[person_id]['cs_indication'] = 'an_aph_pp'
+                    assumed_weeks_till_delivery = 37
 
             if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none':
-                logger.info(key='error', data=f'Mother {person_id} was not admitted for delviery following APH')
+                logger.info(key='error', data=f'Mother {person_id} was not admitted for delivery following APH')
 
         # ===================================== INITIATE TREATMENT FOR PROM =======================================
         # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
@@ -2401,17 +2396,23 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
             # increased risk of morbidity and mortality
-            if mother.ps_gestational_age_in_weeks >= 34:
+            if mother.ps_gestational_age_in_weeks >= 37:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
             # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
-            elif mother.ps_gestational_age_in_weeks < 34:
+            elif mother.ps_gestational_age_in_weeks < 37:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
+                assumed_weeks_till_delivery = 37
 
         # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
         # Women with chorioamnionitis are admitted for delivery (and will receive antibiotics in the labour module)
         if mother.ps_chorioamnionitis:
-            df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
+            if mother.ps_gestational_age_in_weeks >= 28:
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
+
+            elif mother.ps_gestational_age_in_weeks <= 28:
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
+                assumed_weeks_till_delivery = 28
 
         # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
         # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
@@ -2428,8 +2429,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
             # for delivery (assuming delivery is indicated to occur at 37 weeks)
-            if mother.ps_gestational_age_in_weeks < 37:
-                days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+            if mother.ps_gestational_age_in_weeks < assumed_weeks_till_delivery:
+                days_until_safe_for_cs = int((assumed_weeks_till_delivery * 7) -
+                                             (mother.ps_gestational_age_in_weeks * 7))
             else:
                 days_until_safe_for_cs = 1
 

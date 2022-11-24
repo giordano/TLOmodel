@@ -1503,7 +1503,7 @@ class Labour(Module):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self, individual_id=individual_id)
+            self, individual_id=individual_id, timing='postnatal')
 
         # Log df row containing complications and treatments to calculate met need
 
@@ -1939,8 +1939,7 @@ class Labour(Module):
         if (
             df.at[person_id, 'la_sepsis'] or
             df.at[person_id, 'la_sepsis_pp'] or
-            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis'] and
-             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')) or
+            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis']) or
            (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
 
             # run HCW check
@@ -2670,7 +2669,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self.module, individual_id=individual_id)
+            self.module, individual_id=individual_id, timing='intrapartum')
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -2730,6 +2729,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Finally, reset some of the treatment variables
         if not potential_cause_of_death:
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'ac_iv_anti_htn_treatment'] = False
+            df.at[individual_id, 'ac_mag_sulph_treatment'] = False
             df.at[individual_id, 'la_eclampsia_treatment'] = False
             df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
 
