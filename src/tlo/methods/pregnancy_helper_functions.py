@@ -326,11 +326,14 @@ def check_if_delayed_careseeking(self, individual_id, timing):
     if individual_id not in mni or mni[individual_id]['delay_one_two']:
         return
 
-    if ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']) or \
-       ((timing == 'postnatal') and self.sim.modules['Labour'].current_parameters['pnc_sens_analysis_max']) or \
-       ((timing == 'delivery') and self.sim.modules['Labour'].current_parameters['sba_sens_analysis_max']):
+    if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress'] and \
+        ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']):
         mni[individual_id]['delay_one_two'] = False
-        return
+
+    elif self.sim.modules['Labour'].current_parameters['la_analysis_in_progress'] and \
+        (((timing == 'postnatal') and self.sim.modules['Labour'].current_parameters['pnc_sens_analysis_max']) or
+         ((timing == 'delivery') and self.sim.modules['Labour'].current_parameters['sba_sens_analysis_max'])):
+        mni[individual_id]['delay_one_two'] = False
 
     elif self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
         mni[individual_id]['delay_one_two'] = True
