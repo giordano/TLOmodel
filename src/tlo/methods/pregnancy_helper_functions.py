@@ -468,7 +468,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     if mother.ps_chorioamnionitis and (timing != 'postnatal'):
         causes.append('antenatal_sepsis')
 
-    if mother.la_sepsis or (timing == 'intrapartum'):
+    if mother.la_sepsis and (timing == 'intrapartum'):
         causes.append('intrapartum_sepsis')
 
     if (mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum) and (timing == 'postnatal'):
