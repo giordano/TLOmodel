@@ -1179,7 +1179,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
     la_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'primary_postpartum_haemorrhage', birth_data_ex2010[0], la_comps, 1000, sim_years)
+        'primary_postpartum_haemorrhage', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     pn_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
         'secondary_postpartum_haemorrhage', birth_data_ex2010[0], pn_comps, 1000, sim_years)
