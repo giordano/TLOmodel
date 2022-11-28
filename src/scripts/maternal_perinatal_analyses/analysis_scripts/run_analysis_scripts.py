@@ -30,6 +30,15 @@ intervention_years = list(range(2010, 2015))
 sim_years = list(range(2010, 2015))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 
+maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
+    scenario_file_dict=scenario_dict1,
+    outputspath=output_path,
+    sim_years=sim_years,
+    intervention_years=intervention_years,
+    service_of_interest='anc',
+    show_all_results=True,
+    scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
+
 compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
         scenario_file_dict=scenario_dict1,
         outputspath=output_path,
@@ -38,14 +47,7 @@ compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_
         service_of_interest='anc',
         scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
 
-maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
-         scenario_file_dict=scenario_dict1,
-         outputspath=output_path,
-         sim_years=sim_years,
-         intervention_years=intervention_years,
-         service_of_interest='anc',
-         show_all_results=True,
-         scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
+
 
 
 
