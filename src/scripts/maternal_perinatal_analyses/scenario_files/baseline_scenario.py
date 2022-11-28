@@ -34,7 +34,7 @@ class BaselineScenario(BaseScenario):
         self.end_date = Date(2015, 1, 1)
         self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 20
+        self.runs_per_draw = 15
 
     def log_configuration(self):
         return {
@@ -91,7 +91,6 @@ class BaselineScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'PregnancySupervisor': {'analysis_year': 2010},
-
             'Labour': {'analysis_year': 2010},
         }
 
