@@ -37,21 +37,21 @@ compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_
         intervention_years=intervention_years,
         service_of_interest='anc',
         scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
-#
-# maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
-#          scenario_file_dict=scenario_dict1,
-#          outputspath=output_path,
-#          sim_years=sim_years,
-#          intervention_years=intervention_years,
-#          service_of_interest='anc',
-#          show_all_results=True,
-#          scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
-#
-#
-#
-# met_need.met_need_and_contributing_factors_for_deaths(scenario_dict1, output_path, intervention_years,
-#                                                           'anc')
-#
+
+maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
+         scenario_file_dict=scenario_dict1,
+         outputspath=output_path,
+         sim_years=sim_years,
+         intervention_years=intervention_years,
+         service_of_interest='anc',
+         show_all_results=True,
+         scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
+
+
+
+met_need.met_need_and_contributing_factors_for_deaths(scenario_dict1, output_path, intervention_years,
+                                                          'anc')
+
 
 
 
