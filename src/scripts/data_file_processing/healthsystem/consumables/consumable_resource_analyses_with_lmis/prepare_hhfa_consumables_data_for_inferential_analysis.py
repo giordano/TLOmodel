@@ -697,13 +697,14 @@ merged_df2 = pd.merge(merged_df1, fac_gis[['fac_code', 'lat', 'long', 'lat_dh', 
 item_categories = pd.read_excel(path_to_files_in_the_tlo_dropbox / '1 processing/items_hhfa.xlsx',
                                 index_col=0, sheet_name = "items_hhfa")
 
-cols = ['drug_class_rx_list', 'item', 'mode_administration', 'program']
+cols = ['drug_class_rx_list', 'item', 'mode_administration', 'program', 'item_type']
 df_for_regression = pd.merge(merged_df2,item_categories[cols], how = 'left', on = 'item')
 
 cond = df_for_regression.item.str.contains('art_component')
 df_for_regression.loc[cond, 'program'] = 'hiv'
 df_for_regression.loc[cond, 'mode_administration'] = 'oral'
 df_for_regression.loc[cond, 'drug_class_rx_list'] = 'antiretroviral'
+df_for_regression.loc[cond, 'item_type'] = 'drug'
 
 # Clean program to reduce the number of categories
 cond_resp = df_for_regression.program == 'respiratory illness'
@@ -792,7 +793,7 @@ fac_vars_binary = ['outpatient_only', 'fac_urban',
                 'drug_transport_local_supplier','drug_transport_higher_level_supplier','drug_transport_self','drug_transport_other',
                 'referral_system_from_community','referrals_to_other_facs',
                 'mathealth_label_and_expdate_visible', 'mathealth_expdate_fefo',
-                'childhealth_label_and_expdate_visible', 'childhealth_expdate_fefo']
+                'childhealth_label_and_expdate_visible']
 
 binary_dict = {'yes': 1, 'no': 0}
 
