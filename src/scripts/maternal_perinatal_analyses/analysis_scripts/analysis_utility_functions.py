@@ -432,6 +432,10 @@ def return_pregnancy_data_from_multiple_scenarios(results_folders, sim_years, in
     """
 
     def extract_pregnancies(folder):
+        print(folder.name)
+        if folder.name == 'min_sba_sensitivity_analysis-2022-11-28T163122Z':
+            x='y'
+
         pr = extract_results(
             folder,
             module="tlo.methods.contraception",

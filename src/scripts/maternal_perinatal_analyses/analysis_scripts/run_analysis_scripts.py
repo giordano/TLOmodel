@@ -3,19 +3,19 @@ import maternal_newborn_health_analysis_v2
 import met_need
 
 # create dict of some scenario 'title' and the filename of the associated title
-# scenario_dict1 = {'Status Quo': 'baseline_scenario',
-#                   'Intervention 1': 'increased_anc_scenario',
-#                   'Intervention 2': 'anc_scenario_plus_cons_and_qual',
-#                   'Sensitivity (min)': 'min_anc_sensitivity_scenario',
-#                   'Sensitivity (max)': 'max_anc_sensitivity_scenario',
-#                  }
-#
-# scenario_dict2 = {'Status Quo': 'baseline_scenario',
-#                   'Intervention 1': 'bemonc',
-#                   'Intervention 2': 'cemonc',
-#                   'Sensitivity (min)': 'min_sba_sensitivity_analysis',
-#                   'Sensitivity (max)': 'max_sba_sensitivity_analysis',
-#                  }
+scenario_dict1 = {'Status Quo': 'baseline_scenario',
+                  'Intervention 1': 'increased_anc_scenario',
+                  'Intervention 2': 'anc_scenario_plus_cons_and_qual',
+                  'Sensitivity (min)': 'min_anc_sensitivity_scenario',
+                  'Sensitivity (max)': 'max_anc_sensitivity_scenario',
+                 }
+
+scenario_dict2 = {'Status Quo': 'baseline_scenario',
+                  'Intervention 1': 'bemonc',
+                  'Intervention 2': 'cemonc',
+                  'Sensitivity (min)': 'min_sba_sensitivity_analysis',
+                  'Sensitivity (max)': 'max_sba_sensitivity_analysis',
+                 }
 
 scenario_dict3 = {'Status Quo': 'baseline_scenario',
                   'Intervention 1': 'increased_pnc_scenario',
@@ -30,57 +30,58 @@ intervention_years = list(range(2010, 2015))
 sim_years = list(range(2010, 2015))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 
-
-
-maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
-         scenario_file_dict=scenario_dict3,
-         outputspath=output_path,
-         sim_years=sim_years,
-         intervention_years=intervention_years,
-         service_of_interest='pnc',
-         show_all_results=True,
-         scen_colours=['plum', 'purple', 'deeppink', 'crimson', 'maroon'])
-
-compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
-        scenario_file_dict=scenario_dict3,
-        outputspath=output_path,
-        sim_years=sim_years,
-        intervention_years=intervention_years,
-        service_of_interest='pnc',
-        scen_colours=['plum', 'purple', 'deeppink', 'crimson', 'maroon'])
-
-met_need.met_need_and_contributing_factors_for_deaths(scenario_dict3, output_path, intervention_years,
-                                                          'pnc')
-
-
-
-
-# for scenario_dict, service, colours in zip(#[scenario_dict1, scenario_dict2, scenario_dict3],
-#                                             [scenario_dict3],
-#                                            ['pnc'],
-#                                            #[['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
-#                                             #['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen'],
-#                                             ['plum', 'purple', 'deeppink', 'crimson', 'maroon']):
+# maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
+#     scenario_file_dict=scenario_dict1,
+#     outputspath=output_path,
+#     sim_years=sim_years,
+#     intervention_years=intervention_years,
+#     service_of_interest='anc',
+#     show_all_results=True,
+#     scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
 #
-#     service_of_interest = service
-#     scen_colours = colours
-#
-#     maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
-#          scenario_file_dict=scenario_dict,
-#          outputspath=output_path,
-#          sim_years=sim_years,
-#          intervention_years=intervention_years,
-#          service_of_interest=service_of_interest,
-#          show_all_results=True,
-#          scen_colours=scen_colours)
-#
-#     compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
-#         scenario_file_dict=scenario_dict,
+# compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
+#         scenario_file_dict=scenario_dict1,
 #         outputspath=output_path,
 #         sim_years=sim_years,
 #         intervention_years=intervention_years,
-#         service_of_interest=service_of_interest,
-#         scen_colours=scen_colours)
+#         service_of_interest='anc',
+#         scen_colours=['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'])
 #
-#     met_need.met_need_and_contributing_factors_for_deaths(scenario_dict, output_path, intervention_years,
-#                                                           service_of_interest)
+#
+#
+#
+#
+# met_need.met_need_and_contributing_factors_for_deaths(scenario_dict1, output_path, intervention_years,
+#                                                           'anc')
+
+
+
+
+for scenario_dict, service, colours in zip([scenario_dict2],
+                                           ['sba'],
+                                           [#['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange']]):
+                                            ['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen']]):
+                                            #['plum', 'purple', 'deeppink', 'crimson', 'maroon']]):
+
+    service_of_interest = service
+    scen_colours = colours
+
+    # maternal_newborn_health_analysis_v2.run_maternal_newborn_health_analysis(
+    #      scenario_file_dict=scenario_dict,
+    #      outputspath=output_path,
+    #      sim_years=sim_years,
+    #      intervention_years=intervention_years,
+    #      service_of_interest=service_of_interest,
+    #      show_all_results=True,
+    #      scen_colours=scen_colours)
+    #
+    compare_incidence_rates_between_scenarios_v2.compare_key_rates_between_multiple_scenarios(
+        scenario_file_dict=scenario_dict,
+        outputspath=output_path,
+        sim_years=sim_years,
+        intervention_years=intervention_years,
+        service_of_interest=service_of_interest,
+        scen_colours=scen_colours)
+
+    # met_need.met_need_and_contributing_factors_for_deaths(scenario_dict, output_path, intervention_years,
+    #                                                       service_of_interest)

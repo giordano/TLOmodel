@@ -34,7 +34,7 @@ class SBAPerfectCEMONC(BaseScenario):
         self.end_date = Date(2015, 1, 1)
         self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 20
+        self.runs_per_draw = 15
 
     def log_configuration(self):
         return {

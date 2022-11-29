@@ -435,7 +435,7 @@ def calculate_risk_of_death_from_causes(self, risks):
         return False
 
 
-def check_for_risk_of_death_from_cause_maternal(self, individual_id):
+def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     """
     This function calculates the risk of death associated with one or more causes being experience by an individual and
     determines if they will die and which of a number of competing cause is the primary cause of death
@@ -451,35 +451,36 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
     mother = df.loc[individual_id]
 
     # Cycle through mothers properties to ascertain what she is at risk of death from and store in a list
-
-    if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']) or \
-       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
+    if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+       (timing != 'postnatal')) or \
+       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+       (timing == 'postnatal')):
         causes.append('severe_pre_eclampsia')
 
-    if mother.ps_htn_disorders == 'eclampsia' or mother.pn_htn_disorders == 'eclampsia':
+    if ((mother.ps_htn_disorders == 'eclampsia') and (timing != 'postnatal')) or \
+       ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
         causes.append('eclampsia')
 
-    if (((mother.ps_antepartum_haemorrhage != 'none') or
-         (mother.la_antepartum_haem != 'none')) and (self != self.sim.modules['PostnatalSupervisor'])):
+    if ((mother.ps_antepartum_haemorrhage != 'none') and (timing != 'postnatal')) or \
+       ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
         causes.append('antepartum_haemorrhage')
 
-    if mother.ps_chorioamnionitis and (self == self.sim.modules['PregnancySupervisor']):
+    if mother.ps_chorioamnionitis and (timing != 'postnatal'):
         causes.append('antenatal_sepsis')
 
-    if mother.la_uterine_rupture:
-        causes.append('uterine_rupture')
-
-    if mother.la_sepsis or ((self == self.sim.modules['Labour']) and
-                            mother.ps_chorioamnionitis and mother.ac_admitted_for_immediate_delivery != 'none'):
+    if mother.la_sepsis and (timing == 'intrapartum'):
         causes.append('intrapartum_sepsis')
 
-    if mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum:
+    if (mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum) and (timing == 'postnatal'):
         causes.append('postpartum_sepsis')
 
-    if mother.la_postpartum_haem:
+    if mother.la_uterine_rupture and (timing == 'intrapartum'):
+        causes.append('uterine_rupture')
+
+    if mother.la_postpartum_haem and (timing == 'postnatal'):
         causes.append('postpartum_haemorrhage')
 
-    if mother.pn_postpartum_haem_secondary:
+    if mother.pn_postpartum_haem_secondary and (timing == 'postnatal'):
         causes.append('secondary_postpartum_haemorrhage')
 
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
@@ -493,6 +494,9 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                 risks.update(risk)
 
             elif self == self.sim.modules['Labour']:
+                if cause == 'antenatal_sepsis':
+                    cause = 'intrapartum_sepsis'
+
                 if cause == 'secondary_postpartum_haemorrhage':
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
@@ -500,6 +504,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
+
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
                         df.loc[[individual_id]],

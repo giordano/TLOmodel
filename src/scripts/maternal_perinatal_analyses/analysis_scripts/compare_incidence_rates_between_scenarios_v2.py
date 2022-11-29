@@ -768,7 +768,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     #  Postpartum Haemorrhage...
     def get_pph_data(total_births_per_year, comps_df, years):
         la_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
-            'primary_postpartum_haemorrhage', total_births_per_year, comps_df['labour'], 1000, years)
+            'primary_postpartum_haemorrhage', total_births_per_year, comps_df['postnatal_supervisor'], 1000, years)
         pn_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
             'secondary_postpartum_haemorrhage', total_births_per_year, comps_df['postnatal_supervisor'],
             1000, years)
