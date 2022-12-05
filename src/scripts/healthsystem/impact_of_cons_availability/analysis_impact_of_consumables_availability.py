@@ -93,6 +93,33 @@ dalys_extracted = extract_results(
 dalys_summarized = summarize(dalys_extracted)
 dalys_summarized = dalys_summarized.loc[dalys_summarized.index.isin(('2010-2014', '2015-2019'))]
 
+
+
+# DALYS with disease split
+
+def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
+    """Construct a series with index disease and value of the total of DALYS (stacked) from the
+    `dalys_stacked` key logged in `tlo.methods.healthburden`.
+    N.B. This limits the time period of interest to 2010-2019"""
+    _, calperiodlookup = make_calendar_period_lookup()
+
+    return _df.loc[(_df['year'] >= 2010) & (_df['year'] < 2020)]\
+             .drop(columns=['date', 'sex', 'age_range', 'year'])\
+             .sum(axis=0)\
+
+dalys_extracted_by_disease = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked",
+    custom_generate_series=_extract_dalys_by_disease,
+    do_scaling=True
+)
+
+dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
+
+
+
+
 # %% Creating some plots:
 
 fig, ax = plt.subplots()
