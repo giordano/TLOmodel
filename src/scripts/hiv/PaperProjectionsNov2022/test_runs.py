@@ -32,7 +32,7 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 5
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2036, 1, 1)
+        self.end_date = Date(2021, 1, 1)
         self.pop_size = 100000
         self.number_of_draws = 11
         self.runs_per_draw = 1
