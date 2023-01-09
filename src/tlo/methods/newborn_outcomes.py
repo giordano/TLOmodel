@@ -112,6 +112,11 @@ class NewbornOutcomes(Module):
             Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
         'cfr_late_onset_sepsis': Parameter(
             Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
+        'prob_mild_impairment_post_sepsis': Parameter(
+            Types.LIST, 'probability of the mild neurodevelopmental impairment in survivors of sepsis'),
+        'prob_mod_severe_impairment_post_sepsis': Parameter(
+            Types.LIST, 'probability of the moderate or severe neurodevelopmental impairment in survivors of '
+                        'sepsis'),
 
         # NOT BREATHING AT BIRTH....
         'prob_failure_to_transition': Parameter(
@@ -218,40 +223,6 @@ class NewbornOutcomes(Module):
             Types.LIST, 'probability that a neonate will receive a full postnatal check'),
         'prob_timings_pnc_newborns': Parameter(
             Types.LIST, 'probabilities that a postnatal check will happen before or after 48 hours alive'),
-
-        # DISABILITY WEIGHT PROBABILITIES
-        'probs_for_mild_preterm_daly_wts_<32wks': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
-                        'mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or '
-                        'DALY weight 371 ("mild motor impairment")'),
-        'probs_for_sev_preterm_daly_wts_<32wks': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
-                        'moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or '
-                        'DALY weight 383 ("severe motor impairment")'),
-        'probs_for_mild_preterm_daly_wts_>32wks': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at greater than 32 weeks AND experiencing '
-                        'mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or '
-                        'DALY weight 371 ("mild motor impairment")'),
-        'probs_for_sev_preterm_daly_wts_>32wks': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
-                        'moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or '
-                        'DALY weight 383 ("severe motor impairment")'),
-        'probs_for_mild_enceph_daly_wts': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND '
-                        'experiencing mild impairment will accrue the DALY weight 419 ("mild motor and cognitive'
-                        ' impairment") or DALY weight 416 ("mild motor impairment")'),
-        'probs_for_sev_enceph_daly_wts': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND '
-                        'experiencing moderate/severe impairment will accrue the DALY weight 411 ("moderate motor  '
-                        ' impairment") or DALY weight 410 ("severe motor impairment")'),
-        'probs_for_mild_sepsis_daly_wts': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops sepsis AND '
-                        'experiencing mild impairment will accrue the DALY weight 411 ("mild motor and cognitive'
-                        ' impairment") or DALY weight 431 ("mild motor impairment")'),
-        'probs_for_sev_sepsis_daly_wts': Parameter(
-            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops sepsis AND '
-                        'experiencing moderate/severe impairment will accrue the DALY weight 438 ("moderate motor  '
-                        ' impairment") or DALY weight 435 ("severe motor impairment")'),
 
         # TREATMENT...
         'treatment_effect_inj_abx_sep': Parameter(
@@ -798,45 +769,47 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'Child {individual_id} will have now their DALYs calculated following '
                                          f'complications after birth')
 
+        # No available data to differentiate between probability of mild_motor_and_cog and mild_motor for any condition
+        prob_mild_disab_type = [0.5, 0.5]
+
         if individual_id not in nci:
             return
 
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_preterm_daly_wts_<32wks'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_preterm_daly_wts_<32wks'])
+                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
 
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_preterm_daly_wts_>32wks'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_preterm_daly_wts_>32wks'])
+                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
 
         if child.nb_encephalopathy != 'none':
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_enceph_daly_wts'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_enceph_daly_wts'])
+                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
 
-        # n.b. no data data on sepsis long term outcomes, using encephalopathy data as a proxy for now...
         if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
-            if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
+            if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_sepsis_daly_wts'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
 
-            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
+            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_sepsis_daly_wts'])
+                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
 
         del nci[individual_id]
 
