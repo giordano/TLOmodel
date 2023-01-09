@@ -606,7 +606,7 @@ class NewbornOutcomes(Module):
             # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
 
-        if result:
+        if result and (df.at[child_id, 'nb_encephalopathy'] == 'none'):
             # For a newborn who is encephalopathic we then set the severity using a weighted probability derived from
             # the prevalence of severity of encephalopathy in the encephalopathic population
             severity_enceph = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
@@ -1281,7 +1281,7 @@ class NewbornOutcomes(Module):
                 if m['delivery_setting'] == 'health_centre':
                     f_level = '1a'
                 elif m['delivery_setting'] == 'hospital':
-                    f_level = self.rng.choice(['1a', '1b'])
+                    f_level = self.rng.choice(['1b', '2'])
 
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
                     self, person_id=child_id, facility_level_of_this_hsi=f_level)
