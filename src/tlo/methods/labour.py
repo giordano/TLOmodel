@@ -2109,7 +2109,6 @@ class Labour(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.current_parameters
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # We log the log the required consumables and condition the surgery happening on the availability of the
         # first consumable in this package, the anaesthetic required for the surgery
@@ -2121,25 +2120,16 @@ class Labour(Module):
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',
                                                                                    hsi_event=hsi_event)
 
-        if not mni[person_id]['retained_placenta']:
+        # determine if uterine preserving surgery will be successful
+        treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
-            # We apply a probability that surgical techniques will be effective
-            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
-
-            # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'surgery')
-
-            # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif not treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'hysterectomy')
-                df.at[person_id, 'la_has_had_hysterectomy'] = True
-
-        # Next we apply the effect of surgical treatment for women with retained placenta
-        elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
-                                                                                     'manual_removal_placenta')
-              and sf_check and avail):
+        # If resources are available and the surgery is a success then a hysterectomy does not occur
+        if treatment_success_pph and avail and sf_check:
             self.pph_treatment.set(person_id, 'surgery')
+
+        elif not treatment_success_pph and avail and sf_check:
+            self.pph_treatment.set(person_id, 'hysterectomy')
+            df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
