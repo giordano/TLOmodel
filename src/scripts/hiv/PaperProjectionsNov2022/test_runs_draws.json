@@ -1,0 +1,108 @@
+{
+  "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/test_runs.py",
+  "scenario_seed": 5,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 953453411,
+      "parameters": {
+        "Tb": {
+          "beta": 0.14
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 236996814,
+      "parameters": {
+        "Tb": {
+          "beta": 0.16
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1592283119,
+      "parameters": {
+        "Tb": {
+          "beta": 0.18
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1423042237,
+      "parameters": {
+        "Tb": {
+          "beta": 0.2
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 887852006,
+      "parameters": {
+        "Tb": {
+          "beta": 0.22
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 1562238070,
+      "parameters": {
+        "Tb": {
+          "beta": 0.24
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 1797920144,
+      "parameters": {
+        "Tb": {
+          "beta": 0.26
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 2059200585,
+      "parameters": {
+        "Tb": {
+          "beta": 0.28
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 2097710088,
+      "parameters": {
+        "Tb": {
+          "beta": 0.3
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 385778404,
+      "parameters": {
+        "Tb": {
+          "beta": 0.32
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 479936231,
+      "parameters": {
+        "Tb": {
+          "beta": 0.34
+        }
+      }
+    }
+  ],
+  "commit": "831482f05b6771c77bb31cfcac986c035de89f0e",
+  "github": "https://github.com/UCL/TLOmodel/blob/831482f05b6771c77bb31cfcac986c035de89f0e/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
+}

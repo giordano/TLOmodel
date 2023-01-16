@@ -408,7 +408,8 @@ class Tb(Module):
         p = self.parameters
 
         # assume cases distributed equally across districts
-        p["who_incidence_estimates"] = workbook["WHO_activeTB2020"]
+        # todo updated WHO data
+        p["who_incidence_estimates"] = workbook["WHO_activeTB2023"]
 
         # use NTP reported treatment rates as testing rates (perfect referral)
         p["rate_testing_active_tb"] = workbook["NTP2019"]
@@ -975,8 +976,6 @@ class Tb(Module):
         symptoms and smear status are assigned in the TbActiveEvent
         """
         # todo changed this to assign all 2010 tb cases
-        # todo may allow sufficient onward transmission so no big drops!
-
         df = population.props
         rng = self.rng
         now = self.sim.date
@@ -2689,7 +2688,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
         # # todo remove
-        # print(new_tb_cases)
+        print("active", new_tb_cases)
+        scheduled_tb_cases = len(
+            df[(df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))]
+        )
+        print("scheduled", scheduled_tb_cases)
 
         # number of latent cases
         new_latent_cases = len(

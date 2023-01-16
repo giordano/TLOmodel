@@ -31,7 +31,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # TB WHO data
 xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
 
-data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
 data_tb_who = data_tb_who.loc[
     (data_tb_who.year >= 2010)
 ]  # include only years post-2010
@@ -129,7 +129,8 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
+results_folder = get_scenario_outputs("test_runs.py", outputspath)[-1]
 # results_folder = Path("./outputs/t.mangal@imperial.ac.uk/best_calibration_runs")
 
 # Declare path for output graphs from this script

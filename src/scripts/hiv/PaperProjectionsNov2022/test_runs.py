@@ -30,12 +30,12 @@ class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = 5
+        self.seed = 15
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
-        self.pop_size = 100000
+        self.end_date = Date(2019, 1, 1)
+        self.pop_size = 20000
         self.number_of_draws = 11
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -69,7 +69,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'beta': [0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34][draw_number]
+                'beta': [0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38][draw_number]
             },
         }
 

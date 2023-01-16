@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
-popsize = 50000
+end_date = Date(2015, 1, 1)
+popsize = 5000
 
 scenario = 0
 
@@ -37,14 +37,14 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem.summary": logging.INFO,
+        # "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 236996814  # set seed for reproducibility
+seed = 32  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
@@ -63,7 +63,7 @@ sim.register(*fullmodel(
 
 # # set the scenario
 # sim.modules["Hiv"].parameters["beta"] = 0.135999
-# sim.modules["Tb"].parameters["beta"] = 0.204125
+sim.modules["Tb"].parameters["beta"] = 0.3
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 #
