@@ -845,7 +845,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'eclampsia', birth_data_ex2010[0], 1000, [an_comps, la_comps, pn_comps], sim_years)
 
     target_gh_dict = {'double': False,
-                      'first': {'year': 2019, 'value': 36.8, 'label': 'Noubiap et al.', 'ci': 0},
+                      'first': {'year': 2019, 'value': 43.8, 'label': 'Noubiap et al.', 'ci': 0},
                       }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
@@ -853,7 +853,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Rate of Gestational Hypertension per Year',  graph_location, 'gest_htn_rate',)
 
     target_sgh_dict = {'double': False,
-                       'first': {'year': 2019, 'value': 8.1, 'label': 'Noubiap et al.', 'ci': 0},
+                       'first': {'year': 2019, 'value': 5.98, 'label': 'Noubiap et al.', 'ci': 0},
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(

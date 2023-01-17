@@ -170,10 +170,15 @@ class NewbornOutcomes(Module):
         'prob_mod_severe_disability_preterm_32_36weeks': Parameter(
             Types.LIST, 'probability of moderate/severe long term neurodevelopmental disability in preterm infants born'
                         ' between 32 and 36 weeks gestation'),
-        'prob_retinopathy_preterm': Parameter(
-            Types.LIST, 'baseline probability of a preterm neonate developing retinopathy of prematurity '),
-        'prob_retinopathy_severity': Parameter(
-            Types.LIST, 'probabilities of severity of retinopathy'),
+        'prob_retinopathy_preterm_early': Parameter(
+            Types.LIST, 'Probability that a neonate born at less than 32 weeks who survives the neonatal period will '
+                        'develop retinopathy'),
+        'prob_retinopathy_preterm_late': Parameter(
+            Types.LIST, 'Probability that a neonate born at less than 32 weeks who survives the neonatal period will '
+                        'develop retinopathy'),
+        'prob_retinopathy_severity_no_treatment': Parameter(
+            Types.LIST, 'Probabilities that a preterm neonate who developed retinopathy '
+                        'will experience the following vision impairments: none, mild, moderate or blindness'),
         'cfr_preterm_birth': Parameter(
             Types.LIST, 'case fatality rate for a neonate born prematurely'),
         'rr_preterm_death_early_preterm': Parameter(
@@ -784,6 +789,12 @@ class NewbornOutcomes(Module):
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
 
+            # Determine if surviving preterm neonate will develop retinopathy and its severity
+            if self.rng.random_sample() < params['prob_retinopathy_preterm_early']:
+                df.at[individual_id, 'nb_retinopathy_prem'] = self.rng.choice(
+                    ('none', 'mild', 'moderate', 'severe', 'blindness'),
+                    p=params['prob_retinopathy_severity_no_treatment'])
+
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
@@ -792,6 +803,12 @@ class NewbornOutcomes(Module):
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
                     ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
+
+            # Determine if surviving preterm  neonate will develop retinopathy and its severity
+            if self.rng.random_sample() < params['prob_retinopathy_preterm_late']:
+                df.at[individual_id, 'nb_retinopathy_prem'] = self.rng.choice(
+                    ('none', 'mild', 'moderate', 'severe', 'blindness'),
+                    p=params['prob_retinopathy_severity_no_treatment'])
 
         if child.nb_encephalopathy != 'none':
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
@@ -1226,18 +1243,18 @@ class NewbornOutcomes(Module):
             # a congenital anomaly
             self.apply_risk_of_congenital_anomaly(child_id)
 
-            # Next, for all preterm newborns we apply a risk of retinopathy of prematurity
+            # Next, for all preterm newborns we apply a risk of respiratory distress syndrome
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
-                if self.rng.random_sample() < params['prob_retinopathy_preterm']:
 
-                    # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
-                    # retinopathy to map to DALY weights
-                    random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
-                                                  p=params['prob_retinopathy_severity'])
+                # if self.rng.random_sample() < params['prob_retinopathy_preterm']:
+                #
+                #    # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
+                #     # retinopathy to map to DALY weights
+                #     random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
+                #                                   p=params['prob_retinopathy_severity'])
+                #
+                #     df.at[child_id, 'nb_retinopathy_prem'] = random_draw
 
-                    df.at[child_id, 'nb_retinopathy_prem'] = random_draw
-
-                # and respiratory distress syndrome
                 self.apply_risk_of_preterm_respiratory_distress_syndrome(child_id)
 
             # Finally apply risk of infect, encephalopathy and respiratory depression
