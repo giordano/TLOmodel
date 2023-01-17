@@ -1,22 +1,34 @@
 """
-This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
+This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/test_runs.py
+tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/calibration.py
+
+Test the scenario starts running without problems:
+tlo scenario-run src/scripts/hiv/PaperProjectionsNov2022/calibration.py
+
+or execute a single run:
+tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/test_runs.py
+tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/calibration.py
+
+10th Nov 2022:
+Job ID: calibration-2022-11-10T201529Z
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download test_runs-2022-11-09T162246Z
+tlo batch-download calibration-2022-11-10T210128Z
 
-Job ID:
+12th Apr 2022
+Job ID: calibration-2022-11-10T210128Z
+
 
 """
-
+import pandas as pd
+import os
 from random import randint
 
 from tlo import Date, logging
@@ -24,31 +36,38 @@ from tlo.methods.fullmodel import fullmodel
 
 from tlo.scenario import BaseScenario
 
+number_of_draws = 20
+runs_per_draw = 10
+
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
 
     def __init__(self):
         super().__init__()
-        self.seed = 15
+        self.seed = randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 1, 1)
-        self.pop_size = 50000
-        self.number_of_draws = 11
-        self.runs_per_draw = 5
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 100000
+        self.number_of_draws = number_of_draws
+        self.runs_per_draw = runs_per_draw
+
+        self.sampled_parameters = pd.read_excel(
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
+            sheet_name="LHC_samples",
+        )
 
     def log_configuration(self):
         return {
-            "filename": "test_tb_transmission",
-            "directory": "./outputs",
-            "custom_levels": {
-                "*": logging.WARNING,
-                "tlo.methods.hiv": logging.INFO,
+            'filename': 'calibration',
+            'directory': './outputs',
+            'custom_levels': {
+                '*': logging.WARNING,
+                "tlo.methods.deviance_measure": logging.INFO,
+                # "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
-                "tlo.methods.demography": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
-                "tlo.methods.healthburden": logging.INFO,
-            },
+                # "tlo.methods.demography": logging.INFO,
+            }
         }
 
     def modules(self):
@@ -67,14 +86,17 @@ class TestScenario(BaseScenario):
             )
 
     def draw_parameters(self, draw_number, rng):
+
         return {
+            'Hiv': {
+                'beta': self.sampled_parameters.hiv_Dec22[draw_number],
+            },
             'Tb': {
-                'beta': [0.31, 0.33, 0.35, 0.37, 0.39, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5][draw_number]
+                'beta': self.sampled_parameters.tb_Dec22[draw_number],
             },
         }
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from tlo.cli import scenario_run
-
     scenario_run([__file__])
