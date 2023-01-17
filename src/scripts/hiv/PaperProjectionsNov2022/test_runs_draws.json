@@ -1,29 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/test_runs.py",
-  "scenario_seed": 5,
-  "runs_per_draw": 1,
+  "scenario_seed": 15,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 953453411,
-      "parameters": {
-        "Tb": {
-          "beta": 0.14
-        }
-      }
-    },
-    {
-      "draw_number": 1,
-      "draw_seed": 236996814,
-      "parameters": {
-        "Tb": {
-          "beta": 0.16
-        }
-      }
-    },
-    {
-      "draw_number": 2,
-      "draw_seed": 1592283119,
+      "draw_seed": 1498160584,
       "parameters": {
         "Tb": {
           "beta": 0.18
@@ -31,8 +13,8 @@
       }
     },
     {
-      "draw_number": 3,
-      "draw_seed": 1423042237,
+      "draw_number": 1,
+      "draw_seed": 1346817781,
       "parameters": {
         "Tb": {
           "beta": 0.2
@@ -40,8 +22,8 @@
       }
     },
     {
-      "draw_number": 4,
-      "draw_seed": 887852006,
+      "draw_number": 2,
+      "draw_seed": 768352140,
       "parameters": {
         "Tb": {
           "beta": 0.22
@@ -49,8 +31,8 @@
       }
     },
     {
-      "draw_number": 5,
-      "draw_seed": 1562238070,
+      "draw_number": 3,
+      "draw_seed": 392366725,
       "parameters": {
         "Tb": {
           "beta": 0.24
@@ -58,8 +40,8 @@
       }
     },
     {
-      "draw_number": 6,
-      "draw_seed": 1797920144,
+      "draw_number": 4,
+      "draw_seed": 233488247,
       "parameters": {
         "Tb": {
           "beta": 0.26
@@ -67,8 +49,8 @@
       }
     },
     {
-      "draw_number": 7,
-      "draw_seed": 2059200585,
+      "draw_number": 5,
+      "draw_seed": 476682624,
       "parameters": {
         "Tb": {
           "beta": 0.28
@@ -76,8 +58,8 @@
       }
     },
     {
-      "draw_number": 8,
-      "draw_seed": 2097710088,
+      "draw_number": 6,
+      "draw_seed": 1552795804,
       "parameters": {
         "Tb": {
           "beta": 0.3
@@ -85,8 +67,8 @@
       }
     },
     {
-      "draw_number": 9,
-      "draw_seed": 385778404,
+      "draw_number": 7,
+      "draw_seed": 1368427163,
       "parameters": {
         "Tb": {
           "beta": 0.32
@@ -94,15 +76,33 @@
       }
     },
     {
-      "draw_number": 10,
-      "draw_seed": 479936231,
+      "draw_number": 8,
+      "draw_seed": 1182837959,
       "parameters": {
         "Tb": {
           "beta": 0.34
         }
       }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1832416971,
+      "parameters": {
+        "Tb": {
+          "beta": 0.36
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 128850005,
+      "parameters": {
+        "Tb": {
+          "beta": 0.38
+        }
+      }
     }
   ],
-  "commit": "831482f05b6771c77bb31cfcac986c035de89f0e",
-  "github": "https://github.com/UCL/TLOmodel/blob/831482f05b6771c77bb31cfcac986c035de89f0e/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
+  "commit": "8ac5f26492d07d5e207e691b0e450e7903501be9",
+  "github": "https://github.com/UCL/TLOmodel/blob/8ac5f26492d07d5e207e691b0e450e7903501be9/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
 }

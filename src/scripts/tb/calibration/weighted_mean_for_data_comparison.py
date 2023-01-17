@@ -63,7 +63,7 @@ data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per
 xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
 
 # TB active incidence per 100k 2010-2017
-data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
 data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[
     (data_tb_who.year >= 2010), "incidence_per_100k"
 ]
