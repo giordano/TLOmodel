@@ -268,6 +268,10 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                                                       intervention_years) for k in results_folders}
 
     def get_cs_indication_counts(folder):
+
+        if 'min_sba' in folder.name:
+            return
+
         cs_df = extract_results(
            folder,
            module="tlo.methods.labour",
