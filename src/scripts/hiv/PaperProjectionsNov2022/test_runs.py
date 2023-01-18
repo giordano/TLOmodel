@@ -18,6 +18,7 @@ Job ID:
 """
 
 from random import randint
+import numpy as np
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
@@ -32,9 +33,9 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 15
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 1, 1)
+        self.end_date = Date(2020, 1, 1)
         self.pop_size = 50000
-        self.number_of_draws = 11
+        self.number_of_draws = 33
         self.runs_per_draw = 5
 
     def log_configuration(self):
@@ -69,7 +70,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'beta': [0.31, 0.33, 0.35, 0.37, 0.39, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5][draw_number]
+                'beta': np.linspace(0.18, 0.5, num=self.number_of_draws)[draw_number]
             },
         }
 

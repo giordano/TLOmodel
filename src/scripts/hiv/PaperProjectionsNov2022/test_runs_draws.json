@@ -8,7 +8,7 @@
       "draw_seed": 1498160584,
       "parameters": {
         "Tb": {
-          "beta": 0.18
+          "beta": 0.31
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1346817781,
       "parameters": {
         "Tb": {
-          "beta": 0.2
+          "beta": 0.33
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 768352140,
       "parameters": {
         "Tb": {
-          "beta": 0.22
+          "beta": 0.35
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 392366725,
       "parameters": {
         "Tb": {
-          "beta": 0.24
+          "beta": 0.37
         }
       }
     },
@@ -44,7 +44,7 @@
       "draw_seed": 233488247,
       "parameters": {
         "Tb": {
-          "beta": 0.26
+          "beta": 0.39
         }
       }
     },
@@ -53,7 +53,7 @@
       "draw_seed": 476682624,
       "parameters": {
         "Tb": {
-          "beta": 0.28
+          "beta": 0.4
         }
       }
     },
@@ -62,7 +62,7 @@
       "draw_seed": 1552795804,
       "parameters": {
         "Tb": {
-          "beta": 0.3
+          "beta": 0.42
         }
       }
     },
@@ -71,7 +71,7 @@
       "draw_seed": 1368427163,
       "parameters": {
         "Tb": {
-          "beta": 0.32
+          "beta": 0.44
         }
       }
     },
@@ -80,7 +80,7 @@
       "draw_seed": 1182837959,
       "parameters": {
         "Tb": {
-          "beta": 0.34
+          "beta": 0.46
         }
       }
     },
@@ -89,7 +89,7 @@
       "draw_seed": 1832416971,
       "parameters": {
         "Tb": {
-          "beta": 0.36
+          "beta": 0.48
         }
       }
     },
@@ -98,11 +98,11 @@
       "draw_seed": 128850005,
       "parameters": {
         "Tb": {
-          "beta": 0.38
+          "beta": 0.5
         }
       }
     }
   ],
-  "commit": "179f345e0dc078ee1fbfff12af37961cf03aabaf",
-  "github": "https://github.com/UCL/TLOmodel/blob/179f345e0dc078ee1fbfff12af37961cf03aabaf/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
+  "commit": "b9281a87a3846067f3fe953740297d07a58f399a",
+  "github": "https://github.com/UCL/TLOmodel/blob/b9281a87a3846067f3fe953740297d07a58f399a/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
 }
