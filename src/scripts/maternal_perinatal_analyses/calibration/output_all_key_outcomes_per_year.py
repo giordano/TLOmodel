@@ -640,9 +640,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ectopic_data = analysis_utility_functions.get_comp_mean_and_rate(
         'ectopic_unruptured', preg_data[0], an_comps, 1000, sim_years)
 
-    target_ect_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 4.9, 'label': 'GBD 2010', 'ci': 0},
-                       'second': {'year': 2015, 'value': 3.6, 'label': 'GBD 2015', 'ci': 0}}
+    target_ect_dict = {'double': False,
+                       'second': {'year': 2015, 'value': 10, 'label': 'Est.', 'ci': 0}}
 
     # todo: if were using GBD data why cant we have this rate yearly?
 

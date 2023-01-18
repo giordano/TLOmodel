@@ -845,7 +845,7 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
         results_dict.update({'maternal_yld_rate_unstacked': get_as_rate(results_dict['maternal_yld_crude_unstacked'])})
 
         results_dict.update({'neonatal_yll_crude_unstacked': get_output(neo_causes_death, yll)})
-        results_dict.update({'neonatal_yll_crude_unstacked': get_output(neo_causes_death, yll_stacked)})
+        results_dict.update({'neonatal_yll_crude_stacked': get_output(neo_causes_death, yll_stacked)})
 
         results_dict.update({'neonatal_yll_rate_unstacked': get_as_rate(results_dict['neonatal_yll_crude_unstacked'])})
         results_dict.update({'neonatal_yll_rate_stacked': get_as_rate(results_dict['neonatal_yll_crude_unstacked'])})

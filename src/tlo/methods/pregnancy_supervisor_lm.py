@@ -232,8 +232,7 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
     result[df.ac_receiving_bep_supplements] *= params['treatment_effect_still_birth_food_sups']
 
     result[df.ps_gestational_age_in_weeks == 41] *= params['rr_still_birth_ga_41']
-    result[df.ps_gestational_age_in_weeks == 42] *= params['rr_still_birth_ga_42']
-    result[df.ps_gestational_age_in_weeks > 42] *= params['rr_still_birth_ga_>42']
+    result[df.ps_gestational_age_in_weeks > 41] *= params['rr_still_birth_ga_>41']
 
     result[df.ps_htn_disorders == 'mild_pre_eclamp'] *= params['rr_still_birth_pre_eclampsia']
     result[df.ps_htn_disorders == 'severe_pre_eclamp'] *= params['rr_still_birth_pre_eclampsia']

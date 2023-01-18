@@ -223,9 +223,7 @@ class PregnancySupervisor(Module):
             Types.LIST, 'underlying risk of stillbirth per month without the impact of risk factors'),
         'rr_still_birth_ga_41': Parameter(
             Types.LIST, 'relative risk of still birth in women with gestational age 41 weeks'),
-        'rr_still_birth_ga_42': Parameter(
-            Types.LIST, 'relative risk of still birth in women with gestational age 42 weeks'),
-        'rr_still_birth_ga_>42': Parameter(
+        'rr_still_birth_ga_>41': Parameter(
             Types.LIST, 'relative risk of still birth in women with gestational age > 42 weeks'),
 
         'rr_still_birth_gest_diab': Parameter(

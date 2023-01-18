@@ -152,6 +152,8 @@ class NewbornOutcomes(Module):
         # COMPLICATIONS OF PREMATURITY...
         'prob_respiratory_distress_preterm': Parameter(
             Types.LIST, 'probability that a preterm infant will experience respiratory distress at birth'),
+        'rr_rds_early_preterm': Parameter(
+            Types.LIST, 'relative risk of RDS in a preterm newborn born before 34 weeks'),
         'rr_rds_maternal_diabetes_mellitus': Parameter(
             Types.LIST, 'relative risk of RDS in a preterm newborn whose mother has DM'),
         'rr_rds_maternal_gestational_diab': Parameter(
