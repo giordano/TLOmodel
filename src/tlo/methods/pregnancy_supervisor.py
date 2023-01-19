@@ -637,8 +637,10 @@ class PregnancySupervisor(Module):
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
             # And store her anaemia status to calculate the prevalence of anaemia on birth
-            logger.info(key='anaemia_on_birth', data={'mother': mother_id,
-                                                      'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy']})
+            logger.info(key='conditions_on_birth', data={'mother': mother_id,
+                                                         'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy'],
+                                                         'gdm_status': df.at[mother_id, 'ps_gest_diab'],
+                                                         'htn_status': df.at[mother_id, 'ps_htn_disorders']})
 
             # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
             if df.at[mother_id, 'ps_gest_diab'] != 'none':

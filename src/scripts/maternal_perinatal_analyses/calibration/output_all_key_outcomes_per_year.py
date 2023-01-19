@@ -125,29 +125,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        [(x / y) * 1000 for x, y in zip(an_still_birth_data[1], all_births_data[0])],
                        [(x / y) * 1000 for x, y in zip(an_still_birth_data[2], all_births_data[0])]]
 
-    # target_ansbr_dict = {'double': True,
-    #                      'first': {'year': 2010, 'value': 10, 'label': 'UN (2010)', 'ci': (11.6 - 8.5) / 2},
-    #                      'second': {'year': 2019, 'value': 8.15, 'label': 'UN (2015)', 'ci': (9.05 - 7.35) / 2},
-    #                      }
-    #
-    # analysis_utility_functions.line_graph_with_ci_and_target_rate(
-    #     sim_years, an_sbr_per_year, an_sbr_lqs, an_sbr_uqs, target_ansbr_dict, 'Stillbirths per 1000 total births',
-    #     'Antenatal stillbirth rate per year', graph_location, 'sbr_an')
-
     ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
 
     ip_sbr_per_year = [[(x / y) * 1000 for x, y in zip(ip_still_birth_data[0], all_births_data[0])],
                       [(x / y) * 1000 for x, y in zip(ip_still_birth_data[1], all_births_data[0])],
                       [(x / y) * 1000 for x, y in zip(ip_still_birth_data[2], all_births_data[0])]]
-
-    # target_ipsbr_dict = {'double': True,
-    #                      'first': {'year': 2010, 'value': 10, 'label': 'UN (2010)', 'ci': (11.6 - 8.5) / 2},
-    #                      'second': {'year': 2019, 'value': 8.15, 'label': 'UN (2015)', 'ci': (9.05 - 7.35) / 2},
-    #                      }
-    #
-    # analysis_utility_functions.line_graph_with_ci_and_target_rate(
-    #     sim_years, ip_sbr_per_year, ip_sbr_lqs, ip_sbr_uqs, target_ipsbr_dict, 'Rate per 1000 total births',
-    #     'Intrapartum stillbirth rate per year', graph_location, 'sbr_ip')
 
     total_sbr = [[x + y for x, y in zip(an_sbr_per_year[0], ip_sbr_per_year[0])],
                  [x + y for x, y in zip(an_sbr_per_year[1], ip_sbr_per_year[1])],
@@ -641,10 +623,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'ectopic_unruptured', preg_data[0], an_comps, 1000, sim_years)
 
     target_ect_dict = {'double': False,
-                       'second': {'year': 2015, 'value': 10, 'label': 'Est.', 'ci': 0}}
+                       'first': {'year': 2015, 'value': 10, 'label': 'Est.', 'ci': 0}}
 
     # todo: if were using GBD data why cant we have this rate yearly?
-
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, ectopic_data[0], ectopic_data[1], ectopic_data[2], target_ect_dict, 'Rate per 100 pregnancies',
         'Yearly trends for Ectopic Pregnancy', graph_location, 'ectopic_rate')
@@ -753,7 +734,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     anaemia_results = extract_results(
         results_folder,
         module="tlo.methods.pregnancy_supervisor",
-        key="anaemia_on_birth",
+        key="conditions_on_birth",
         custom_generate_series=(
             lambda df: df.loc[df['anaemia_status'] != 'none'].assign(year=df['date'].dt.year).groupby(['year'])[
                 'year'].count()))
@@ -1032,13 +1013,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ol_data = analysis_utility_functions.get_comp_mean_and_rate(
         'obstructed_labour', birth_data_ex2010[0], la_comps, 1000, sim_years)
 
-    target_rate_ol = list()
-    for year in sim_years:
-        if year < 2015:
-            target_rate_ol.append(17)
-        else:
-            target_rate_ol.append(31)
-
     target_ol_dict = {'double': True,
                       'first': {'year': 2010, 'value': 18.3, 'label': 'BEmONC 2010', 'ci': 0},
                       'second': {'year': 2015, 'value': 33.7, 'label': 'BEmONC 2015', 'ci': 0}}
@@ -1251,10 +1225,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     total_enceph_rates = [x + y + z for x, y, z in zip(mild_data[0], mod_data[0], sev_data[0])]
     enceph_lq = [x + y + z for x, y, z in zip(mild_data[1], mod_data[1], sev_data[1])]
     enceph_uq = [x + y + z for x, y, z in zip(mild_data[2], mod_data[2], sev_data[2])]
-
-    target_rate_enceph = list()  # todo: replace
-    for year in sim_years:
-        target_rate_enceph.append(19)
 
     target_enceph_dict = {'double': True,
                           'first': {'year': 2010, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},

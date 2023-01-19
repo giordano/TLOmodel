@@ -6,13 +6,13 @@ import output_all_death_calibration_per_year, output_all_key_outcomes_per_year
 for file in ['standard_mph_calibration']:
     output_all_key_outcomes_per_year.output_incidence_for_calibration(
        scenario_filename=f'{file}.py',
-       pop_size='100K',
+       pop_size='50K',
        outputspath='./outputs/sejjj49@ucl.ac.uk/',
        sim_years=list(range(2010, 2021)))
 
     output_all_death_calibration_per_year.output_all_death_calibrations(
         scenario_filename=f'{file}.py',
         outputspath='./outputs/sejjj49@ucl.ac.uk/',
-        pop_size='100K',
+        pop_size='50K',
         sim_years=list(range(2010, 2021)),
         daly_years=list(range(2010, 2020)))
