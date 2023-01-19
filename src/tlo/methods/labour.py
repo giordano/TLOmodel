@@ -3169,7 +3169,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # delivered
         if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
 
-            # We log the log the required consumables and condition the caesarean happening on the availability of the
+            # We log the required consumables and condition the caesarean happening on the availability of the
             # first consumable in this package, the anaesthetic required for the surgery
             avail = pregnancy_helper_functions.return_cons_avail(
                 self.module, self, self.module.item_codes_lab_consumables, core='caesarean_delivery_core',
@@ -3179,18 +3179,21 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
                                                                                        hsi_event=self)
 
-            if (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other' and
-                                        params['cemonc_availability'] != 0.0):
-                person = df.loc[person_id]
-                logger.info(key='caesarean_delivery', data=person.to_dict())
-                logger.info(key='cs_indications', data={'id': person_id,
-                                                        'indication': mni[person_id]['cs_indication']})
+            # Block CS delivery for this analysis
+            if params['la_analysis_in_progress'] and (params['cemonc_availability'] == 0.0):
+                logger.debug(key='message', data="cs delivery blocked for this analysis")
 
-                # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces risk
-                # of intrapartum still birth and death due to antepartum haemorrhage
-                mni[person_id]['mode_of_delivery'] = 'caesarean_section'
-                mni[person_id]['amtsl_given'] = True
-                df.at[person_id, 'la_previous_cs_delivery'] += 1
+            elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
+                    person = df.loc[person_id]
+                    logger.info(key='caesarean_delivery', data=person.to_dict())
+                    logger.info(key='cs_indications', data={'id': person_id,
+                                                            'indication': mni[person_id]['cs_indication']})
+
+                    # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces
+                    # risk of intrapartum still birth and death due to antepartum haemorrhage
+                    mni[person_id]['mode_of_delivery'] = 'caesarean_section'
+                    mni[person_id]['amtsl_given'] = True
+                    df.at[person_id, 'la_previous_cs_delivery'] += 1
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to
