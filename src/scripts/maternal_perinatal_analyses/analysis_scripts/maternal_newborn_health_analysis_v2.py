@@ -174,6 +174,16 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             :return: mean, lower quantile, upper quantil of coverage
             """
 
+            all_surviving_mothers = extract_results(
+                folder,
+                module="tlo.methods.postnatal_supervisor",
+                key="total_mat_pnc_visits",
+                custom_generate_series=(
+                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])[
+                        'mother'].count()),
+                do_scaling=True
+            )
+
             # Extract data on all women with 1+ PNC visits
             pnc_results_maternal = extract_results(
                 folder,
@@ -186,6 +196,16 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             )
 
             # Followed by newborns...
+            all_surviving_newborns = extract_results(
+                folder,
+                module="tlo.methods.postnatal_supervisor",
+                key="total_neo_pnc_visits",
+                custom_generate_series=(
+                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])[
+                        'child'].count()),
+                do_scaling=True
+            )
+
             pnc_results_newborn = extract_results(
                 folder,
                 module="tlo.methods.postnatal_supervisor",
@@ -197,20 +217,24 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             )
 
             # Get mean/quantiles
+            all_mat_data = analysis_utility_functions.get_mean_and_quants(all_surviving_mothers, sim_years)
+            all_neo_data = analysis_utility_functions.get_mean_and_quants(all_surviving_newborns, sim_years)
+
             pn_mat_data = analysis_utility_functions.get_mean_and_quants(pnc_results_maternal, sim_years)
             pn_neo_data = analysis_utility_functions.get_mean_and_quants(pnc_results_newborn, sim_years)
 
             # Use birth data to calculate coverage as a proportion of total births
-            pnc_1_plus_rate_mat = [(x / y) * 100 for x, y in zip(pn_mat_data[0], birth_data[0])]
-            pnc_mat_lqs = [(x / y) * 100 for x, y in zip(pn_mat_data[1], birth_data[1])]
-            pnc_mat_uqs = [(x / y) * 100 for x, y in zip(pn_mat_data[2], birth_data[2])]
+            def output_pnc_coverage(data, denom):
+                mean = [(x / y) * 100 for x, y in zip(data[0], denom[0])]
+                lq = [(x / y) * 100 for x, y in zip(data[1], denom[1])]
+                uq = [(x / y) * 100 for x, y in zip(data[2], denom[2])]
 
-            pnc1_plus_rate_neo = [(x / y) * 100 for x, y in zip(pn_neo_data[0], birth_data[0])]
-            pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data[1])]
-            pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data[2])]
+                return [mean, lq, uq]
 
-            return {'maternal_pnc': [pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
-                    'neonatal_pnc': [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]}
+            return {'maternal_pnc_births': output_pnc_coverage(pn_mat_data, birth_data),
+                    'maternal_pnc_survivors': output_pnc_coverage(pn_mat_data, all_mat_data),
+                    'neonatal_pnc_births': output_pnc_coverage(pn_neo_data, birth_data),
+                    'neonatal_pnc_survivors': output_pnc_coverage(pn_mat_data, all_neo_data)}
 
         coverage_data = {k: get_pnc_coverage(results_folders[k], births_dict[k]['total_births']) for k in
                          results_folders}
@@ -218,16 +242,28 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
 
         # generate plots showing coverage of ANC intervention in the baseline and intervention scenarios
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, sim_years, coverage_data, 'maternal_pnc',
+            scen_colours, sim_years, coverage_data, 'maternal_pnc_births',
             '% Total Births',
-            'Proportion of Mothers Receiving PNC following Birth',
-            plot_destination_folder, 'mat_pnc_coverage')
+            'Maternal PNC Coverage as Proportion of Total Births',
+            plot_destination_folder, 'mat_pnc_coverage_births')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, sim_years, coverage_data, 'neonatal_pnc',
+            scen_colours, sim_years, coverage_data, 'maternal_pnc_survivors',
+            '% Total Survivors at Day 42',
+            'Maternal PNC Coverage as Proportion of Postnatal Survivors',
+            plot_destination_folder, 'mat_pnc_coverage_survivors')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, sim_years, coverage_data, 'neonatal_pnc_births',
             '% Total Births',
-            'Proportion of Neonates Receiving PNC following Birth',
-            plot_destination_folder, 'neo_pnc_coverage')
+            'Neonatal PNC Coverage as Proportion of Total Births',
+            plot_destination_folder, 'neo_pnc_coverage_births')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, sim_years, coverage_data, 'neonatal_pnc_survivors',
+            '% Total Survivors at Day 28',
+            'Neonatal PNC Coverage as Proportion of Neonatal Survivors',
+            plot_destination_folder, 'neo_pnc_coverage_survivors')
 
     # --------------------------------------------PRIMARY OUTCOMES ----------------------------------------------------
     # ===================================== MATERNAL/NEONATAL DEATHS ==================================================

@@ -29,9 +29,9 @@ from tlo.scenario import BaseScenario
 class ANCMaxSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562537
+        self.seed = 562661
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2014, 1, 1)
         self.pop_size = 250_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
@@ -95,9 +95,9 @@ class ANCMaxSensitivityAnalysis(BaseScenario):
                                     'alternative_ip_anc_quality': True,
                                     'anc_availability_probability': 1.0,
                                     'ip_anc_availability_probability': 1.0,
-                                    'analysis_year': 2023},
+                                    'analysis_year': 2010},
 
-            'Labour': {'analysis_year': 2023},
+            'Labour': {'analysis_year': 2010},
         }
 
 
