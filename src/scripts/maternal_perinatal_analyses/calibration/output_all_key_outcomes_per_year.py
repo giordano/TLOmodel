@@ -750,7 +750,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     preg_an_severity = extract_results(
         results_folder,
         module="tlo.methods.pregnancy_supervisor",
-        key="anaemia_on_birth",
+        key="conditions_on_birth",
         custom_generate_series=(
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'anaemia_status'])['year'].count()
         ),
