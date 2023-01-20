@@ -8,7 +8,7 @@
       "draw_seed": 1498160584,
       "parameters": {
         "Tb": {
-          "beta": 0.31
+          "beta": 0.18
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1346817781,
       "parameters": {
         "Tb": {
-          "beta": 0.33
+          "beta": 0.19
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 768352140,
       "parameters": {
         "Tb": {
-          "beta": 0.35
+          "beta": 0.19999999999999998
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 392366725,
       "parameters": {
         "Tb": {
-          "beta": 0.37
+          "beta": 0.21
         }
       }
     },
@@ -44,7 +44,7 @@
       "draw_seed": 233488247,
       "parameters": {
         "Tb": {
-          "beta": 0.39
+          "beta": 0.22
         }
       }
     },
@@ -53,7 +53,7 @@
       "draw_seed": 476682624,
       "parameters": {
         "Tb": {
-          "beta": 0.4
+          "beta": 0.22999999999999998
         }
       }
     },
@@ -62,7 +62,7 @@
       "draw_seed": 1552795804,
       "parameters": {
         "Tb": {
-          "beta": 0.42
+          "beta": 0.24
         }
       }
     },
@@ -71,7 +71,7 @@
       "draw_seed": 1368427163,
       "parameters": {
         "Tb": {
-          "beta": 0.44
+          "beta": 0.25
         }
       }
     },
@@ -80,7 +80,7 @@
       "draw_seed": 1182837959,
       "parameters": {
         "Tb": {
-          "beta": 0.46
+          "beta": 0.26
         }
       }
     },
@@ -89,7 +89,7 @@
       "draw_seed": 1832416971,
       "parameters": {
         "Tb": {
-          "beta": 0.48
+          "beta": 0.27
         }
       }
     },
@@ -98,11 +98,209 @@
       "draw_seed": 128850005,
       "parameters": {
         "Tb": {
+          "beta": 0.28
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 107172470,
+      "parameters": {
+        "Tb": {
+          "beta": 0.29
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1313911727,
+      "parameters": {
+        "Tb": {
+          "beta": 0.3
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 1384259805,
+      "parameters": {
+        "Tb": {
+          "beta": 0.31
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 1307707409,
+      "parameters": {
+        "Tb": {
+          "beta": 0.32
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 944571117,
+      "parameters": {
+        "Tb": {
+          "beta": 0.32999999999999996
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 479925151,
+      "parameters": {
+        "Tb": {
+          "beta": 0.33999999999999997
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 911000599,
+      "parameters": {
+        "Tb": {
+          "beta": 0.35
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 1073308064,
+      "parameters": {
+        "Tb": {
+          "beta": 0.36
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 1599572286,
+      "parameters": {
+        "Tb": {
+          "beta": 0.37
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 1793706762,
+      "parameters": {
+        "Tb": {
+          "beta": 0.38
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 139567247,
+      "parameters": {
+        "Tb": {
+          "beta": 0.39
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 1134502084,
+      "parameters": {
+        "Tb": {
+          "beta": 0.4
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 8663913,
+      "parameters": {
+        "Tb": {
+          "beta": 0.41000000000000003
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 935330855,
+      "parameters": {
+        "Tb": {
+          "beta": 0.42
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 218539813,
+      "parameters": {
+        "Tb": {
+          "beta": 0.43
+        }
+      }
+    },
+    {
+      "draw_number": 26,
+      "draw_seed": 1570734099,
+      "parameters": {
+        "Tb": {
+          "beta": 0.44
+        }
+      }
+    },
+    {
+      "draw_number": 27,
+      "draw_seed": 2080674604,
+      "parameters": {
+        "Tb": {
+          "beta": 0.45
+        }
+      }
+    },
+    {
+      "draw_number": 28,
+      "draw_seed": 1318896333,
+      "parameters": {
+        "Tb": {
+          "beta": 0.46
+        }
+      }
+    },
+    {
+      "draw_number": 29,
+      "draw_seed": 1814154172,
+      "parameters": {
+        "Tb": {
+          "beta": 0.47
+        }
+      }
+    },
+    {
+      "draw_number": 30,
+      "draw_seed": 904307869,
+      "parameters": {
+        "Tb": {
+          "beta": 0.48
+        }
+      }
+    },
+    {
+      "draw_number": 31,
+      "draw_seed": 1432560975,
+      "parameters": {
+        "Tb": {
+          "beta": 0.49
+        }
+      }
+    },
+    {
+      "draw_number": 32,
+      "draw_seed": 718303334,
+      "parameters": {
+        "Tb": {
           "beta": 0.5
         }
       }
     }
   ],
-  "commit": "b9281a87a3846067f3fe953740297d07a58f399a",
-  "github": "https://github.com/UCL/TLOmodel/blob/b9281a87a3846067f3fe953740297d07a58f399a/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
+  "commit": "e2c7e1d25d62fbac7e1b3b840fac80dcbd662c12",
+  "github": "https://github.com/UCL/TLOmodel/blob/e2c7e1d25d62fbac7e1b3b840fac80dcbd662c12/src/scripts/hiv/PaperProjectionsNov2022/test_runs.py"
 }
