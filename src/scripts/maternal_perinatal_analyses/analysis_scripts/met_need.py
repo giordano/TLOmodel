@@ -279,7 +279,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         cs_results = cs_df.fillna(0)
 
         cs_id_counts = dict()
-        if 'min_sba' in folder.name and (2023 not in cs_results.index):
+        if 'min_sba' in folder.name and (intervention_years[0] not in cs_results.index):
             l = [0 for y in intervention_years]
             blank_data = [l, l, l]
             treatments.append('ur_cs')

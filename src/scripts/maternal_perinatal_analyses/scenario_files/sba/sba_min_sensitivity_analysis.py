@@ -96,9 +96,9 @@ class SBAMinSensitivityAnalysis(BaseScenario):
                        'cemonc_availability': 0.0,
                        'bemonc_cons_availability': 0.0,
                        'cemonc_cons_availability': 0.0,
-                       'analysis_year': 2010},
+                       'analysis_year': 2023},
 
-            'PregnancySupervisor': {'analysis_year': 2010}
+            'PregnancySupervisor': {'analysis_year': 2023}
         }
 
 

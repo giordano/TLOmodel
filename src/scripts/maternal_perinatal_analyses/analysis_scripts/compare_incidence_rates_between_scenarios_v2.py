@@ -472,10 +472,11 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     # Anaemia...
     def get_anaemia_output_at_birth(results_folder, total_births_per_year, years):
+
         anaemia_results = extract_results(
             results_folder,
             module="tlo.methods.pregnancy_supervisor",
-            key="anaemia_on_birth",
+            key="conditions_on_birth",
             custom_generate_series=(
                 lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'anaemia_status'])['year'].count()),
             do_scaling=True
@@ -501,6 +502,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     # Repeat this process looking at anaemia at the time of delivery
     def get_anaemia_output_at_delivery(results_folder, total_births_per_year, years):
+        print(results_folder.name)
         pnc_anaemia = extract_results(
             results_folder,
             module="tlo.methods.postnatal_supervisor",
