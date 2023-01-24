@@ -28,7 +28,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2015, 1, 1),
+            end_date=Date(2010, 2, 1),
             initial_population_size=10_000,
             number_of_draws=2,
             runs_per_draw=2,
@@ -46,7 +46,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources, use_simplified_births=True)
 
     def draw_parameters(self, draw_number, rng):
         return {
