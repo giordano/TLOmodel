@@ -29,7 +29,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2010, 1, 1),
-            initial_population_size=1_000,
+            initial_population_size=1000,
             number_of_draws=2,
             runs_per_draw=2,
         )
@@ -46,7 +46,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources, use_simplified_births=True)
+        return fullmodel(resourcefilepath=self.resources,use_simplified_births=True)
 
     def draw_parameters(self, draw_number, rng):
         return {
@@ -55,7 +55,8 @@ class ImpactOfConsumablesAvailability(BaseScenario):
             }
         }
 
-if __name__ =='__main__':
+
+if __name__ == '__main__':
 
     from tlo.cli import scenario_run
 
