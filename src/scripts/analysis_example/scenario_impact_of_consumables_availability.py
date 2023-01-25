@@ -1,8 +1,7 @@
 """
 This file defines an example scenario for analysing the impact of consumable availability.
 
-It can be submitted on Azure Batch by running:
-
+It can be submitted on Azure Batch by running
     tlo batch-submit src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
 
 or locally using:
