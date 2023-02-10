@@ -2679,9 +2679,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key="hiv_detailed_outputs",
             description="Baseline comparisons",
             data={
-                "outputs_age15_64": outputs_age15_64,
-                "outputs_age15_64_M": outputs_age15_64_M,
-                "outputs_age15_64_F": outputs_age15_64_F,
+                "outputs_age15_64": tuple(outputs_age15_64),
+                "outputs_age15_64_M": tuple(outputs_age15_64_M),
+                "outputs_age15_64_F": tuple(outputs_age15_64_F),
             },
         )
 
@@ -2690,23 +2690,23 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # total number of subset (subset is a true/false series)
 
             num_infected = sum(subset & df.hv_inf)
-            num_not_diagnosed = sum(subset & ~df.hv_diagnosed)
-            num_dx_no_art = sum(subset & df.hv_diagnosed & (df.hv_art == "not"))
+            num_not_diagnosed = sum(subset & df.hv_inf & ~df.hv_diagnosed)
+            num_dx_no_art = sum(subset & df.hv_inf & df.hv_diagnosed & (df.hv_art == "not"))
 
-            num_art_not_vs = sum(subset & (df.hv_art == "on_not_VL_suppressed"))
-            num_art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
+            num_art_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed"))
+            num_art_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed"))
 
-            num_art_under_6mths_not_vs = sum(subset & (df.hv_art == "on_not_VL_suppressed") &
+            num_art_under_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
                                              (df.hv_date_treated >= (now - DateOffset(months=6))))
-            num_art_under_6mths_vs = sum(subset & (df.hv_art == "on_VL_suppressed") &
+            num_art_under_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
                                              (df.hv_date_treated >= (now - DateOffset(months=6))))
 
-            num_art_over_6mths_not_vs = sum(subset & (df.hv_art == "on_not_VL_suppressed") &
+            num_art_over_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
                                              (df.hv_date_treated < (now - DateOffset(months=6))))
-            num_art_over_6mths_vs = sum(subset & (df.hv_art == "on_VL_suppressed") &
+            num_art_over_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
                                              (df.hv_date_treated < (now - DateOffset(months=6))))
 
-            num_any_interruption = sum(subset & (df.hv_art == "not") & ~pd.isnull(df.hv_date_treated))
+            num_any_interruption = sum(subset & df.hv_inf & (df.hv_art == "not") & ~pd.isnull(df.hv_date_treated))
 
             return [num_infected, num_not_diagnosed, num_dx_no_art,
                     num_art_not_vs, num_art_vs,
@@ -2761,34 +2761,34 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key="hiv_detailed_outputs",
             description="Transmission outputs",
             data={
-                "outputs_age15_19_M": outputs_age15_19_M,
-                "outputs_age15_19_F": outputs_age15_19_F,
-                "outputs_age20_24_M": outputs_age20_24_M,
-                "outputs_age20_24_F": outputs_age20_24_F,
-                "outputs_age25_29_M": outputs_age25_29_M,
-                "outputs_age25_29_F": outputs_age25_29_F,
-                "outputs_age30_34_M": outputs_age30_34_M,
-                "outputs_age30_34_F": outputs_age30_34_F,
-                "outputs_age35_39_M": outputs_age35_39_M,
-                "outputs_age35_39_F": outputs_age35_39_F,
-                "outputs_age40_44_M": outputs_age40_44_M,
-                "outputs_age40_44_F": outputs_age40_44_F,
-                "outputs_age45_49_M": outputs_age45_49_M,
-                "outputs_age45_49_F": outputs_age45_49_F,
-                "outputs_age50_54_M": outputs_age50_54_M,
-                "outputs_age50_54_F": outputs_age50_54_F,
-                "outputs_age55_59_M": outputs_age55_59_M,
-                "outputs_age55_59_F": outputs_age55_59_F,
-                "outputs_age60_64_M": outputs_age60_64_M,
-                "outputs_age60_64_F": outputs_age60_64_F,
-                "outputs_age65_69_M": outputs_age65_69_M,
-                "outputs_age65_69_F": outputs_age65_69_F,
-                "outputs_age70_74_M": outputs_age70_74_M,
-                "outputs_age70_74_F": outputs_age70_74_F,
-                "outputs_age75_79_M": outputs_age75_79_M,
-                "outputs_age75_79_F": outputs_age75_79_F,
-                "outputs_age80_84_M": outputs_age80_84_M,
-                "outputs_age80_84_F": outputs_age80_84_F,
+                "outputs_age15_19_M": tuple(outputs_age15_19_M),
+                "outputs_age15_19_F": tuple(outputs_age15_19_F),
+                "outputs_age20_24_M": tuple(outputs_age20_24_M),
+                "outputs_age20_24_F": tuple(outputs_age20_24_F),
+                "outputs_age25_29_M": tuple(outputs_age25_29_M),
+                "outputs_age25_29_F": tuple(outputs_age25_29_F),
+                "outputs_age30_34_M": tuple(outputs_age30_34_M),
+                "outputs_age30_34_F": tuple(outputs_age30_34_F),
+                "outputs_age35_39_M": tuple(outputs_age35_39_M),
+                "outputs_age35_39_F": tuple(outputs_age35_39_F),
+                "outputs_age40_44_M": tuple(outputs_age40_44_M),
+                "outputs_age40_44_F": tuple(outputs_age40_44_F),
+                "outputs_age45_49_M": tuple(outputs_age45_49_M),
+                "outputs_age45_49_F": tuple(outputs_age45_49_F),
+                "outputs_age50_54_M": tuple(outputs_age50_54_M),
+                "outputs_age50_54_F": tuple(outputs_age50_54_F),
+                "outputs_age55_59_M": tuple(outputs_age55_59_M),
+                "outputs_age55_59_F": tuple(outputs_age55_59_F),
+                "outputs_age60_64_M": tuple(outputs_age60_64_M),
+                "outputs_age60_64_F": tuple(outputs_age60_64_F),
+                "outputs_age65_69_M": tuple(outputs_age65_69_M),
+                "outputs_age65_69_F": tuple(outputs_age65_69_F),
+                "outputs_age70_74_M": tuple(outputs_age70_74_M),
+                "outputs_age70_74_F": tuple(outputs_age70_74_F),
+                "outputs_age75_79_M": tuple(outputs_age75_79_M),
+                "outputs_age75_79_F": tuple(outputs_age75_79_F),
+                "outputs_age80_84_M": tuple(outputs_age80_84_M),
+                "outputs_age80_84_F": tuple(outputs_age80_84_F),
             },
         )
 
