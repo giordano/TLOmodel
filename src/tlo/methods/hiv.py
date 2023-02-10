@@ -42,9 +42,6 @@ from tlo.util import create_age_range_lookup
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger_detail = logging.getLogger(f"{__name__}.detail")
-logger_detail.setLevel(logging.INFO)
-
 
 class Hiv(Module):
     """
@@ -2678,7 +2675,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         outputs_age15_64_M = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64) & (df.sex == "M"))
         outputs_age15_64_F = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64) & (df.sex == "F"))
 
-        logger_detail.info(
+        logger.info(
             key="hiv_detailed_outputs",
             description="Baseline comparisons",
             data={
@@ -2760,7 +2757,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         outputs_age80_84_M = transmission_outputs(df.is_alive & df.age_years.between(80, 84) & (df.sex == "M"))
         outputs_age80_84_F = transmission_outputs(df.is_alive & df.age_years.between(80, 84) & (df.sex == "F"))
 
-        logger_detail.info(
+        logger.info(
             key="hiv_detailed_outputs",
             description="Transmission outputs",
             data={
