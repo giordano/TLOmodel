@@ -801,7 +801,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1851,6 +1851,30 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
                 df.at[person_id, "tb_inf"] != "active"):
+
+            # Log the death
+            # - log the line-list of summary information about each death
+            six_months_on_art = True if df.at[person_id, "hv_date_treated"] >= (
+                    self.sim.date - DateOffset(months=6)) else False
+            previously_on_art = True if (df.at[person_id, 'hv_art'] == "not") and not pd.isnull(
+                df.at[person_id, "hv_date_treated"]) else False
+            has_aids = True if 'aids_symptoms' in self.sim.modules["SymptomManager"].has_what(
+                person_id=person_id) else False
+
+            data_to_log_for_each_death = {
+                'age': df.at[person_id, 'age_range'],
+                'sex': df.at[person_id, 'sex'],
+                'cause': "AIDS_non_TB",
+                'person_id': person_id,
+                'dx_status': df.at[person_id, 'hv_diagnosed'],
+                'art_status': df.at[person_id, 'hv_art'],
+                'six_months_on_art': six_months_on_art,
+                'previously_on_art': previously_on_art,
+                'has_aids': has_aids,
+            }
+
+            logger.info(key='death', data=data_to_log_for_each_death)
+
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -1895,11 +1919,36 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
 
             # treatment adjustment reduces probability of death
             if prob < self.sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"]:
+
+                # Log the death
+                # - log the line-list of summary information about each death
+                six_months_on_art = True if df.at[person_id, "hv_date_treated"] >= (
+                    self.sim.date - DateOffset(months=6)) else False
+                previously_on_art = True if (df.at[person_id, 'hv_art'] == "not") and not pd.isnull(
+                    df.at[person_id, "hv_date_treated"]) else False
+                has_aids = True if 'aids_symptoms' in self.sim.modules["SymptomManager"].has_what(
+                    person_id=person_id) else False
+
+                data_to_log_for_each_death = {
+                    'age': df.at[person_id, 'age_range'],
+                    'sex': df.at[person_id, 'sex'],
+                    'cause': "AIDS_TB",
+                    'person_id': person_id,
+                    'dx_status': df.at[person_id, 'hv_diagnosed'],
+                    'art_status': df.at[person_id, 'hv_art'],
+                    'six_months_on_art': six_months_on_art,
+                    'previously_on_art': previously_on_art,
+                    'has_aids': has_aids,
+                }
+
+                logger.info(key='death', data=data_to_log_for_each_death)
+
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
                     cause="AIDS_TB",
                     originating_module=self.module,
                 )
+
             else:
                 # if they survive, reschedule the aids death event
                 # module calling rescheduled AIDS death should be Hiv (not TB)
@@ -1917,6 +1966,30 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
         # aids-tb and not on tb treatment
         elif not df.at[person_id, 'tb_on_treatment']:
             # Cause the death to happen immediately, cause defined by TB status
+
+            # Log the death
+            # - log the line-list of summary information about each death
+            six_months_on_art = True if df.at[person_id, "hv_date_treated"] >= (
+                    self.sim.date - DateOffset(months=6)) else False
+            previously_on_art = True if (df.at[person_id, 'hv_art'] == "not") and not pd.isnull(
+                df.at[person_id, "hv_date_treated"]) else False
+            has_aids = True if 'aids_symptoms' in self.sim.modules["SymptomManager"].has_what(
+                person_id=person_id) else False
+
+            data_to_log_for_each_death = {
+                'age': df.at[person_id, 'age_range'],
+                'sex': df.at[person_id, 'sex'],
+                'cause': "AIDS_TB",
+                'person_id': person_id,
+                'dx_status': df.at[person_id, 'hv_diagnosed'],
+                'art_status': df.at[person_id, 'hv_art'],
+                'six_months_on_art': six_months_on_art,
+                'previously_on_art': previously_on_art,
+                'has_aids': has_aids,
+            }
+
+            logger.info(key='death', data=data_to_log_for_each_death)
+
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id, cause="AIDS_TB", originating_module=self.module
             )
@@ -2676,7 +2749,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         outputs_age15_64_F = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64) & (df.sex == "F"))
 
         logger.info(
-            key="hiv_detailed_outputs",
+            key="hiv_baseline_outputs",
             description="Baseline comparisons",
             data={
                 "outputs_age15_64": tuple(outputs_age15_64),
