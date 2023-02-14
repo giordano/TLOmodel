@@ -5,7 +5,7 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo scenario-run src/scripts/hiv/projections_jan2023/calibration_script.py
 
 or execute a single run:
 tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
@@ -59,7 +59,7 @@ class TestScenario(BaseScenario):
         )
 
         self.sampled_parameters = pd.read_excel(
-            os.path.join(self.resources, "../../../../resources/ResourceFile_HIV.xlsx"),
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
             sheet_name="LHC_samples",
         )
 
