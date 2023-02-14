@@ -44,9 +44,6 @@ from tlo.scenario import BaseScenario
 # Ignore warnings to avoid cluttering output from simulation
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-number_of_draws = 1
-runs_per_draw = 5
-
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
@@ -55,10 +52,10 @@ class TestScenario(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2036, 1, 1),
-            initial_population_size=75000,
+            end_date=Date(2022, 1, 1),
+            initial_population_size=5000,
             number_of_draws=1,
-            runs_per_draw=1,
+            runs_per_draw=2,
         )
 
         self.sampled_parameters = pd.read_excel(
