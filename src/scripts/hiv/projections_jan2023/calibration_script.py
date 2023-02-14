@@ -37,7 +37,7 @@ import warnings
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.methods import deviance_measure
+# from tlo.methods import deviance_measure
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -69,14 +69,14 @@ class TestScenario(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
-                "tlo.methods.deviance_measure": logging.INFO,
+                # "tlo.methods.deviance_measure": logging.INFO,
             }
         }
 
     def modules(self):
         return [
             fullmodel(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
+            # deviance_measure.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
