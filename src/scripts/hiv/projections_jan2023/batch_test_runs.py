@@ -24,7 +24,6 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 import warnings
 
 from tlo import Date, logging
-# from tlo.methods import deviance_measure
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -60,7 +59,6 @@ class TestScenario(BaseScenario):
     def modules(self):
         return [
             fullmodel(resourcefilepath=self.resources),
-            # deviance_measure.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
