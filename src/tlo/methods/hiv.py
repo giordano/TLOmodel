@@ -2772,12 +2772,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             num_art_under_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
                                              (df.hv_date_treated >= (now - DateOffset(months=6))))
             num_art_under_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
-                                             (df.hv_date_treated >= (now - DateOffset(months=6))))
+                                         (df.hv_date_treated >= (now - DateOffset(months=6))))
 
             num_art_over_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
-                                             (df.hv_date_treated < (now - DateOffset(months=6))))
+                                            (df.hv_date_treated < (now - DateOffset(months=6))))
             num_art_over_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
-                                             (df.hv_date_treated < (now - DateOffset(months=6))))
+                                        (df.hv_date_treated < (now - DateOffset(months=6))))
 
             num_any_interruption = sum(subset & df.hv_inf & (df.hv_art == "not") & ~pd.isnull(df.hv_date_treated))
 
