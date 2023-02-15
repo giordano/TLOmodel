@@ -801,7 +801,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
