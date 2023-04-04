@@ -149,8 +149,9 @@ def test_natural_history(seed):
 
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
+    # todo change active testing rate
     # set very high incidence rates for poll
-    sim.modules['Tb'].parameters['beta'] = 50
+    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 50
     sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
     sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
 
@@ -212,7 +213,7 @@ def test_natural_history(seed):
                          )
         hsi_event.run(squeeze_factor=0)
 
-    assert df.at[tb_case, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[tb_case, 'tb_date_tested'])
     assert df.at[tb_case, 'tb_diagnosed']
     assert df.at[tb_case, "tb_on_treatment"]
     assert df.at[tb_case, "tb_date_treated"] == sim.date
@@ -265,7 +266,7 @@ def test_treatment_schedule(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -341,7 +342,7 @@ def test_treatment_failure(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -506,7 +507,7 @@ def test_relapse_risk(seed):
     sim.modules['Tb'].relapse_event(sim.population)
 
     # check relapse to active tb is scheduled to occur
-    assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_scheduled_date_active'])
 
 
 def test_ipt_to_child_of_tb_mother(seed):
@@ -750,7 +751,7 @@ def test_active_tb_linear_model(seed):
     tb_module = sim.modules['Tb']
 
     # set parameters
-    tb_module.parameters['beta'] = 5
+    tb_module.parameters['scaling_factor_WHO'] = 5
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -761,19 +762,19 @@ def test_active_tb_linear_model(seed):
     df = sim.population.props
 
     # set properties - no risk factors
-    df.at[df.is_alive, 'tb_inf'] = 'uninfected'
-    df.at[df.is_alive, 'age_years'] = 25
-    df.at[df.is_alive, 'va_bcg_all_doses'] = True
+    df.loc[df.is_alive, 'tb_inf'] = 'uninfected'
+    df.loc[df.is_alive, 'age_years'] = 25
+    df.loc[df.is_alive, 'va_bcg_all_doses'] = True
 
-    df.at[df.is_alive, 'li_bmi'] = 1  # 4=obese
-    df.at[df.is_alive, 'li_ex_alc'] = False
-    df.at[df.is_alive, 'li_tob'] = False
+    df.loc[df.is_alive, 'li_bmi'] = 1  # 4=obese
+    df.loc[df.is_alive, 'li_ex_alc'] = False
+    df.loc[df.is_alive, 'li_tob'] = False
 
-    df.at[df.is_alive, 'tb_on_ipt'] = False
+    df.loc[df.is_alive, 'tb_on_ipt'] = False
 
-    df.at[df.is_alive, 'hv_inf'] = False
-    df.at[df.is_alive, 'sy_aids_symptoms'] = 0
-    df.at[df.is_alive, 'hv_art'] = "not"
+    df.loc[df.is_alive, 'hv_inf'] = False
+    df.loc[df.is_alive, 'sy_aids_symptoms'] = 0
+    df.loc[df.is_alive, 'hv_art'] = "not"
 
     # no risk factors
     person_id0 = 0
@@ -812,7 +813,6 @@ def test_basic_run_with_default_parameters(seed):
     end_date = Date(2010, 6, 30)
 
     sim = get_sim(seed=seed)
-
     sim.make_initial_population(n=1000)
 
     check_dtypes(sim)
