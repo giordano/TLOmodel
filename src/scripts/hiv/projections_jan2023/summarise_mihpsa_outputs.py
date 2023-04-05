@@ -30,6 +30,8 @@ results_folder = get_scenario_outputs("batch_test_runs.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
+log2 = load_pickled_dataframes(results_folder, draw=0, run=1, name=None)
+log3 = load_pickled_dataframes(results_folder, draw=0, run=2, name=None)
 
 baseline_outputs = log["tlo.methods.hiv"]["hiv_baseline_outputs"]
 detailed_outputs = log["tlo.methods.hiv"]["hiv_detailed_outputs"]
