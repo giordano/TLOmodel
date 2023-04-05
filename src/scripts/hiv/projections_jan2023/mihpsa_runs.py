@@ -39,14 +39,14 @@ class TestScenario(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2036, 1, 1),
-            initial_population_size=100000,
+            initial_population_size=300000,
             number_of_draws=1,
             runs_per_draw=3,
         )
 
     def log_configuration(self):
         return {
-            'filename': 'test_runs',
+            'filename': 'mihpsa_runs',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
