@@ -16,7 +16,6 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-
 # %% Function to make standard plot to compare model and data
 def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_str=None):
     assert model is not None
