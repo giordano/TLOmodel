@@ -57,7 +57,7 @@ def get_num_dalys(_df):
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 # Plot for total number of DALYs from the scenario
-    name_of_plot = f'Total DALYS, {target_period()}'
+    name_of_plot_1 = f'Total DALYS, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('DALYS (Millions)')
@@ -67,7 +67,7 @@ def get_num_dalys(_df):
     plt.close(fig)
 
 # plot of total number of deaths from the scenario
-    name_of_plot = f'Total Deaths, {target_period()}'
+    name_of_plot_2 = f'Total Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('Deaths (Millions)')
@@ -77,14 +77,10 @@ def get_num_dalys(_df):
     plt.close(fig)
 
 
-resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+# resourcefilepath = Path("./resources")
+# outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-
-
-
-#
 # # %% Function to make standard plot to compare model and data
 # def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_str=None):
 #     assert model is not None
