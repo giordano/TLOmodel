@@ -14,8 +14,8 @@ from tlo.analysis.utils import extract_results, summarize, get_scenario_outputs
 from tlo import Date
 
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-#outputspath = Path("./outputs/nic503@york.ac.uk")
+#outputpath = Path("./outputs")  # folder for convenience of storing outputs
+outputpath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
@@ -74,7 +74,7 @@ with open(outputpath / "default_run.pickle", "rb") as f:
 
 #results_folder = get_scenario_outputs("batch_test_runs.py", outputpath)[-1]
 num_deaths = extract_results(
-    results_folder,
+    outputpath,
     module='tlo.methods.demography',
     key='death',
     custom_generate_series=get_num_deaths,
@@ -82,7 +82,7 @@ num_deaths = extract_results(
 )
 
 num_dalys = extract_results(
-    results_folder,
+    outputpath,
     module='tlo.methods.healthburden',
     key='dalys_stacked',
     custom_generate_series=get_num_dalys(),
