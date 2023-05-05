@@ -5,7 +5,6 @@ Extracts DALYs and mortality from the TB module
 import argparse
 import datetime
 import pickle
-from typing import Tuple
 from pathlib import Path
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -34,7 +33,8 @@ def get_num_dalys(_df):
         .drop(columns=['date', 'sex', 'age_range', 'year'])
         .sum().sum()
     )
-    def do_bar_plot_with_ci(_df, annotations=None):
+
+    def make_plot(_df, annotations=None):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar."""
         yerr = np.array([
@@ -61,15 +61,16 @@ def get_num_dalys(_df):
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         fig.tight_layout()
-
+        plt.savefig(
+            outputpath / (name_of_plot.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+        )
         return fig, ax
 
-    # Quantify the health gains associated with all interventions combined.
-
+# Quantify the health gains associated with all interventions combined
     with open(outputpath / "default_run.pickle", "rb") as f:
-        output = pickle.load(f)
+     output = pickle.load(f)
 
-        results_folder= Path("./output")
+     results_folder = Path("./output")
 
     num_deaths = extract_results(
         results_folder,
@@ -92,22 +93,22 @@ def get_num_dalys(_df):
 
 # Plot for total number of DALYs from the scenario
     name_of_plot= f'Total DALYS, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
+    fig, ax = make_plot(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('DALYS (Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    plt.show()
 
 # plot of total number of deaths from the scenario
     name_of_plot= f'Total Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
+    fig, ax = make_plot(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('Deaths (Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    plt.show()
+
+
 
 
