@@ -2,7 +2,6 @@
 """
 Extracts DALYs and mortality from the TB module
  """
-import argparse
 import datetime
 import pickle
 from pathlib import Path
@@ -34,9 +33,9 @@ def get_num_dalys(_df):
         .sum().sum()
     )
 
+    #Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+    #    extent of the error bar
     def make_plot(_df, annotations=None):
-        """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-         extent of the error bar."""
         yerr = np.array([
             (_df['mean'] - _df['lower']).values,
             (_df['upper'] - _df['mean']).values,
@@ -70,7 +69,7 @@ def get_num_dalys(_df):
     with open(outputpath / "default_run.pickle", "rb") as f:
      output = pickle.load(f)
 
-     results_folder = Path("./output")
+     results_folder = Path("./outputs")
 
     num_deaths = extract_results(
         results_folder,
@@ -91,6 +90,17 @@ def get_num_dalys(_df):
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
+    deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
+    deaths = deaths.set_index("date")
+
+    # TB deaths will exclude TB/HIV
+    # keep if cause = TB
+    keep = (deaths.cause == "TB")
+    deaths_TB = deaths.loc[keep].copy()
+    deaths_TB["year"] = deaths_TB.index.year  # count by year
+    tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
+    tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+
 # Plot for total number of DALYs from the scenario
     name_of_plot= f'Total DALYS, {target_period()}'
     fig, ax = make_plot(num_dalys_summarized / 1e6)
@@ -109,6 +119,12 @@ def get_num_dalys(_df):
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     plt.show()
 
-
+# TB deaths will exclude TB/HIV
+    # keep if cause = TB
+    keep = (deaths.cause == "TB")
+    deaths_TB = deaths.loc[keep].copy()
+    deaths_TB["year"] = deaths_TB.index.year  # count by year
+    tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
+    tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
 
 
