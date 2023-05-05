@@ -12,7 +12,7 @@ import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize, compare_number_of_deaths
+from tlo.analysis.utils import extract_results,  summarize
 from tlo import Date
 
 resourcefilepath = Path("./resources")
@@ -34,9 +34,42 @@ def get_num_dalys(_df):
         .drop(columns=['date', 'sex', 'age_range', 'year'])
         .sum().sum()
     )
+    def do_bar_plot_with_ci(_df, annotations=None):
+        """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+         extent of the error bar."""
+        yerr = np.array([
+            (_df['mean'] - _df['lower']).values,
+            (_df['upper'] - _df['mean']).values,
+        ])
+
+        xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+        fig, ax = plt.subplots()
+        ax.bar(
+            xticks.keys(),
+            _df['mean'].values,
+            yerr=yerr,
+            alpha=0.5,
+            ecolor='black',
+            capsize=10,
+        )
+        if annotations:
+            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
+                ax.text(xpos, ypos, text, horizontalalignment='center')
+        ax.set_xticks(list(xticks.keys()))
+        ax.set_xticklabels(list(xticks.values()), rotation=90)
+        ax.grid(axis="y")
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        fig.tight_layout()
+
+        return fig, ax
 
     # Quantify the health gains associated with all interventions combined.
 
+    with open(outputpath / "default_run.pickle", "rb") as f:
+        output = pickle.load(f)
+
+        results_folder= Path("./output")
 
     num_deaths = extract_results(
         results_folder,
