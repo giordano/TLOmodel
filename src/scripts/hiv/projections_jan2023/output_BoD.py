@@ -74,8 +74,11 @@ with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
 print(f"the out put is {output['tlo.methods.demography']['death']}")
 mydata=output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
-mydata.to_excel(outputpath/"mortalityexamplesx.xlsx")
+mydata.to_excel(outputpath/"sample_mortality.xlsx")
 
+print(f"the out put is {output['tlo.methods.healthburden']['dalys']}")
+mydata=output['tlo.methods.healthburden']['dalys'].groupby(['cause', 'sex']).size()
+mydata.to_excel(outputpath/"sample_dalys.xlsx")
     # results_folder = Path("./outputs")
 
 # #results_folder = get_scenario_outputs("batch_test_runs.py", outputpath)[-1]
@@ -128,5 +131,5 @@ mydata.to_excel(outputpath/"mortalityexamplesx.xlsx")
 # plt.show()
 #
 #
-#
-#
+
+
