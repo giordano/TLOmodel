@@ -7,19 +7,19 @@ import datetime
 import pickle
 # import random
 from pathlib import Path
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.methods import healthburden
 from tlo.methods.fullmodel import fullmodel
+import tlo.methods.healthburden
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath: Path = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
@@ -46,7 +46,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+seed = 32567  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
@@ -63,7 +63,23 @@ sim.register(*fullmodel(
                          "use_funded_or_actual_staffing": "funded_plus",
                          "capabilities_coefficient": 1.0},
     },
+
 ))
+# sim.register(*fullmodel(healthburden.HealthBurden,
+#     resourcefilepath=resourcefilepath,
+#     use_simplified_births=False,
+#     module_kwargs={
+#         "SymptomManager": {"spurious_symptoms": True},
+#         "HealthSystem": {"disable": False,
+#                          "service_availability": ["*"],
+#                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
+#                          "cons_availability": "default",
+#                          "beds_availability": "all",
+#                          "ignore_priority": False,
+#                          "use_funded_or_actual_staffing": "funded_plus",
+#                          "capabilities_coefficient": 1.0},
+#     },
+# ))
 
 # set the scenario
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
