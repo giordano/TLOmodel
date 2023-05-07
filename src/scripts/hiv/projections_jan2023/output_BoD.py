@@ -91,9 +91,9 @@ mydalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', '
 mydalys.to_excel(outputpath / "sample_dalys.xlsx")
 
 
-# print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
-# ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability']
-# print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
+#print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
+ #ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability']
+print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
 # yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
 
 # results_folder = Path("./outputs")
