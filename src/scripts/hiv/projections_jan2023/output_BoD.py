@@ -36,6 +36,7 @@ def get_num_dalys(_df):
         .sum().sum()
     )
 
+
 # Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
 #    extent of the error bar
 def make_plot(_df, annotations=None):
@@ -79,25 +80,20 @@ with open(outputpath / "default_run.pickle", "rb") as f:
 # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
-
 print(output.keys())
-print(output['tlo.methods.healthburden'].keys())
-print(output['tlo.methods.demography'].keys())
-print(output['tlo.methods.healthburden']['dalys_stacked'].keys())
-
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
-#sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'age', 'sex']).size()
-sample_deaths = output['tlo.methods.demography']['death'].drop(columns= [])
-sample_deaths.to_excel(outputpath / "sample_mortality_scenario0.xlsx")
+sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
+sample_deaths.to_excel(outputpath / "sample_mortality.xlsx")
 
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-#mydalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-mydalys= output['tlo.methods.healthburden']['dalys'].drop(columns=[ 'sex', 'year'])
-mydalys.to_excel(outputpath / "sample_dalys_scenario0.xlsx")
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+#mydalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause']).size()
+sample_dalys.to_excel(outputpath / "sample_dalys.xlsx")
+
 
 #print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
  #ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability']
-#print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
+print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
 # yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
 
 # results_folder = Path("./outputs")
