@@ -73,16 +73,17 @@ def make_plot(_df, annotations=None):
 # with open(outputpath / "default_run.pickle", "rb") as f:
 #     output = pickle.load(f)
 
+
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
-
 # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 print(output.keys())
+print(list(output['tlo.methods.demography']['death'].keys()))
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
-#sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
-sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
+sample_deaths = output['tlo.methods.demography']['death'].groupby(['date', 'cause']).size()
+#sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
 sample_deaths.to_excel(outputpath / "sample_mortality_scenario0.xlsx")
 
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
@@ -96,52 +97,52 @@ sample_dalys.to_excel(outputpath / "sample_dalys_scenario0.xlsx")
 #print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
 # yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
 
-results_folder = Path("./outputs")
+#results_folder = Path("./outputs")
 
 #results_folder = Path("./outputs/nic503@york.ac.uk")
-
-num_deaths =extract_results(
-        outputpath,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_num_deaths,
-        do_scaling=True
-    )
-
-num_dalys = extract_results(
-    outputpath,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=get_num_dalys(),
-    do_scaling=True
-)
-
-num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
-num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
-
-# #     # # TB deaths will exclude TB/HIV
-# #     # # keep if cause = TB
-# #     # keep = (deaths.cause == "TB")
-# #     # deaths_TB = deaths.loc[keep].copy()
-# #     # deaths_TB["year"] = deaths_TB.index.year  # count by year
-# #     # tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
-# #     # tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
 #
-# Plot for total number of DALYs from the scenario
-name_of_plot = f'Total DALYS, {TARGET_PERIOD()}'
-fig, ax = make_plot(num_dalys_summarized / 1e6)
-ax.set_title(name_of_plot)
-ax.set_ylabel('DALYS (Millions)')
-fig.tight_layout()
-fig.savefig("DALY_graph.png")
-plt.show()
+# num_deaths =extract_results(
+#         outputpath,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_num_deaths,
+#         do_scaling=True
+#     )
+#
+# num_dalys = extract_results(
+#     outputpath,
+#     module='tlo.methods.healthburden',
+#     key='dalys_stacked',
+#     custom_generate_series=get_num_dalys(),
+#     do_scaling=True
+# )
+#
+# num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
+# num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+#
+# # #     # # TB deaths will exclude TB/HIV
+# # #     # # keep if cause = TB
+# # #     # keep = (deaths.cause == "TB")
+# # #     # deaths_TB = deaths.loc[keep].copy()
+# # #     # deaths_TB["year"] = deaths_TB.index.year  # count by year
+# # #     # tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
+# # #     # tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+# #
+# # Plot for total number of DALYs from the scenario
+# name_of_plot = f'Total DALYS, {TARGET_PERIOD()}'
+# fig, ax = make_plot(num_dalys_summarized / 1e6)
+# ax.set_title(name_of_plot)
+# ax.set_ylabel('DALYS (Millions)')
+# fig.tight_layout()
+# fig.savefig("DALY_graph.png")
+# plt.show()
 
 # plot of total number of deaths from the scenario
-name_of_plot= f'Total Deaths, {TARGET_PERIOD()}'
-fig, ax = make_plot(num_deaths_summarized / 1e6)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Deaths (Millions)')
-fig.tight_layout()
-fig.savefig("Mortality_graph.png")
-plt.show()
+# name_of_plot= f'Total Deaths, {TARGET_PERIOD()}'
+# fig, ax = make_plot(num_deaths_summarized / 1e6)
+# ax.set_title(name_of_plot)
+# ax.set_ylabel('Deaths (Millions)')
+# fig.tight_layout()
+# fig.savefig("Mortality_graph.png")
+# plt.show()
 
