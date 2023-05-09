@@ -39,9 +39,9 @@ class TestScenario(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2036, 1, 1),
-            initial_population_size=300000,
-            number_of_draws=1,
-            runs_per_draw=3,
+            initial_population_size=100000,
+            number_of_draws=10,
+            runs_per_draw=1,
         )
 
     def log_configuration(self):
@@ -60,7 +60,17 @@ class TestScenario(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return
+        return {
+            'Tb': {
+                'scaling_factor_WHO': [1.603029372, 1.507636969, 1.673313118, 1.739471024, 1.702850618,
+                                       1.603029372, 1.507636969, 1.673313118, 1.739471024, 1.702850618][draw_number]
+
+            },
+            'Hiv': {
+                'beta': [0.143785163, 0.137641638, 0.130761192, 0.141134768, 0.11937769,
+                         0.143785163, 0.137641638, 0.130761192, 0.141134768, 0.11937769][draw_number]
+            },
+        }
 
 
 if __name__ == '__main__':
