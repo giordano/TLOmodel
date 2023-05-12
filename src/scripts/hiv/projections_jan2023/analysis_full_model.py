@@ -23,8 +23,8 @@ resourcefilepath: Path = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
-popsize = 10000
+end_date = Date(2030, 12, 31)
+popsize = 50_000
 scenario = 0
 
 # set up the log config
@@ -42,11 +42,10 @@ log_config = {
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
-
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 32567  # set seed for reproducibility
+seed = 9064 # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
@@ -63,7 +62,6 @@ sim.register(*fullmodel(
                          "use_funded_or_actual_staffing": "funded_plus",
                          "capabilities_coefficient": 1.0},
     },
-
 ))
 # sim.register(*fullmodel(healthburden.HealthBurden,
 #     resourcefilepath=resourcefilepath,
@@ -82,7 +80,9 @@ sim.register(*fullmodel(
 # ))
 
 # set the scenario
-#sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
+# sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0
+# sim.modules["Tb"].parameters["probability_access_to_xray"] = 0
+# sim.modules["Tb"].parameters["second_line_test"] = []
 sim.modules["Tb"].parameters["scenario"] = 0
 sim.modules["Tb"].parameters["scenario_start_date"] =start_date
 # Run the simulation and flush the logger

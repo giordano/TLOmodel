@@ -85,8 +85,8 @@ cons_available .to_excel(outputpath / "cons_available_baseline.xlsx")
 
 # output serialises mortality patterns
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
-sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
-#sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
+#sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
+sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
 sample_deaths.to_excel(outputpath / "sample_mortality_baseline.xlsx")
 
 # output YLLs and YLDs
@@ -100,10 +100,10 @@ yll_output.to_excel(outputpath / "sample_yll_baseline.xlsx")
 
 
 # Exports TB program indicators
-print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
-sample_dalys.to_excel(outputpath / "sample_dalys_baseline.xlsx")
+# print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
+# sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+# #sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
+# sample_dalys.to_excel(outputpath / "sample_dalys_baseline.xlsx")
 
 print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
 TB_incidence= output['tlo.methods.tb']['tb_incidence'].drop(columns=[])
@@ -115,8 +115,8 @@ TB_treatment_cov.to_excel(outputpath / "TB_treatment_baseline.xlsx")
 
 # output DALYs
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-# sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(column=[])
+#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked']#.drop(column=[])
 sample_dalys.to_excel(outputpath / "sample_dalys_baseline.xlsx")
 
 
