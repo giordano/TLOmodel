@@ -58,7 +58,7 @@ sim.register(*fullmodel(
                          "service_availability": ["*"],
                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
                          "cons_availability": "default",
-                         "beds_availability": "all",
+                         "beds_availability": "default",
                          "ignore_priority": False,
                          "use_funded_or_actual_staffing": "funded_plus",
                          "capabilities_coefficient": 1.0},
@@ -93,9 +93,9 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run.pickle", "wb") as f:
+with open(outputpath / "Tb_baseline.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "Tb_baseline.pickle", "rb") as f:
     output = pickle.load(f)

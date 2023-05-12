@@ -72,13 +72,13 @@ def make_plot(_df, annotations=None):
 #     output = pickle.load(f)
 
 
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "Tb_baseline.pickle", "rb") as f:
     output = pickle.load(f)
+
 # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 print(output.keys())
-
 # output serialises availability of  CXR consumables
 cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
 cons_available .to_excel(outputpath / "cons_available_baseline.xlsx")
@@ -101,8 +101,8 @@ yll_output.to_excel(outputpath / "sample_yll_baseline.xlsx")
 
 # Exports TB program indicators
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
 sample_dalys.to_excel(outputpath / "sample_dalys_baseline.xlsx")
 
 print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
@@ -115,8 +115,8 @@ TB_treatment_cov.to_excel(outputpath / "TB_treatment_baseline.xlsx")
 
 # output DALYs
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(column=[])
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+# sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(column=[])
 sample_dalys.to_excel(outputpath / "sample_dalys_baseline.xlsx")
 
 
