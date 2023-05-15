@@ -334,6 +334,7 @@ def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type
     if individual_id not in mni or mni[individual_id]['delay_three']:
         return
 
+    # Can we make this contingent on actual delay in care?
     if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
         mni[individual_id]['delay_three'] = True
 
