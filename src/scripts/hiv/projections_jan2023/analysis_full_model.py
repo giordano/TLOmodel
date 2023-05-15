@@ -23,8 +23,8 @@ resourcefilepath: Path = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 3, 31)
-popsize = 500
+end_date = Date(2033, 12, 31)
+popsize = 50000
 scenario = 0
 
 # set up the log config
@@ -42,8 +42,7 @@ log_config = {
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
-# Register the appropriate modules
-# need to call epi before tb to get bcg vax
+
 # seed = random.randint(0, 50000)
 seed = 9064 # set seed for reproducibility
 
@@ -63,21 +62,6 @@ sim.register(*fullmodel(
                          "capabilities_coefficient": 1.0},
     },
 ))
-# sim.register(*fullmodel(healthburden.HealthBurden,
-#     resourcefilepath=resourcefilepath,
-#     use_simplified_births=False,
-#     module_kwargs={
-#         "SymptomManager": {"spurious_symptoms": True},
-#         "HealthSystem": {"disable": False,
-#                          "service_availability": ["*"],
-#                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
-#                          "cons_availability": "default",
-#                          "beds_availability": "all",
-#                          "ignore_priority": False,
-#                          "use_funded_or_actual_staffing": "funded_plus",
-#                          "capabilities_coefficient": 1.0},
-#     },
-# ))
 
 # set the scenario
 # sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0
