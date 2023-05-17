@@ -46,6 +46,7 @@ def get_sim(seed):
             mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
             cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
             ignore_priority=True,  # do not use the priority information in HSI event to schedule
+            adopt_priority_policy=False,  # overwrite default setting of adopting priority policy
             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
             disable_and_reject_all=False,  # disable healthsystem and no HSI runs
@@ -124,8 +125,8 @@ def test_scenario_ipt_expansion(seed):
     list_of_events = list()
 
     for ev_tuple in sim.modules['HealthSystem'].HSI_EVENT_QUEUE:
-        date = ev_tuple[1]  # this is the 'topen' value
-        event = ev_tuple[4]
+        date = ev_tuple.topen  # this is the 'topen' value
+        event = ev_tuple.hsi_event
         if isinstance(event, tb.HSI_Tb_Start_or_Continue_Ipt):
             list_of_events.append((date, event, event.target))
 
