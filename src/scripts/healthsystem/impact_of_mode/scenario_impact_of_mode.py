@@ -69,9 +69,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "Mode 2": {
+            "Mode 0": {
                 'HealthSystem': {
-                    'mode_appt_constraints': 2,
+                    'mode_appt_constraints': 0,
                     "use_funded_or_actual_staffing": "actual",
                  },
              },
