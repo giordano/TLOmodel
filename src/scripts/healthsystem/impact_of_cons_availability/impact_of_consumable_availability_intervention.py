@@ -1,7 +1,7 @@
 """
 This file defines a batch run to calculate the health effect of updated consumable availability estimates
 as a result of a supply chain intervention. The following scenarios are currently considered:
-1. Scenario 1: Provide computers to all level 1a and 1b facilities.
+1. Scenario 1: Assign pharmacists to manage drug stocks at all level 1a and 1b facilities.
 
 The batch runs are for a large population for a long time with all disease modules and full use of HSIs.
 
@@ -23,10 +23,10 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 12, 31)
-        self.pop_size = 100_000 # large population size for final simulation
+        self.end_date = Date(2025, 12, 31) # 31/12/2025
+        self.pop_size = 100_000 # large population size for final simulation = 100,000
         self.number_of_draws = 2  # <- one scenario
-        self.runs_per_draw = 5  # <- repeated this many times
+        self.runs_per_draw = 5  # <- repeated this many times = 5
 
     def log_configuration(self):
         return {
@@ -46,7 +46,7 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'cons_availability':  ['alternate_scenario1', 'default'][draw_number]
+                'change_cons_availability_to': ['alternate_scenario1', 'NO_CHANGE'][draw_number]
                }
         }
 
