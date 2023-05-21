@@ -37,7 +37,7 @@ class ImpactOfTBDiagnosisPathways(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_all_TB_diagnosis_pathways',
+            'filename': 'impact_of_baseline_TB_diagnosis_pathways',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,

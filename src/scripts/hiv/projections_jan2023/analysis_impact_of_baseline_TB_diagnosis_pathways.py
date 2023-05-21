@@ -96,7 +96,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs("scenario_impact_of_TB_diagnosis_pathways.py", outputspath)[-1]
+    results_folder = get_scenario_outputs("scenario_impact_of__baseline_TB_diagnosis_pathways.py", outputspath)[-1]
     print(f"this is the results folder {results_folder}")
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
