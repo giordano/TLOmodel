@@ -22,7 +22,7 @@ from tlo.scenario import BaseScenario
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 
-class ImpactOfBaselineTbDiagnosisPathways(BaseScenario):
+class ImpactOfTbDiagnosisPathways(BaseScenario):
 
     def __init__(self):
         super().__init__(
