@@ -96,7 +96,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs("scenario_impact_of__baseline_TB_diagnosis_pathways.py", outputspath)[-1]
+    results_folder = get_scenario_outputs("scenario_impact_of_baseline_TB_diagnosis_pathways.py", outputspath)[-1]
     print(f"this is the results folder {results_folder}")
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
@@ -108,12 +108,12 @@ if __name__ == "__main__":
     print(f"expected deaths {log['tlo.methods.demography']['death']}")
     #sample_deaths = log['tlo.methods.demography']['death'].groupby(['date', 'cause', 'sex']).size()
     summary_deaths = log['tlo.methods.demography']['death'].drop(columns=[])
-    summary_deaths.to_excel(outputspath / "Expected_mortality_NoXpert.xlsx")
+    summary_deaths.to_excel(outputspath / "Expected_mortality_baseline.xlsx")
 
     print(f"expected dalys{log['tlo.methods.healthburden']['dalys_stacked']}")
     # sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
     expected_dalys = log['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
-    expected_dalys.to_excel(outputspath / "Expected_dalys_NoXpert.xlsx")
+    expected_dalys.to_excel(outputspath / "Expected_dalys_baseline.xlsx")
 
     # Get basic information about the results
     scenario_info = get_scenario_info(results_folder)
