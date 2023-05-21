@@ -3,11 +3,12 @@ This file defines an example scenario for analysing the impact of consumable ava
 
 It can be submitted on Azure Batch by running:
 
-    tlo batch-submit src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
+    tlo scenario-run src/scripts/hiv/projections_2023/scenario_impact_of_TB_diagnosis_pathways.py
 
 or locally using:
 
-    tlo scenario-run src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
+    tlo batch-submit src/scripts/hiv/projections_2023/scenario_impact_of_TB_diagnosis_pathways.py
+
 """
 import warnings
 
@@ -21,29 +22,46 @@ from tlo.scenario import BaseScenario
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-#class ImpactOfConsumablesAvailability(BaseScenario):
-class ImpactOfTbDignosisPathway(BaseScenario):
+
+class ImpactOfTBDiagnosisPathways(BaseScenario):
+
     def __init__(self):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2033, 12, 31),
-            initial_population_size=50_000,
+            end_date=Date(2015, 12, 31),
+            initial_population_size=10_000,
             number_of_draws=1,
             runs_per_draw=2,
         )
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_TB_Diagnosis_pathways',
+            'filename': 'impact_of_all_TB_diagnosis_pathways',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
-                'tlo.methods.population': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.Tb': logging.INFO,
-                'tlo.methods.HIV': logging.INFO,
+                'tlo.methods.Hiv': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
+    def modules(self):
+        return fullmodel(resourcefilepath=self.resources)
+
+    def draw_parameters(self, draw_number, rng):
+        return {
+            'Tb': {
+                'scenario': 0
+            },
+        }
+if __name__ == '__main__':
+
+    from tlo.cli import scenario_run
+
+    scenario_run([__file__])
+
+################################################################################################
+
