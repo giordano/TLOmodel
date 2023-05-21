@@ -22,7 +22,7 @@ from tlo.scenario import BaseScenario
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 
-class ImpactOfBaselineTBDiagnosisPathways(BaseScenario):
+class ImpactOfBaselineTbDiagnosisPathways(BaseScenario):
 
     def __init__(self):
         super().__init__(
@@ -36,7 +36,7 @@ class ImpactOfBaselineTBDiagnosisPathways(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_baseline_TB_diagnosis_pathways',
+            'filename': 'impact_of_Tb_diagnosis_pathways',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
