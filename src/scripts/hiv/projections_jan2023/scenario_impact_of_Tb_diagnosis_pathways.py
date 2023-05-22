@@ -23,7 +23,6 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 
 class ImpactOfTbDiagnosisPathways(BaseScenario):
-
     def __init__(self):
         super().__init__(
             seed=0,
