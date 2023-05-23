@@ -174,67 +174,111 @@ def extract_outputs_detailed(results_folder: Path,
 
 
 age15_19 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age15_19_M",
-                             column_f="outputs_age15_19_F")
+                                    column_m="outputs_age15_19_M",
+                                    column_f="outputs_age15_19_F")
 
 age20_24 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age20_24_M",
-                             column_f="outputs_age20_24_F")
+                                    column_m="outputs_age20_24_M",
+                                    column_f="outputs_age20_24_F")
 
 age25_29 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age25_29_M",
-                             column_f="outputs_age25_29_F")
+                                    column_m="outputs_age25_29_M",
+                                    column_f="outputs_age25_29_F")
 
 age30_34 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age30_34_M",
-                             column_f="outputs_age30_34_F")
+                                    column_m="outputs_age30_34_M",
+                                    column_f="outputs_age30_34_F")
 
 age35_39 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age35_39_M",
-                             column_f="outputs_age35_39_F")
+                                    column_m="outputs_age35_39_M",
+                                    column_f="outputs_age35_39_F")
 
 age40_44 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age40_44_M",
-                             column_f="outputs_age40_44_F")
+                                    column_m="outputs_age40_44_M",
+                                    column_f="outputs_age40_44_F")
 
 age45_49 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age45_49_M",
-                             column_f="outputs_age45_49_F")
+                                    column_m="outputs_age45_49_M",
+                                    column_f="outputs_age45_49_F")
 
 age50_54 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age50_54_M",
-                             column_f="outputs_age50_54_F")
+                                    column_m="outputs_age50_54_M",
+                                    column_f="outputs_age50_54_F")
 
 age55_59 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age55_59_M",
-                             column_f="outputs_age55_59_F")
-
+                                    column_m="outputs_age55_59_M",
+                                    column_f="outputs_age55_59_F")
 
 age60_64 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age60_64_M",
-                             column_f="outputs_age60_64_F")
-
+                                    column_m="outputs_age60_64_M",
+                                    column_f="outputs_age60_64_F")
 
 age65_69 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age65_69_M",
-                             column_f="outputs_age65_69_F")
+                                    column_m="outputs_age65_69_M",
+                                    column_f="outputs_age65_69_F")
 
 age70_74 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age70_74_M",
-                             column_f="outputs_age70_74_F")
+                                    column_m="outputs_age70_74_M",
+                                    column_f="outputs_age70_74_F")
 
 age75_79 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age75_79_M",
-                             column_f="outputs_age75_79_F")
+                                    column_m="outputs_age75_79_M",
+                                    column_f="outputs_age75_79_F")
 
 age80_84 = extract_outputs_detailed(results_folder=results_folder,
-                             column_m="outputs_age80_84_M",
-                             column_f="outputs_age80_84_F")
+                                    column_m="outputs_age80_84_M",
+                                    column_f="outputs_age80_84_F")
+
 
 # baseline_outputs = log["tlo.methods.hiv"]["hiv_baseline_outputs"]
 # detailed_outputs = log["tlo.methods.hiv"]["hiv_detailed_outputs"]
 # deaths = log["tlo.methods.hiv"]["death"]
 #
+
+# extract deaths by age-group
+def extract_deaths(results_folder: Path) -> pd.DataFrame:
+    module = "tlo.methods.demography"
+    key = "death"
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+    df_out = pd.DataFrame()
+
+    # 10 draws, 1 run
+    run = 0
+    for draw in range(info['number_of_draws']):
+        # load the log file
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+        # categorise age into groups
+        df["age_group"] = (df["age"] / 5).astype(int) * 5
+
+        # sum AIDS deaths by year and age-group
+        keep = (df.label == "AIDS")
+        aids_deaths = df.loc[keep].copy()
+        aids_deaths["year"] = aids_deaths["date"].dt.year  # count by year
+        # remove children
+        aids_deaths = aids_deaths.loc[aids_deaths.age_group >= 15]
+        aids_deaths_summary = aids_deaths.groupby(by=["year", "sex", "age_group"]).size().to_frame(
+            name='count').reset_index()
+
+        # for first draw, create the dataframe
+        # subsequent draws can be merged in
+        if draw == 0:
+            df_out = aids_deaths_summary
+        else:
+            df_out = pd.merge(df_out, aids_deaths_summary,
+                              how="left",
+                              on=["year", "sex", "age_group"])
+
+    # take mean across all draws
+    df_out['avg'] = df_out.iloc[:, -10:].mean(axis=1) * scaling_factor
+
+    return df_out
+
+
+deaths = extract_deaths(results_folder=results_folder)
+deaths.to_csv(outputspath / ("MIHPSA_deaths_May2023" + ".csv"), index=None)
 
 
 # write to excel
@@ -244,4 +288,3 @@ with pd.ExcelWriter(outputspath / ("MIHPSA_outputs2" + ".xlsx"), engine='openpyx
     deaths.to_excel(writer, sheet_name='Sheet3', index=False)
     writer.save()
 
-detailed_outputs.to_csv(outputspath / ("MIHPSA_detailed_outputs" + ".csv"), index=None)
