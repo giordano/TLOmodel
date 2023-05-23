@@ -154,3 +154,6 @@ if __name__ == "__main__":
    # print(f" the log is {log['tlo.methods.tb'].keys()}")
     print(f" the log is {log['tlo.methods.hiv'].keys()}")
     #print(f"The scaling_factor is: {log['tlo.methods.population']['scaling_factor']}")
+print(f"projected TB incidence{log['tlo.methods.tb']['tb_incidence']}")
+TB_incidence =log['tlo.methods.tb']['tb_incidence'].drop(columns=[])
+TB_incidence.to_excel(outputspath / "new_TB_cases_baseline.xlsx")
