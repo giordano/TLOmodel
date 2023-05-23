@@ -34,7 +34,7 @@ def extract_total_dalys(results_folder):
     return extract_results(
         results_folder,
         module="tlo.methods.healthburden",
-        key="dalys",
+        key="dalys_stacked",
         custom_generate_series=extract_dalys_total,
         do_scaling=False
     )
@@ -150,3 +150,7 @@ if __name__ == "__main__":
         fig_1.savefig(results_folder / "total_deaths_across_baseline.pdf")
         fig_2.savefig(results_folder / "total_dalys_across_baseline.pdf")
 
+    print(f" the log is {log['tlo.methods.demography'].keys()}")
+   # print(f" the log is {log['tlo.methods.tb'].keys()}")
+    print(f" the log is {log['tlo.methods.hiv'].keys()}")
+    #print(f"The scaling_factor is: {log['tlo.methods.population']['scaling_factor']}")
