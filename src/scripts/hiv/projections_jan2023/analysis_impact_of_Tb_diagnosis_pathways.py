@@ -1,6 +1,6 @@
 """Baseline impact  analysis for Tb diagnosis pathways."""
 
-# python src\scripts\hiv\projections_jan2023\analysis_baseline_impact_of_TB_diagnosis_pathways.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src\scripts\hiv\projections_jan2023\analysis_impact_of_TB_diagnosis_pathways.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from pathlib import Path
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs("scenario_impact_of_baseline_Tb_diagnosis_pathways.py", outputspath)[-1]
+    results_folder = get_scenario_outputs("scenario_impact_of_Tb_diagnosis_pathways.py", outputspath)[-1]
     print(f"this is the results folder {results_folder}")
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
