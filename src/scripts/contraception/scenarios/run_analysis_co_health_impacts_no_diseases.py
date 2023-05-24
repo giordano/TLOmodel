@@ -81,8 +81,8 @@ class RunAnalysisCo(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'run_analysis_co_health_impacts_no_diseases',  # <- (specified only for local running)
-            'directory': './outputs',  # <- (specified only for local running)
+            'filename': 'run_analysis_co_health_impacts_no_diseases',
+            'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
