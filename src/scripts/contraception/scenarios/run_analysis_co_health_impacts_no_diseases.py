@@ -73,10 +73,10 @@ class RunAnalysisCo(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2030, 12, 31),
+            end_date=Date(2014, 12, 31),
             initial_population_size=2_000,  # selected size for the Tim C at al. 2023 paper: 250K
             number_of_draws=1,  # <- one scenario
-            runs_per_draw=1,  # <- repeated this many times
+            runs_per_draw=10,  # <- repeated this many times
         )
 
     def log_configuration(self):
