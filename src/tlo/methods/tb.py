@@ -1430,7 +1430,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     * scenario 0 is the default which uses baseline parameters
-    * scenario 1 constrains availablity of Xpert by setting probability of expert  to zero
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
     """
