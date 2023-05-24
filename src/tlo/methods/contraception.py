@@ -315,15 +315,16 @@ class Contraception(Module):
         person_age = self.sim.population.props.at[person_id, 'age_years']
         # assert self.sim.population.props.at[person_id, 'co_contraception'] == "not_using"
         # TODO: the above BACK and REMOVE the below (+ person age move back lower)
-        logger.info(key='on_contraceptive_at_the_end_of_pregnancy',
-                    data={
-                        'mother_id': person_id,
-                        'mother_age': person_age,
-                        'mother_co': self.sim.population.props.at[person_id, 'co_contraception']
-                    },
-                    description="Debug Information about women who are on a contraceptive at the end of the pregnancy"
-                                "as they shouldn't be!"
-                    )
+        if not self.sim.population.props.at[person_id, 'co_contraception'] == "not_using":
+            logger.info(key='on_contraceptive_at_the_end_of_pregnancy',
+                        data={
+                            'mother_id': person_id,
+                            'mother_age': person_age,
+                            'mother_co': self.sim.population.props.at[person_id, 'co_contraception']
+                        },
+                        description="Debug Information about women who are on a contraceptive at the end of the pregnancy"
+                                    "as they shouldn't be!"
+                        )
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         # person_age = self.sim.population.props.at[person_id, 'age_years']
         self.select_contraceptive_following_birth(person_id, person_age)
