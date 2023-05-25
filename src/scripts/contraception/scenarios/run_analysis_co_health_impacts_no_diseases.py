@@ -107,8 +107,8 @@ class RunAnalysisCo(BaseScenario):
         return [
             demography.Demography(resourcefilepath=self.resources),
             contraception.Contraception(resourcefilepath=self.resources,
-                                        use_interventions=False,  # default: False
-                                        # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
+                                        use_interventions=True,  # default: False
+                                        interventions_start_date=Date(2011, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         ),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
