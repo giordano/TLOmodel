@@ -69,6 +69,7 @@ sim.register(*fullmodel(
 # sim.modules["Tb"].parameters["second_line_test"] = []
 sim.modules["Tb"].parameters["scenario"] = 0
 sim.modules["Tb"].parameters["scenario_start_date"] =start_date
+
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

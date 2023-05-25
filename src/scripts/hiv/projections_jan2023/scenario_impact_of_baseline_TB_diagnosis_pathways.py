@@ -50,12 +50,20 @@ class ImpactOfBaselineTbDiagnosisPathways(BaseScenario):
     def modules(self):
         return fullmodel(resourcefilepath=self.resources)
 
+    # def draw_parameters(self, draw_number, rng):
+    #     return {
+    #         'Tb': {
+    #             'scenario': 0,
+    #             'scenario_start_date': 2010,
+    #
+    #         },
+    #     }
+
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Tb': {
-                'scenario': 0
-            },
+          return {
         }
+
+
 if __name__ == '__main__':
 
     from tlo.cli import scenario_run
