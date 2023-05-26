@@ -116,7 +116,7 @@ class RunAnalysisCo(BaseScenario):
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       mode_appt_constraints=1,
-                                      cons_availability='default'),
+                                      cons_availability='all'),
             newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
