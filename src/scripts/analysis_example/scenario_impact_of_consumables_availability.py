@@ -26,12 +26,12 @@ class ImpactOfConsumablesAvailability(BaseScenario):
 
     def __init__(self):
         super().__init__(
-            seed=0,
+            seed=5001,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2015, 1, 1),
-            initial_population_size=10_000,
+            end_date=Date(2033, 12, 31),
+            initial_population_size=50_000,
             number_of_draws=2,
-            runs_per_draw=2,
+            runs_per_draw=1,
         )
 
     def log_configuration(self):
