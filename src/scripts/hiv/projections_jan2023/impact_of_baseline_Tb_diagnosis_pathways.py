@@ -2,10 +2,10 @@
 Analyses baseline impact of Tb diagnosis pathways
 
 It can be submitted on Azure Batch by running:
- tlo batch-submit src/scripts/hiv/projections_jan2023/impact_of_baseline_TB_diagnosis_pathways.py
+ tlo batch-submit src/scripts/hiv/projections_jan2023/impact_of_baseline_Tb_diagnosis_pathways.py
 
 or locally using:
-tlo scenario-run src/scripts/hiv/projections_jan2023/impact_of_baseline_TB_diagnosis_pathways.py
+tlo scenario-run src/scripts/hiv/projections_jan2023/impact_of_baseline_Tb_diagnosis_pathways.py
 
 
 """
