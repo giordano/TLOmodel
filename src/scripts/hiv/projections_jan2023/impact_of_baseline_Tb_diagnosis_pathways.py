@@ -2,10 +2,10 @@
 Analyses baseline impact of Tb diagnosis pathways
 
 It can be submitted on Azure Batch by running:
- tlo batch-submit src/scripts/hiv/projections_jan2023/baseline_TB_diagnosis_pathways.py
+ tlo batch-submit src/scripts/hiv/projections_jan2023/impact_of_baseline_TB_diagnosis_pathways.py
 
 or locally using:
-tlo scenario-run src/scripts/hiv/projections_jan2023/baseline_TB_diagnosis_pathways.py
+tlo scenario-run src/scripts/hiv/projections_jan2023/impact_of_baseline_TB_diagnosis_pathways.py
 
 
 """
@@ -16,12 +16,12 @@ from tlo.scenario import BaseScenario
 
 
 # Ignore warnings to avoid cluttering output from simulation - generally you do not
-# need (and generally shouldn't) do this as warnings can contain useful information but
+# need (and generally shouldn't) do this as warnings can contain useful information
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 
-class BaselineTbDiagnosisPathways(BaseScenario):
+class ImpactBaselineTbDiagnosisPathways(BaseScenario):
     def __init__(self):
         super().__init__(
             seed=5001,
@@ -34,7 +34,7 @@ class BaselineTbDiagnosisPathways(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_Tb_diagnosis_pathways',
+            'filename': 'impact_of_baseline_Tb_diagnosis_pathways',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
