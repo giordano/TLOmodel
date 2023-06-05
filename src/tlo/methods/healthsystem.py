@@ -1164,7 +1164,7 @@ class HealthSystem(Module):
 
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
-            tclose = topen + DateOffset(days=2)
+            tclose = topen + DateOffset(months=2)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
