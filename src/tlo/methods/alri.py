@@ -2659,7 +2659,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     oxygen_provided=oxygen_provided
                 )
                 if treatment_outcome == 'failure':
-                    self._schedule_follow_up_following_treatment_failure()
+                    # apply 30% chance of following-up
+                    if self.module.rng.random_sample < 0.3:
+                        self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
