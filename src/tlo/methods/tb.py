@@ -751,9 +751,13 @@ class Tb(Module):
         )
 
         # TB GeneXpert
-        self.item_codes_for_consumables_required['xpert_test'] ={
-            hs.get_item_codes_from_item_name("Xpert")
-           }
+        # self.item_codes_for_consumables_required['xpert_test'] ={
+        #     hs.get_item_codes_from_item_name("Xpert")
+        #    }
+        # TB GeneXpert
+        self.item_codes_for_consumables_required['xpert_test'] = \
+            hs.get_item_codes_from_package_name("Xpert test")
+
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
