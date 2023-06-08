@@ -59,6 +59,7 @@ log_config = {
 seed = 2025  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
+
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
