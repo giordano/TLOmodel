@@ -80,8 +80,8 @@ with open(outputpath / "Tb_baseline.pickle", "rb") as f:
 
 print(output.keys())
 # output serialises availability of  CXR consumables
-cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
-cons_available .to_excel(outputpath / "cons_available_baseline.xlsx")
+# cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
+# cons_available .to_excel(outputpath / "cons_available_baseline.xlsx")
 
 # output serialises mortality patterns
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
