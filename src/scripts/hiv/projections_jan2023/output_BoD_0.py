@@ -18,7 +18,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 #outputpath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
 
 def get_num_deaths(_df):
     """Return total number of Deaths (total within the TARGET_PERIOD)
