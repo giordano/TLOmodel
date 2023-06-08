@@ -16,7 +16,8 @@ from tlo.methods import (
     symptommanager,
     hiv, healthburden,
     simplified_births,
-    healthsystem, epi,
+    healthsystem,
+    epi,
     enhanced_lifestyle,
     healthseekingbehaviour,
 )
@@ -53,6 +54,7 @@ log_config = {
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
+
 # Register the appropriate modules
 seed = 2025  # set seed for reproducibility
 
@@ -72,7 +74,7 @@ sim.register(
 
 # set the scenario
 # sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
-sim.modules["Tb"].parameters["scenario"] = 0
+sim.modules["Tb"].parameters["scenario"] = 2
 sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 
 # Run the simulation and flush the logger
