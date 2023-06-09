@@ -68,7 +68,7 @@ sim.register(
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
    )
