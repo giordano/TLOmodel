@@ -1168,9 +1168,8 @@ class HealthSystem(Module):
          checks for each individual HSI event of the shared type will be redundant.
         """
 
-        # If there is no specified tclose time then set this to a week after topen
-        if tclose is None:
-            tclose = topen + DateOffset(days=7)
+        # In this branch, always overwrite tclose with 7days
+        tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
