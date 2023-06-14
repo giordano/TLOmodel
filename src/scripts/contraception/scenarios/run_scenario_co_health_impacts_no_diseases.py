@@ -1,9 +1,9 @@
 """
 This file defines a batch run to get sims results to be used by the analysis_contraception_plot_table.
 Run on the remote batch system using:
-```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_co_health_impacts_no_diseases.py```
+```tlo batch-submit src/scripts/contraception/scenarios/run_scenario_co_health_impacts_no_diseases.py```
 or locally using:
-```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_co_health_impacts_no_diseases.py```
+```tlo scenario-run src/scripts/contraception/scenarios/run_scenario_co_health_impacts_no_diseases.py```
 
 # TODO: update
 SCENARIO SETTINGS
