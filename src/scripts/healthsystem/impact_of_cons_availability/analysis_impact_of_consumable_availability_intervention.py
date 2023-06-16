@@ -8,7 +8,9 @@ than holding it constant for a long period.
 """
 
 import argparse
+from collections import Counter, defaultdict
 from pathlib import Path
+from tlo import Date
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -74,9 +76,10 @@ def formatting_hsi_df(_df):
 # %% Gathering basic information
 
 # Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('impact_of_cons_availability_intervention.py', outputspath)
-#results_folder = Path(outputspath/ 'impact_of_consumables_availability_intervention-2023-05-09T210307Z/')
-results_folder = Path(outputspath / 'sakshi.mohan@york.ac.uk/impact_of_cons_availability_intervention-2023-05-18T114610Z/')
+#results_folder = get_scenario_outputs('impact_of_cons_availability_intervention.py', outputspath)
+results_folder = Path(outputspath/ 'impact_of_consumables_availability_intervention-2023-06-14T232900Z/')
+#results_folder = Path(outputspath / 'sakshi.mohan@york.ac.uk/impact_of_cons_availability_intervention-2023-05-18T114610Z/')
+results_folder = Path(outputspath/ 'only_one_scenario/')
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -107,7 +110,29 @@ def extract_total_dalys(results_folder):
     )
 
 total_dalys_accrued = extract_total_dalys(results_folder)
-#? Total DALYs accrued higher in the alternate scenario
+
+# Figure showing total DALYs accrued
+mean = [6.250586e+07,  6.511489e+07,  7.982065e+07]# total_dalys_accrued[[(0,1), (1,1), (2,1)]]
+lower = total_dalys_accrued[[(0,0), (1,0), (2,0)]]
+upper = total_dalys_accrued[[(0,2), (1,2), (2,2)]]
+err0 = total_dalys_accrued[(0,2)] - total_dalys_accrued[(0,0)]
+err1 = total_dalys_accrued[(1,2)] - total_dalys_accrued[(1,0)]
+err2 = total_dalys_accrued[(2,2)] - total_dalys_accrued[(2,0)]
+err = [29304944.96591875, 21059633.308431387, 16852184.259618893] # [err0['Total'], err1['Total'], err2['Total']]
+# width of the bars
+barWidth = 0.3
+r1 = np.arange(len(mean))
+plt.bar(r1, mean, width = barWidth, color = 'blue', edgecolor = 'black', yerr=err, capsize=7)
+# Set the xtick labels
+# Set the xtick positions
+plt.xticks(range(3))
+plt.gca().set_xticklabels(['All features', 'Level 1b', 'Pharmacists handle drug orders'])
+
+# Add labels and title
+plt.xlabel('Scenario')
+plt.ylabel('DALYs accrued')
+
+plt.savefig(path_for_figures / 'dalys_comparison.png', dpi=600)
 
 # 1.2 (Optional) Difference in total DALYs accrued by disease
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
@@ -130,7 +155,7 @@ dalys_extracted_by_disease = extract_results(
 #? some NCDs see a decline in DALYs accrued
 
 dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
-print(dalys_by_disease_summarized[[(0,  'mean'),(1,  'mean')]])
+print(dalys_by_disease_summarized[[(0,  'mean'),(1,  'mean'), (2,  'mean')]])
 # dalys_by_disease_summarized.to_csv(outputspath / 'dalys_by_disease.csv')
 # ? HIV, ALRI, epilepsy - higher DALYs accrued in the alternate scenario
 
@@ -193,14 +218,27 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
         only_mean=True,
         collapse_columns=True
     )
+    # cons_req = cons_req[0]
+
+# %% The problem with the above code is that it was written for one draw rather than 2 so the dataframe remains multiindex and the merge does not work
 
     # Merge in item names and prepare to plot:
     cons = cons_req.unstack()
+    # cons = cons['mean'] # new line
     cons_names = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
     )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
-    cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
+
+    #cons_multiindex_columns = cons.columns # remove this if only one draw is used
+    #cons.columns = cons.columns.get_level_values(0) # remove this if only one draw is used
+
+    cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items')# .astype(int)
+    # %% In order to make the astype(int) work, I could replace all the NaNs as 0s
+
+    cons = cons[cons.Available.notna()] # new line
     cons = cons.assign(total=cons.sum(1)).sort_values('total').drop(columns='total')
+
+    #cons.columns = cons_multiindex_columns # remove this if only one draw is used
 
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'
@@ -219,7 +257,7 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
 
     fig, ax = plt.subplots()
     name_of_plot = 'Consumables Not Available'
-    (cons['Not_Available'] / 1e6).sort_values().head(20).plot.barh(ax=ax)
+    (cons['Not_Available'] / 1e6).sort_values(ascending = False).head(20).plot.barh(ax=ax) # change = updated to descending
     ax.set_title(name_of_plot)
     ax.set_ylabel('Item (20 most frequently not available when requested)')
     ax.set_xlabel('Number of requests (Millions)')
