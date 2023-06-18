@@ -1,8 +1,8 @@
-"""This file uses the results of the results of running `impact_of_cons_availability_intervention.py`
-tob extract summary results for the manuscript - "Rethinking economic evaluation of
-system level interventions.
+"""This file uses the results of
+`impact_of_cons_regression_scenarios.py` and 'impact_of_consumables_availability.py'
+to extract summary results for the June 2023 Think Tank Presentation.
 
-I plan to run the simulation for a short period of 5 years (2020 - 2025) because
+The simulation was run for a short period of 6 years (2020 - 2025) because
 holding the consumable availability constant in the short run would be more justifiable
 than holding it constant for a long period.
 """
@@ -13,6 +13,7 @@ from pathlib import Path
 from tlo import Date
 
 import matplotlib.pyplot as plt
+import textwrap # to wrap x-tick labels in the DALY figures
 import pandas as pd
 import numpy as np
 import pickle
@@ -45,17 +46,16 @@ from tlo.analysis.utils import (
 
 outputspath = Path('./outputs/')
 resourcefilepath = Path("./resources")
+path_for_figures = outputspath / "think_tank_figures_june2023"
 
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 12, 31))
 
-
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
-
 
 def formatting_hsi_df(_df):
     """Standard formatting for the HSI_Event log."""
@@ -74,12 +74,12 @@ def formatting_hsi_df(_df):
     return _df
 
 # %% Gathering basic information
-
 # Find results_folder associated with a given batch_file and get most recent
 #results_folder = get_scenario_outputs('impact_of_cons_availability_intervention.py', outputspath)
+# Results folder for `impact_of_cons_regression_scenarios.py`
 results_folder = Path(outputspath/ 'impact_of_consumables_availability_intervention-2023-06-14T232900Z/')
-#results_folder = Path(outputspath / 'sakshi.mohan@york.ac.uk/impact_of_cons_availability_intervention-2023-05-18T114610Z/')
-results_folder = Path(outputspath/ 'only_one_scenario/')
+# Results folder for 'impact_of_consumables_availability.py'
+results_folder_default = outputspath / 'default_scenario' # move the 'NO_CHANGE' scenario folder to a seperate folder
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -92,6 +92,10 @@ params = extract_params(results_folder)
 
 
 # %% Extracting results from run
+
+# Create a list of strings summarizing the parameter values in the different draws
+param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
+scenario_strings = [f"{row.value}" for _, row in params.iterrows()]
 
 # 1. DALYs averted
 #-----------------------------------------
@@ -110,29 +114,57 @@ def extract_total_dalys(results_folder):
     )
 
 total_dalys_accrued = extract_total_dalys(results_folder)
+summarised_total_dalys = summarize(total_dalys_accrued)
 
 # Figure showing total DALYs accrued
-mean = [6.250586e+07,  6.511489e+07,  7.982065e+07]# total_dalys_accrued[[(0,1), (1,1), (2,1)]]
-lower = total_dalys_accrued[[(0,0), (1,0), (2,0)]]
-upper = total_dalys_accrued[[(0,2), (1,2), (2,2)]]
-err0 = total_dalys_accrued[(0,2)] - total_dalys_accrued[(0,0)]
-err1 = total_dalys_accrued[(1,2)] - total_dalys_accrued[(1,0)]
-err2 = total_dalys_accrued[(2,2)] - total_dalys_accrued[(2,0)]
-err = [29304944.96591875, 21059633.308431387, 16852184.259618893] # [err0['Total'], err1['Total'], err2['Total']]
-# width of the bars
-barWidth = 0.3
-r1 = np.arange(len(mean))
-plt.bar(r1, mean, width = barWidth, color = 'blue', edgecolor = 'black', yerr=err, capsize=7)
-# Set the xtick labels
-# Set the xtick positions
-plt.xticks(range(3))
-plt.gca().set_xticklabels(['All features', 'Level 1b', 'Pharmacists handle drug orders'])
+def plot_summarized_total_dalys(summarised_total_dalys, param_strings, file_name):
+    fig, ax = plt.subplots()
+    number_of_draws = len(param_strings)
+    statistic_values = {
+        s: np.array(
+            [summarised_total_dalys[(d, s)].values[0] for d in range(number_of_draws)]
+        )
+        for s in ["mean", "lower", "upper"]
+    }
+    ax.bar(
+        param_strings,
+        statistic_values["mean"],
+        yerr=[
+            statistic_values["mean"] - statistic_values["lower"],
+            statistic_values["upper"] - statistic_values["mean"]
+        ]
+    )
+    ax.set_ylabel("Total number of DALYs")
 
-# Add labels and title
-plt.xlabel('Scenario')
-plt.ylabel('DALYs accrued')
+    # Clean x-tick labels
+    label_mapping = {
+                  'NO_CHANGE': 'Actual (2018)',
+                  'scenario_fac_type': "Scenario: Facility level 1b",
+                  'scenario_fac_owner': "Scenario: Facility owner CHAM",
+                  'scenario_functional_computer': "Scenario: Functional computer available",
+                  'scenario_incharge_drug_orders': "Scenario: Pharmacist in-charge of drug orders",
+                  'scenario_functional_emergency_vehicle': "Scenario: Emergency vehicle available",
+                  'scenario_service_diagnostic': "Scenario: Diagnostic services available",
+                  'scenario_dist_todh': "Scenario: Distance to DHO - 0-10 kms",
+                  'scenario_dist_torms': "Scenario: Distance to RMS - 0-10 kms" ,
+                  'scenario_drug_order_fulfilment_freq_last_3mts': "Scenario: Monthly drug order fulfillment",
+                  'scenario_all_features': "Scenario: All features"
+    } # Dictionary mapping old x-tick labels to new ones
 
-plt.savefig(path_for_figures / 'dalys_comparison.png', dpi=600)
+    xtick_labels = ax.get_xticklabels() # Get the current x-tick labels
+    new_xtick_labels = [label_mapping.get(label.get_text(), label.get_text()) for label in xtick_labels] # Replace the x-tick labels using the mapping dictionary
+
+    wrapped_labels = [textwrap.fill(label, 10) for label in new_xtick_labels] # Wrap the x-tick labels
+
+    ax.set_xticklabels(wrapped_labels)  # Set the new x-tick labels
+    ax.tick_params(axis="x", rotation=45, labelsize=7) # format x-tick labels
+
+    plt.tight_layout()
+    plt.savefig(path_for_figures / file_name, dpi=300)
+    return fig, ax
+
+# Plot the deaths by age across the two scenario draws as line plot with error bars
+fig_1, ax_1 = plot_summarized_total_dalys(summarize(total_dalys_accrued), scenario_strings, 'dalys_comparison.png')
 
 # 1.2 (Optional) Difference in total DALYs accrued by disease
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
@@ -141,7 +173,7 @@ def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
     N.B. This limits the time period of interest to 2010-2019"""
     _, calperiodlookup = make_calendar_period_lookup()
 
-    return _df.loc[(_df['year'] >=2009) & (_df['year'] < 2012)]\
+    return _df.loc[(_df['year'] >=2020) & (_df['year'] < 2025)]\
              .drop(columns=['date', 'sex', 'age_range', 'year'])\
              .sum(axis=0)
 
@@ -152,12 +184,10 @@ dalys_extracted_by_disease = extract_results(
     custom_generate_series=_extract_dalys_by_disease,
     do_scaling=True
 )
-#? some NCDs see a decline in DALYs accrued
 
 dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
 print(dalys_by_disease_summarized[[(0,  'mean'),(1,  'mean'), (2,  'mean')]])
 # dalys_by_disease_summarized.to_csv(outputspath / 'dalys_by_disease.csv')
-# ? HIV, ALRI, epilepsy - higher DALYs accrued in the alternate scenario
 
 # 2. Services delivered
 #-----------------------------------------
@@ -165,25 +195,14 @@ print(dalys_by_disease_summarized[[(0,  'mean'),(1,  'mean'), (2,  'mean')]])
 hsi_alternatescenario = load_pickled_dataframes(results_folder, draw=0, run=0)['tlo.methods.healthsystem.summary']['HSI_Event']
 hsi_default = load_pickled_dataframes(results_folder, draw=1, run=1)['tlo.methods.healthsystem.summary']['HSI_Event']
 
-# ? Is there data to indicate whether the HSI was successfully delivered?
-
 # 2.2 Number of HSIs completed by disease
 # use 'TREATMENT_ID' on above data
 
-# 3. Resource use / Mechanisms of impact
+# 3. Consumable availability
 #-----------------------------------------
-# 3.1 Proportion of HSIs for which consumable was recorded as not available
 # Sample data
-consumable_alternatescenario = load_pickled_dataframes(results_folder, draw=0, run=2)['tlo.methods.healthsystem']['Consumables']
-consumable_default = load_pickled_dataframes(results_folder, draw=1, run=1)['tlo.methods.healthsystem']['Consumables']
-
-# ? How to load from multiple runs?
-# ? What does tlo.methods.healthysystem.summary provide?
-# ? For resource use, there are two ways to report - % increase in consumable availability;
-# OR % of hsi's for which consumable was or was not available
-
-# ? Use the following columns for estimates
-consumable_alternatescenario['Item_NotAvailable']
+#consumable_alternatescenario = load_pickled_dataframes(results_folder, draw=0, run=2)['tlo.methods.healthsystem']['Consumables']
+#consumable_default = load_pickled_dataframes(results_folder, draw=1, run=1)['tlo.methods.healthsystem']['Consumables']
 
 def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ 'Figure 6': Usage of consumables in the HealthSystem"""
@@ -218,7 +237,6 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
         only_mean=True,
         collapse_columns=True
     )
-    # cons_req = cons_req[0]
 
 # %% The problem with the above code is that it was written for one draw rather than 2 so the dataframe remains multiindex and the merge does not work
 
@@ -240,6 +258,7 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
 
     #cons.columns = cons_multiindex_columns # remove this if only one draw is used
 
+    # 3.1 Instances of availability/unavailability of top 20 demanded consumables
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'
     (cons / 1e6).head(20).plot.barh(ax=ax, stacked=True)
@@ -255,6 +274,7 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     fig.show()
     plt.close(fig)
 
+    # 3.2 To 20 consumables not available
     fig, ax = plt.subplots()
     name_of_plot = 'Consumables Not Available'
     (cons['Not_Available'] / 1e6).sort_values(ascending = False).head(20).plot.barh(ax=ax) # change = updated to descending
@@ -269,7 +289,7 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     fig.show()
     plt.close(fig)
 
-    # HSI affected by missing consumables
+    # 3.3 Proportion of HSIs for which consumable was recorded as not available
 
     def get_treatment_id_affecting_by_missing_consumables(_df):
         """Return frequency that a (short) TREATMENT_ID suffers from consumables not being available."""
@@ -306,14 +326,13 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     fig.show()
     plt.close(fig)
 
-figure6_cons_use(results_folder, outputspath, resourcefilepath)
+figure6_cons_use(results_folder_default, path_for_figures, resourcefilepath)
 
-# Create a dataframe with individual columns for each element in the dictionary
-# list_of_item_codes = list(healthsystem_usage_alternatescenario['Consumables']['Item_Available'].keys())
+'''
+# The following code will be relevant once mode_appt_constraints = 2 is applied
 
-# 3.2 Proportion of HSIs for which consumable was recorded as not available by disease
-
-# 3.3 Proportion of staff time demanded (This could also be measured as number of minutes of
+# 4. Staff use
+# Proportion of staff time demanded (This could also be measured as number of minutes of
 # staff time required under the two scenarios)
 # Load pickle files
 staffusage_alternatescenario = load_pickled_dataframes(results_folder, draw=0, run=0)['tlo.methods.healthsystem']['Capacity']
@@ -454,7 +473,7 @@ collapsed_df_level = capacity_by_officer.groupby('Facility_Level').mean()
 officer_types = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy']
 idx = pd.IndexSlice # Create an IndexSlice object
 capacity_by_officer_subset = capacity_by_officer.loc[idx[officer_types, :], :] # Subset the DataFrame using the IndexSlice object
-
+'''
 
 '''
 # Scratch code

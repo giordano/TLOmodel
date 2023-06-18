@@ -171,6 +171,7 @@ for group_name, group_data in grouped_data:
 
     # Show or save the plot
     fig_name = 'probability_by_scenario_fac_level' + group_name + '.png'
+    plt.tight_layout()
     plt.savefig(path_for_figures /fig_name, dpi=600)
 
 legend_mapping = {'available_prop_actual': 'Actual (2018)',
@@ -183,7 +184,7 @@ legend_mapping = {'available_prop_actual': 'Actual (2018)',
                   'available_prop_scenario_dist_todh': "Scenario: Distance to DHO - 0-10 kms",
                   'available_prop_scenario_dist_torms': "Scenario: Distance to RMS - 0-10 kms" ,
                   'available_prop_scenario_drug_order_fulfilment_freq_last_3mts': "Scenario: Monthly drug order fulfillment",
-                  'available_prop_scenario_all_features': "Scenario: All of the above"}
+                  'available_prop_scenario_all_features': "Scenario: All features"}
 
 # Replace old labels with new labels based on the dictionary mapping
 new_labels = [legend_mapping.get(label, label) for label in labels]
