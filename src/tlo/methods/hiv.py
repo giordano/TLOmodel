@@ -1350,8 +1350,9 @@ class Hiv(Module):
                 date=self.sim.date + pd.DateOffset(months=months_to_aids),
             )
 
-        # Set that the person is no longer on ART
+        # Set that the person is no longer on ART or cotrimoxazole
         df.at[person_id, "hv_art"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = "not"
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
@@ -2540,7 +2541,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # default to person stopping cotrimoxazole
+        # default to person not being on cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Check if drugs are available, and provide drugs
@@ -2548,7 +2549,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # ART is first item in drugs_available dict
-        if list(drugs_available.values()[0]):
+        if list(drugs_available.values())[0]:
             # Assign person to be have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset,)
@@ -2566,7 +2567,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
         # if cotrimoxazole is available
-        if list(drugs_available.values()[1]):
+        if list(drugs_available.values())[1]:
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         # Consider if TB treatment should start
@@ -2591,7 +2592,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # if cotrimoxazole is available, update person's property
-        if list(drugs_available.values()[1]):
+        if list(drugs_available.values())[1]:
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         return drugs_available
