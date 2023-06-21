@@ -1053,6 +1053,8 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
+        # todo pregnant women can't have IPTp if also on cotrimxazole
+
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
