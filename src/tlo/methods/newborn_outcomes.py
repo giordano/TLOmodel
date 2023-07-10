@@ -10,6 +10,9 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_hel
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueOnPrep
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueTreatment
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -701,6 +704,46 @@ class NewbornOutcomes(Module):
             PostnatalWeekOneNeonatalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
             self.sim.date + DateOffset(days=day_for_event))
 
+    def apply(self, person_id, squeeze_factor):
+        """Start PrEP for breastfeeding person"""
+
+        # Do not run if the person is not alive or is diagnosed with HIV
+        if (
+            (not person["is_alive"])
+            or (person["hv_diagnosed"])
+        ):
+            return
+
+        # Run an HIV test
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="hiv_rapid_test", hsi_event=self
+        )
+        df.at[person_id, "hv_number_tests"] += 1
+        df.at[person_id, "hv_last_test_date"] = self.sim.date
+
+        # If test is positive, flag as diagnosed and refer to ART
+        if test_result is True:
+            # label as diagnosed
+            df.at[person_id, "hv_diagnosed"] = True
+
+            # Do actions for when a person has been diagnosed with HIV
+            self.module.do_when_hiv_diagnosed(person_id=person_id)
+
+            return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
+
+            # Check if the mother is undergoing breastfeeding
+            mother_id = df.at[individual_id, 'mother_id']
+            if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
+                    # Initiate PrEP for the mother
+                    df.at[mother_id, 'hv_is_on_prep'] = True
+                    # Schedule refill appointment event for PrEP
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(months=1),
+                        priority=0,
+                    )
+
     def set_death_status(self, individual_id):
         """
         This function cycles through each complication of which a newborn may die, if the newborn has experienced one or
@@ -951,6 +994,29 @@ class NewbornOutcomes(Module):
         if 'Hiv' in self.sim.modules:
             # schedule test if child not already diagnosed and mother is known hiv+
             self.sim.modules['Hiv'].decide_whether_hiv_test_for_infant(mother_id, child_id)
+
+    def apply_effect_of_neonatal_resus(self, person_id):
+        """
+        This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
+        resuscitation for neonates delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewborn
+        BySkilledAttendant.
+        :param hsi_event: The HSI event in which this function is called
+        (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
+        """
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mother_id = df.at[person_id, 'mother_id']
+
+        if mni[mother_id]['delivery_setting'] == 'home_birth':
+            logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
+                                          f'mother delivering at home')
+
+        if df.at[person_id, 'nb_not_breathing_at_birth']:
+            if mni[mother_id]['neo_will_receive_resus_if_needed']:
+                df.at[person_id, 'nb_received_neonatal_resus'] = True
+                # pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
+            else:
+                self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
         """
@@ -1269,20 +1335,16 @@ class NewbornOutcomes(Module):
             # ===================================== HSI SCHEDULING ====================================================
             # If delivered in a health facility schedule immediate post-delivery care
             if m['delivery_setting'] != 'home_birth':
-                if m['delivery_setting'] == 'health_centre':
-                    f_level = '1a'
-                elif m['delivery_setting'] == 'hospital':
-                    f_level = self.rng.choice(['1a', '1b'])
 
-                event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-                    self, person_id=child_id, facility_level_of_this_hsi=f_level)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
-
-                # Followed by a full postnatal check up
+                # Check if PNC will occur
                 if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
                     self.schedule_pnc(child_id)
+
+                # Apply effect of resus for those who both required and received this intervention
+                self.apply_effect_of_neonatal_resus(child_id)
+
+                if not nci[child_id]['will_receive_pnc'] == 'early':
+                    self.set_death_status(child_id)
 
             # If delivered at home, determine if a postnatal check will be sought for this newborn- with the probability
             # being higher if complications have occurred
@@ -1304,14 +1366,13 @@ class NewbornOutcomes(Module):
 
                 # If this child will not receive any early care following delivery we determine if they will die
                 # following any complications immediately after birth
-                if nci[child_id]['will_receive_pnc'] != 'early':
+                if not nci[child_id]['will_receive_pnc'] == 'early':
                     self.set_death_status(child_id)
 
         # Finally we call the following functions to conduct logging/update variables related to pregnancy
-        if not df.at[mother_id, 'ps_multiple_pregnancy'] or\
+        if not df.at[mother_id, 'ps_multiple_pregnancy'] or \
             (df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2)) or \
            (df.at[mother_id, 'ps_multiple_pregnancy'] and m['single_twin_still_birth']):
-
             self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
             self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id)
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)

@@ -1036,10 +1036,11 @@ class Labour(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # log delivery setting
-        logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
-                                                           'facility_type': mni[mother_id]['delivery_setting'],
-                                                           'mode': mni[mother_id]['mode_of_delivery']})
+        # log delivery setting if it exists in the mni dictionary
+        if 'delivery_setting' in mni[mother_id]:
+            logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
+                                                               'facility_type': mni[mother_id]['delivery_setting'],
+                                                               'mode': mni[mother_id]['mode_of_delivery']})
 
         # Store only live births to a mother parity
         if not df.at[mother_id, 'la_intrapartum_still_birth']:

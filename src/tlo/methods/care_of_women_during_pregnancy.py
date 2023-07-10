@@ -11,6 +11,9 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueOnPrep
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueTreatment
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1493,11 +1496,33 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             self.module.balance_energy_and_protein_supplementation(hsi_event=self)
             self.module.insecticide_treated_bed_net(hsi_event=self)
             self.module.tb_screening(hsi_event=self)
-            self.module.hiv_testing(hsi_event=self)
+            #self.module.hiv_testing(hsi_event=self)
             self.module.hep_b_testing(hsi_event=self)
             self.module.syphilis_screening_and_treatment(hsi_event=self)
             self.module.point_of_care_hb_testing(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
+
+            # Run an HIV rapid test
+            hiv_test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_rapid_test", hsi_event=self
+            )
+            df.at[person_id, "hv_number_tests"] += 1
+            df.at[person_id, "hv_last_test_date"] = self.sim.date
+
+            # If HIV test is positive, flag as diagnosed and refer to ART
+            if hiv_test_result is True:
+                df.at[person_id, "hv_diagnosed"] = True
+
+            else:
+            # If HIV test is negative, initiate prep
+                df.at[person_id, "hv_is_on_prep"] = True
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(months=1),
+                priority=0,
+            )
 
             # If the woman presents after 20 weeks she is provided interventions she has missed by presenting late
             if mother.ps_gestational_age_in_weeks > 19:

@@ -606,6 +606,9 @@ class PregnancySupervisor(Module):
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
+        mni = self.mother_and_newborn_info
+        if mother_id not in mni:
+            mni[mother_id] = {}  # Create a new dictionary for the mother_id if it doesn't exist
 
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
         df.at[child_id, 'ps_date_of_anc1'] = pd.NaT
@@ -627,6 +630,10 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
         df.at[child_id, 'ps_chorioamnionitis'] = False
         df.at[child_id, 'ps_emergency_event'] = False
+        #new section
+        delivery_setting = "hospital"  # Set the appropriate delivery setting value
+        mni[mother_id]['delivery_setting'] = delivery_setting
+
 
     def further_on_birth_pregnancy_supervisor(self, mother_id):
         """
@@ -779,7 +786,7 @@ class PregnancySupervisor(Module):
         # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
         # calculate their individual daly weight for the month
         for person in list(mni):
-            if df.at[person, 'is_alive']:
+            if person in df.index and df.at[person, 'is_alive']:
                 monthly_daly[person] = 0
 
                 for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
