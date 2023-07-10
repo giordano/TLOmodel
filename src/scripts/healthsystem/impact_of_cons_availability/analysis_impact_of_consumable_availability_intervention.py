@@ -75,11 +75,12 @@ def formatting_hsi_df(_df):
 
 # %% Gathering basic information
 # Find results_folder associated with a given batch_file and get most recent
-#results_folder = get_scenario_outputs('impact_of_cons_availability_intervention.py', outputspath)
+#results_folder = get_scenario_outputs('impact_of_cons_regression_scenarios.py', outputspath)
 # Results folder for `impact_of_cons_regression_scenarios.py`
-results_folder = Path(outputspath/ 'impact_of_consumables_availability_intervention-2023-06-14T232900Z/')
+#results_folder = Path(outputspath/ 'impact_of_consumables_availability_intervention-2023-06-14T232900Z/')
+results_folder = Path(outputspath/ 'sakshi.mohan@york.ac.uk/impact_of_cons_regression_scenarios-2023-06-26T204948Z/') # 270623
 # Results folder for 'impact_of_consumables_availability.py'
-results_folder_default = outputspath / 'default_scenario' # move the 'NO_CHANGE' scenario folder to a seperate folder
+# results_folder_default = outputspath / 'default_scenario' # move the 'NO_CHANGE' scenario folder to a seperate folder
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -157,7 +158,7 @@ def plot_summarized_total_dalys(summarised_total_dalys, param_strings, file_name
     wrapped_labels = [textwrap.fill(label, 10) for label in new_xtick_labels] # Wrap the x-tick labels
 
     ax.set_xticklabels(wrapped_labels)  # Set the new x-tick labels
-    ax.tick_params(axis="x", rotation=45, labelsize=7) # format x-tick labels
+    ax.tick_params(axis="x", rotation=45, labelsize=5.5) # format x-tick labels
 
     plt.tight_layout()
     plt.savefig(path_for_figures / file_name, dpi=300)
