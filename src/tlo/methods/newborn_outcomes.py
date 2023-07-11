@@ -220,6 +220,8 @@ class NewbornOutcomes(Module):
             Types.LIST, 'probability that a neonate will receive a full postnatal check'),
         'prob_timings_pnc_newborns': Parameter(
             Types.LIST, 'probabilities that a postnatal check will happen before or after 48 hours alive'),
+        'prob_breastfeeding_woman_starts_prep': Parameter(
+            Types.LIST, 'Probabilities that a breastfeeding woman will start on PrEP'),
 
         # DISABILITY WEIGHT PROBABILITIES
         'probs_for_mild_preterm_daly_wts_<32wks': Parameter(
@@ -734,15 +736,18 @@ class NewbornOutcomes(Module):
             # Check if the mother is undergoing breastfeeding
             mother_id = df.at[individual_id, 'mother_id']
             if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
-                    # Initiate PrEP for the mother
-                    df.at[mother_id, 'hv_is_on_prep'] = True
-                    # Schedule refill appointment event for PrEP
+            #decide to start prep
+                if (
+                    self.module.rng.random_sample()
+                    < params['prob_breastfeeding_woman_starts_prep']
+                ):
+                    # start PrEP - and schedule an HSI for a refill appointment today
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(months=1),
-                        priority=0,
-                    )
+                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(months=1),
+                    priority=0,
+            )
 
     def set_death_status(self, individual_id):
         """

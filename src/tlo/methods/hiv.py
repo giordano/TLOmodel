@@ -341,14 +341,15 @@ class Hiv(Module):
             "Probability that someone who has initiated on prep will attend an appointment and be on prep "
             "for the next 3 months, until the next appointment.",
         ),
+        "probability_of_being_retained_on_prep_every_1_month": Parameter(
+            Types.REAL,
+            "Probability that someone who has initiated on prep will attend an appointment and be on prep "
+            "for the next month, until the next appointment.",
+        ),
         "probability_of_being_retained_on_art_every_3_months": Parameter(
             Types.REAL,
             "Probability that someone who has initiated on treatment will attend an appointment and be on "
             "treatment for next 3 months, until the next appointment.",
-        ),
-        "prob_pregnant_woman_starts_prep": Parameter(
-            Types.REAL,
-            "Probability that a pregnant woman will start on PrEP if HIV-negativeg",
         ),
         "probability_of_seeking_further_art_appointment_if_drug_not_available": Parameter(
             Types.REAL,
@@ -1705,7 +1706,10 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         return
 
                     # Check if the person is pregnant or breastfeeding
-                    if person["is_pregnant"] or person["nb_breastfeeding_status"]:
+                    if (
+                        (person.is_pregnant)
+                       or (df.at[person_id, 'nb_breastfeeding_status']== "none")\
+                    ):
                         # Schedule an HIV test after 1 month of starting PrEP
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             HSI_Hiv_TestAndRefer(person_id=person_id, module=m, referred_from="PrEP_continuation"),
@@ -2067,11 +2071,14 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             return
 
         # Check if the person is eligible for continuation of PrEP after 1 month
-        if person["is_pregnant"] or person["is_breastfeeding"]:
+        if (
+            (df.at[person_id, "nb_breastfeeding_status"] == "none")\
+            or(person.is_pregnant)
+        ):
 
         # Continue on PrEP after 1 month - schedule an HSI for a refill appointment after 1 month
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_RefillAppointmentForPrEP(person_id=person_id, module=m),
+                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
                 topen=self.sim.date + pd.DateOffset(months=1),
                 tclose=self.sim.date + pd.DateOffset(months=1) + pd.DateOffset(days=7),
                 priority=0
@@ -2082,7 +2089,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         # Determine if this appointment is actually attended by the person who has already started on PrEP
         if (
             m.rng.random_sample()
-            < m.parameters["probability_of_being_retained_on_prep_every_3_months"]
+            < m.parameters["probability_of_being_retained_on_prep_every_1_month"]
         ):
             # Continue on PrEP - and schedule an HSI for a refill appointment today
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2478,7 +2485,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
             # Check if the person is pregnant or breastfeeding
-            if person["is_pregnant"] or person["is_breastfeeding"]:
+            if (
+                (df.at[person_id, "nb_breastfeeding_status"] == "none")\
+                or (person.is_pregnant)
+            ):
                 # Check that PrEP is available and if it is, initiate or continue PrEP every 1 month
                 if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
                     df.at[person_id, "hv_is_on_prep"] = True
@@ -2491,7 +2501,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 else:
                     # If PrEP is not available, the person will default and not be on PrEP
                     df.at[person_id, "hv_is_on_prep"] = False  # Check if the person is pregnant or breastfeeding
-        if person["is_pregnant"] or person["is_breastfeeding"]:
+        if (
+                        (person.is_pregnant)
+                        or (df.at[person_id, "nb_breastfeeding_status"] == "none") \
+            ):
             # Check that PrEP is available and if it is, initiate or continue PrEP every 1 month
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
                 df.at[person_id, "hv_is_on_prep"] = True
