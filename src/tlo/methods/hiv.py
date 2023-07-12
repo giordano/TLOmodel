@@ -362,6 +362,7 @@ class Hiv(Module):
             "system has not been able to provide them with an appointment",
         ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
+        "prep_for_pregnant_woman_start_year": Parameter(Types.REAL, "Year from which PrEP is introduced for all pregnant and breastfeeding woman"),
         "ART_age_cutoff_young_child": Parameter(
             Types.INT, "Age cutoff for ART regimen for young children"
         ),
@@ -2416,6 +2417,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             if (
                 (df.at[person_id, "nb_breastfeeding_status"] == "none")\
                 or (person.is_pregnant)
+                & (self.sim.date.year >= params.parameters["prep_for_pregnant_woman_start_year"])
             ):
                 # Check that PrEP is available and if it is, initiate or continue PrEP every 1 month
                 if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):

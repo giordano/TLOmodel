@@ -45,8 +45,8 @@ resourcefilepath = Path("./resources")
 #
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 1000
+end_date = Date(2025, 1, 1)
+popsize = 100
 
 # Set the simulation interval
 interval = relativedelta(months=6)

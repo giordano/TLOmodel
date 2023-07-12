@@ -155,6 +155,8 @@ class CareOfWomenDuringPregnancy(Module):
         'squeeze_threshold_for_delay_three_an': Parameter(
             Types.LIST, 'squeeze factor value over which an individual within a antenatal HSI is said to experience '
                         'type 3 delay i.e. delay in receiving appropriate care'),
+        "prep_for_pregnant_woman_start_year": Parameter(Types.REAL,
+                                                        "Year from which PrEP is introduced for all pregnant and breastfeeding woman"),
     }
 
     PROPERTIES = {
@@ -1523,8 +1525,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             params = self.module.current_parameters
 
             if (
-                self.module.rng.random_sample() <
-                params['prob_pregnant_woman_starts_prep']
+                (self.sim.date.year >= params.parameters["prep_for_pregnant_woman_start_year"])
+                &(self.module.rng.random_sample() <
+                params['prob_pregnant_woman_starts_prep'])
             ):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
