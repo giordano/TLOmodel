@@ -45,8 +45,8 @@ resourcefilepath = Path("./resources")
 #
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 100
+end_date = Date(2013, 1, 1)
+popsize = 200
 
 # Set the simulation interval
 # interval = relativedelta(months=6)
@@ -68,7 +68,6 @@ log_config = {
     },
 }
 
-
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 seed = 1  # set seed for reproducibility
@@ -81,7 +80,19 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=1, cons_availability='default'),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                              service_availability=["*"],  # all treatment allowed
+                              mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+                              cons_availability="default",
+                              # mode for consumable constraints (if ignored, all consumables available)
+                              ignore_priority=False,  # do not use the priority information in HSI event to schedule
+                              capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+                              use_funded_or_actual_staffing="funded_plus",
+                              # actual: use numbers/distribution of staff available currently
+                              disable=False,
+                              # disables the healthsystem (no constraints and no logging) and every HSI runs
+                              disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+                              ),
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -90,12 +101,16 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath)
-    )
+)
 
-# todo you can uncomment and change these and they will overwrite the parameters in the resourcefiles
+# todo you can comment/uncomment and change these and they will overwrite the parameters in the resourcefiles
 # set the scenario
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prob_pregnant_woman_starts_prep"] = 1.0
 # sim.modules["NewbornOutcomes"].parameters["prob_breastfeeding_woman_starts_prep"] = 0.2
+# todo I changed this just for development so I can see women starting prep
+# straightaway instead of waiting until 2023
+sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2010
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
 
 
 # Run the simulation and flush the logger

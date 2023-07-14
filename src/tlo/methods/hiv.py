@@ -2435,7 +2435,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 # Schedule 'decision about whether to continue on PrEP' for 1 month time
                 self.sim.schedule_event(
                     Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
-                    topen=self.sim.date + pd.DateOffset(months=1),
+                    self.sim.date + pd.DateOffset(months=1),
                 )
             else:
                 # If PrEP is not available, the person will default and not be on PrEP
