@@ -170,6 +170,16 @@ print(count_stkout_entries, "stockout entries before first interpolation")
 months_dict31 = ['January', 'March', 'May', 'July', 'August', 'October', 'December']
 months_dict30 = ['April', 'June', 'September', 'November']
 
+missing_counts = lmis_df_wide_flat.groupby(['fac_type_tlo','program']).apply(lambda x: x[['stkout_days', 'received', 'closing_bal', 'amc']].isnull().sum())
+not_missing_counts = lmis_df_wide_flat.groupby(['fac_type_tlo','program']).apply(lambda x: x[['stkout_days', 'received', 'closing_bal', 'amc']].notnull().sum())
+percentage_not_missing = not_missing_counts/(missing_counts + not_missing_counts)
+percentage_not_missing.to_csv(outputspath / 'lmis_data_missingness.csv')
+
+missing_counts = lmis_df_wide_flat.groupby(['fac_type_tlo','program', 'item']).apply(lambda x: x[['stkout_days', 'received', 'closing_bal', 'amc']].isnull().sum())
+not_missing_counts = lmis_df_wide_flat.groupby(['fac_type_tlo','program', 'item']).apply(lambda x: x[['stkout_days', 'received', 'closing_bal', 'amc']].notnull().sum())
+percentage_not_missing = not_missing_counts/(missing_counts + not_missing_counts)
+percentage_not_missing.to_csv(outputspath / 'lmis_data_missingness_detailed.csv')
+
 for m in range(1, 13):
     # Identify datapoints which come from the original data source (not interpolation)
     lmis_df_wide_flat[('data_source', months_dict[m])] = np.nan  # empty column
@@ -235,6 +245,8 @@ lmis_df_wide_flat['consumable_reporting_freq'] = lmis_df_wide_flat['closing_bal'
 # Flatten multilevel columns
 lmis_df_wide_flat.columns = [' '.join(col).strip() for col in lmis_df_wide_flat.columns.values]
 
+lmis_df_wide_flat[lmis_df_wide_flat.program == 'HIV'].to_csv(outputspath / "lmis_data_after_3.2.csv")
+
 # 3.3 --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
 # RULE: If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_
@@ -263,6 +275,8 @@ for m in range(1, 13):
     count_stkout_entries = count_stkout_entries + lmis_df_wide_flat['stkout_days ' + months_dict[m]].count().sum()
 print(count_stkout_entries, "stockout entries after third interpolation")
 
+lmis_df_wide_flat[lmis_df_wide_flat.program == 'HIV'].to_csv(outputspath / "lmis_data_after_3.3.csv")
+
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 
@@ -283,6 +297,9 @@ lmis = pd.wide_to_long(lmis, stubnames=['closing_bal', 'received', 'amc', 'dispe
                        i=['district', 'fac_type_tlo', 'fac_name', 'program', 'item'], j='month',
                        sep=' ', suffix=r'\w+')
 lmis = lmis.reset_index()
+
+cond = ((lmis.item == "Efavirenz (EFV), 600mg") | (lmis.item == "Efavirenz (EFV), 600mg, 30''s (3A)")) & (lmis.month == "December") & (lmis.fac_name == "Chikwawa DHO Pharmacy")
+lmis[cond]['stkout_prop']
 
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 #########################################################################################
