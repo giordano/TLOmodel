@@ -347,6 +347,7 @@ class Demography(Module):
 
         # Log the birth:
         _mother_age_at_birth = df.at[abs(mother_id), 'age_years']  # Log age of mother whether true or direct birth
+        # TODO: What the comment above means?
         _mother_age_at_pregnancy = int(
             age_at_date(
                 df.at[mother_id, 'date_of_last_pregnancy'],
