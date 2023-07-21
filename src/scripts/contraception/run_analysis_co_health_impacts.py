@@ -1,9 +1,9 @@
 import contraception_mnh_analysis_script
 
 # create dict of some scenario 'title' and the filename of the associated title
-scenario_dict1 = {'Status Quo': 'run_analysis_co_health_impacts_no_diseases-2023-05-25T161549Z',
-                  'Intervention Scenario': 'run_analysis_co_health_impacts_no_diseases-2023-05-25T161708Z',
-                 }
+scenario_dict1 = {'Status Quo': 'run_analysis_co_health_impacts_no_diseases-2023-05-30T155924Z',
+                  'Intervention Scenario': 'run_analysis_co_health_impacts_no_diseases-2023-05-30T155652Z',
+                  }
 
 
 # define key variables used within the analysis scripts
