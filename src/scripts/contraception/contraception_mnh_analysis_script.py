@@ -21,11 +21,11 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
 
     # Create folder to store graphs (if it hasn't already been created when ran previously)
     path = f'{outputspath}/contraception_mnh_analysis_results_' \
-           f'{results_folders[scenario_names[0]].name}'
+           f'{results_folders[scenario_names[0]].name}' \
+           f'_{results_folders[scenario_names[1]].name.split("diseases-")[1]}'
 
     if not os.path.isdir(path):
-        os.makedirs(f'{outputspath}/contraception_mnh_analysis_results_'
-                    f'{results_folders[scenario_names[0]].name}')
+        os.makedirs(path)
 
     primary_oc_path = f'{path}/primary_outcomes'
     if not os.path.isdir(primary_oc_path):
