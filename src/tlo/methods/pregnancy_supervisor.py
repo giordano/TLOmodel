@@ -647,6 +647,7 @@ class PregnancySupervisor(Module):
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
             # And store her anaemia status to calculate the prevalence of anaemia on birth
+            # TODO: explore - this is saying 'store' but it's only logged
             logger.info(key='anaemia_on_birth', data={'mother': mother_id,
                                                       'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy']})
 
