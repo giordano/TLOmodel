@@ -357,7 +357,7 @@ def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, y_labe
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, graph_location, save_name):
@@ -372,7 +372,7 @@ def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, gra
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{save_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_location):
@@ -383,7 +383,7 @@ def simple_line_chart(sim_years, model_rate, y_title, title, file_name, graph_lo
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
@@ -395,7 +395,7 @@ def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, t
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
@@ -409,7 +409,7 @@ def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_
     plt.gca().set_ylim(bottom=0)
     plt.grid(True)
     plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years, graph_location):
@@ -422,7 +422,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
     plt.title(title)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years, graph_location):
@@ -534,7 +534,7 @@ def comparison_graph_multiple_scenarios(colours, intervention_years, data_dict, 
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'./{graph_location}/{save_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_years, data_dict, key, y_label, title,
@@ -551,7 +551,7 @@ def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_y
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'./{graph_location}/{save_name}.png')
-    plt.show()
+    # plt.show()
 
 
 def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colours, y_title, title,
@@ -578,7 +578,7 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colo
     plt.legend(loc='best')
     plt.xticks(x_ticks, labels=intervention_years)
     plt.savefig(f'{plot_destination_folder}/{save_name}.png')
-    plt.show()
+    # plt.show()
 
 
 # =========================== FUNCTIONS RETURNING DATA FROM MULTIPLE SCENARIOS =======================================

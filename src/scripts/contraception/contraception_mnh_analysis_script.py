@@ -69,7 +69,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         ax.set_xlabel('Scenario')
         ax.set_title(title)
         plt.savefig(f'{save_location}/{save_name}.png')
-        plt.show()
+        # plt.show()
 
     def get_med_or_mean_from_columns(df, mean_or_med):
         values = list()
@@ -204,7 +204,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         ax.set_xlabel('Scenario')
         ax.set_title(title)
         plt.savefig(f'{plot_destination_folder}/{file_name}.png')
-        plt.show()
+        # plt.show()
 
     bar_chart_from_dict(preg_dict, 'Pregnancies', 'Total Pregnancies by Scenario', primary_oc_path, 'agg_preg')
     bar_chart_from_dict(births_dict, 'Births', 'Total Births by Scenario', primary_oc_path, 'agg_births')
@@ -606,7 +606,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             ax.set_xlabel('Complication')
             ax.set_title(f'Cause specific {d[1]} for {k} scenario')
             plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
-            plt.show()
+            # plt.show()
     save_mr_by_cause_data_and_output_graphs('mat', cod_data)
     save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
 
@@ -648,7 +648,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         plt.legend(loc='best')
         plt.xticks(x_ticks, labels=labels, rotation=90, size=7)
         plt.savefig(f'{primary_oc_path}/cs_mmr_one_graph.png', bbox_inches='tight')
-        plt.show()
+        # plt.show()
         pass
 
     #  ---------------- STILLBIRTH GRAPHS ---------------
@@ -708,7 +708,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         ax.set_xlabel('Scenario')
         ax.set_title(title)
         plt.savefig(f'{primary_oc_path}/{data}.png')
-        plt.show()
+        # plt.show()
 
     keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df', 'neo_deaths_total_df',
             'stillbirths_total_df']
@@ -921,7 +921,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         ax.set_xlabel('Scenario')
         ax.set_title(title)
         plt.savefig(f'{primary_oc_path}/{data}.png')
-        plt.show()
+        # plt.show()
 
     for dict_key, axis, title, save_name in zip(['maternal_dalys_crude_stacked', 'maternal_dalys_rate_stacked',
                                                  'maternal_yll_crude_stacked', 'maternal_yll_rate_stacked',
