@@ -226,7 +226,7 @@ class HSI_Event:
                                                          facility_info=self.facility_info,
                                                          treatment_id=self.TREATMENT_ID)
 
-        # If contraception applied (ie all essential items are available), do log the Availability of the Items:
+        # If contraception applied (ie all essential items are available), do log the Availability of all Items:
         if self.TREATMENT_ID.startswith('Contraception') & all([v for k, v in rtn.items() if k in _item_codes]):
             items_available = {k: v for k, v in item_codes.items() if rtn[k]}
             items_not_available = {k: v for k, v in item_codes.items() if not rtn[k]}
