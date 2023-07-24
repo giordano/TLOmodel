@@ -783,7 +783,8 @@ class PregnancySupervisor(Module):
                     mni[person][f'{complication}_onset'] = pd.NaT
                     mni[person][f'{complication}_resolution'] = pd.NaT
 
-        # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
+        # Then for each alive person
+        # in the MNI we cycle through all the complications that can lead to disability and
         # calculate their individual daly weight for the month
         for person in list(mni):
             if person in df.index and df.at[person, 'is_alive']:

@@ -10,9 +10,6 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_hel
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
-from tlo.methods.hiv import HSI_Hiv_StartOrContinueOnPrep
-from tlo.methods.hiv import HSI_Hiv_StartOrContinueTreatment
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -220,8 +217,6 @@ class NewbornOutcomes(Module):
             Types.LIST, 'probability that a neonate will receive a full postnatal check'),
         'prob_timings_pnc_newborns': Parameter(
             Types.LIST, 'probabilities that a postnatal check will happen before or after 48 hours alive'),
-        'prob_breastfeeding_woman_starts_prep': Parameter(
-            Types.LIST, 'Probabilities that a breastfeeding woman will start on PrEP'),
 
         # DISABILITY WEIGHT PROBABILITIES
         'probs_for_mild_preterm_daly_wts_<32wks': Parameter(
@@ -450,7 +445,7 @@ class NewbornOutcomes(Module):
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
-        self.item_codes_nb_consumables['sepsis_abx'] =\
+        self.item_codes_nb_consumables['sepsis_abx'] = \
             get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
                                      'Gentamicin 40mg/ml, 2ml_each_CMST'])
 
@@ -706,48 +701,6 @@ class NewbornOutcomes(Module):
             PostnatalWeekOneNeonatalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
             self.sim.date + DateOffset(days=day_for_event))
 
-    def apply(self, person_id, squeeze_factor):
-        """Start PrEP for breastfeeding person"""
-
-        # Do not run if the person is not alive or is diagnosed with HIV
-        if (
-            (not person["is_alive"])
-            or (person["hv_diagnosed"])
-        ):
-            return
-
-        # Run an HIV test
-        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            dx_tests_to_run="hiv_rapid_test", hsi_event=self
-        )
-        df.at[person_id, "hv_number_tests"] += 1
-        df.at[person_id, "hv_last_test_date"] = self.sim.date
-
-        # If test is positive, flag as diagnosed and refer to ART
-        if test_result is True:
-            # label as diagnosed
-            df.at[person_id, "hv_diagnosed"] = True
-
-            # Do actions for when a person has been diagnosed with HIV
-            self.module.do_when_hiv_diagnosed(person_id=person_id)
-
-            return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
-
-            # Check if the mother is undergoing breastfeeding
-            mother_id = df.at[individual_id, 'mother_id']
-            if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
-            #decide to start prep
-                if (
-                    self.module.rng.random_sample()
-                    < params['prob_breastfeeding_woman_starts_prep']
-                ):
-                    # start PrEP - and schedule an HSI for a refill appointment today
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(months=1),
-                    priority=0,
-            )
 
     def set_death_status(self, individual_id):
         """
@@ -826,7 +779,8 @@ class NewbornOutcomes(Module):
         mother_id = df.loc[individual_id, 'mother_id']
         if not df.at[mother_id, 'is_alive']:
             if (mother_id in mni and (not df.at[mother_id, 'ps_multiple_pregnancy'] or
-               (df.at[mother_id, 'ps_multiple_pregnancy'] and (mni[mother_id]['twin_count'] == 2)))):
+               (df.at[mother_id, 'ps_multiple_pregnancy'] and (
+                   mni[mother_id]['twin_count'] == 2)))):
                 del mni[mother_id]
 
     def set_disability_status(self, individual_id):
@@ -1069,7 +1023,7 @@ class NewbornOutcomes(Module):
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
+        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or \
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
             # Run HCW check
@@ -1242,8 +1196,8 @@ class NewbornOutcomes(Module):
         # Set the childs birthweight, decided in the labour module, and log accordingly
         df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
 
-        if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or\
-            (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
+        if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or \
+            (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or \
            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
 
@@ -1581,8 +1535,8 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
         # Postnatal Supervisor module
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none')\
-            or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or\
+        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none') \
+            or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or \
            df.at[person_id, 'nb_kangaroo_mother_care']:
 
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(

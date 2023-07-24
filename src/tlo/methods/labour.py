@@ -12,6 +12,10 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueOnPrep
+from tlo.methods.hiv import HSI_Hiv_StartOrContinueTreatment
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.hiv import Hiv
 from tlo.util import BitsetHandler
 
 # Standard logger
@@ -492,6 +496,10 @@ class Labour(Module):
         'treatment_effect_cs_still_birth': Parameter(
             Types.LIST, 'effect of caesarean section delivery on risk of intrapartum still birth'),
 
+        # PrEP initiation for breastfeeding women
+        'prob_breastfeeding_woman_starts_prep': Parameter(
+            Types.REAL, 'Probability that a breastfeeding woman will start on PrEP'),
+
         # HEALTH CARE WORKER AVAILABILITY AND COMPETENCE...
         'prob_hcw_avail_iv_abx': Parameter(
             Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
@@ -849,6 +857,18 @@ class Labour(Module):
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_lab_consumables['resuscitation'] = \
             get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
+        # -------------------------------------------- PrEP ---------------------------------------------------
+        hs = self.sim.modules["HealthSystem"]
+        self.item_codes_for_consumables_required = dict()
+
+        self.item_codes_for_consumables_required['hiv_rapid_test'] = \
+            hs.get_item_code_from_item_name("Test, HIV EIA Elisa")
+
+        self.item_codes_for_consumables_required['hiv_early_infant_test'] = \
+            hs.get_item_code_from_item_name("Test, HIV EIA Elisa")
+
+        self.item_codes_for_consumables_required['prep'] = {
+            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
 
     def initialise_simulation(self, sim):
         # Update self.current_parameters
@@ -3108,6 +3128,69 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
+
+        # ====================================== PrEP initiation ===================================================
+        """Start PrEP for breastfeeding person"""
+        # Do not run if the person is not alive or is diagnosed with HIV
+        if (
+            (not df.at[person_id, "is_alive"])
+            or (df.at[person_id, "hv_diagnosed"])
+            ):
+            return
+
+            # Run an HIV test
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_rapid_test", hsi_event=self
+            )
+            df.at[person_id, "hv_number_tests"] += 1
+            df.at[person_id, "hv_last_test_date"] = self.sim.date
+
+            # If test is positive, flag as diagnosed and refer to ART
+            if test_result is True:
+                # label as diagnosed
+                df.at[person_id, "hv_diagnosed"] = True
+
+            # Do actions for when a person has been diagnosed with HIV - calling from HIV module
+            self.sim.modules['Hiv'].do_when_hiv_diagnosed(person_id=person_id)
+
+            # Run an HIV test for infant:
+            test_result_infant = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_early_infant_test", hsi_event=self
+            )
+            df.at[child_id, "hv_inf"] += 1
+
+            # If test is positive, flag as diagnosed and refer to ART
+            if test_result_infnat is True:
+                # label as diagnosed
+                df.at[person_id, "hv_diagnosed"] = True
+
+            # Do actions for when a person has been diagnosed with HIV - calling from HIV module
+            self.sim.modules['Hiv'].do_when_hiv_diagnosed(person_id=child_id)
+
+            # Check if the mother is undergoing breastfeeding
+            mother_id = df.at[person_id, 'mother_id']
+            if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
+
+                # Check the availability of PrEP
+                if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
+                    df.at[person_id, "hv_is_on_prep"] = True
+
+                # Check whether they have initiated PrEP or not:
+                if (
+                    (not df.at[person_id, "hv_is_on_prep"])
+                    ):
+                # decide to start prep
+                  if (
+                    self.rng.random_sample()
+                    < self.sim.modules.parameters['prob_breastfeeding_woman_starts_prep']
+                      ):
+                 # start PrEP - and schedule an HSI for a refill appointment today
+                       self.sim.modules["HealthSystem"].schedule_hsi_event(
+                       HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
+                       topen=self.sim.date,
+                       tclose=self.sim.date + pd.DateOffset(months=1),
+                       priority=0,
+                       )
 
         # ====================================== APPLY RISK OF DEATH===================================================
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
