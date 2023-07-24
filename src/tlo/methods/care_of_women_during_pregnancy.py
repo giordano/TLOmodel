@@ -124,7 +124,7 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via '
                         'caesarean or via assisted vaginal delivery'),
         'prob_pregnant_woman_starts_prep': Parameter(
-            Types.LIST,'Probability that a pregnant women who will start on PrEP'),
+            Types.REAL,'Probability that a pregnant women who will start on PrEP'),
 
         # ASSESSMENT SENSITIVITIES/SPECIFICITIES...
         'sensitivity_bp_monitoring': Parameter(
@@ -1516,26 +1516,25 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # If HIV test is positive, flag as diagnosed and refer to ART
             if hiv_test_result is True:
                 df.at[person_id, "hv_diagnosed"] = True
+                self.sim.modules["Hiv"].do_when_hiv_diagnosed(person_id=person_id)
 
             else:
             # If HIV test is negative, initiate prep
-                df.at[person_id, "hv_is_on_prep"] = True
+            # df.at[person_id, "hv_is_on_prep"] = True
 
             # Determine if this appointment is actually attended by the person who has already started on PrEP
-            params = self.module.current_parameters
+                 params = self.module.parameters
 
-            if (
-                (self.sim.date.year >= params.parameters["prep_for_pregnant_woman_start_year"])
-                &(self.module.rng.random_sample() <
-                params['prob_pregnant_woman_starts_prep'])
-            ):
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                 if (
+                     (self.sim.date.year >= params["prep_for_pregnant_woman_start_year"])
+                    & (self.module.rng.random_sample() < params['prob_pregnant_woman_starts_prep'])
+                 ):
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(months=1),
                     priority=0,
                 )
-
             # If the woman presents after 20 weeks she is provided interventions she has missed by presenting late
             if mother.ps_gestational_age_in_weeks > 19:
                 self.module.point_of_care_hb_testing(hsi_event=self)
