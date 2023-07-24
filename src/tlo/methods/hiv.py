@@ -2807,7 +2807,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & df.age_years.between(15, 49)
                 ]
         )
-    prev_hiv_fsw = (
+        prev_hiv_fsw = (
             0
             if n_fsw == 0
             else len(
