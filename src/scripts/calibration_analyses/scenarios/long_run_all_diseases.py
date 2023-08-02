@@ -21,15 +21,15 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 20_000
+        self.end_date = Date(2010, 2, 1)
+        self.pop_size = 500
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
-            'directory': './outputs',  # <- (specified only for local running)
+            'filename': 'my_long_run_with_a_custom_name',  # <- (specified only for local running)
+            'directory': './outputs/tbh03@ic.ac.uk',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
