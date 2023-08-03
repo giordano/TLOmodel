@@ -14,10 +14,10 @@ class Playing22(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 2
-        self.runs_per_draw = 2
+        self.number_of_draws = 1
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -39,10 +39,6 @@ class Playing22(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Lifestyle': {
-                'init_p_urban': rng.randint(10, 20) / 100.0,
-                'init_p_high_sugar': 0.52,
-            },
         }
 
 
