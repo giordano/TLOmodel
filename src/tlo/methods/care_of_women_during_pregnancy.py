@@ -1520,7 +1520,6 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             else:
             # If HIV test is negative, initiate prep
-            # df.at[person_id, "hv_is_on_prep"] = True
 
             # Determine if this appointment is actually attended by the person who has already started on PrEP
                  params = self.module.parameters
