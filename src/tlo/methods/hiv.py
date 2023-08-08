@@ -2012,8 +2012,8 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
-        # check still eligible, person must be older than 16 years old or a fsw
-        if (person["age_years"] <16) or not person["li_is_sexworker"] or not person["is_pregnant"] or (
+        # check still eligible, person must be older than 15 years old or a fsw
+        if (person["age_years"] <15) or not person["li_is_sexworker"] or not person["is_pregnant"] or (
             person["nb_breastfeeding_status"] == "none"):
             return
 
@@ -3203,7 +3203,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_preg_women = len(
             df.loc[
                 df.is_alive
-                & (df.age_years >= 16)
+                & (df.age_years >= 15)
                 & df.is_pregnant
                 & (df.sex == "F")
                 ]
@@ -3212,7 +3212,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_breastfeeding_women = len(
             df.loc[
                 df.is_alive
-                & (df.age_years >= 16)
+                & (df.age_years >= 15)
                 & (df.nb_breastfeeding_status != "none")
                 & (df.sex == "F")
                 ]
@@ -3224,13 +3224,13 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             else len(
                 df[
                     df.is_alive
-                    & (df.age_years >= 16)
+                    & (df.age_years >= 15)
                     & df.is_pregnant
                     & df.hv_is_on_prep
                    ]
             )
-            / len(df[df.is_alive & df.is_pregnant & (df.age_years >= 16)])
-        ) if len(df[df.is_alive & df.is_pregnant & (df.age_years >= 16)]) else 0
+            / len(df[df.is_alive & df.is_pregnant & (df.age_years >= 15)])
+        ) if len(df[df.is_alive & df.is_pregnant & (df.age_years >= 15)]) else 0
 
         prop_breastfeeding_women_on_prep = (
             0
@@ -3238,7 +3238,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             else len(
                 df[
                     df.is_alive
-                    & (df.age_years >= 16)
+                    & (df.age_years >= 15)
                     & (df.nb_breastfeeding_status != "none")
                     & df.hv_is_on_prep
                    ]
@@ -3251,7 +3251,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.is_alive
                 & df.li_is_sexworker
-                & (df.age_years >= 16)
+                & (df.age_years >= 15)
                 ]
         )
 
@@ -3262,22 +3262,22 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 df[
                     df.is_alive
                     & df.li_is_sexworker
-                    & (df.age_years >= 16)
+                    & (df.age_years >= 15)
                     & df.hv_is_on_prep
                    ]
             )
-            / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 16)])
-        ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 16)]) else 0
+            / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
+        ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
 
         # ------------------------------------ TOTAL PROPORTION OF FEMALES ON PREP ------------------------------------
         total_females_on_prep = len(
             df[
                 df.is_alive
                 & (df.sex == "F")
-                & (df.age_years >= 16)
+                & (df.age_years >= 15)
                 & df.hv_is_on_prep
                ]
-        ) / len(df[df.is_alive & (df.sex == "F") & (df.age_years >= 16)])
+        ) / len(df[df.is_alive & (df.sex == "F") & (df.age_years >= 15)])
 
         # Log the prep status for the current person
         logger.info(
