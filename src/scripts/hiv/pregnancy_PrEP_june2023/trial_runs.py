@@ -56,7 +56,7 @@ log_config = {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tol.methods.care_of_women_during_pregnancy":logging.INFO,
+        "tlo.methods.care_of_women_during_pregnancy":logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.healthburden": logging.INFO,
     },
