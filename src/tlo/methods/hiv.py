@@ -2019,14 +2019,13 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
         # Check if the person is eligible for continuation of PrEP after 1 month
         if person["is_pregnant"] or person["nb_breastfeeding_status"] != "none":
-            if person["age_years"] >= 35 or person["nb_breastfeeding_status"] != "none":
-                # For pregnant women aged 30 or breastfeeding, use lower probability
+            if person["nb_breastfeeding_status"] != "none" or person['la_parity'] > 1:
+                # For pregnant women breastfeeding or having previous birth, they will have lower adherence
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_low"]
-            elif person["age_years"] < 24:
-                # For pregnant women younger than 30, use higher probability
+                # For qualified breastfeeding and pregnant women, 7% (modelled as women having high-risk partners) will have higher probability
+            elif m.rng.random_sample() < 0.07:
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_high"]
             else:
-                # For all other pregnant women, use the standard probability
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month"]
         else:
             # For all other individuals, use the standard probability

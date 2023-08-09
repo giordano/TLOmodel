@@ -56,6 +56,7 @@ log_config = {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.demography": logging.INFO,
+        "tol.methods.care_of_women_during_pregnancy":logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.healthburden": logging.INFO,
     },
@@ -100,9 +101,10 @@ sim.modules["CareOfWomenDuringPregnancy"].parameters["prob_pregnant_woman_starts
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2010
 
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
+
 # scenario 3 - adjuest probability of being retained on prep accordingly
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.9
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.9
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
 # sim.modules["NewbornOutcomes"].parameters["prob_breastfeeding_woman_starts_prep"] = 0.2
 
 

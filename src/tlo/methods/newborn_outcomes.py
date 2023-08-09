@@ -742,11 +742,11 @@ class NewbornOutcomes(Module):
                 ):
                     # start PrEP - and schedule an HSI for a refill appointment today
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(months=1),
-                    priority=0,
-            )
+                        HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(months=1),
+                        priority=0,
+                    )
 
     def set_death_status(self, individual_id):
         """
