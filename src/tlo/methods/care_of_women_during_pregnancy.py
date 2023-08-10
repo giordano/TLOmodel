@@ -501,6 +501,35 @@ class CareOfWomenDuringPregnancy(Module):
             else:
                 ga_anc_one = 0
 
+            total_pregnancy = len(
+                df.loc[
+                    df.is_alive
+                    & (df.age_years >= 15)
+                    & df.is_pregnant
+                    & (df.sex == "F")
+                    ]
+            )
+
+            attended_at_least_one_anc = len(
+                df.loc[
+                    (df.is_alive)
+                    & (df.age_years >= 15)
+                    & df.is_pregnant
+                    & (df.sex == "F")
+                    & (df.ac_total_anc_visits_current_pregnancy >= 1)
+                    ]
+            )
+
+            # Calculate the proportion of pregnant females attending >=1 ANC
+            proportion_attended_at_least_one_anc = attended_at_least_one_anc / total_pregnancy if total_pregnancy > 0 else 0
+
+            # Log the proportion of pregnant females attending >=1 ANC
+            logger.info(
+                key='anc_proportion_on_birth',
+                data={"proportion_attended_at_least_one_anc": proportion_attended_at_least_one_anc},
+                description='Proportion of pregnant females attending at least one ANC visit'
+            )
+
             total_anc_visit_count = {'person_id': mother_id,
                                      'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
                                      'ga_anc_one': ga_anc_one}

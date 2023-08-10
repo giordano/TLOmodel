@@ -143,7 +143,7 @@ make_plot(
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[1],
+    prev_and_inc_over_time.index[6],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -151,7 +151,7 @@ plt.plot(
 )
 
 # DHS
-x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[1]]
+x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[6]]
 y_values = data_hiv_dhs_prev.loc[
     (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
 ]
@@ -206,7 +206,7 @@ make_plot(
 
 # MPHIA
 plt.errorbar(
-    prev_and_inc_over_time.index[1],
+    prev_and_inc_over_time.index[6],
     data_hiv_mphia_inc_estimate,
     yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
     fmt="o",
@@ -235,7 +235,7 @@ make_plot(
 )
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[1],
+    prev_and_inc_over_time.index[6],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
     ].values[0],
@@ -281,8 +281,19 @@ make_plot(
 )
 plt.show()
 
-# ------------------------PrEP intervention -------------------------------- #
-# PrEP
+# ------------------------PrEP intervention ------------------------------#
+# ----------------------- ANC visits
+anc_visit = output["tlo.methods.care_of_women_during_pregnancy"]["anc_proportion_on_birth"]
+anc_visit = anc_visit.set_index("date")
+
+# Proportion of ANC visits
+make_plot(
+    title_str="Proportion of Pregnant Women Attending >=1 ANC visits",
+    model=anc_visit["proportion_attended_at_least_one_anc"],
+)
+plt.show()
+
+# -----------------------PrEP
 cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
 cov_over_time = cov_over_time.set_index("date")
 
@@ -350,4 +361,3 @@ make_plot(
 )
 
 plt.show()
-
