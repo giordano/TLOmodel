@@ -709,11 +709,13 @@ class NewbornOutcomes(Module):
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for breastfeeding person"""
 
+        params = self.current_parameters
+
         # Do not run if the person is not alive or is diagnosed with HIV
         df = self.sim.population.props
         if (
-            (not person["is_alive"])
-            or (person["hv_diagnosed"])
+            (not person_id["is_alive"])
+            or (person_id["hv_diagnosed"])
         ):
             return
 
@@ -733,7 +735,7 @@ class NewbornOutcomes(Module):
             self.sim.modules['Hiv'].do_when_hiv_diagnosed(person_id=person_id)
 
             # Check if the mother is undergoing breastfeeding
-            mother_id = df.at[individual_id, 'mother_id']
+            mother_id = df.at[person_id, 'mother_id']
             if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
             #decide to start prep
                 if (
