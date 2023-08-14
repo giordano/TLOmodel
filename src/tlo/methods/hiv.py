@@ -379,7 +379,7 @@ class Hiv(Module):
         ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "prep_for_pregnant_woman_start_year": Parameter(Types.REAL,
-        "Year from which PrEP is introduced for all pregnant and breastfeeding woman"),
+                                                        "Year from which PrEP is introduced for all pregnant and breastfeeding woman"),
         "ART_age_cutoff_young_child": Parameter(
             Types.INT, "Age cutoff for ART regimen for young children"
         ),
@@ -503,7 +503,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
+            .when("==0", 1)  # Weibull with shape=1 equivalent to exponential distribution
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
             .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
@@ -867,7 +867,7 @@ class Hiv(Module):
 
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(HivPrepLoggingEvent(self), sim.date + DateOffset(years=1)) #logging prep events every year
+        sim.schedule_event(HivPrepLoggingEvent(self), sim.date + DateOffset(years=1))  # logging prep events every year
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1100,7 +1100,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1416,7 +1416,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         if not df.at[person_id, 'hv_diagnosed'] and (
-                self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
+            self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
@@ -1998,6 +1998,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         m = self.module
+        now = self.sim.date
 
         # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
@@ -2012,17 +2013,25 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
+        # establish whether mother could be breastfeeding
+        # breastfeeding period is from (date_of_last_pregnancy + 9 months) to (date_of_last_pregnancy + 27 months)
+        # condition checks whether last pregnancy was within previous 18 months
+        date_of_last_pregnancy = df.at[person_id, "date_of_last_pregnancy"]
+        currently_breastfeeding = (now >= (date_of_last_pregnancy + pd.DateOffset(months=9))) and (
+            now <= (date_of_last_pregnancy + pd.DateOffset(months=27)))
+
         # check still eligible, person must be older than 15 years old or a fsw
-        if (person["age_years"] <15) or not person["li_is_sexworker"] or not person["is_pregnant"] or (
-            person["nb_breastfeeding_status"] == "none"):
+        if (person["age_years"] < 15) or not person["li_is_sexworker"] or not person[
+            "is_pregnant"] or not currently_breastfeeding:
             return
 
         # Check if the person is eligible for continuation of PrEP after 1 month
-        if person["is_pregnant"] or person["nb_breastfeeding_status"] != "none":
-            if person["nb_breastfeeding_status"] != "none" or person['la_parity'] > 1:
+        if person["is_pregnant"] or currently_breastfeeding:
+            if currently_breastfeeding or person['la_parity'] > 1:
                 # For pregnant women breastfeeding or having previous birth, they will have lower adherence
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_low"]
-                # For qualified breastfeeding and pregnant women, 7% (modelled as women having high-risk partners) will have higher probability
+                # For qualified breastfeeding and pregnant women, 7% (modelled as women having high-risk partners)
+                # will have higher probability
             elif m.rng.random_sample() < 0.07:
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_high"]
             else:
@@ -2425,9 +2434,21 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
+        # if test is negative, refer for PrEP
+        else:
             # Check if the person is pregnant or breastfeeding
+            df = self.sim.population.props
+            now = self.sim.date
+
+            # establish whether mother could be breastfeeding
+            # breastfeeding period is from (date_of_last_pregnancy + 9 months) to (date_of_last_pregnancy + 27 months)
+            # condition checks whether last pregnancy was within previous 18 months
+            date_of_last_pregnancy = df.at[person_id, "date_of_last_pregnancy"]
+            currently_breastfeeding = (now >= (date_of_last_pregnancy + pd.DateOffset(months=9))) and (
+                now <= (date_of_last_pregnancy + pd.DateOffset(months=27)))
+
             if (
-                ((df.at[person_id, "nb_breastfeeding_status"] != "none") or person['is_pregnant'])
+                (currently_breastfeeding or person['is_pregnant'])
                 & (self.sim.date.year >= self.sim.modules['CareOfWomenDuringPregnancy'].parameters[
                 "prep_for_pregnant_woman_start_year"])
             ):
@@ -2449,11 +2470,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                     Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
                     self.sim.date + pd.DateOffset(months=1),
                 )
-            else:
-                # If PrEP is not available, the person will default and not be on PrEP
-                df.at[person_id, "hv_is_on_prep"] = False
 
-        else:
             # For non-pregnant and non-breastfeeding individuals, continue PrEP for 3 months
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
                 df.at[person_id, "hv_is_on_prep"] = True
@@ -3187,6 +3204,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # --------------------------------------------- Logging events------------------------------------
+
+
 class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ Log prep status of the population, every month """
@@ -3208,11 +3227,13 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
 
+        # sum all women who would be in the breastfeeding stage post-pregnancy
         n_breastfeeding_women = len(
             df.loc[
                 df.is_alive
                 & (df.age_years >= 15)
-                & (df.nb_breastfeeding_status != "none")
+                & (now >= (df.date_of_last_pregnancy + pd.DateOffset(months=9)))
+                & (now <= (df.date_of_last_pregnancy + pd.DateOffset(months=27)))
                 & (df.sex == "F")
                 ]
         )
@@ -3229,7 +3250,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "F")
                     ]
             )
-            / n_preg_women
+                 / n_preg_women
         )
 
         prop_breastfeeding_women_on_prep = (
@@ -3244,7 +3265,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "F")
                     ]
             )
-            / n_breastfeeding_women
+                 / n_breastfeeding_women
         )
 
         # ------------------------------------ PREP AMONG FSW ------------------------------------
@@ -3265,9 +3286,9 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     & df.li_is_sexworker
                     & (df.age_years >= 15)
                     & df.hv_is_on_prep
-                   ]
+                    ]
             )
-            / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
+                 / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
         ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
 
         # ------------------------------------ TOTAL PROPORTION OF FEMALES ON PREP ------------------------------------
@@ -3277,7 +3298,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.sex == "F")
                 & (df.age_years >= 15)
                 & df.hv_is_on_prep
-               ]
+                ]
         ) / len(df[df.is_alive & (df.sex == "F") & (df.age_years >= 15)])
 
         # Log the prep status for the current person
@@ -3286,11 +3307,15 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="Logging the prep status of a person",
             data={
                 "prop_pregnant_women_on_prep": prop_pregnant_women_on_prep,
+                "number_pregnant_women": n_preg_women,
                 "prop_breastfeeding_women_on_prep": prop_breastfeeding_women_on_prep,
+                "number_breastfeeding_women": n_breastfeeding_women,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "total_females_on_prep": total_females_on_prep,
             },
         )
+
+
 # ---------------------------------------------------------------------------
 #   Debugging / Checking Events
 # ---------------------------------------------------------------------------
@@ -3301,6 +3326,7 @@ class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.check_config_of_properties()
+
 
 # ---------------------------------------------------------------------------
 #   Helper functions for analysing outputs

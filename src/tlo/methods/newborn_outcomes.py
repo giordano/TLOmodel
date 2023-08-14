@@ -706,50 +706,6 @@ class NewbornOutcomes(Module):
             PostnatalWeekOneNeonatalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
             self.sim.date + DateOffset(days=day_for_event))
 
-    def apply(self, person_id, squeeze_factor):
-        """Start PrEP for breastfeeding person"""
-
-        params = self.current_parameters
-
-        # Do not run if the person is not alive or is diagnosed with HIV
-        df = self.sim.population.props
-        if (
-            (not person_id["is_alive"])
-            or (person_id["hv_diagnosed"])
-        ):
-            return
-
-        # Run an HIV test
-        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            dx_tests_to_run="hiv_rapid_test", hsi_event=self
-        )
-        df.at[person_id, "hv_number_tests"] += 1
-        df.at[person_id, "hv_last_test_date"] = self.sim.date
-
-        # If test is positive, flag as diagnosed and refer to ART
-        if test_result is True:
-            # label as diagnosed
-            df.at[person_id, "hv_diagnosed"] = True
-
-            # Do actions for when a person has been diagnosed with HIV
-            self.sim.modules['Hiv'].do_when_hiv_diagnosed(person_id=person_id)
-
-            # Check if the mother is undergoing breastfeeding
-            mother_id = df.at[person_id, 'mother_id']
-            if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'nb_breastfeeding_status'] != 'none':
-            #decide to start prep
-                if (
-                    self.module.rng.random_sample()
-                    < params['prob_breastfeeding_woman_starts_prep']
-                ):
-                    # start PrEP - and schedule an HSI for a refill appointment today
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.sim.modules["Hiv"]),
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(months=1),
-                        priority=0,
-                    )
-
     def set_death_status(self, individual_id):
         """
         This function cycles through each complication of which a newborn may die, if the newborn has experienced one or
@@ -1588,6 +1544,30 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
                 self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
+
+        # Start PrEP for breastfeeding mother
+        mother_id = df.at[person_id, 'mother_id']
+
+        # Do not run if the mother is not alive or is diagnosed with HIV
+        if (
+            (not mother_id["is_alive"])
+            or (mother_id["hv_diagnosed"])
+        ):
+            return
+
+        if df.at[mother_id, 'is_alive']:
+        # decide to start prep
+            if (
+                self.module.rng.random_sample()
+                < params['prob_breastfeeding_woman_starts_prep']
+            ):
+                # start PrEP - and schedule an HSI for a refill appointment today
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_StartOrContinueOnPrep(person_id=mother_id, module=self.sim.modules["Hiv"]),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(months=1),
+                    priority=0,
+                )
 
     def never_ran(self):
         self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
