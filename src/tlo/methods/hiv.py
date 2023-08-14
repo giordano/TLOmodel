@@ -2853,6 +2853,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ) / n_fsw
         )
 
+        female_prev_15plus = len(
+            df[df.hv_inf
+               & df.is_alive
+               & (df.sex == "F")
+               & (df.age_years >= 15)]
+        ) / len(df[df.is_alive & (df.sex == "F") & (df.age_years >= 15)]) \
+            if len(df[df.is_alive & (df.sex == "F") & (df.age_years >= 15)]) else 0
+
         total_population = len(df.loc[df.is_alive])
 
         logger.info(
@@ -2876,6 +2884,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "hiv_adult_inc_1549": adult_inc_1549,
                 "hiv_child_inc": child_inc,
                 "hiv_prev_fsw": prev_hiv_fsw,
+                "female_prev_15plus": female_prev_15plus,
             },
         )
 
@@ -3227,6 +3236,7 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.is_alive
                 & (df.age_years >= 15)
+                & (df.nb_breastfeeding_status != "none")
                 & (now >= (df.date_of_last_pregnancy + pd.DateOffset(months=9)))
                 & (now <= (df.date_of_last_pregnancy + pd.DateOffset(months=27)))
                 & (df.sex == "F")

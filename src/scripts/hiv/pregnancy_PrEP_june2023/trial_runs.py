@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 10000
+popsize = 1000
 
 
 # set up the log config
@@ -98,7 +98,6 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["CareOfWomenDuringPregnancy"].parameters["prob_pregnant_woman_starts_prep"] = 0.99
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2010
 
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
@@ -106,8 +105,6 @@ sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_mon
 # scenario 3 - adjuest probability of being retained on prep accordingly
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.7
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
-# sim.modules["NewbornOutcomes"].parameters["prob_breastfeeding_woman_starts_prep"] = 0.2
-
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

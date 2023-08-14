@@ -281,6 +281,13 @@ make_plot(
 )
 plt.show()
 
+# HIV prevalence among female aged 15 above
+make_plot(
+    title_str="HIV Prevalence among Females above 15+ (%)",
+    model=prev_and_inc_over_time["female_prev_15plus"] * 100,
+)
+plt.show()
+
 # ------------------------PrEP intervention ------------------------------#
 # ----------------------- ANC visits
 anc_visit = output["tlo.methods.care_of_women_during_pregnancy"]["anc_proportion_on_birth"]
@@ -315,12 +322,9 @@ make_plot(
 plt.show()
 
 # PrEP among breastfeeding women
-cov_over_time_breastfeeding = output["tlo.methods.hiv"]["prep_status_logging"]
-cov_over_time_breastfeeding = cov_over_time_breastfeeding.set_index("date")
-# PrEP among breastfeeding women
 make_plot(
     title_str="Proportion of Breastfeeding Women That Are On PrEP",
-    model=cov_over_time_breastfeeding["prop_breastfeeding_women_on_prep"],
+    model=cov_over_time_prep["prop_breastfeeding_women_on_prep"],
 )
 plt.show()
 
