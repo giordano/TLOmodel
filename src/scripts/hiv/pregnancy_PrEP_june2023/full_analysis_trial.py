@@ -26,29 +26,27 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 100
+end_date = Date(2035, 1, 1)
+popsize = 100000
 scenario = 0
 
 # set up the log config
-# add deviance measure logger if needed
 log_config = {
-    "filename": "tb_transmission_runs",
+    "filename": "test_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
-        "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
+        "tlo.methods.care_of_women_during_pregnancy":logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
     },
 }
 
-# Register the appropriate modules
-# need to call epi before tb to get bcg vax
-# seed = random.randint(0, 50000)
-seed = 1  # set seed for reproducibility
+
+seed = random.randint(0, 50000)
+# seed = 1  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
@@ -59,17 +57,27 @@ sim.register(*fullmodel(
         "HealthSystem": {"disable": False,
                          "service_availability": ["*"],
                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
-                         "cons_availability": "default",
+                         "cons_availability": "default",# mode of constraints to do with officer numbers and time
                          "beds_availability": "all",
-                         "ignore_priority": False,
+                         "ignore_priority": False,# do not use the priority information in HSI event to schedule
                          "use_funded_or_actual_staffing": "funded_plus",
-                         "capabilities_coefficient": 1.0},
+                         "capabilities_coefficient": 1.0}, # multiplier for the capabilities of health officers
     },
 ))
 
-# # set the scenario
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+# set the scenario
+sim.modules["CareOfWomenDuringPregnancy"].parameters["prob_pregnant_woman_starts_prep"] = 0.99
+
+# scenario 2 - adherence remains the same for all individuals
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
+
+# scenario 3 - adjuest probability of being retained on prep accordingly
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.7
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

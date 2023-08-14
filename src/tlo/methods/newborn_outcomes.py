@@ -1550,14 +1550,14 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Do not run if the mother is not alive or is diagnosed with HIV
         if (
-            (not mother_id["is_alive"])
-            or (mother_id["hv_diagnosed"])
+            (not df.at[mother_id, 'is_alive'])
+            or (df.at[mother_id, 'hv_diagnosed'])
         ):
             return
 
         if df.at[mother_id, 'is_alive']:
-        # decide to start prep
-            if (
+           # decide to start prep
+           if (
                 self.module.rng.random_sample()
                 < params['prob_breastfeeding_woman_starts_prep']
             ):

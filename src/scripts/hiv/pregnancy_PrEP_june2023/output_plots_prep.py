@@ -143,7 +143,7 @@ make_plot(
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -151,7 +151,7 @@ plt.plot(
 )
 
 # DHS
-x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[6]]
+x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[2]]
 y_values = data_hiv_dhs_prev.loc[
     (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
 ]
@@ -206,7 +206,7 @@ make_plot(
 
 # MPHIA
 plt.errorbar(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_inc_estimate,
     yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
     fmt="o",
@@ -235,7 +235,7 @@ make_plot(
 )
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
     ].values[0],
@@ -315,9 +315,12 @@ make_plot(
 plt.show()
 
 # PrEP among breastfeeding women
+cov_over_time_breastfeeding = output["tlo.methods.hiv"]["prep_status_logging"]
+cov_over_time_breastfeeding = cov_over_time_breastfeeding.set_index("date")
+# PrEP among breastfeeding women
 make_plot(
     title_str="Proportion of Breastfeeding Women That Are On PrEP",
-    model=cov_over_time_prep["prop_breastfeeding_women_on_prep"],
+    model=cov_over_time_breastfeeding["prop_breastfeeding_women_on_prep"],
 )
 plt.show()
 
