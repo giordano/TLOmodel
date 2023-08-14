@@ -2437,7 +2437,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         # if test is negative, refer for PrEP
         else:
             # Check if the person is pregnant or breastfeeding
-            df = self.sim.population.props
             now = self.sim.date
 
             # establish whether mother could be breastfeeding
@@ -2449,8 +2448,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
             if (
                 (currently_breastfeeding or person['is_pregnant'])
-                & (self.sim.date.year >= self.sim.modules['CareOfWomenDuringPregnancy'].parameters[
-                "prep_for_pregnant_woman_start_year"])
+                & (self.sim.date.year >= p["prep_for_pregnant_woman_start_year"])
             ):
                 # Check that PrEP is available and if it is, initiate or continue PrEP every 1 month
                 if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
