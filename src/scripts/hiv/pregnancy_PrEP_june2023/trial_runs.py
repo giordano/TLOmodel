@@ -57,6 +57,7 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.care_of_women_during_pregnancy":logging.INFO,
+        "tlo.methods.newborn_outcomes": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.healthburden": logging.INFO,
     },

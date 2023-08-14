@@ -65,8 +65,8 @@ sim.register(*fullmodel(
     },
 ))
 
-# set the scenario
-sim.modules["CareOfWomenDuringPregnancy"].parameters["prob_pregnant_woman_starts_prep"] = 0.99
+# scenario 1 - this is set up for current scenario where PrEP is only introduced to sex workers
+sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2036
 
 # scenario 2 - adherence remains the same for all individuals
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
@@ -77,6 +77,10 @@ sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_mon
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.7
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
 
+# scenario 4 - limited consumables where adherence is kept constant
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
 
 
 # Run the simulation and flush the logger

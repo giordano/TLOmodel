@@ -325,11 +325,10 @@ make_plot(
 plt.show()
 
 make_plot(
-    title_str="Proportion of  Females That Are On PrEP",
+    title_str="Proportion of Females That Are On PrEP",
     model=cov_over_time_prep["total_females_on_prep"],
 )
 plt.show()
-
 
 # ---------------------------------------------------------------------- #
 # %%: DEATHS
