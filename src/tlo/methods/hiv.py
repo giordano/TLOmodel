@@ -3226,10 +3226,11 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.age_years >= 15)
                     & df.is_pregnant
                     & df.hv_is_on_prep
-                   ]
+                    & (df.sex == "F")
+                    ]
             )
-            / len(df[df.is_alive & df.is_pregnant & (df.age_years >= 15)])
-        ) if len(df[df.is_alive & df.is_pregnant & (df.age_years >= 15)]) else 0
+            / n_preg_women
+        )
 
         prop_breastfeeding_women_on_prep = (
             0
@@ -3240,10 +3241,11 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.age_years >= 15)
                     & (df.nb_breastfeeding_status != "none")
                     & df.hv_is_on_prep
-                   ]
+                    & (df.sex == "F")
+                    ]
             )
-            / len(df[df.is_alive & (df.nb_breastfeeding_status != "none") & (df.age_years >= 15)])
-        ) if len(df[df.is_alive & (df.nb_breastfeeding_status != "none") & (df.age_years >= 15)]) else 0
+            / n_breastfeeding_women
+        )
 
         # ------------------------------------ PREP AMONG FSW ------------------------------------
         n_fsw = len(

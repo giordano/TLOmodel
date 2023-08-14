@@ -31,10 +31,11 @@ from tlo.methods import (
 )
 
 # Set the working directory
-os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
+# os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
 
 # Where will outputs go
-outputpath = Path("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs")  # folder for convenience of storing outputs
+# outputpath = Path("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs")  # folder for convenience of storing outputs
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -44,7 +45,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2013, 1, 1)
 popsize = 1000
 
 
