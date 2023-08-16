@@ -3236,12 +3236,12 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.is_alive
                 & (df.age_years >= 15)
-                & (df.nb_breastfeeding_status != "none")
                 & (now >= (df.date_of_last_pregnancy + pd.DateOffset(months=9)))
                 & (now <= (df.date_of_last_pregnancy + pd.DateOffset(months=27)))
                 & (df.sex == "F")
                 ]
         )
+        print(n_breastfeeding_women)
 
         prop_pregnant_women_on_prep = (
             0
@@ -3265,7 +3265,8 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 df[
                     df.is_alive
                     & (df.age_years >= 15)
-                    & (df.nb_breastfeeding_status != "none")
+                    & (now >= (df.date_of_last_pregnancy + pd.DateOffset(months=9)))
+                    & (now <= (df.date_of_last_pregnancy + pd.DateOffset(months=27)))
                     & df.hv_is_on_prep
                     & (df.sex == "F")
                     ]
