@@ -3241,7 +3241,6 @@ class HivPrepLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.sex == "F")
                 ]
         )
-        print(n_breastfeeding_women)
 
         prop_pregnant_women_on_prep = (
             0
