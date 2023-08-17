@@ -1478,7 +1478,8 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
     This is HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck. This event is scheduled on_birth for all neonates who are
     predicted to receive a full postnatal checkup within the first 2 days of life following either home birth or
     facility delivery. Interventions within in this event include management of essential newborn care, initiation of
-    kangaroo mother care, newborn immunisation, HIV screening and management of early onset neonatal sepsis,
+    kangaroo mother care, newborn immunisation, HIV screening and management of early onset neonatal sepsis. PrEP is
+    intiated for all breastfeeding women.
     """
 
     def __init__(self, module, person_id):

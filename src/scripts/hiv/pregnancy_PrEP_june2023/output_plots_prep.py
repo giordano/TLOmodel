@@ -2,14 +2,25 @@ import datetime
 import pickle
 from pathlib import Path
 
+# import lacroix
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+#import statsmodels.api as sm
 import numpy as np
 import pandas as pd
 import os
-from tlo.analysis.utils import extract_results, get_scenario_outputs
-from tlo.analysis.utils import compare_number_of_deaths
+from tlo.analysis.utils import (
+    extract_results,
+    get_scenario_outputs,
+    compare_number_of_deaths,
+    extract_params,
+    get_scenario_info,
+    load_pickled_dataframes,
+    summarize,
+)
+from tlo import Date
+
 
 plt.style.use('seaborn-darkgrid')
 
@@ -365,5 +376,219 @@ make_plot(
     data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
     data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
 )
+
+plt.show()
+
+
+# ---------------------------------------------------------------------- #
+# %%: DALYS
+# ---------------------------------------------------------------------- #
+
+# download all files (and get most recent [-1])
+results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
+results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
+results3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
+results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
+
+TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
+
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+def return_daly_summary(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+    # combine two labels for non-AIDS TB (this now fixed in latest code)
+    dalys.loc['AIDS'] = dalys.loc['HIV'] + dalys.loc['HIV/AIDS']
+    out = pd.DataFrame()
+    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
+    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
+    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
+
+    return out
+
+
+def return_daly_summary2(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+    # combine two labels for non-AIDS TB (this now fixed in latest code)
+    # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    # dalys.drop(['non_AIDS_TB'], inplace=True)
+    out = pd.DataFrame()
+    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
+    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
+    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
+
+    return out
+
+
+dalys1 = return_daly_summary(results1)
+dalys2 = return_daly_summary(results2)
+dalys3 = return_daly_summary2(results3)
+dalys4 = return_daly_summary2(results4)
+
+dalys1.loc['Column_Total'] = dalys1.sum(numeric_only=True, axis=0)
+dalys2.loc['Column_Total'] = dalys2.sum(numeric_only=True, axis=0)
+dalys3.loc['Column_Total'] = dalys3.sum(numeric_only=True, axis=0)
+dalys4.loc['Column_Total'] = dalys4.sum(numeric_only=True, axis=0)
+
+# create full table for export
+daly_table = pd.DataFrame()
+daly_table['scenario1'] = dalys0['median'].astype(str) + \
+                          " (" + dalys0['lower'].astype(str) + " - " + \
+                          dalys0['upper'].astype(str) + ")"
+daly_table['scenario2'] = dalys1['median'].astype(str) + \
+                          " (" + dalys1['lower'].astype(str) + " - " + \
+                          dalys1['upper'].astype(str) + ")"
+daly_table['scenario3'] = dalys2['median'].astype(str) + \
+                          " (" + dalys2['lower'].astype(str) + " - " + \
+                          dalys2['upper'].astype(str) + ")"
+daly_table['scenario4'] = dalys2['median'].astype(str) + \
+                          " (" + dalys2['lower'].astype(str) + " - " + \
+                          dalys2['upper'].astype(str) + ")"
+daly_table.to_csv(outputspath / "daly_summary.csv")
+
+# extract dalys averted by each scenario relative to scenario 1 (the standard)
+# comparison should be run-by-run
+full_dalys1 = extract_results(
+    results1,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys1.loc['AIDS'] = full_dalys1.loc['HIV'] + full_dalys1.loc['HIV/AIDS']
+full_dalys1.loc['Column_Total'] = full_dalys1.sum(numeric_only=True, axis=0)
+
+full_dalys2 = extract_results(
+    results2,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys2.loc['AIDS'] = full_dalys2.loc['HIV'] + full_dalys2.loc['HIV/AIDS']
+full_dalys2.loc['Column_Total'] = full_dalys2.sum(numeric_only=True, axis=0)
+
+full_dalys3 = extract_results(
+    results3,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys3.loc['AIDS'] = full_dalys3.loc['HIV'] + full_dalys3.loc['HIV/AIDS']
+full_dalys3.loc['Column_Total'] = full_dalys3.sum(numeric_only=True, axis=0)
+
+full_dalys4 = extract_results(
+    results4,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys4.loc['AIDS'] = full_dalys4.loc['HIV'] + full_dalys4.loc['HIV/AIDS']
+full_dalys4.loc['Column_Total'] = full_dalys4.sum(numeric_only=True, axis=0)
+
+writer = pd.ExcelWriter(r"outputs/wenjia.zhang22@imperial.ac.uk/full_dalys.xlsx")
+full_dalys1.to_excel(writer, sheet_name='sc1')
+full_dalys2.to_excel(writer, sheet_name='sc2')
+full_dalys3.to_excel(writer, sheet_name='sc3')
+full_dalys4.to_excel(writer, sheet_name='sc4')
+writer.save()
+
+# DALYs averted: baseline - scenario
+# positive value will be DALYs averted due to interventions
+# negative value will be higher DALYs reported, therefore increased health burden
+sc2_sc1 = full_dalys1.subtract(full_dalys2, fill_value=0)
+sc2_sc1_median = sc2_sc1.median(axis=1)
+sc2_sc1_lower = sc2_sc1.quantile(q=0.025, axis=1)
+sc2_sc1_upper = sc2_sc1.quantile(q=0.975, axis=1)
+
+sc3_sc1 = full_dalys1.subtract(full_dalys3, fill_value=0)
+sc3_sc1_median = sc3_sc1.median(axis=1)
+sc3_sc1_lower = sc3_sc1.quantile(q=0.025, axis=1)
+sc3_sc1_upper = sc3_sc1.quantile(q=0.975, axis=1)
+
+sc4_sc1 = full_dalys1.subtract(full_dalys4, fill_value=0)
+sc4_sc1_median = sc4_sc1.median(axis=1)
+sc4_sc1_lower = sc4_sc1.quantile(q=0.025, axis=1)
+sc4_sc1_upper = sc4_sc1.quantile(q=0.975, axis=1)
+
+# create full table for export
+daly_averted_table = pd.DataFrame()
+daly_averted_table['cause'] = sc1_sc0_median.index
+daly_averted_table['scenario2_med'] = [int(round(x, -3)) for x in sc2_sc1_median]
+daly_averted_table['scenario2_low'] = [int(round(x, -3)) for x in sc2_sc1_lower]
+daly_averted_table['scenario2_upp'] = [int(round(x, -3)) for x in sc2_sc1_upper]
+daly_averted_table['scenario3_med'] = [int(round(x, -3)) for x in sc3_sc1_median]
+daly_averted_table['scenario3_low'] = [int(round(x, -3)) for x in sc3_sc1_lower]
+daly_averted_table['scenario3_upp'] = [int(round(x, -3)) for x in sc3_sc1_upper]
+daly_averted_table['scenario4_med'] = [int(round(x, -3)) for x in sc4_sc1_median]
+daly_averted_table['scenario4_low'] = [int(round(x, -3)) for x in sc4_sc1_lower]
+daly_averted_table['scenario4_upp'] = [int(round(x, -3)) for x in sc4_sc1_upper]
+
+daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
+
+# this is now unconstrained scenario first!!
+aids_dalys_diff = [sc2_sc1_median['AIDS'],
+                   sc3_sc1_median['AIDS'],
+                   sc4_sc1_median['AIDS']]
+
+
+# ggplot - for DALYS
+plt.style.use('ggplot')
+
+aids_colour = "#8949ab"
+hiv_colour = "#ed7e7a"
+total_colour = "#eede77"
+
+# present DALYs in millions
+million = 1000000
+aids_dalys_diff = [x / million for x in aids_dalys_diff]
+hiv_dalys_diff = [x / million for x in hiv_dalys_diff]
+total_dalys_diff = [x / million for x in total_dalys_diff]
+
+
+fig, ax1 = plt.subplots(nrows=1, ncols=1,
+                                             figsize=(5, 4))
+fig.suptitle('')
+
+# DALYs
+labels = ['Unconstrained scale-up', 'Constrained scale-up']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
+rects1 = ax1.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+rects2 = ax1.bar(x, tb_dalys_diff, width, label='HIV', color=tb_colour)
+rects3 = ax1.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax1.set_ylabel('DALYs averted, millions')
+ax1.set_title('')
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+ax1.legend(["AIDS", "HIV", "Total"], frameon=False)
+
+fig.tight_layout()
+fig.savefig(outputspath / "DALYS.png")
 
 plt.show()

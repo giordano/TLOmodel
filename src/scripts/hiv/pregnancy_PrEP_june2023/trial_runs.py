@@ -31,11 +31,10 @@ from tlo.methods import (
 )
 
 # Set the working directory
-# os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
+os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
 
 # Where will outputs go
-# outputpath = Path("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs")  # folder for convenience of storing outputs
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+outputpath = Path("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -99,13 +98,23 @@ sim.register(
 )
 
 # set the scenario
+# scenario 1 - this is set up for current scenario where PrEP is only introduced to sex workers
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2010
 
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
+# scenario 2 - adherence remains the same for all individuals
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1
 
 # scenario 3 - adjuest probability of being retained on prep accordingly
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.7
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+
+
+# scenario 4 - limited consumables where adherence is kept constant
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
+#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.20
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

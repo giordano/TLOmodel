@@ -4,9 +4,11 @@ save outputs for plotting (file: output_plots_tb.py)
  """
 
 import datetime
+import os
 import pickle
 import random
 from pathlib import Path
+from dateutil.relativedelta import relativedelta
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -26,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2035, 1, 1)
+end_date = Date(2036, 1, 1)
 popsize = 100000
 scenario = 0
 
@@ -40,6 +42,7 @@ log_config = {
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.care_of_women_during_pregnancy":logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.newborn_outcomes": logging.INFO,
         "tlo.methods.healthburden": logging.INFO,
     },
 }
@@ -69,19 +72,16 @@ sim.register(*fullmodel(
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2036
 
 # scenario 2 - adherence remains the same for all individuals
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1
 
-# scenario 3 - adjuest probability of being retained on prep accordingly
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.7
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+# scenario 3 - adjuest probability of being retained on prep accordingly - use embedded parameters
 
 # scenario 4 - limited consumables where adherence is kept constant
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
-
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

@@ -362,6 +362,10 @@ class Hiv(Module):
             "Probability that a person who are eligible for PrEP will seek another appointment (the following "
             "day and try for each of the next 7 days) if PrEP were not available at the first place.",
         ),
+        "probability_of_prep_consumables_being_available": Parameter(
+            Types.REAL,
+            "Probability that prep consumables are available at the facility.",
+        ),
         "probability_of_being_retained_on_art_every_3_months": Parameter(
             Types.REAL,
             "Probability that someone who has initiated on treatment will attend an appointment and be on "
@@ -1023,6 +1027,13 @@ class Hiv(Module):
                     self.item_codes_for_consumables_required['blood_tube'],
                     self.item_codes_for_consumables_required['gloves']]
             )
+        )
+
+    def modify_consumables_availability(self):
+
+        prep_cons = self.item_codes_for_consumables_required['prep']
+        self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            {prep_cons: probability_of_prep_consumables_being_available}
         )
 
     def on_birth(self, mother_id, child_id):
@@ -2448,7 +2459,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 (currently_breastfeeding or person['is_pregnant'])
                 & (self.sim.date.year >= self.sim.modules['CareOfWomenDuringPregnancy'].parameters["prep_for_pregnant_woman_start_year"])
             ):
-                # Check that PrEP is available and if it is, initiate or continue PrcareEP every 1 month
+                # Check that PrEP is available and if it is, initiate or continue PrEP every 1 month
                 if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
                     df.at[person_id, "hv_is_on_prep"] = True
 
