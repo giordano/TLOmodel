@@ -44,8 +44,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 1000
+end_date = Date(2013, 1, 1)
+popsize = 50000
 
 
 # set up the log config
@@ -113,7 +113,7 @@ sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_mon
 #sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
 #sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
 #sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
-#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.20
+#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.80
 
 
 # Run the simulation and flush the logger
