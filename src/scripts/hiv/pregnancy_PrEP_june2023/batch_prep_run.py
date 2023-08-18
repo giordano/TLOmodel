@@ -9,7 +9,7 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_runs.py
+tlo scenario-run src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 or execute a single run:
 tlo scenario-run src/scripts/hiv/trial_run.py --draw 1 0
@@ -29,24 +29,32 @@ import warnings
 
 from tlo import Date, logging
 from tlo.scenario import BaseScenario
-# you need to import each module that you require
+import datetime
+import os
+import pickle
+import random
+from pathlib import Path
+from dateutil.relativedelta import relativedelta
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     contraception,
     enhanced_lifestyle,
+    epi,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    labour,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    epi,
     hiv,
-    tb,
-    newborn_outcomes,
-    pregnancy_supervisor,
-    care_of_women_during_pregnancy,
-    labour,
     postnatal_supervisor,
+    care_of_women_during_pregnancy,
+    symptommanager,
+    tb,
 )
+
 
 # Ignore warnings to avoid cluttering output from simulation
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
@@ -108,20 +116,17 @@ class TestScenario(BaseScenario):
             tb.Tb(resourcefilepath=self.resources),
         ]
 
-    # todo you can't use the term "default" in a list here, you need the actual value
-    # for probability_of_prep_consumables_being_available, you can use 0.85 as a value which is close to default
-    # are you sure you don't want prep to start until 2036?? that means no prep as your simulation ends in 2036
     def draw_parameters(self, draw_number, rng):
         return {
             'CareOfWomenDuringPregnancy': {
-                'prep_for_pregnant_woman_start_year': [2036, "default", "default", "default"][draw_number]
+                'prep_for_pregnant_woman_start_year': [2050, 2023, 2023, 2023][draw_number]
 
             },
             'Hiv': {
-                'probability_of_being_retained_on_prep_every_1_month': [1, 1, "default", 1][draw_number],
-                'probability_of_being_retained_on_prep_every_1_month_high': [1, 1, "default", 1][draw_number],
-                'probability_of_being_retained_on_prep_every_1_month_low': [1, 1, "default", 1][draw_number],
-                'probability_of_prep_consumables_being_available': ["default", "default", "default", 0.8][draw_number]
+                'probability_of_being_retained_on_prep_every_1_month': [1, 1, 0.8, 1][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_high': [1, 1, 0.98, 1][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_low': [1, 1, 0.6, 1][draw_number],
+                'probability_of_prep_consumables_being_available': [1, 1, 1, 0.85][draw_number]
             },
         }
 
