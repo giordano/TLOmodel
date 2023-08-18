@@ -15,7 +15,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/trial_run.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/projections_jan2023/batch_test_runs.py
+tlo batch-submit src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
