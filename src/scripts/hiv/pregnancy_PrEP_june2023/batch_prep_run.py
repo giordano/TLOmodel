@@ -1,8 +1,12 @@
 """
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
+conda activate TLOmodel
+find ~/Documents/MSc_HDA/Summer/TLOmodel -name 'batch_prep_runs.py'
+tlo scenario-run --draw-only batch_prep_run.py
+
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_runs.py
+tlo scenario-run --draw-only src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 Test the scenario starts running without problems:
 tlo scenario-run src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_runs.py
@@ -95,9 +99,9 @@ class TestScenario(BaseScenario):
 
             },
             'Hiv': {
-                'probability_of_being_retained_on_prep_every_1_month': [1, 1, "default", 1][draw_number]
-                'probability_of_being_retained_on_prep_every_1_month_high': [1, 1, "default", 1][draw_number]
-                'probability_of_being_retained_on_prep_every_1_month_low': [1, 1, "default", 1][draw_number]
+                'probability_of_being_retained_on_prep_every_1_month': [1, 1, "default", 1][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_high': [1, 1, "default", 1][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_low': [1, 1, "default", 1][draw_number],
                 'probability_of_prep_consumables_being_available': ["default", "default", "default", 0.8][draw_number]
             },
         }
