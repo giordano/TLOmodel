@@ -28,9 +28,25 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 import warnings
 
 from tlo import Date, logging
-from tlo.methods import hiv_tb_calibration
-from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+# you need to import each module that you require
+from tlo.methods import (
+    demography,
+    contraception,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    symptommanager,
+    epi,
+    hiv,
+    tb,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    care_of_women_during_pregnancy,
+    labour,
+    postnatal_supervisor,
+)
 
 # Ignore warnings to avoid cluttering output from simulation
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
@@ -66,13 +82,13 @@ class TestScenario(BaseScenario):
 
     def modules(self):
         return [
-            epi.Epi(resourcefilepath=resourcefilepath),
-            demography.Demography(resourcefilepath=resourcefilepath),
-            contraception.Contraception(resourcefilepath=resourcefilepath),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+            epi.Epi(resourcefilepath=self.resources),
+            demography.Demography(resourcefilepath=self.resources),
+            contraception.Contraception(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=["*"],  # all treatment allowed
                                       mode_appt_constraints=0,
                                       cons_availability="default",
@@ -82,20 +98,23 @@ class TestScenario(BaseScenario):
                                       disable=False,
                                       disable_and_reject_all=False,  # disable healthsystem and no HSI runs
                                       ),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-            labour.Labour(resourcefilepath=resourcefilepath),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-            hiv.Hiv(resourcefilepath=resourcefilepath),
-            tb.Tb(resourcefilepath=resourcefilepath),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            labour.Labour(resourcefilepath=self.resources),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources),
+            tb.Tb(resourcefilepath=self.resources),
         ]
 
+    # todo you can't use the term "default" in a list here, you need the actual value
+    # for probability_of_prep_consumables_being_available, you can use 0.85 as a value which is close to default
+    # are you sure you don't want prep to start until 2036?? that means no prep as your simulation ends in 2036
     def draw_parameters(self, draw_number, rng):
         return {
             'CareOfWomenDuringPregnancy': {
-                'prep_for_pregnant_woman_start_year': [2036,"default","default","default"][draw_number]
+                'prep_for_pregnant_woman_start_year': [2036, "default", "default", "default"][draw_number]
 
             },
             'Hiv': {
