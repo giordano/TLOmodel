@@ -119,14 +119,14 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'CareOfWomenDuringPregnancy': {
-                'prep_for_pregnant_woman_start_year': [2050, 2023, 2023, 2023][draw_number]
+                'prep_for_pregnant_woman_start_year':[2050.0, 2023.0, 2023.0, 2023.0][draw_number]
 
             },
             'Hiv': {
-                'probability_of_being_retained_on_prep_every_1_month': [1, 1, 0.8, 1][draw_number],
-                'probability_of_being_retained_on_prep_every_1_month_high': [1, 1, 0.98, 1][draw_number],
-                'probability_of_being_retained_on_prep_every_1_month_low': [1, 1, 0.6, 1][draw_number],
-                'probability_of_prep_consumables_being_available': [1, 1, 1, 0.85][draw_number]
+                'probability_of_being_retained_on_prep_every_1_month': [1.0, 1.0, 0.8, 1.0][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_high': [1.0, 1.0, 0.98, 1.0][draw_number],
+                'probability_of_being_retained_on_prep_every_1_month_low': [1.0, 1.0, 0.6, 1.0][draw_number],
+                'probability_of_prep_consumables_being_available': [1.0, 1.0, 1.0, 0.85][draw_number]
             },
         }
 
