@@ -660,6 +660,9 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     malaria prophylaxis for pregnant women
     """
 
+    # no IPTp if HIV+ or on cotrim
+    # select not HIV diagnosed
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -1053,7 +1056,8 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        # todo pregnant women can't have IPTp if also on cotrimxazole
+        # todo pregnant women can't have IPTp if also on cotrimoxazole
+        # todo need to clear this property after 6 weeks
 
         df = self.sim.population.props
 
