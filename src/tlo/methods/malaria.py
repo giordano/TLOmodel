@@ -680,6 +680,27 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
             )
 
 
+class MalariaEndIPTpProtection(Event, IndividualScopeEventMixin):
+    """
+    This resets the properties of a person on IPTp
+    the protective effects ends after 6 weeks and so the property is reset to prevent the
+    malaria poll assuming that this person still has reduced susceptibility to malaria infection
+    """
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+        self.cause = cause
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'ma_iptp']:
+            return
+
+        # reset the IPTp property
+        df.at[individual_id, 'ma_iptp'] = False
+
+
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
@@ -1064,26 +1085,32 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, 'hv_on_cotrimoxazole']:
             return
 
-        else:
+        logger.debug(key='message',
+                     data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
+        # request the treatment
+        if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_iptp']):
             logger.debug(key='message',
-                         data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
+                         data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
-            # request the treatment
-            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_iptp']):
-                logger.debug(key='message',
-                             data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
+            df.at[person_id, 'ma_iptp'] = True
 
-                df.at[person_id, 'ma_iptp'] = True
+            # if currently infected, IPTp will clear the infection
+            df.at[person_id, 'ma_is_infected'] = False
+            df.at[person_id, 'ma_inf_type'] = 'none'
 
-                # if currently infected, IPTp will clear the infection
-                df.at[person_id, 'ma_is_infected'] = False
-                df.at[person_id, 'ma_inf_type'] = 'none'
+            # clear any symptoms
+            self.sim.modules['SymptomManager'].clear_symptoms(
+                person_id=person_id, disease_module=self.module
+            )
 
-                # clear any symptoms
-                self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=person_id, disease_module=self.module
-                )
+            # If person has been placed/continued on IPTp, schedule end of protective period
+            self.sim.schedule_event(
+                MalariaEndIPTpProtection(
+                    person_id=person_id, module=self.module
+                ),
+                self.sim.date + pd.DateOffset(weeks=6),
+            )
 
     def did_not_run(self):
 
