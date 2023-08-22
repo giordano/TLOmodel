@@ -2541,18 +2541,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # default to person not being on cotrimoxazole
-        df.at[person_id, "hv_on_cotrimoxazole"] = False
-
         # Check if drugs are available, and provide drugs
         # this will return a dict where the first item is ART and the second is cotrimoxazole
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # ART is first item in drugs_available dict
         if list(drugs_available.values())[0]:
-            # Assign person to be have suppressed or un-suppressed viral load
+            # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )
