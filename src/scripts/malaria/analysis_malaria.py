@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2026, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 50
 
 # set up the log config
@@ -54,7 +54,7 @@ sim.register(
     healthsystem.HealthSystem(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
-        mode_appt_constraints=2,
+        mode_appt_constraints=1,
         cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
