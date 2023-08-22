@@ -660,9 +660,6 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     malaria prophylaxis for pregnant women
     """
 
-    # no IPTp if HIV+ or on cotrim
-    # select not HIV diagnosed
-
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -670,8 +667,8 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        # select currently pregnant women without IPTp, malaria-negative
-        p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp]
+        # select currently pregnant women without IPTp, malaria-negative, not on cotrimoxazole
+        p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp & ~df.hv_on_cotrimoxazole]
 
         for person_index in p1:
             logger.debug(key='message',
@@ -1056,12 +1053,15 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        # todo pregnant women can't have IPTp if also on cotrimoxazole
         # todo need to clear this property after 6 weeks
 
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
+            return
+
+        # IPTp contra-indicated if currently on cotrimoxazole
+        if df.at[person_id, 'hv_on_cotrimoxazole']:
             return
 
         else:
