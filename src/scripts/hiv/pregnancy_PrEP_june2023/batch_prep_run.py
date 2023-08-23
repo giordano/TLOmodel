@@ -1,5 +1,6 @@
 """
-This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
+This file defines a batch run through which the hiv modules are run across a set of parameter values -
+determining various adherence
 
 conda activate TLOmodel
 find ~/Documents/MSc_HDA/Summer/TLOmodel -name 'batch_prep_runs.py'
@@ -12,16 +13,16 @@ Test the scenario starts running without problems:
 tlo scenario-run src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/trial_run.py --draw 1 0
+tlo scenario-run src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py --draw 1 0
 
 Run on the batch system using:
 tlo batch-submit src/scripts/hiv/pregnancy_PrEP_june2023/batch_prep_run.py
 
 Display information about a job:
-tlo batch-job tlo_q1_demo-123 --tasks
+tlo batch-job batch_prep_run-2023-08-18T231546Z --tasks
 
 Download result files for a completed job:
-tlo batch-download calibration_script-2022-04-12T190518Z
+tlo batch-download batch_prep_run-2023-08-18T231546Z
 
 """
 
@@ -119,7 +120,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'CareOfWomenDuringPregnancy': {
-                'prep_for_pregnant_woman_start_year':[2050.0, 2023.0, 2023.0, 2023.0][draw_number]
+                'prep_for_pregnant_woman_start_year': [2050.0, 2023.0, 2023.0, 2023.0][draw_number]
 
             },
             'Hiv': {
@@ -130,8 +131,7 @@ class TestScenario(BaseScenario):
             },
         }
 
+    if __name__ == '__main__':
+        from tlo.cli import scenario_run
 
-if __name__ == '__main__':
-    from tlo.cli import scenario_run
-
-    scenario_run([__file__])
+        scenario_run([__file__])

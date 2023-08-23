@@ -13,6 +13,7 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 from tlo.analysis.utils import (
     compare_number_of_deaths,
@@ -105,10 +106,89 @@ info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # choose which draw to summarise / visualise
-draw = 3
+# draw = 1
 
 # %% extract results
 # Load and format model results (with year as integer):
+def extract_total_deaths(results_folder):
+
+    def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
+        return pd.Series({"Total": len(df)})
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=extract_deaths_total,
+        do_scaling=True
+    )
+def plot_summarized_total_deaths(summarized_total_deaths):
+    fig, ax = plt.subplots()
+
+    draws = list(summarized_total_deaths.keys())
+    means = [summarized_total_deaths[draw]['mean'] for draw in draws]
+    lowers = [summarized_total_deaths[draw]['lower'] for draw in draws]
+    uppers = [summarized_total_deaths[draw]['upper'] for draw in draws]
+
+    ax.bar(
+        draws,
+        means,
+        yerr=[np.array(means) - np.array(lowers), np.array(uppers) - np.array(means)],
+        tick_label=draws
+    )
+    ax.set_ylabel("Total number of deaths")
+    ax.set_xlabel("Draw Number")
+    fig.tight_layout()
+    return fig, ax
+
+def compute_difference_in_deaths_across_runs(total_deaths, info):
+    deaths_difference_by_run = [
+        total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
+        for run_number in range(scenario_info["runs_per_draw"])
+    ]
+    return np.mean(deaths_difference_by_run)
+
+def summarize(total_deaths, collapse_columns=False):
+    summary = {}
+    for draw, deaths_df in total_deaths.items():
+        total_values = deaths_df.loc['Total'].tolist()
+
+        summary[draw] = {
+            'mean': np.mean(total_values),
+            'lower': np.percentile(total_values, 5),
+            'upper': np.percentile(total_values, 95)
+        }
+    return summary
+
+def plot_summarized_total_deaths(summarized_total_deaths):
+    fig, ax = plt.subplots()
+
+    draws = list(summarized_total_deaths.keys())
+    means = [summarized_total_deaths[draw]['mean'] for draw in draws]
+    lowers = [summarized_total_deaths[draw]['lower'] for draw in draws]
+    uppers = [summarized_total_deaths[draw]['upper'] for draw in draws]
+
+    ax.bar(
+        draws,
+        means,
+        yerr=[np.array(means) - np.array(lowers), np.array(uppers) - np.array(means)],
+        tick_label=draws
+    )
+    ax.set_ylabel("Total number of deaths")
+    ax.set_xlabel("Draw Number")
+    fig.tight_layout()
+    return fig, ax
+
+
+# We first look at total deaths in the scenario runs for each draw
+all_total_deaths = {draw: extract_total_deaths(results_folder) for draw in range(info['number_of_draws'])}
+
+# Compute the summary statistics for each draw
+summarized_deaths = summarize(all_total_deaths)
+
+# Plot the summarized deaths for each draw
+fig_1, ax_1 = plot_summarized_total_deaths(summarized_deaths)
+plt.show()
 
 # ---------------------------------- HIV ---------------------------------- #
 model_hiv_adult_prev = summarize(
@@ -382,11 +462,10 @@ aids_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_TB"]
 
 # ------------ summarise deaths producing df for each draw
 
-
 # AIDS deaths
 aids_deaths = {}  # dict of df
 
-for draw in info["number_of_draws"]:
+for draw in range(info["number_of_draws"]):
     draw = draw
 
     # rename dataframe
@@ -445,7 +524,7 @@ for draw in info["number_of_draws"]:
 # HIV/TB deaths
 aids_tb_deaths = {}  # dict of df
 
-for draw in info["number_of_draws"]:
+for draw in range(info["number_of_draws"]):
     draw = draw
 
     # rename dataframe
@@ -554,6 +633,14 @@ def make_plot(
     # plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
 
+    # Adjust x-ticks to show every half year
+    #total_months = len(model.index)
+    #ticks = np.arange(0, total_months, 6)  # every 6th month
+    #ax.set_xticks(ticks)
+    #ax.set_xticklabels(model.index[ticks], rotation=45)  # Using rotation for better visibility
+
+    #plt.tight_layout()
+    # plt.show()
 
 # %% make plots
 

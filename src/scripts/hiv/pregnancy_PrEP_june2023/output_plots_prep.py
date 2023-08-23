@@ -28,7 +28,7 @@ plt.style.use('seaborn-darkgrid')
 os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
 
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+outputpath = Path("./outputs/")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 
@@ -57,7 +57,7 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
 # %%: DATA
 # ---------------------------------------------------------------------- #
 start_date = 2010
-end_date = 2020
+end_date = 2036
 
 # HIV resourcefile
 xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
@@ -154,7 +154,7 @@ make_plot(
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[2],
+    prev_and_inc_over_time.index[0],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -162,7 +162,7 @@ plt.plot(
 )
 
 # DHS
-x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[2]]
+x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[0]]
 y_values = data_hiv_dhs_prev.loc[
     (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
 ]
@@ -217,7 +217,7 @@ make_plot(
 
 # MPHIA
 plt.errorbar(
-    prev_and_inc_over_time.index[2],
+    prev_and_inc_over_time.index[0],
     data_hiv_mphia_inc_estimate,
     yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
     fmt="o",
@@ -228,9 +228,9 @@ red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="MPHIA")
 plt.legend(handles=[red_line, blue_line, orange_ci])
-# plt.savefig(
-#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-# )
+plt.savefig(
+    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -246,7 +246,7 @@ make_plot(
 )
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[2],
+    prev_and_inc_over_time.index[0],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
     ].values[0],
@@ -277,9 +277,9 @@ make_plot(
     data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
     data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
 )
-# plt.savefig(
-#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-# )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -290,6 +290,9 @@ make_plot(
     title_str="HIV Prevalence among Female Sex Workers (%)",
     model=prev_and_inc_over_time["hiv_prev_fsw"] * 100,
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # HIV prevalence among female aged 15 above
@@ -297,6 +300,9 @@ make_plot(
     title_str="HIV Prevalence among Females above 15+ (%)",
     model=prev_and_inc_over_time["female_prev_15plus"] * 100,
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # ------------------------PrEP intervention ------------------------------#
@@ -309,6 +315,9 @@ make_plot(
     title_str="Proportion of Pregnant Women Attending >=1 ANC visits",
     model=anc_visit["proportion_attended_at_least_one_anc"],
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # -----------------------PrEP
@@ -320,6 +329,9 @@ make_plot(
     title_str="Proportion of FSW That Are On PrEP",
     model=cov_over_time["prop_fsw_on_prep"],
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # PrEP among pregnant women
@@ -330,6 +342,9 @@ make_plot(
     title_str="Proportion of Pregnant Women That Are On PrEP",
     model=cov_over_time_prep["prop_pregnant_women_on_prep"],
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # PrEP among breastfeeding women
@@ -337,12 +352,18 @@ make_plot(
     title_str="Proportion of Breastfeeding Women That Are On PrEP",
     model=cov_over_time_prep["prop_breastfeeding_women_on_prep"],
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 make_plot(
     title_str="Proportion of Females That Are On PrEP",
     model=cov_over_time_prep["total_females_on_prep"],
 )
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -376,8 +397,60 @@ make_plot(
     data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
     data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
 )
-
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
 plt.show()
+
+# ---------------------------------------------------------------------- #
+# %%: PRINTING NUMBERS
+# ---------------------------------------------------------------------- #
+print(
+    "HIV Prevalence among Females above 15+:",
+    prev_and_inc_over_time["female_prev_15plus"].iloc[-1] * 100,  # Assuming the value is in proportion, convert to percentage
+    "%"
+)
+
+print(
+    "HIV Incidence in Children (0-14) per 100 py:",
+    prev_and_inc_over_time["hiv_child_inc"].iloc[-1] * 100,  # Convert to percentage if needed
+    "%"
+)
+
+print(
+    "HIV Prevalence in Children (0-14):",
+    prev_and_inc_over_time["hiv_prev_child"].iloc[-1] * 100,  # Convert to percentage if needed
+    "%"
+)
+
+# Proportion of Pregnant Women That Are On PrEP
+print(
+    "Proportion of Pregnant Women That Are On PrEP:",
+    cov_over_time_prep["prop_pregnant_women_on_prep"].iloc[-1]  # Get the last entry
+)
+
+# Proportion of Breastfeeding Women That Are On PrEP
+print(
+    "Proportion of Breastfeeding Women That Are On PrEP:",
+    cov_over_time_prep["prop_breastfeeding_women_on_prep"].iloc[-1]  # Get the last entry
+)
+
+# Proportion of All Females That Are On PrEP
+print(
+    "Proportion of All Females That Are On PrEP:",
+    cov_over_time_prep["total_females_on_prep"].iloc[-1]  # Get the last entry
+)
+
+print("Number of entries in data_hiv_unaids_death:", len(data_hiv_unaids_deaths))
+print(data_hiv_unaids_deaths)
+
+year_of_interest = 2035
+aids_mortality_rate_2035 = total_aids_deaths_rate_100kpy.get(year_of_interest)
+
+if aids_mortality_rate_2035 is not None:
+    print(f"AIDS mortality rates per 100k person-years in {year_of_interest}:", aids_mortality_rate_2035)
+else:
+    print(f"No data available for AIDS mortality rates in {year_of_interest}.")
 
 
 # ---------------------------------------------------------------------- #
@@ -385,10 +458,9 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # download all files (and get most recent [-1])
+results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
-results3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
-results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
 
 TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
 

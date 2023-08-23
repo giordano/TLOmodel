@@ -44,8 +44,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 50000
+end_date = Date(2012, 1, 1)
+popsize = 5000
 
 
 # set up the log config
@@ -102,18 +102,14 @@ sim.register(
 sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2010
 
 # scenario 2 - adherence remains the same for all individuals
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1.0
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
 
 # scenario 3 - adjuest probability of being retained on prep accordingly
 
-
 # scenario 4 - limited consumables where adherence is kept constant
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 0.95
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 0.95
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 0.95
-#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.80
+#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.85
 
 
 # Run the simulation and flush the logger
