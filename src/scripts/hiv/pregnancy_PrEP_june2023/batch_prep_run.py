@@ -119,7 +119,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'CareOfWomenDuringPregnancy': {
-                'prep_for_pregnant_woman_start_year':[2050.0, 2023.0, 2023.0, 2023.0][draw_number]
+                'prep_for_pregnant_woman_start_year': [2050.0, 2023.0, 2023.0, 2023.0][draw_number]
 
             },
             'Hiv': {

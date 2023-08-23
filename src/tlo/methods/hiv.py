@@ -1029,12 +1029,11 @@ class Hiv(Module):
             )
         )
 
-    def modify_consumables_availability(self):
+        p = self.parameters
+        prep_item_code = list(self.item_codes_for_consumables_required['prep'].keys())[0]
 
-        prep_cons = self.item_codes_for_consumables_required['prep']
         self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            {prep_cons: probability_of_prep_consumables_being_available}
-        )
+            {prep_item_code: p['probability_of_prep_consumables_being_available']})
 
     def on_birth(self, mother_id, child_id):
         """
@@ -2034,20 +2033,17 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             "is_pregnant"] or not currently_breastfeeding:
             return
 
+        prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month"]
+
         # Check if the person is eligible for continuation of PrEP after 1 month
+        # override prob_retention
         if person["is_pregnant"] or currently_breastfeeding:
             if currently_breastfeeding or person['la_parity'] > 1:
                 # For pregnant women breastfeeding or having previous birth, they will have lower adherence
                 prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_low"]
-                # For qualified breastfeeding and pregnant women, 7% (modelled as women having high-risk partners)
-                # will have higher probability
-            elif m.rng.random_sample() < 0.07:
-                prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_high"]
+                # For first pregnancy high adherence
             else:
-                prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month"]
-        else:
-            # For all other individuals, use the standard probability
-            prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month"]
+                prob_retention = m.parameters["probability_of_being_retained_on_prep_every_1_month_high"]
 
         if m.rng.random_sample() < prob_retention:
             # Continue on PrEP - and schedule an HSI for a refill appointment today

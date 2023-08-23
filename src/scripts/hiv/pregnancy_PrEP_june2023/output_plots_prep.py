@@ -25,7 +25,7 @@ from tlo import Date
 plt.style.use('seaborn-darkgrid')
 
 # Set the working directory
-os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
+# os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
