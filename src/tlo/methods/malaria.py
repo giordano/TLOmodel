@@ -264,7 +264,7 @@ class Malaria(Module):
         # LinearModel for the relative risk of clinical malaria infection
         self.lm["rr_of_clinical_malaria"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            1.0,  # intercept could be series of monthly probabilities?
+            1.0,
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_clinical_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
@@ -280,7 +280,7 @@ class Malaria(Module):
         # todo effects of cotrim and iptp on severe (not just clinical) malaria
         self.lm["rr_of_severe_malaria"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            1.0,  # intercept could be series of monthly probabilities?
+            1.0,
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_severe_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
