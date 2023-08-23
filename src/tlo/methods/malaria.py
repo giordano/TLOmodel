@@ -17,6 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+from tlo.lm import LinearModel, LinearModelType, Predictor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -250,6 +251,45 @@ class Malaria(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom('severe_anaemia'),  # nb. will cause care seeking as much as a typical symptom
             Symptom.emergency('severe_malaria'),  # emergency
+        )
+
+    def pre_initialise_population(self):
+        """
+        * Establish the Linear Models
+        *
+        """
+        p = self.parameters
+
+        # ---- LINEAR MODELS -----
+        # LinearModel for the relative risk of clinical malaria infection
+        self.lm["rr_of_clinical_malaria"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,  # intercept could be series of monthly probabilities?
+            Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
+                             p['rr_clinical_malaria_hiv_under5']),
+            Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
+                             p['rr_clinical_malaria_hiv_over5']),
+            Predictor().when('(hv_inf == True) & (is_pregnant == True)',
+                             p['rr_clinical_malaria_hiv_pregnant']),
+            # treatment effects
+            Predictor("hv_on_cotrimoxazole").when(True, p["rr_clinical_malaria_cotrimoxazole"]),
+            Predictor("ma_iptp").when(True, p["rr_clinical_malaria_iptp"]),
+        )
+
+        # LinearModel for the relative risk of severe malaria infection
+        # todo effects of cotrim and iptp on severe (not just clinical) malaria
+        self.lm["rr_of_severe_malaria"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,  # intercept could be series of monthly probabilities?
+            Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
+                             p['rr_severe_malaria_hiv_under5']),
+            Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
+                             p['rr_severe_malaria_hiv_over5']),
+            Predictor().when('(hv_inf == True) & (is_pregnant == True)',
+                             p['rr_severe_malaria_hiv_pregnant']),
+            # treatment effects
+            Predictor("hv_on_cotrimoxazole").when(True, p["rr_severe_malaria_cotrimoxazole"]),
+            Predictor("ma_iptp").when(True, p["rr_severe_malaria_iptp"]),
         )
 
     def initialise_population(self, population):
@@ -642,6 +682,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     this calls functions to assign new malaria infections
     and schedules rdt at a community level (non-symptom driven)
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
