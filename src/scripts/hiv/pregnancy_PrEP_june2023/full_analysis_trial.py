@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2036, 1, 1)
 popsize = 5000
 
 # set up the log config
@@ -96,22 +96,22 @@ sim.register(
  )
 
 # scenario 0 - adherence remains the same for all individuals
-sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2040
+sim.modules["CareOfWomenDuringPregnancy"].parameters["prep_for_pregnant_woman_start_year"] = 2023
 
 
 # scenario 1 - adherence remains the same for all individuals
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1.0
-#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
-#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1.0
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.2
 
 # scenario 2 - adjusted scenario
 
 # scenario 3 - adherence remains the same for all individuals
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1.0
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
-sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.85
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month"] = 1.0
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_low"] = 1.0
+#sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_1_month_high"] = 1.0
+#sim.modules["Hiv"].parameters["probability_of_prep_consumables_being_available"] = 0.85
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

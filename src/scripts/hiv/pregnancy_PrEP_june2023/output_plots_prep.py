@@ -402,6 +402,21 @@ plt.savefig(
  )
 plt.show()
 
+# Group by 'li_wealth' and count the number of deaths
+deaths_by_wealth = deaths_AIDS.groupby('li_wealth').size()
+
+# Plot pie chart
+plt.figure(figsize=(10, 7))
+deaths_by_wealth.plot.pie(autopct='%1.1f%%', startangle=90)
+plt.title('Proportion of AIDS Deaths by Wealth Category')
+plt.ylabel('')  # This is to remove the default column name as label on y-axis.
+plt.savefig(
+     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+ )
+plt.show()
+
+
+
 # ---------------------------------------------------------------------- #
 # %%: PRINTING NUMBERS
 # ---------------------------------------------------------------------- #
@@ -458,7 +473,7 @@ else:
 # ---------------------------------------------------------------------- #
 
 # download all files (and get most recent [-1])
-results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
+results0 = get_scenario_outputs("./0", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 

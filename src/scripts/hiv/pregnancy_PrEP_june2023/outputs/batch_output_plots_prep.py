@@ -9,6 +9,7 @@ import pickle
 from pathlib import Path
 from tlo import Date
 import os
+import lacroix
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -32,6 +33,7 @@ resourcefilepath = Path("./resources")
 outputspath = Path("./outputs/wz2016@ic.ac.uk/")
 
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
 
 # %% read in data files for plots
 # load all the data for calibration
@@ -91,7 +93,7 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
+results_folder = get_scenario_outputs("batch_prep_run-2023-08-23T154133Z.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -106,7 +108,7 @@ info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # choose which draw to summarise / visualise
-# draw = 1
+draw = 0
 
 # %% extract results
 # Load and format model results (with year as integer):
@@ -141,54 +143,55 @@ def plot_summarized_total_deaths(summarized_total_deaths):
     fig.tight_layout()
     return fig, ax
 
-def compute_difference_in_deaths_across_runs(total_deaths, info):
-    deaths_difference_by_run = [
-        total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
-        for run_number in range(scenario_info["runs_per_draw"])
-    ]
-    return np.mean(deaths_difference_by_run)
+#def compute_difference_in_deaths_across_runs(total_deaths, info):
+    #    deaths_difference_by_run = [
+    #       total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
+    #       for run_number in range(scenario_info["runs_per_draw"])
+    #   ]
+#   return np.mean(deaths_difference_by_run)
 
-def summarize(total_deaths, collapse_columns=False):
-    summary = {}
-    for draw, deaths_df in total_deaths.items():
-        total_values = deaths_df.loc['Total'].tolist()
+#def summarize(total_deaths, collapse_columns=False):
+    #    summary = {}
+    #   for draw, deaths_df in total_deaths.items():
+    #       total_values = deaths_df.loc['Total'].tolist()
 
-        summary[draw] = {
-            'mean': np.mean(total_values),
-            'lower': np.percentile(total_values, 5),
-            'upper': np.percentile(total_values, 95)
-        }
-    return summary
+    #      summary[draw] = {
+    #        'mean': np.mean(total_values),
+    #        'lower': np.percentile(total_values, 5),
+    #        'upper': np.percentile(total_values, 95)
+    #   }
+# return summary
 
-def plot_summarized_total_deaths(summarized_total_deaths):
-    fig, ax = plt.subplots()
+#def plot_summarized_total_deaths(summarized_total_deaths):
+    # fig, ax = plt.subplots()
 
-    draws = list(summarized_total_deaths.keys())
-    means = [summarized_total_deaths[draw]['mean'] for draw in draws]
-    lowers = [summarized_total_deaths[draw]['lower'] for draw in draws]
-    uppers = [summarized_total_deaths[draw]['upper'] for draw in draws]
+    #  draws = list(summarized_total_deaths.keys())
+    #  means = [summarized_total_deaths[draw]['mean'] for draw in draws]
+    #   lowers = [summarized_total_deaths[draw]['lower'] for draw in draws]
+    # uppers = [summarized_total_deaths[draw]['upper'] for draw in draws]
 
-    ax.bar(
-        draws,
-        means,
-        yerr=[np.array(means) - np.array(lowers), np.array(uppers) - np.array(means)],
-        tick_label=draws
-    )
-    ax.set_ylabel("Total number of deaths")
-    ax.set_xlabel("Draw Number")
-    fig.tight_layout()
-    return fig, ax
+    # ax.bar(
+    #     draws,
+    #     means,
+    #    yerr=[np.array(means) - np.array(lowers), np.array(uppers) - np.array(means)],
+    #    tick_label=draws
+    #)
+    # ax.set_ylabel("Total number of deaths")
+    #  ax.set_xlabel("Draw Number")
+    #  fig.tight_layout()
+#  return fig, ax
 
 
 # We first look at total deaths in the scenario runs for each draw
-all_total_deaths = {draw: extract_total_deaths(results_folder) for draw in range(info['number_of_draws'])}
+#all_total_deaths = {draw: extract_total_deaths(results_folder) for draw in range(info['number_of_draws'])}
 
 # Compute the summary statistics for each draw
-summarized_deaths = summarize(all_total_deaths)
+#summarized_deaths = summarize(all_total_deaths)
 
 # Plot the summarized deaths for each draw
-fig_1, ax_1 = plot_summarized_total_deaths(summarized_deaths)
-plt.show()
+#fig_1, ax_1 = plot_summarized_total_deaths(summarized_deaths)
+#print(summarized_deaths)
+#plt.show()
 
 # ---------------------------------- HIV ---------------------------------- #
 model_hiv_adult_prev = summarize(
@@ -349,41 +352,32 @@ model_females_prep.index = model_females_prep.index.year
 # ---------------------------------- PERSON-YEARS ---------------------------------- #
 # function to extract person-years by year
 # call this for each run and then take the mean to use as denominator for mortality / incidence etc.
-#def get_person_years(draw, run):
-#    log = load_pickled_dataframes(results_folder, draw, run)
+def get_person_years(draw, run):
+    log = load_pickled_dataframes(results_folder, draw, run)
 
-#    if "tlo.methods.demography" not in log:
-#        print(f"Missing 'tlo.methods.demography' for draw: {draw}, run: {run}")
-#        return pd.Series(dtype="int64")
+    py_ = log["tlo.methods.demography"]["person_years"]
+    years = pd.to_datetime(py_["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
 
-#    if "person_years" not in log["tlo.methods.demography"]:
-#        print(f"Missing 'person_years' inside 'tlo.methods.demography' for draw: {draw}, run: {run}")
-#        return pd.Series(dtype="int64")
+    py.index = pd.to_datetime(years, format="%Y")
 
-#    py_ = log["tlo.methods.demography"]["person_years"]
-#    years = pd.to_datetime(py_["date"]).dt.year
-#    py = pd.Series(dtype="int64", index=years)
-#    for year in years:
-#        tot_py = (
-#            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-#            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
-#        ).transpose()
-#        py[year] = tot_py.sum().values[0]
-
-#    py.index = pd.to_datetime(years, format="%Y")
-
-#    return py
+    return py
 
 # for draw 0, get py for all runs
-#number_runs = info["runs_per_draw"]
-#py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
+number_runs = info["runs_per_draw"]
+py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
 
 # draw number (default = 0) is specified above
-#for run in range(0, number_runs):
-#    py_summary.iloc[:, run] = get_person_years(draw, run)
+for run in range(0, number_runs):
+    py_summary.iloc[:, run] = get_person_years(draw, run)
 
-#py_summary["mean"] = py_summary.mean(axis=1)
-
+py_summary["mean"] = py_summary.mean(axis=1)
 
 def get_person_years(draw, run):
     log = load_pickled_dataframes(results_folder, draw, run)
@@ -440,7 +434,11 @@ results_deaths = results_deaths.reset_index()
 # summarise across runs
 aids_non_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_non_TB"]
 aids_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_TB"]
-tb_deaths_table = results_deaths.loc[results_deaths.cause == "TB"]
+
+combined_table = pd.concat([aids_non_tb_deaths_table, aids_tb_deaths_table], axis=0)
+combined_table = combined_table.groupby("year").sum().reset_index()
+
+# combined_table = pd.concat([aids_non_tb_deaths_table, aids_tb_deaths_table], axis=0).reset_index(drop=True)
 
 # ------------ summarise deaths producing df for each draw
 results_deaths = extract_results(
@@ -613,14 +611,16 @@ def make_plot(
 
     # Make plot
     fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, "-", color="C3")
+    ax.plot(model.index, model.values, "-", color="C3", label="TLO")
+
     if (model_low is not None) and (model_high is not None):
-        ax.fill_between(model_low.index, model_low, model_high, color="C3", alpha=0.2)
+        ax.fill_between(model_low.index, model_low, model_high, color="C3", alpha=0.2, label="_no_legend_")
 
     if data_mid is not None:
-        ax.plot(data_mid.index, data_mid.values, "-", color="C0")
+        ax.plot(data_mid.index, data_mid.values, "-", color="C0", label=data_name)
+
     if (data_low is not None) and (data_high is not None):
-        ax.fill_between(data_low.index, data_low, data_high, color="C0", alpha=0.2)
+        ax.fill_between(data_low.index, data_low, data_high, color="C0", alpha=0.2, label="_no_legend_")
 
     if xlab is not None:
         ax.set_xlabel(xlab)
@@ -629,18 +629,7 @@ def make_plot(
         ax.set_xlabel(ylab)
 
     plt.title(title_str)
-    plt.legend(["TLO", data_name])
-    # plt.gca().set_ylim(bottom=0)
-    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
-
-    # Adjust x-ticks to show every half year
-    #total_months = len(model.index)
-    #ticks = np.arange(0, total_months, 6)  # every 6th month
-    #ax.set_xticks(ticks)
-    #ax.set_xticklabels(model.index[ticks], rotation=45)  # Using rotation for better visibility
-
-    #plt.tight_layout()
-    # plt.show()
+    ax.legend()
 
 # %% make plots
 
@@ -702,7 +691,7 @@ green_cross = mlines.Line2D(
 )
 orange_ci = mlines.Line2D([], [], color="black", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-# plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
+plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
 
 plt.show()
 
@@ -742,8 +731,7 @@ orange_ci = mlines.Line2D(
 )
 plt.legend(handles=[red_line, blue_line, orange_ci])
 
-# plt.savefig(make_graph_file_name("HIV_Incidence_in_Adults"))
-
+plt.savefig(make_graph_file_name("HIV_Incidence_in_Adults"))
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -781,12 +769,11 @@ green_cross = mlines.Line2D(
     [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
 )
 plt.legend(handles=[red_line, blue_line, green_cross])
-# plt.savefig(make_graph_file_name("HIV_Prevalence_in_Children"))
+plt.savefig(make_graph_file_name("HIV_Prevalence_in_Children"))
 
 plt.show()
 
 # ---------------------------------------------------------------------- #
-
 # HIV Incidence Children
 make_plot(
     title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
@@ -797,8 +784,11 @@ make_plot(
     data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
     data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
 )
-# plt.savefig(make_graph_file_name("HIV_Incidence_in_Children"))
-
+# handles for legend
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
+plt.legend(handles=[red_line, blue_line])
+plt.savefig(make_graph_file_name("HIV_Incidence_in_Children"))
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -810,10 +800,8 @@ make_plot(
     model_low=model_hiv_fsw_prev[(draw,"lower")] * 100,
     model_high=model_hiv_fsw_prev[(draw,"upper")] * 100,
 )
-#plt.savefig(make_graph_file_name("HIV_Prevalence_FSW"))
+plt.savefig(make_graph_file_name("HIV_Prevalence_among_FSW(%)"))
 plt.show()
-
-
 # ---------------------------------------------------------------------- #
 
 # HIV prevalence among female aged 15 above
@@ -821,15 +809,16 @@ make_plot(
     title_str="HIV Prevalence among Females above 15+ (%)",
     model=model_hiv_female_15plus_prev[(draw,"mean")] * 100,
 )
+plt.savefig(make_graph_file_name("HIV_prev_among_females_15plus"))
 plt.show()
-
 # ------------------------PrEP intervention ------------------------------#
 # ----------------------- ANC visits
 # make_plot(
-#    title_str="Proportion of Pregnant Women Attending >=1 ANC visits",
+#     title_str="Proportion of Pregnant Women Attending >=1 ANC visits",
 #     model=model_ancvist[(draw,"mean")] * 100,
-# )
+ # )
 # plt.show()
+
 # -----------------------PrEP
 # PrEP among FSW
 make_plot(
@@ -838,35 +827,40 @@ make_plot(
     model_low=model_fsw_prep[(draw,"lower")] * 100,
     model_high=model_fsw_prep[(draw,"upper")] * 100,
 )
+plt.savefig(make_graph_file_name("Proportion_of_FSW_on_prep"))
 plt.show()
 
-# PrEP among pregnant women
+#PrEP among pregnant women
 make_plot(
     title_str="Proportion of Pregnant Women That Are On PrEP(%)",
     model=model_preg_women_prep[(draw,"mean")] * 100,
     model_low=model_preg_women_prep[(draw,"lower")] * 100,
     model_high=model_preg_women_prep[(draw,"upper")] * 100,
 )
+plt.savefig(make_graph_file_name("Proportion_of_pregnant_females_on_prep"))
 plt.show()
 
-# PrEP among breastfeeding women
+#PrEP among breastfeeding women
 make_plot(
     title_str="Proportion of Breastfeeding Women That Are On PrEP(%)",
     model=model_breastfeeding_women_prep[(draw,"mean")] * 100,
     model_low=model_breastfeeding_women_prep[(draw,"lower")] * 100,
     model_high=model_breastfeeding_women_prep[(draw,"upper")] * 100,
 )
+plt.savefig(make_graph_file_name("Proportion_of_breastfeeding_females_on_prep"))
 plt.show()
 
 # Total Females on PrEP
 make_plot(
     title_str="Proportion of Females That Are On PrEP(%)",
     model=model_females_prep[(draw,"mean")] * 100,
+    model_low=model_females_prep[(draw, "lower")] * 100,
+    model_high=model_females_prep[(draw, "upper")] * 100,
 )
+plt.savefig(make_graph_file_name("Proportion_of_females_on_prep"))
 plt.show()
 
 # ---------------------------------------------------------------------- #
-
 # HIV treatment coverage
 make_plot(
     title_str="HIV treatment coverage",
@@ -878,63 +872,132 @@ make_plot(
     data_low=data_hiv_unaids["ART_coverage_all_HIV_adults_lower"],
     data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"],
 )
-
-# plt.savefig(make_graph_file_name("HIV_treatment_coverage"))
-
+plt.savefig(make_graph_file_name("HIV treatment coverage"))
 plt.show()
-
 
 # ---------------------------------------------------------------------- #
 # %%: DEATHS - GBD COMPARISON
 # ---------------------------------------------------------------------- #
+# get numbers of deaths from model runs
+results_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "cause"])["person_id"].count()
+    ),
+    do_scaling=True,
+)
 
-#  ---------------------------------- DALYS ---------------------------------- #
-dalys_list = []
+results_deaths = results_deaths.reset_index()
 
-for idx, results_folder in enumerate(scenario_folders):
-    if idx < 2:
-        dalys = return_daly_summary(results_folder)
-    else:
-        dalys = return_daly_summary2(results_folder)
+# results_deaths.columns.get_level_values(1)
+# Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
+#
+# results_deaths.columns.get_level_values(0)  # this is higher level
+# Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
+tmp = results_deaths.loc[
+    (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+]
+tmp2 = tmp.loc[:, tmp.columns.get_level_values('draw') == draw].copy()
+frames = [tmp["year"], tmp["cause"], tmp2]
+tmp3 = pd.concat(frames, axis=1)
 
-    dalys.loc['Column_Total'] = dalys.sum(numeric_only=True, axis=0)
-    dalys_list.append(dalys)
+base_columns = ["year", "cause"]
+run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]  # Since each draw has 5 runs
+base_columns.extend(run_columns)
+tmp3.columns = base_columns
+tmp3 = tmp3.set_index("year")
+model_deaths_AIDS = pd.DataFrame(tmp3.groupby(["year"]).sum())
+# Calculate the mean and standard deviation across the runs for each year
+model_deaths_AIDS["mean"] = model_deaths_AIDS[run_columns].mean(axis=1)
+model_deaths_AIDS["std"] = model_deaths_AIDS[run_columns].std(axis=1)
+print(model_deaths_AIDS)
 
-daly_table = pd.DataFrame()
+make_plot(
+    title_str="Death Associated with AIDS between 2010 and 2035",
+    model=model_deaths_AIDS["mean"],
+    model_low=model_deaths_AIDS["mean"] - model_deaths_AIDS["std"],
+    model_high=model_deaths_AIDS["mean"] + model_deaths_AIDS["std"],
+    xlab="Year",
+    ylab="Number of Deaths"
+)
+plt.savefig(make_graph_file_name("Death_associated_with_AIDS_2010_2035"))
+plt.show()
 
-for idx, dalys in enumerate(dalys_list):
-    daly_table[f'scenario{idx}'] = dalys['median'].astype(str) + \
-                                  " (" + dalys['lower'].astype(str) + " - " + \
-                                  dalys['upper'].astype(str) + ")"
-
-writer = pd.ExcelWriter(outputspath / "full_dalys.xlsx")
-
-for idx, results_folder in enumerate(scenario_folders):
-    full_dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True
-    )
-    if idx < 2:
-        full_dalys.loc['AIDS)'] = full_dalys.loc['TB (non-AIDS)'] + full_dalys.loc['non_AIDS_TB']
-        full_dalys.drop(['non_AIDS_TB'], inplace=True)
-    full_dalys.loc['Column_Total'] = full_dalys.sum(numeric_only=True, axis=0)
-
-    full_dalys.to_excel(writer, sheet_name=f'sc{idx}')
-
-writer.save()
+# double check all columns are float64 or quantile argument will fail
+model_2010_median = model_deaths_AIDS.iloc[2].quantile(0.5)
+model_2015_median = model_deaths_AIDS.iloc[5].quantile(0.5)
+model_2010_low = model_deaths_AIDS.iloc[2].quantile(0.025)
+model_2015_low = model_deaths_AIDS.iloc[5].quantile(0.025)
+model_2010_high = model_deaths_AIDS.iloc[2].quantile(0.975)
+model_2015_high = model_deaths_AIDS.iloc[5].quantile(0.975)
 
 
+#  --------------------------------------------------------------------
+#                                 Results                              #
+#  --------------------------------------------------------------------
+# Function to print out result
+def print_2035_data(model, model_name):
+    try:
+        print(f"2035 data for {model_name}: {model.loc[2035]}")
+    except KeyError:
+        print(f"No data for 2035 in {model_name}.")
 
-results0 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
-results1 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
-results2 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
-results3 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
+# For HIV Among 15-49
+print_2035_data(model_hiv_adult_prev[(draw, "mean")], "HIV Prevalence among Adults")
+print_2035_data(model_hiv_adult_inc[(draw, "mean")], "HIV Incidence among Adults")
 
+# For HIV Prevalence Children
+print_2035_data(model_hiv_child_prev[(draw, "mean")], "HIV Prevalence among Children")
+
+# For HIV Incidence Children
+print_2035_data(model_hiv_child_inc[(draw, "mean")], "HIV Incidence in Children")
+print_2035_data(data_hiv_aidsinfo["incidence0_14_per100py"], "Data - HIV Incidence in Children")
+
+# For HIV prevalence among female sex workers
+print_2035_data(model_hiv_fsw_prev[(draw, "mean")], "HIV Prevalence among Female Sex Workers")
+
+# For HIV prevalence among female aged 15 above
+print_2035_data(model_hiv_female_15plus_prev[(draw, "mean")], "HIV Prevalence among Females above 15+")
+
+# For PrEP among FSW
+print_2035_data(model_fsw_prep[(draw, "mean")], "PrEP among FSW")
+
+# For PrEP among pregnant women
+print_2035_data(model_preg_women_prep[(draw, "mean")], "PrEP among Pregnant Women")
+
+# For PrEP among breastfeeding women
+print_2035_data(model_breastfeeding_women_prep[(draw, "mean")], "PrEP among Breastfeeding Women")
+
+# For Total Females on PrEP
+print_2035_data(model_females_prep[(draw, "mean")], "Total Females on PrEP")
+
+# For HIV treatment coverage
+print_2035_data(model_hiv_tx[(draw, "mean")], "HIV treatment coverage")
+print_2035_data(data_hiv_unaids["ART_coverage_all_HIV_adults"], "Data - HIV treatment coverage")
+
+#  --------------------------------------------------------------------
+#                                Discussion - Wealth & Deaths            #
+#  --------------------------------------------------------------------
+
+#  --------------------------------------------------------------------
+#                                 DALYS                               #
+#  --------------------------------------------------------------------
+# Define paths for different scenarios
+
+results0 = get_scenario_outputs("batch_prep_run-2023-08-23T154133Z.py", outputspath)[-1]
+results1 =get_scenario_outputs("batch_prep_run-2023-08-23T154133Z.py", outputspath)[-1]
+results2 = get_scenario_outputs("batch_prep_run-2023-08-23T154133Z.py", outputspath)[-1]
+
+berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
+baseline_colour = berry[5]  # '#001563'
+sc1_colour = berry[3]  # '#009A90'
+sc2_colour = berry[2]  # '#E40035'
+
+# %%:  ---------------------------------- DALYS ---------------------------------- #
 TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
-
 
 def num_dalys_by_cause(_df):
     """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
@@ -954,39 +1017,18 @@ def return_daly_summary(results_folder):
     )
     dalys.columns = dalys.columns.get_level_values(0)
     # combine two labels for non-AIDS TB (this now fixed in latest code)
-    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
-    dalys.drop(['non_AIDS_TB'], inplace=True)
-    out = pd.DataFrame()
-    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
-    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
-    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
-
-    return out
-
-
-def return_daly_summary2(results_folder):
-    dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True
-    )
-    dalys.columns = dalys.columns.get_level_values(0)
-    # combine two labels for non-AIDS TB (this now fixed in latest code)
     # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
     # dalys.drop(['non_AIDS_TB'], inplace=True)
     out = pd.DataFrame()
     out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
     out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
     out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
-
     return out
 
 
 dalys0 = return_daly_summary(results0)
 dalys1 = return_daly_summary(results1)
-dalys2 = return_daly_summary2(results2)
+dalys2 = return_daly_summary(results2)
 
 dalys0.loc['Column_Total'] = dalys0.sum(numeric_only=True, axis=0)
 dalys1.loc['Column_Total'] = dalys1.sum(numeric_only=True, axis=0)
@@ -1006,172 +1048,27 @@ daly_table['scenario2'] = dalys2['median'].astype(str) + \
 
 daly_table.to_csv(outputspath / "daly_summary.csv")
 
-# extract dalys averted by each scenario relative to scenario 0
-# comparison should be run-by-run
-full_dalys0 = extract_results(
-    results0,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=num_dalys_by_cause,
-    do_scaling=True
-)
-full_dalys0.loc['AIDS)'] = full_dalys0.loc['TB (non-AIDS)'] + full_dalys0.loc['non_AIDS_TB']
-full_dalys0.drop(['non_AIDS_TB'], inplace=True)
-full_dalys0.loc['Column_Total'] = full_dalys0.sum(numeric_only=True, axis=0)
+#---------- RESULT --------------
+print("DALYs caused by AIDS in scenario0:", daly_table.loc['AIDS', 'scenario0'])
+print("DALYs caused by AIDS in scenario1:", daly_table.loc['AIDS', 'scenario1'])
+print("DALYs caused by AIDS in scenario2:", daly_table.loc['AIDS', 'scenario2'])
 
-full_dalys1 = extract_results(
-    results1,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=num_dalys_by_cause,
-    do_scaling=True
-)
-full_dalys1.loc['AIDS'] = full_dalys1.loc['AIDS']
-
-
-full_dalys2 = extract_results(
-    results2,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=num_dalys_by_cause,
-    do_scaling=True
-)
-full_dalys2.loc['Column_Total'] = full_dalys2.sum(numeric_only=True, axis=0)
-
-writer = pd.ExcelWriter(r"outputs/wz2016@ic.ac.uk/full_dalys.xlsx")
-full_dalys0.to_excel(writer, sheet_name='sc0')
-full_dalys1.to_excel(writer, sheet_name='sc1')
-full_dalys2.to_excel(writer, sheet_name='sc2')
-writer.save()
-
-# DALYs averted: baseline - scenario
-# positive value will be DALYs averted due to interventions
-# negative value will be higher DALYs reported, therefore increased health burden
-sc1_sc0 = full_dalys0.subtract(full_dalys1, fill_value=0)
-sc1_sc0_median = sc1_sc0.median(axis=1)
-sc1_sc0_lower = sc1_sc0.quantile(q=0.025, axis=1)
-sc1_sc0_upper = sc1_sc0.quantile(q=0.975, axis=1)
-
-sc2_sc0 = full_dalys0.subtract(full_dalys2, fill_value=0)
-sc2_sc0_median = sc2_sc0.median(axis=1)
-sc2_sc0_lower = sc2_sc0.quantile(q=0.025, axis=1)
-sc2_sc0_upper = sc2_sc0.quantile(q=0.975, axis=1)
-
-# create full table for export
-daly_averted_table = pd.DataFrame()
-daly_averted_table['cause'] = sc1_sc0_median.index
-daly_averted_table['scenario1_med'] = [int(round(x, -3)) for x in sc1_sc0_median]
-daly_averted_table['scenario1_low'] = [int(round(x, -3)) for x in sc1_sc0_lower]
-daly_averted_table['scenario1_upp'] = [int(round(x, -3)) for x in sc1_sc0_upper]
-daly_averted_table['scenario2_med'] = [int(round(x, -3)) for x in sc2_sc0_median]
-daly_averted_table['scenario2_low'] = [int(round(x, -3)) for x in sc2_sc0_lower]
-daly_averted_table['scenario2_upp'] = [int(round(x, -3)) for x in sc2_sc0_upper]
-
-daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
-
-# this is now unconstrained scenario first!!
-aids_dalys_diff = [sc2_sc0_median['AIDS'],
-                   sc1_sc0_median['AIDS']]
-
-
-# -------------------------- plots ---------------------------- #
-# plt.style.use('ggplot')
-#
-# aids_colour = "#8949ab"
-# tb_colour = "#ed7e7a"
-# total_colour = "#eede77"
-#
-# years = list((range(2010, 2036, 1)))
-# years_num = pd.Series(years)
-#
-# fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
-#                                figsize=(14, 6))
-# # constrained_layout=True)
-# fig.suptitle('')
-#
-# # HCW time
-# # labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
-# # x = np.arange(len(labels))  # the label locations
-# width = 0.2  # the width of the bars
-#
-# ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
-# ax1.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
-#
-# ax1.set_ylabel("% difference HCW time", rotation=90, labelpad=15)
-# # ax1.set_ylim([-0.5, 1.5])
-#
-# ax1.yaxis.set_label_position("left")
-# ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
-#
-# # DALYs
-# labels = ['Constrained scale-up', 'Unconstrained scale-up']
-# x = np.arange(len(labels))  # the label locations
-# width = 0.2  # the width of the bars
-#
-# rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
-# rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
-# rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
-#
-# # Add some text for labels, title and custom x-axis tick labels, etc.
-# ax2.set_ylabel('DALYs')
-# ax2.set_title('')
-# ax2.set_xticks(x)
-# ax2.set_xticklabels(labels)
-# ax2.legend(["AIDS", "TB", "Total"], frameon=False)
-#
-# font = {'family': 'sans-serif',
-#         'color': 'black',
-#         'weight': 'bold',
-#         'size': 11,
-#         }
-#
-# ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
-#          verticalalignment='center', transform=ax1.transAxes, fontdict=font)
-#
-# ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
-#          verticalalignment='center', transform=ax2.transAxes, fontdict=font)
-#
-# fig.tight_layout()
-# fig.savefig(outputspath / "HCW_DALYS.png")
-#
-# plt.show()
-
-# -------------------------- DALYs only plot ---------------------------- #
-
-plt.style.use('ggplot')
-
-aids_colour = "#8949ab"
-
-# present DALYs in millions
 million = 1000000
-aids_dalys_diff = [x / million for x in aids_dalys_diff]
-total_dalys_diff = [x / million for x in total_dalys_diff]
+# Extracting DALYs (median, lower, upper) caused by AIDS for each scenario and scale to millions
+aids_dalys_median = [dalys0.loc['AIDS', 'median']/million, dalys1.loc['AIDS', 'median']/million, dalys2.loc['AIDS', 'median']/million]
+aids_dalys_lower = [dalys0.loc['AIDS', 'lower']/million, dalys1.loc['AIDS', 'lower']/million, dalys2.loc['AIDS', 'lower']/million]
+aids_dalys_upper = [dalys0.loc['AIDS', 'upper']/million, dalys1.loc['AIDS', 'upper']/million, dalys2.loc['AIDS', 'upper']/million]
 
-fig, ax1 = plt.subplots(nrows=1, ncols=1,
-                                             figsize=(5, 4))
-fig.suptitle('')
+# Calculate the error below and above the median
+error_below = [median - lower for median, lower in zip(aids_dalys_median, aids_dalys_lower)]
+error_above = [upper - median for median, upper in zip(aids_dalys_median, aids_dalys_upper)]
+error_bars = [error_below, error_above]
 
-# DALYs
-labels = ['Unconstrained scale-up', 'Constrained scale-up']
-x = np.arange(len(labels))  # the label locations
-width = 0.2  # the width of the bars
+# Plotting
+fig, ax = plt.subplots()
+ax.bar(['Scenario 0', 'Scenario 1', 'Scenario 2'], aids_dalys_median, yerr=error_bars,
+       color=[baseline_colour, sc1_colour, sc2_colour], capsize=10)
 
-rects1 = ax1.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
-
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax1.set_ylabel('DALYs averted, millions')
-ax1.set_title('')
-ax1.set_xticks(x)
-ax1.set_xticklabels(labels)
-ax1.legend(["AIDS"], frameon=False)
-
-font = {'family': 'sans-serif',
-        'color': 'black',
-        'weight': 'bold',
-        'size': 11,
-        }
-
-fig.tight_layout()
-fig.savefig(outputspath / "DALYS.png")
-
+ax.set_title('DALYs caused by AIDS in Different Scenarios')
+ax.set_ylabel('Number of DALYs')
 plt.show()

@@ -114,7 +114,10 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['prob_early_onset_neonatal_sepsis_week_1'], index=df.index)
 
-    result[externals['maternal_chorioamnionitis']] *= params['rr_eons_maternal_chorio']
+    valid_indices = result.index.intersection(externals['maternal_chorioamnionitis'])
+    result.loc[valid_indices] *= params['rr_eons_maternal_chorio']
+
+    #result[externals['maternal_chorioamnionitis']] *= params['rr_eons_maternal_chorio']
     result[externals['maternal_prom']] *= params['rr_eons_maternal_prom']
     result[df.nb_early_preterm] *= params['rr_eons_preterm_neonate']
     result[df.nb_late_preterm] *= params['rr_eons_preterm_neonate']

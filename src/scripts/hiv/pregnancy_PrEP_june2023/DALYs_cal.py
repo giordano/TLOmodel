@@ -8,7 +8,7 @@ import os
 import datetime
 from pathlib import Path
 import pickle
-# import lacroix
+import lacroix
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,39 +30,20 @@ from tlo import Date
 # Set the working directory
 os.chdir('/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/')
 resourcefilepath = Path("./resources")
-# Set paths
-outputpath = Path("./outputs/")
+outputspath = Path("./outputs/wz2016@ic.ac.uk/")
 
 # Define paths for different scenarios
-sc0_path = outputpath / "sc0/default_run.pickle"
-sc1_path = outputpath / "sc1/default_run.pickle"
-sc2_path = outputpath / "sc1/default_run.pickle"  # I assume you meant sc2 here
+results0 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
+results1 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
+results2 = get_scenario_outputs("batch_prep_run-2023-08-18T231546Z.py", outputspath)[-1]
 
-# Load pickle for scenario 0
-if sc0_path.exists():
-    with sc0_path.open("rb") as f:
-        output0 = pickle.load(f)
-else:
-    print(f"File {sc0_path} does not exist!")
-
-# Load pickle for scenario 1
-if sc1_path.exists():
-    with sc1_path.open("rb") as f1:
-        output1 = pickle.load(f1)
-else:
-    print(f"File {sc1_path} does not exist!")
-
-# Load pickle for scenario 2
-if sc2_path.exists():
-    with sc2_path.open("rb") as f2:
-        output2 = pickle.load(f2)
-else:
-    print(f"File {sc2_path} does not exist!")
-
+berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
+baseline_colour = berry[5]  # '#001563'
+sc1_colour = berry[3]  # '#009A90'
+sc2_colour = berry[2]  # '#E40035'
 
 # %%:  ---------------------------------- DALYS ---------------------------------- #
 TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
-
 
 def num_dalys_by_cause(_df):
     """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
@@ -82,39 +63,18 @@ def return_daly_summary(results_folder):
     )
     dalys.columns = dalys.columns.get_level_values(0)
     # combine two labels for non-AIDS TB (this now fixed in latest code)
-    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
-    dalys.drop(['non_AIDS_TB'], inplace=True)
-    out = pd.DataFrame()
-    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
-    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
-    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
-
-    return out
-
-
-def return_daly_summary2(results_folder):
-    dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True
-    )
-    dalys.columns = dalys.columns.get_level_values(0)
-    # combine two labels for non-AIDS TB (this now fixed in latest code)
-    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
     # dalys.drop(['non_AIDS_TB'], inplace=True)
     out = pd.DataFrame()
     out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
     out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
     out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
-
     return out
 
 
-dalys0 = return_daly_summary("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs/sc0/")
-dalys1 = return_daly_summary("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs/sc1/")
-dalys2 = return_daly_summary2("/Users/wenjiazhang/Documents/MSc_HDA/Summer/TLOmodel/outputs/sc1/")
+dalys0 = return_daly_summary(results0)
+dalys1 = return_daly_summary(results1)
+dalys2 = return_daly_summary(results2)
 
 dalys0.loc['Column_Total'] = dalys0.sum(numeric_only=True, axis=0)
 dalys1.loc['Column_Total'] = dalys1.sum(numeric_only=True, axis=0)
@@ -134,6 +94,31 @@ daly_table['scenario2'] = dalys2['median'].astype(str) + \
 
 daly_table.to_csv(outputspath / "daly_summary.csv")
 
+#---------- RESULT --------------
+print("DALYs caused by AIDS in scenario0:", daly_table.loc['AIDS', 'scenario0'])
+print("DALYs caused by AIDS in scenario1:", daly_table.loc['AIDS', 'scenario1'])
+print("DALYs caused by AIDS in scenario2:", daly_table.loc['AIDS', 'scenario2'])
+
+million = 1000000
+# Extracting DALYs (median, lower, upper) caused by AIDS for each scenario and scale to millions
+aids_dalys_median = [dalys0.loc['AIDS', 'median']/million, dalys1.loc['AIDS', 'median']/million, dalys2.loc['AIDS', 'median']/million]
+aids_dalys_lower = [dalys0.loc['AIDS', 'lower']/million, dalys1.loc['AIDS', 'lower']/million, dalys2.loc['AIDS', 'lower']/million]
+aids_dalys_upper = [dalys0.loc['AIDS', 'upper']/million, dalys1.loc['AIDS', 'upper']/million, dalys2.loc['AIDS', 'upper']/million]
+
+# Calculate the error below and above the median
+error_below = [median - lower for median, lower in zip(aids_dalys_median, aids_dalys_lower)]
+error_above = [upper - median for median, upper in zip(aids_dalys_median, aids_dalys_upper)]
+error_bars = [error_below, error_above]
+
+# Plotting
+fig, ax = plt.subplots()
+ax.bar(['Scenario 0', 'Scenario 1', 'Scenario 2'], aids_dalys_median, yerr=error_bars,
+       color=[baseline_colour, sc1_colour, sc2_colour], capsize=10)
+
+ax.set_title('DALYs caused by AIDS in Different Scenarios')
+ax.set_ylabel('Number of DALYs')
+plt.show()
+
 # extract dalys averted by each scenario relative to scenario 0
 # comparison should be run-by-run
 full_dalys0 = extract_results(
@@ -143,9 +128,6 @@ full_dalys0 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
-full_dalys0.loc['TB (non-AIDS)'] = full_dalys0.loc['TB (non-AIDS)'] + full_dalys0.loc['non_AIDS_TB']
-full_dalys0.drop(['non_AIDS_TB'], inplace=True)
-full_dalys0.loc['Column_Total'] = full_dalys0.sum(numeric_only=True, axis=0)
 
 full_dalys1 = extract_results(
     results1,
@@ -154,9 +136,6 @@ full_dalys1 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
-full_dalys1.loc['TB (non-AIDS)'] = full_dalys1.loc['TB (non-AIDS)'] + full_dalys1.loc['non_AIDS_TB']
-full_dalys1.drop(['non_AIDS_TB'], inplace=True)
-full_dalys1.loc['Column_Total'] = full_dalys1.sum(numeric_only=True, axis=0)
 
 full_dalys2 = extract_results(
     results2,
@@ -165,13 +144,12 @@ full_dalys2 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
-full_dalys2.loc['Column_Total'] = full_dalys2.sum(numeric_only=True, axis=0)
 
-writer = pd.ExcelWriter(r"outputs/t.mangal@imperial.ac.uk/full_dalys.xlsx")
+writer = pd.ExcelWriter(r"outputs/wz2016@ic.ac.uk/full_dalys.xlsx")
 full_dalys0.to_excel(writer, sheet_name='sc0')
 full_dalys1.to_excel(writer, sheet_name='sc1')
 full_dalys2.to_excel(writer, sheet_name='sc2')
-writer.save()
+# writer.save()
 
 # DALYs averted: baseline - scenario
 # positive value will be DALYs averted due to interventions
@@ -198,26 +176,18 @@ daly_averted_table['scenario2_upp'] = [int(round(x, -3)) for x in sc2_sc0_upper]
 
 daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
 
-
+# this is now unconstrained scenario first!!
 aids_dalys_diff = [sc2_sc0_median['AIDS'],
                    sc1_sc0_median['AIDS']]
-tb_dalys_diff = [sc2_sc0_median['TB (non-AIDS)'],
-                 sc1_sc0_median['TB (non-AIDS)']]
-total_dalys_diff = [sc2_sc0_median['Column_Total'],
-                    sc1_sc0_median['Column_Total']]
 
 plt.style.use('ggplot')
 
 aids_colour = "#8949ab"
-tb_colour = "#ed7e7a"
-total_colour = "#eede77"
+
 
 # present DALYs in millions
 million = 1000000
 aids_dalys_diff = [x / million for x in aids_dalys_diff]
-tb_dalys_diff = [x / million for x in tb_dalys_diff]
-total_dalys_diff = [x / million for x in total_dalys_diff]
-
 
 fig, ax1 = plt.subplots(nrows=1, ncols=1,
                                              figsize=(5, 4))
@@ -229,8 +199,6 @@ x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
 rects1 = ax1.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
-rects2 = ax1.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
-rects3 = ax1.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax1.set_ylabel('DALYs averted, millions')
