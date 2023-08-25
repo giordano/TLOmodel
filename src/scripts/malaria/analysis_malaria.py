@@ -19,6 +19,7 @@ from tlo.methods import (
     tb,
     simplified_births,
     symptommanager,
+    epi,
 )
 
 t0 = time.time()
@@ -76,6 +77,9 @@ sim.register(
     hiv.Hiv(
         resourcefilepath=resourcefilepath,
     ),
+    epi.Epi(
+        resourcefilepath=resourcefilepath,
+    )
 )
 
 # Run the simulation and flush the logger

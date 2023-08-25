@@ -301,16 +301,21 @@ class Malaria(Module):
     def pre_initialise_population(self):
         """
         * Establish the Linear Models
-        *
+
+        if HIV is registered, the conditional predictors will apply
+        otherwise only IPTp will affect risk of clinical/severe malaria
         """
+
         p = self.parameters
 
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of clinical malaria infection
-        self.lm["rr_of_clinical_malaria"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
-            # people with HIV
+        predictors = [
+            Predictor("ma_iptp").when(True, p["rr_clinical_malaria_iptp"]),
+        ]
+
+        # people with HIV
+        conditional_predictors = [
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_clinical_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
@@ -321,23 +326,28 @@ class Malaria(Module):
             # assume same effect of cotrim if pregnant
             Predictor("hv_art").when('on_VL_suppressed', p["rr_clinical_malaria_art"]).otherwise(1.0),
             Predictor("hv_on_cotrimoxazole").when(True, p["rr_clinical_malaria_cotrimoxazole"]),
-            Predictor("ma_iptp").when(True, p["rr_clinical_malaria_iptp"]),
-        )
+        ] if "hiv" in self.sim.modules else []
+
+        self.lm["rr_of_clinical_malaria"] = LinearModel.multiplicative(
+            *(predictors + conditional_predictors))
 
         # LinearModel for the relative risk of severe malaria infection
-        self.lm["rr_of_severe_malaria"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        predictors = [
+            Predictor("ma_iptp").when(True, p["rr_severe_malaria_iptp"]),
+        ]
+
+        # people with HIV
+        conditional_predictors = [
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_severe_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
                              p['rr_severe_malaria_hiv_over5']),
             Predictor().when('(hv_inf == True) & (is_pregnant == True)',
                              p['rr_severe_malaria_hiv_pregnant']),
-            # treatment effects
-            # assume ART and cotrim not specifically affecting severity (just clinical incidence)
-            Predictor("ma_iptp").when(True, p["rr_severe_malaria_iptp"]),
-        )
+        ] if "hiv" in self.sim.modules else []
+
+        self.lm["rr_of_severe_malaria"] = LinearModel.multiplicative(
+            *(predictors + conditional_predictors))
 
     def initialise_population(self, population):
         df = population.props
