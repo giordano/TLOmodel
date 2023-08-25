@@ -15,6 +15,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     malaria,
+    hiv,
+    tb,
     simplified_births,
     symptommanager,
 )
@@ -41,6 +43,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.malaria": logging.INFO,
+        "tlo.methods.hiv": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
@@ -66,7 +69,13 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
-    )
+    ),
+    tb.Tb(
+        resourcefilepath=resourcefilepath,
+    ),
+    hiv.Hv(
+        resourcefilepath=resourcefilepath,
+    ),
 )
 
 # Run the simulation and flush the logger

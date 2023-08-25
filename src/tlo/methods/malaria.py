@@ -37,9 +37,10 @@ class Malaria(Module):
         self.itn_irs = None
         self.all_inc = None
         self.item_codes_for_consumables_required = dict()
+        self.lm = dict()
 
     INIT_DEPENDENCIES = {
-        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
+        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager', 'Hiv', 'Tb'
     }
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
@@ -316,7 +317,7 @@ class Malaria(Module):
                              p['rr_clinical_malaria_hiv_pregnant']),
             # treatment effects
             # assume same effect of cotrim if pregnant
-            Predictor("hv_art").when('on_VL_suppressed', p["rr_clinical_malaria_art"].otherwise(1.0)),
+            Predictor("hv_art").when('on_VL_suppressed', p["rr_clinical_malaria_art"]).otherwise(1.0),
             Predictor("hv_on_cotrimoxazole").when(True, p["rr_clinical_malaria_cotrimoxazole"]),
             Predictor("ma_iptp").when(True, p["rr_clinical_malaria_iptp"]),
         )
@@ -392,8 +393,28 @@ class Malaria(Module):
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals
             monthly_prob = monthly_prob.set_axis(df.index[_where])
+
+            # add individual properties relevant to linear model of risk
+            age = df.loc[_where, 'age_years']  # don't need the edited age for the linear model
+            hiv_status = df.loc[_where, 'hv_inf']
+            pregnant = df.loc[_where, 'is_pregnant']
+            on_cotrimoxazole = df.loc[_where, 'hv_on_cotrimoxazole']
+            on_art = df.loc[_where, 'hv_art']
+            on_iptp = df.loc[_where, 'ma_iptp']
+            tmp = pd.DataFrame([monthly_prob, age, hiv_status, pregnant, on_cotrimoxazole, on_art, on_iptp],
+                               columns=['monthly_prob', 'age', 'hiv_status', 'pregnant',
+                                        'on_cotrimoxazole', 'on_art', 'on_iptp'])
+
+            # apply linear model to get individual risk
+            individual_risk = self.lm["rr_of_clinical_malaria"].predict(
+                df.loc[_where]
+            )
+            # mulitply individual risk by monthly prob
+            # adjusted_risk =
+
+
             # select individuals for infection
-            random_draw = rng.random_sample(_where.sum()) < monthly_prob
+            random_draw = rng.random_sample(_where.sum()) < adjusted_risk
             selected = _where & random_draw
             return selected
 
