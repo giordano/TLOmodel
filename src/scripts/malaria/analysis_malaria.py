@@ -73,7 +73,7 @@ sim.register(
     tb.Tb(
         resourcefilepath=resourcefilepath,
     ),
-    hiv.Hv(
+    hiv.Hiv(
         resourcefilepath=resourcefilepath,
     ),
 )

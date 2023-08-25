@@ -40,10 +40,12 @@ class Malaria(Module):
         self.lm = dict()
 
     INIT_DEPENDENCIES = {
-        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager', 'Hiv', 'Tb'
+        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
+    ADDITIONAL_DEPENDENCIES = {'Hiv', 'Tb'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
