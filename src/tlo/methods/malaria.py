@@ -93,9 +93,6 @@ class Malaria(Module):
         'dur_clin_para': Parameter(
             Types.REAL, 'duration (days) of parasitaemia for clinical malaria cases'
         ),
-        'rr_hiv': Parameter(
-            Types.REAL, 'relative risk of clinical malaria if hiv-positive'
-        ),
         'treatment_adjustment': Parameter(
             Types.REAL, 'probability of death from severe malaria if on treatment'
         ),
@@ -265,6 +262,7 @@ class Malaria(Module):
         self.lm["rr_of_clinical_malaria"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
+            # people with HIV (untreated????)
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_clinical_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
