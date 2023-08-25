@@ -326,7 +326,7 @@ class Malaria(Module):
             # assume same effect of cotrim if pregnant
             Predictor("hv_art").when('on_VL_suppressed', p["rr_clinical_malaria_art"]).otherwise(1.0),
             Predictor("hv_on_cotrimoxazole").when(True, p["rr_clinical_malaria_cotrimoxazole"]),
-        ] if "hiv" in self.sim.modules else []
+        ] if "Hiv" in self.sim.modules else []
 
         self.lm["rr_of_clinical_malaria"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors))
@@ -406,28 +406,24 @@ class Malaria(Module):
             # update the index so it's the same as the original population dataframe for these individuals
             monthly_prob = monthly_prob.set_axis(df.index[_where])
 
-            # add individual properties relevant to linear model of risk
-            age = df.loc[_where, 'age_years']  # don't need the edited age for the linear model
-            hiv_status = df.loc[_where, 'hv_inf']
-            pregnant = df.loc[_where, 'is_pregnant']
-            on_cotrimoxazole = df.loc[_where, 'hv_on_cotrimoxazole']
-            on_art = df.loc[_where, 'hv_art']
-            on_iptp = df.loc[_where, 'ma_iptp']
-            tmp = pd.DataFrame([monthly_prob, age, hiv_status, pregnant, on_cotrimoxazole, on_art, on_iptp],
-                               columns=['monthly_prob', 'age', 'hiv_status', 'pregnant',
-                                        'on_cotrimoxazole', 'on_art', 'on_iptp'])
+            # the linear models only apply to clinical and severe malaria risk
+            if _col == 'monthly_prob_inf':
+                # select individuals for infection
+                random_draw = rng.random_sample(_where.sum()) < monthly_prob
 
-            # apply linear model to get individual risk
-            individual_risk = self.lm["rr_of_clinical_malaria"].predict(
-                df.loc[_where]
-            )
-            # mulitply individual risk by monthly prob
-            # adjusted_risk =
+            else:
+                linear_model = self.lm["rr_of_clinical_malaria"] if _col == 'monthly_prob_clin' else self.lm[
+                    "rr_of_severe_malaria"]
 
+                # apply linear model to get individual risk
+                individual_risk = linear_model.predict(
+                    df.loc[_where]
+                )
 
-            # select individuals for infection
-            random_draw = rng.random_sample(_where.sum()) < adjusted_risk
+                random_draw = rng.random_sample(_where.sum()) < monthly_prob * individual_risk
+
             selected = _where & random_draw
+
             return selected
 
         # we don't have incidence data for over 80s
@@ -805,7 +801,7 @@ class MalariaEndIPTpProtection(Event, IndividualScopeEventMixin):
     malaria poll assuming that this person still has reduced susceptibility to malaria infection
     """
 
-    def __init__(self, module, person_id,):
+    def __init__(self, module, person_id, ):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
@@ -841,7 +837,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
             # if draw -> death
             if prob < self.module.parameters['treatment_adjustment']:
                 self.sim.modules['Demography'].do_death(
-                    person_id=person_id, cause=self.cause, originating_module=self.module)
+                    individual_id=person_id, cause=self.cause, originating_module=self.module)
 
                 df.at[person_id, 'ma_date_death'] = self.sim.date
 
@@ -859,7 +855,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         # if not on treatment - death will occur
         else:
             self.sim.modules['Demography'].do_death(
-                person_id=person_id, cause=self.cause, originating_module=self.module)
+                individual_id=person_id, cause=self.cause, originating_module=self.module)
 
             df.at[person_id, 'ma_date_death'] = self.sim.date
 
@@ -1220,7 +1216,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                 MalariaEndIPTpProtection(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(weeks=p["duration_iptp_protection_weeks"]),
+                self.sim.date + pd.DateOffset(days=7 * p["duration_iptp_protection_weeks"]),
             )
 
     def did_not_run(self):
@@ -1480,6 +1476,39 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='prevalence',
                     data=prev,
                     description='Prevalence malaria cases')
+
+        # ------------------------------------ CO-INFECTION PREVALENCE ------------------------------------
+        if "Hiv" in self.sim.modules:
+            # number of people with both HIV and clinical/severe malaria
+            # output is malaria prevalence in HIV pop
+            coinfection_num = len(
+                df[df.is_alive & (df.ma_inf_type != 'none') & df.hv_inf]
+            )
+
+            # hiv population
+            hiv_infected = len(
+                df[df.is_alive & df.hv_inf]
+            )
+
+            # prevalence of malaria in HIV population
+            prev_malaria_in_hiv_population = coinfection_num / hiv_infected
+
+            # proportion of malaria cases with concurrent HIV infection
+            malaria_infected = len(
+                df[df.is_alive & (df.ma_inf_type != 'none')]
+            )
+
+            prop_malaria_cases_with_hiv = coinfection_num / malaria_infected
+
+            coinfection_prevalence = {
+                'coinfection_num': coinfection_num,
+                'prev_malaria_in_hiv_population': prev_malaria_in_hiv_population,
+                'prop_malaria_cases_with_hiv': prop_malaria_cases_with_hiv,
+            }
+
+            logger.info(key='coinfection_prevalence',
+                        data=coinfection_prevalence,
+                        description='Co-infection prevalence')
 
 
 class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):

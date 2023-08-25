@@ -55,6 +55,7 @@ with open(outputpath / "malaria_run.pickle", "rb") as f:
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
+coinfection = output["tlo.methods.malaria"]["coinfection_prevalence"]
 
 scaling_factor = output["tlo.methods.population"]["scaling_factor"].values[0][1]
 
@@ -84,7 +85,7 @@ model_years = model_years.dt.year
 years_of_simulation = len(model_years)
 # ------------------------------------- FIGURES -----------------------------------------#
 start_date = 2010
-end_date = 2026
+end_date = model_years[-1]
 
 # FIGURES
 plt.style.use("ggplot")
@@ -155,6 +156,49 @@ plt.tight_layout()
 plt.show()
 
 plt.close()
+
+
+# ------------------------------------- FIGURES - co-infection -----------------------------------------#
+
+plt.style.use("ggplot")
+plt.figure(1, figsize=(5, 10))
+
+# malaria prevalence in HIV population
+# model value is whole population, Obebe is pooled prev, Mirz is adults across all years
+ax = plt.subplot(121)  # numrows, numcols, fignum
+plt.plot(model_years, coinfection.prev_malaria_in_hiv_population, color="crimson")
+plt.errorbar(
+    model_years.index[1],
+    16.5,
+    yerr=[[10.6], [21.9]],
+    fmt="o",
+)
+plt.axhline(y=27.34, color='r', linestyle='-')
+plt.title("malaria prevalence in HIV population")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Model", "Obebe, 2021", "Mirzohreh, 2022"])
+plt.tight_layout()
+
+
+# Proportion of malaria cases with HIV
+ax2 = plt.subplot(122)  # numrows, numcols, fignum
+plt.plot(model_years, coinfection.prop_malaria_cases_with_hiv, color="mediumseagreen")  # model
+plt.title("Prop malaria cases with HIV")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Proportion")
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["Model"])
+plt.tight_layout()
+
+plt.show()
+
+plt.close()
+
 
 # ------------------------------------- plot rdt delivery -----------------------------------------#
 rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
