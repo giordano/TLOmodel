@@ -132,7 +132,52 @@ class Malaria(Module):
             Types.REAL,
             'scaling factor applied to the reports of rdt usage to compensate for'
             'non-availability of rdts at some facilities'
-        )
+        ),
+        'duration_iptp_protection_weeks': Parameter(
+            Types.REAL,
+            'duration of protection against clinical malaria conferred by each dose of IPTp'
+        ),
+        'rr_clinical_malaria_hiv_under5': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if HIV+ and aged under 5 years'
+        ),
+        'rr_clinical_malaria_hiv_over5': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if HIV+ and aged over 5 years'
+        ),
+        'rr_clinical_malaria_hiv_pregnant': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if HIV+ and pregnant'
+        ),
+        'rr_clinical_malaria_cotrimoxazole': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if on cotrimoxazole'
+        ),
+        'rr_clinical_malaria_art': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if HIV+ and on ART and virally suppressed'
+        ),
+        'rr_clinical_malaria_iptp': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria with each dose of IPTp'
+        ),
+        'rr_severe_malaria_hiv_under5': Parameter(
+            Types.REAL,
+            'relative risk of severe malaria if HIV+ and aged under 5 years'
+        ),
+        'rr_severe_malaria_hiv_over5': Parameter(
+            Types.REAL,
+            'relative risk of severe malaria if HIV+ and aged over 5 years'
+        ),
+        'rr_severe_malaria_hiv_pregnant': Parameter(
+            Types.REAL,
+            'relative risk of clinical malaria if HIV+ and pregnant'
+        ),
+        'rr_severe_malaria_iptp': Parameter(
+            Types.REAL,
+            'relative risk of severe malaria with each dose of IPTp'
+        ),
+
     }
 
     PROPERTIES = {
@@ -262,7 +307,7 @@ class Malaria(Module):
         self.lm["rr_of_clinical_malaria"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            # people with HIV (untreated????)
+            # people with HIV
             Predictor().when('(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)',
                              p['rr_clinical_malaria_hiv_under5']),
             Predictor().when('(hv_inf == True) & (age_years > 5) & (is_pregnant == False)',
@@ -270,12 +315,13 @@ class Malaria(Module):
             Predictor().when('(hv_inf == True) & (is_pregnant == True)',
                              p['rr_clinical_malaria_hiv_pregnant']),
             # treatment effects
+            # assume same effect of cotrim if pregnant
+            Predictor("hv_art").when('on_VL_suppressed', p["rr_clinical_malaria_art"].otherwise(1.0)),
             Predictor("hv_on_cotrimoxazole").when(True, p["rr_clinical_malaria_cotrimoxazole"]),
             Predictor("ma_iptp").when(True, p["rr_clinical_malaria_iptp"]),
         )
 
         # LinearModel for the relative risk of severe malaria infection
-        # todo effects of cotrim and iptp on severe (not just clinical) malaria
         self.lm["rr_of_severe_malaria"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
@@ -286,7 +332,7 @@ class Malaria(Module):
             Predictor().when('(hv_inf == True) & (is_pregnant == True)',
                              p['rr_severe_malaria_hiv_pregnant']),
             # treatment effects
-            Predictor("hv_on_cotrimoxazole").when(True, p["rr_severe_malaria_cotrimoxazole"]),
+            # assume ART and cotrim not specifically affecting severity (just clinical incidence)
             Predictor("ma_iptp").when(True, p["rr_severe_malaria_iptp"]),
         )
 
@@ -424,7 +470,7 @@ class Malaria(Module):
             date_death = df.at[person, 'ma_date_symptoms'] + DateOffset(days=rng.randint(low=1, high=7))
 
             death_event = MalariaDeathEvent(
-                self, individual_id=person, cause='Malaria'
+                self, person_id=person, cause='Malaria'
             )  # make that death event
             self.sim.schedule_event(
                 death_event, date_death
@@ -726,18 +772,17 @@ class MalariaEndIPTpProtection(Event, IndividualScopeEventMixin):
     malaria poll assuming that this person still has reduced susceptibility to malaria infection
     """
 
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-        self.cause = cause
+    def __init__(self, module, person_id,):
+        super().__init__(module, person_id=person_id)
 
-    def apply(self, individual_id):
+    def apply(self, person_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'ma_iptp']:
+        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'ma_iptp']:
             return
 
         # reset the IPTp property
-        df.at[individual_id, 'ma_iptp'] = False
+        df.at[person_id, 'ma_iptp'] = False
 
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
@@ -745,45 +790,45 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
         self.cause = cause
 
-    def apply(self, individual_id):
+    def apply(self, person_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, 'is_alive'] or (df.at[individual_id, 'ma_inf_type'] == 'none'):
+        if not df.at[person_id, 'is_alive'] or (df.at[person_id, 'ma_inf_type'] == 'none'):
             return
 
         # if on treatment, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
-        if df.at[individual_id, 'ma_tx']:
+        if df.at[person_id, 'ma_tx']:
             prob = self.module.rng.rand()
 
             # if draw -> death
             if prob < self.module.parameters['treatment_adjustment']:
                 self.sim.modules['Demography'].do_death(
-                    individual_id=individual_id, cause=self.cause, originating_module=self.module)
+                    person_id=person_id, cause=self.cause, originating_module=self.module)
 
-                df.at[individual_id, 'ma_date_death'] = self.sim.date
+                df.at[person_id, 'ma_date_death'] = self.sim.date
 
             # else if draw does not result in death -> cure
             else:
-                df.at[individual_id, 'ma_tx'] = False
-                df.at[individual_id, 'ma_inf_type'] = 'none'
-                df.at[individual_id, 'ma_is_infected'] = False
+                df.at[person_id, 'ma_tx'] = False
+                df.at[person_id, 'ma_inf_type'] = 'none'
+                df.at[person_id, 'ma_is_infected'] = False
 
                 # clear symptoms
                 self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=individual_id, disease_module=self.module
+                    person_id=person_id, disease_module=self.module
                 )
 
         # if not on treatment - death will occur
         else:
             self.sim.modules['Demography'].do_death(
-                individual_id=individual_id, cause=self.cause, originating_module=self.module)
+                person_id=person_id, cause=self.cause, originating_module=self.module)
 
-            df.at[individual_id, 'ma_date_death'] = self.sim.date
+            df.at[person_id, 'ma_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------
@@ -1108,9 +1153,8 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        # todo need to clear this property after 6 weeks
-
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
             return
@@ -1143,7 +1187,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                 MalariaEndIPTpProtection(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(weeks=6),
+                self.sim.date + pd.DateOffset(weeks=p["duration_iptp_protection_weeks"]),
             )
 
     def did_not_run(self):
