@@ -294,6 +294,31 @@ def format_hsi_event_details_as_csv(
         return csv_file.getvalue()
 
 
+def format_hsi_event_details_as_csv2(
+    hsi_event_details: Iterable[HSIEventDetails]
+) -> str:
+    """Format HSI event details list as comma-separated value string to be used
+    with treatments_unique.py script."""
+    with io.StringIO(newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow([
+            'Module',
+            'Event',
+            'Treatment',
+            'Facility level',
+        ])
+        for event_details in hsi_event_details:
+            writer.writerow(
+                [
+                    event_details.module_name,
+                    event_details.event_name,
+                    event_details.treatment_id,
+                    event_details.facility_level #,
+                ]
+            )
+        return csv_file.getvalue()
+
+
 def format_hsi_event_details_as_table(
     hsi_event_details: Iterable[HSIEventDetails],
     text_format: str = 'rst'
@@ -444,7 +469,7 @@ def _parse_command_line_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--output-format',
-        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'csv', 'json'),
+        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'csv', 'csv2', 'json'),
         help="Format to use for output.",
         default='rst-list'
     )
@@ -508,6 +533,7 @@ def main():
         'md-list': lambda details: format_hsi_event_details_as_list(details, 'md'),
         'md-table': lambda details: format_hsi_event_details_as_table(details, 'md'),
         'csv': lambda details: format_hsi_event_details_as_csv(details),
+        'csv2': lambda details: format_hsi_event_details_as_csv2(details),
         'json': lambda details: json.dumps(details, indent=4)
     }
     formatted_details = formatters[args.output_format](sorted_hsi_event_details)
