@@ -30,7 +30,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=33)
-        self.pop_size = 150
+        self.pop_size = 75_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
