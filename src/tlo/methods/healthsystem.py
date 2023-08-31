@@ -2783,13 +2783,18 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
+        print("Switched from", self.module.priority_policy)
+        print("Switched from mode", self.module.mode_appt_constraints)
         self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
         if self.module.priority_policy != "":
             self.module.load_priority_policy(self.module.priority_policy)
         logger.info(key="message",
                     data=f"Switched policy at sim date: "
-                         f"{self.service_availability}"
+                         f"{self.module.sim.date}"
                          f"Now using policy: "
                          f"{self.module.priority_policy}"
                     )
+        print("Switched on", self.module.sim.date)
+        print("Switched to", self.module.priority_policy)
+        print("Switched to mode", self.module.mode_appt_constraints)
