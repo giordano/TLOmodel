@@ -2659,7 +2659,6 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
