@@ -575,6 +575,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # TODO: Is it? There is 1 month as the frequency, isn't it?
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
