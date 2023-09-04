@@ -575,6 +575,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # TODO: Is it? There is 1 month as the frequency, isn't it?
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -668,6 +669,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this
+        self.used_equipment = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
+                               'Mammograph maybe?'}
 
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
