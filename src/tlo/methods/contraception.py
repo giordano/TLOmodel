@@ -353,7 +353,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] = (
-                probs.loc['female_sterilization'] / 
+                probs.loc['female_sterilization'] /
                 self.ratio_n_females_30_49_to_15_49_in_2010
             )
             # Scale so that the probability of all outcomes sum to 1.0
@@ -633,7 +633,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] = (
-                probs.loc['female_sterilization'] / 
+                probs.loc['female_sterilization'] /
                 self.ratio_n_females_30_49_to_15_49_in_2010
             )
             # Scale so that the probability of all outcomes sum to 1.0
@@ -1282,7 +1282,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             _new_contraceptive = self.new_contraceptive
 
             # Update equipment when needed
-            # NB. read only with HSI run and healthsystem.summary logger set at the level of logger.INFO or higher
             if _new_contraceptive == 'female_sterilization':
                 self.EQUIPMENT.update({'Smt used to sterilize a woman'})
             elif _new_contraceptive == 'IUD':
