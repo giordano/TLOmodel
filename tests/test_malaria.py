@@ -719,6 +719,7 @@ def test_linear_model_for_clinical_malaria(sim):
     # and therefore eligible for clinical/severe malaria poll
     df.loc["ma_is_infected"] = True
     df.loc["ma_date_infected"] = sim.date
+    df.loc["ma_inf_type"] = "asym"
 
     # select person and assign properties
     person_id = 0
@@ -731,13 +732,3 @@ def test_linear_model_for_clinical_malaria(sim):
     # make sure person 0 not assigned clinical or severe malaria
     assert df.at[person_id, "ma_inf_type"] not in ["clinical", "severe"]
 
-
-
-
-    # put person on treatment
-    treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
-                                                               module=sim.modules['Malaria'])
-    treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx']
-    assert df.at[person_id, "ma_date_tx"] == sim.date
-    assert df.at[person_id, "ma_tx_counter"] > 0

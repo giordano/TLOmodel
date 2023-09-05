@@ -278,7 +278,7 @@ deaths_yr = deaths.groupby(by=["year"]).size()
 deaths_yr.index = pd.to_datetime(deaths_yr.index, format="%Y")
 
 # malaria mortality rates per 100k person-years
-deaths_rate_100kpy = (deaths_yr / py) * 100000
+deaths_rate_100kpy = (deaths_yr / py) * 100_000
 
 # # ---------------------------------------------------------------------- #
 # Malaria deaths
