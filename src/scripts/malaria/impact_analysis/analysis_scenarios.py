@@ -24,7 +24,7 @@ tlo scenario-run src/scripts/malaria/impact_analysis/analysis_scenarios.py --dra
 """
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_filtered_treatment_ids, get_parameters_for_status_quo, mix_scenarios
@@ -59,29 +59,13 @@ class EffectOfProgrammes(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
-            resourcefilepath=self.resources,
-            module_kwargs={
-                "HealthSystem": {
-                    "mode_appt_constraints": 1,
-                    "use_funded_or_actual_staffing": "funded",
-                },
-                "SymptomManager": {
-                    "spurious_symptoms": True
-                },
-            }
-        )
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'HealthSystem': {
-                'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'default',
-            },
-        }
+        return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """ create a dict which returns the allowed treatment IDs for each scenario."""
+        """ create a dict which modifies the health system settings for each scenario."""
 
         # Generate list of TREATMENT_IDs
         treatments = get_filtered_treatment_ids(depth=1)
@@ -104,25 +88,37 @@ class EffectOfProgrammes(BaseScenario):
         return {
             "Default":
                 mix_scenarios(
-                    get_parameters_for_status_quo()
+                    get_parameters_for_status_quo(),
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      }
+                     }
                 ),
 
             "Remove_HIV_services":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'HealthSystem': {'Service_Availability': 'No_Hiv_*'}}
+                    {'HealthSystem': {'Service_Availability': service_availability['No Hiv_*'],
+                                      'use_funded_or_actual_staffing': 'funded',
+                                      }
+                     }
                 ),
 
             "Remove_TB_services":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'HealthSystem': {'Service_Availability': 'No_Tb_*'}}
+                    {'HealthSystem': {'Service_Availability': service_availability['No Tb_*'],
+                                      'use_funded_or_actual_staffing': 'funded',
+                                      }
+                     }
                 ),
 
             "Remove_malaria_services":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'HealthSystem': {'Service_Availability': 'No_Malaria_*'}}
+                    {'HealthSystem': {'Service_Availability': service_availability['No Malaria_*'],
+                                      'use_funded_or_actual_staffing': 'funded',
+                                      }
+                     }
                 ),
 
             "Remove_HIV_TB_malaria_under_constraints":
@@ -130,8 +126,10 @@ class EffectOfProgrammes(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                         'HealthSystem': {
-                            'Service_Availability': 'No_Hiv_TB_Malaria',
+                            'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
+                            'use_funded_or_actual_staffing': 'funded',
                             'mode_appt_constraints': 2,
+                            'policy_name': 'VerticalProgrammes',
                         }
                     }
                 ),
