@@ -282,6 +282,10 @@ deaths_rate_100kpy = (deaths_yr / py) * 100_000
 
 # # ---------------------------------------------------------------------- #
 # Malaria deaths
+
+x_labels = pd.to_datetime(deaths_rate_100kpy.index)
+x_labels = x_labels.year
+
 plt.style.use("ggplot")
 plt.figure(1, figsize=(10, 10))
 
@@ -290,22 +294,21 @@ ax = plt.subplot(111)  # numrows, numcols, fignum
 plt.plot(MAP_mort.Year, MAP_mort.mortality_rate_median * 100_000, color="crimson")  # MAP data
 plt.fill_between(
     MAP_mort.Year, MAP_mort.mortality_rate_LCI * 100_000, MAP_mort.mortality_rate_UCI * 100_000,
-    color="crimson", alpha=0.1
+ color="crimson", alpha=0.5
 )
-plt.plot(WHO_data.Year, WHO_data.MortalityRatePer100_000, color="darkorchid")  # WHO data
+plt.plot(WHO_data.Year, WHO_data.MortalityRatePer100_000, color="seagreen")  # WHO data
 plt.fill_between(
     WHO_data.Year, WHO_data.MortalityRatePer100_000Low, WHO_data.MortalityRatePer100_000_High,
-    color="darkorchid", alpha=0.1
+ color="seagreen", alpha=0.5
 )
 plt.plot(
-    model_years, deaths_rate_100kpy, color="mediumseagreen"
-)  # model
+    x_labels, deaths_rate_100kpy, color="blue")  # model
 plt.title("Malaria deaths /100_000py")
 plt.xlabel("Year")
 plt.ylabel("Deaths (/100_000py)")
-plt.gca().set_ylim(0.0, 100)
+plt.gca().set_ylim(0.0, 200)
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
