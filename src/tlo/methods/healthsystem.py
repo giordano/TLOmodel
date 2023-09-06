@@ -871,6 +871,8 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
+        print("Year of policy switch ", self.parameters["year_policy_switch"])
+
         # Schedule priority policy and mode_appt_constraints change
         sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
                            Date(self.parameters["year_policy_switch"], 1, 1))
