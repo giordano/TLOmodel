@@ -2803,7 +2803,7 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
         print("Switched to mode", self.module.mode_appt_constraints)
         print("and policy", self.module.priority_policy)
         print("on date", self.sim.date)
-        logger.info(key="message",
+        logger.warning(key="message",
                     data=f"Switched policy at sim date: "
                          f"{self.sim.date}"
                          f"Now using policy: "
