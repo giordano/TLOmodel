@@ -2798,7 +2798,9 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
             self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
             if self.module.priority_policy != "":
                 self.module.load_priority_policy(self.module.priority_policy)
-        print("Switched to ", self.module.mode_appt_constraints)
+        print("Switched to mode", self.module.mode_appt_constraints)
+        print("and policy", self.module.priority_policy)
+        print("on date", self.sim.date)
         logger.info(key="message",
                     data=f"Switched policy at sim date: "
                          f"{self.sim.date}"
