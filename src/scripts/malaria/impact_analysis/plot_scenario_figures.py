@@ -10,6 +10,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from tlo import Date
 
 from tlo.analysis.utils import (
     compare_number_of_deaths,
@@ -80,6 +81,7 @@ def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_de
         color="mediumaquamarine"
     )
     ax.set_ylim(0, max(statistic_values["upper"])*1.1)
+    plt.title("Total deaths by scenario (scaled)")
 
     # add values above bars
     # create gap above bar for value
@@ -167,14 +169,31 @@ print(f"Mean difference in total deaths = {format_mean_deaths_difference_by_run}
 fig_1, ax_1 = plot_summarized_total_deaths(summarize(total_deaths), scenario_info, format_mean_deaths_difference_by_run)
 plt.show()
 
-# Now we look at things in more detail with an age breakdown
-deaths_by_age = extract_deaths_by_age(results_folder)
 
-# Plot the deaths by age across the two scenario draws as line plot with error bars
-fig_2, ax_2 = plot_summarized_deaths_by_age(summarize(deaths_by_age), param_strings)
+# %%:  ---------------------------------- DALYS ---------------------------------- #
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 1, 1))
 
-plt.show()
 
-fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
-fig_2.savefig(results_folder / "death_by_age_across_scenario_draws.pdf")
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
 
+
+# extract dalys by cause with mean and upper/lower intervals
+# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+
+daly_summary = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    ),
+    only_mean=True,
+    collapse_columns=False,
+)
+daly_summary = daly_summary.astype(int)
