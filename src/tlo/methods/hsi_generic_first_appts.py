@@ -309,15 +309,21 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             if person_id in mni:
                 la_currently_in_labour = df.at[person_id, 'la_currently_in_labour']
                 if 'sought_care_for_complication' in mni[person_id]:
-                    if (
-                        la_currently_in_labour &
-                        mni[person_id]['sought_care_for_complication'] &
-                        (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
-                    ):
-                        event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
-                            module=sim.modules['Labour'], person_id=person_id,
-                            facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                        schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
+                    try:
+                        if (
+                            la_currently_in_labour &
+                            mni[person_id]['sought_care_for_complication'] &
+                            (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
+                        ):
+                            event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
+                                module=sim.modules['Labour'], person_id=person_id,
+                                facility_level_of_this_hsi=rng.choice(['1a', '1b']))
+                            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
+                    except Exception:
+                        logger.warning(key="message",
+                                       data=f"This person in labour fails to receive generic emergency care"
+                                            f"{mni[person_id]}" 
+                                      )                        
                 else:
                     print(mni[person_id])
                     logger.warning(key="message",
