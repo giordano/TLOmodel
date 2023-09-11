@@ -36,7 +36,7 @@ make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 log = load_pickled_dataframes(results_folder)
 
 # get basic information about the results
-scenario_info  = get_scenario_info(results_folder)
+scenario_info = get_scenario_info(results_folder)
 
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
