@@ -37,11 +37,11 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 1, 1)
-        self.pop_size = 1000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -81,9 +81,9 @@ class EffectOfProgrammes(BaseScenario):
             )
 
         # create service package with all three sets of interventions removed
-        service_availability.update(
-            {f"No_Hiv_TB_Malaria": [v for v in treatments if v not in services_to_remove]}
-        )
+        # service_availability.update(
+        #     {f"No_Hiv_TB_Malaria": [v for v in treatments if v not in services_to_remove]}
+        # )
 
         return {
             "Default":
@@ -121,18 +121,18 @@ class EffectOfProgrammes(BaseScenario):
                      }
                 ),
 
-            "Remove_HIV_TB_malaria_under_constraints":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                        'HealthSystem': {
-                            'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
-                            'use_funded_or_actual_staffing': 'funded',
-                            'mode_appt_constraints': 2,
-                            'policy_name': 'VerticalProgrammes',
-                        }
-                    }
-                ),
+            # "Remove_HIV_TB_malaria_under_constraints":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo(),
+            #         {
+            #             'HealthSystem': {
+            #                 'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
+            #                 'use_funded_or_actual_staffing': 'funded',
+            #                 'mode_appt_constraints': 2,
+            #                 'policy_name': 'VerticalProgrammes',
+            #             }
+            #         }
+            #     ),
         }
 
 
