@@ -180,6 +180,10 @@ class Malaria(Module):
             Types.REAL,
             'relative risk of severe malaria with each dose of IPTp'
         ),
+        'prob_of_treatment_success': Parameter(
+            Types.REAL,
+            'probability malaria treatment cures and clears parasitaemia'
+        ),
 
     }
 
@@ -1243,7 +1247,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         * assigns symptoms
         * schedules rdt
         * cures people currently on treatment for malaria
-        * clears symptoms for those not on treatment
+        * clears symptoms for those not on treatment but self-cured
         * clears parasites if treated
         """
 
@@ -1326,14 +1330,18 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
+        random_draw = self.module.rng.random_sample(size=len(df))
+
         clinical_and_treated = df.index[df.is_alive &
                                         (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
-                                        (df.ma_inf_type == 'clinical')]
+                                        (df.ma_inf_type == 'clinical') &
+                                        (random_draw < p['prob_of_treatment_success'])]
 
         # select people with severe malaria and treatment for at least 7 days
         severe_and_treated = df.index[df.is_alive &
                                       (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
-                                      (df.ma_inf_type == 'severe')]
+                                      (df.ma_inf_type == 'severe') &
+                                      (random_draw < p['prob_of_treatment_success'])]
 
         # create list of all cases to be resolved through treatment
         infections_to_clear = sorted(set(clinical_and_treated).union(severe_and_treated))

@@ -1268,7 +1268,7 @@ class Hiv(Module):
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
         draw_number_of_months = self.rng.exponential(mean)
-        return pd.DateOffset(months=draw_number_of_months)
+        return pd.DateOffset(days=draw_number_of_months*30.5)
 
     def do_when_hiv_diagnosed(self, person_id):
         """Things to do when a person has been tested and found (newly) be be HIV-positive:.

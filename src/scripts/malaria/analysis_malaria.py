@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 2000
+end_date = Date(2012, 1, 1)
+popsize = 500
 
 # set up the log config
 log_config = {
