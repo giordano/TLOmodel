@@ -1267,7 +1267,7 @@ class Hiv(Module):
         Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed.
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
-        draw_number_of_months = int(np.round(self.rng.exponential(mean)))
+        draw_number_of_months = self.rng.exponential(mean)
         return pd.DateOffset(months=draw_number_of_months)
 
     def do_when_hiv_diagnosed(self, person_id):
@@ -1864,12 +1864,12 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                     date=date_of_aids_death,
                 )
                 # schedule hospital stay
-                beddays = self.module.rng.randint(low=14, high=20)
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
                 date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
                     priority=0,
-                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    topen=date_admission if (date_admission > self.sim.date) else self.sim.date,
                     tclose=date_of_aids_death
                 )
 
@@ -1883,7 +1883,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                 )
 
                 # schedule hospital stay
-                beddays = self.module.rng.randint(low=14, high=20)
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
                 date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),

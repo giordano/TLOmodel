@@ -1582,7 +1582,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in active_no_hiv:
             date_of_tb_death = self.sim.date + pd.DateOffset(
-                months=int(rng.uniform(low=1, high=5))
+                months=int(rng.uniform(low=1, high=6))
             )
             self.sim.schedule_event(
                 event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="TB"),

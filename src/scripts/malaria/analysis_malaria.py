@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -95,3 +95,6 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "malaria_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+with open(outputpath / "malaria_run.pickle", "rb") as f:
+    output = pickle.load(f)
