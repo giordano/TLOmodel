@@ -483,7 +483,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
+            .when("==0", 1)  # Weibull with shape=1 equivalent to exponential distribution
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
             .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
@@ -549,7 +549,7 @@ class Hiv(Module):
                       external=True,
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True).when("<2020", p["prob_circ_for_child_before_2020"])
-                                                     .otherwise(p["prob_circ_for_child_from_2020"])
+            .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
     def initialise_population(self, population):
@@ -923,6 +923,15 @@ class Hiv(Module):
                 HivAidsDeathEvent(person_id=person_id, module=self, cause=cause_of_death),
                 date=date_aids_death,
             )
+            # schedule hospital stay for end of life care if untreated
+            beddays = self.rng.randint(low=14, high=20)
+            date_admission = date_aids_death - pd.DateOffset(days=beddays)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self, beddays=beddays),
+                priority=0,
+                topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                tclose=date_aids_death
+            )
 
         # 5) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
@@ -1080,7 +1089,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1105,8 +1114,7 @@ class Hiv(Module):
             )
 
             if "newborn_outcomes" not in self.sim.modules and (
-                    self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
-
+                self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1398,7 +1406,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         if not df.at[person_id, 'hv_diagnosed'] and (
-                self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
+            self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
@@ -1426,8 +1434,7 @@ class Hiv(Module):
         if not df.at[child_id, 'hv_diagnosed'] and \
             df.at[mother_id, 'hv_diagnosed'] and (
             df.at[child_id, 'nb_pnc_check'] == 1) and (
-                self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
-
+            self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1606,8 +1613,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             test_rates = p["hiv_testing_rates"]
 
             testing_rate_adults = test_rates.loc[
-                test_rates.year == current_year, "annual_testing_rate_adults"
-            ].values[0] * p["hiv_testing_rate_adjustment"]
+                                      test_rates.year == current_year, "annual_testing_rate_adults"
+                                  ].values[0] * p["hiv_testing_rate_adjustment"]
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1688,7 +1695,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "M")
                     & (df.age_years < 15)
                     & (~df.li_is_circ)
-                ],
+                    ],
                 self.module.rng,
                 year=self.sim.date.year,
             )
@@ -1815,7 +1822,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -1856,6 +1863,15 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                     ),
                     date=date_of_aids_death,
                 )
+                # schedule hospital stay
+                beddays = self.module.rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
+                )
 
             else:
                 # cause is active TB
@@ -1864,6 +1880,16 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                         person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
                     ),
                     date=date_of_aids_death,
+                )
+
+                # schedule hospital stay
+                beddays = self.module.rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
 
@@ -1891,12 +1917,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -1958,6 +1984,15 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                         cause="AIDS_non_TB"
                     ),
                     date=date_of_aids_death,
+                )
+                # schedule hospital stay
+                beddays = self.module.rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
         # aids-tb and not on tb treatment
@@ -2312,8 +2347,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
-        if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
-                or (df.at[person_id, "age_years"] >= 1.5):
+        if (df.at[person_id, "nb_breastfeeding_status"] == "none") \
+            or (df.at[person_id, "age_years"] >= 1.5):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
@@ -2691,6 +2726,40 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
         else:
             return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+
+
+class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with AHD
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
+
+        self.TREATMENT_ID = 'Hiv_Treatment_Palliative'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.beddays})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'hv_art'] == 'virally_suppressed':
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(key='message',
+                     data=f'HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}')
 
 
 # ---------------------------------------------------------------------------
