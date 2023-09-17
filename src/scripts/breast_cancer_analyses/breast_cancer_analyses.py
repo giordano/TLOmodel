@@ -19,19 +19,13 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     breast_cancer,
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
+    simplified_births,
+    symptommanager
 )
 
 # Where will outputs go
@@ -45,8 +39,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 10000
+end_date = Date(2010, 3, 1)
+popsize = 3000
 
 
 def run_sim(service_availability):
@@ -55,21 +49,17 @@ def run_sim(service_availability):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
+                                           disable=False,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
+                 breast_cancer.BreastCancer(resourcefilepath=resourcefilepath),
                  )
+
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
@@ -174,6 +164,7 @@ plt.xlabel('Time')
 plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
 plt.show()
 
+"""
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
     y=['YLD_BreastCancer_0', 'YLL_BreastCancer_BreastCancer'],
@@ -183,6 +174,7 @@ plt.ylabel('DALYS')
 plt.legend()
 plt.title("With No Health System")
 plt.show()
+"""
 
 # Examine Deaths (summed over whole simulation)
 deaths = results_no_healthsystem['breast_cancer_deaths']
@@ -243,6 +235,7 @@ prev_per_100k = 1e5 * counts.sum() / totpopsize
 # ** Incidence rate of diagnosis, treatment, palliative care for breast cancer (all stages combined),
 # per 100,000 population
 (results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
+
 
 
 # ** 5-year survival following treatment
