@@ -55,7 +55,7 @@ class RunAnalysisCo(BaseScenario):
             end_date=Date(2016, 12, 31),
             initial_population_size=4_000,  # selected size for the Tim C at al. 2023 paper: 250K  #TODO: update
             number_of_draws=1,  # <- one scenario
-            runs_per_draw=1,  # <- repeated this many times
+            runs_per_draw=5,  # <- repeated this many times
         )
 
     def log_configuration(self):
