@@ -1,11 +1,11 @@
 """
-This file defines a batch run to get sims results to be used by an analysis script
+This scenario file defines a batch run to get sims results to be used by an analysis script
 ( # TODO: create one and add its name here
 ).
 Run on the remote batch system using:
-```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_co_health_impacts_no_diseases.py```
+```tlo batch-submit src/scripts/contraception/scenarios/run_scenario_co_health_impacts_no_diseases.py```
 or locally using:
-```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_co_health_impacts_no_diseases.py```
+```tlo scenario-run src/scripts/contraception/scenarios/run_scenario_co_health_impacts_no_diseases.py```
 
 # TODO: update
 SCENARIO SETTINGS
@@ -60,7 +60,7 @@ class RunAnalysisCo(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'run_analysis_co_health_impacts_no_diseases',  # <- (specified only for local running)
+            'filename': 'run_scenario_co_health_impacts_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
