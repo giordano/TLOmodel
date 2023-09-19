@@ -45,7 +45,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.labour': logging.DEBUG
             }
         }
 
