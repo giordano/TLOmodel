@@ -56,7 +56,6 @@ class ImpactOfTbDaH(BaseScenario):
 
             }
         }
-
     def modules(self):
         return fullmodel(resourcefilepath=self.resources)
 
