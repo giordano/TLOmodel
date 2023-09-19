@@ -29,7 +29,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=20)
+        self.end_date = self.start_date + pd.DateOffset(years=2)
         self.pop_size = 50_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -45,6 +45,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
+                'tlo.methods.labour': logging.DEBUG
             }
         }
 
@@ -62,52 +63,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "Naive Status Quo cons":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        'cons_availability': "default",
-                        "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2011,
-                        'mode_appt_constraints_postSwitch': 2,
-                        "policy_name_post_switch": "Naive",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
-                     },
-                    }
-                ),
-
-            "Clinically Vulnerable Status Quo cons":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        'cons_availability': "default",
-                        "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2011,
-                        'mode_appt_constraints_postSwitch': 2,
-                        "policy_name_post_switch": "ClinicallyVulnerable",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
-                     },
-                    }),
-
-            "Vertical Programmes Status Quo cons":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        'cons_availability': "default",
-                        "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2011,
-                        'mode_appt_constraints_postSwitch': 2,
-                        "policy_name_post_switch": "VerticalProgrammes",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
-                     },
-                    }),
-
             "Vertical Programmes Status Quo cons Longer tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -115,7 +70,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'HealthSystem': {
                         'cons_availability': "default",
                         "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2011,
+                        'year_policy_switch': 2010,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name_post_switch": "VerticalProgrammes",
                         'tclose_overwrite': 1,

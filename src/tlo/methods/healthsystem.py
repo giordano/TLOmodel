@@ -873,7 +873,7 @@ class HealthSystem(Module):
 
         # Schedule priority policy and mode_appt_constraints change
         sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
-                           Date(self.parameters["year_policy_switch"], 1, 1))
+                           Date(self.parameters["year_policy_switch"], 6, 6))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
