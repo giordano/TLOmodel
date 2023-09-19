@@ -76,6 +76,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'tclose_days_offset_overwrite': 10,
                      },
                     }),
+
+            "Vertical Programmes Status Quo cons Longer tclose only mode2":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -90,7 +92,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 10,
                      },
-                    }),
+                    })
         }
 
 
