@@ -1483,6 +1483,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                  {175: 0.43})
+        # increases probability of accessing chest xray by 20%
+        if scenario == 4:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                    {175: 0.53})
+        # increases probability of accessing chest xray by 20%
+        if scenario == 5:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {175: 0.63})
 # ######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
