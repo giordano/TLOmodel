@@ -38,7 +38,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.impact_tb_DAH import ImpactOfTbDaH
+    from scripts.hiv.projections_jan2023.impact_analysis_tb_DAH import ImpactOfTbDaH
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 

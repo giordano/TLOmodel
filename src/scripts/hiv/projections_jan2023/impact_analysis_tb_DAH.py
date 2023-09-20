@@ -4,16 +4,16 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 It can be submitted on Azure Batch by running:
 
- tlo batch-submit src/scripts/hiv/projections_jan2023/impact_tb_DAH.py
+ tlo batch-submit src/scripts/hiv/projections_jan2023/impact_analysis_tb_DAH.py
 or locally using:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/impact_tb_DAH.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/impact_analysis_tb_DAH.py
   execute a single run:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/impact_tb_DAH.py --draw 1 0
+ tlo scenario-run src/scripts/hiv/projections_jan2023/impact_analysis_tb_DAH.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/impact_tb_DAH.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/impact_analysis_tb_DAH.py
 
  """
 import warnings
@@ -95,17 +95,17 @@ class ImpactOfTbDaH(BaseScenario):
             },
             "CXR scale_up20": {
                 'Tb': {
-                    'scenario': 3,
+                    'scenario': 4,
                 }
             },
             "CXR scale_up30": {
                 'Tb': {
-                    'scenario': 3,
+                    'scenario': 5,
                 }
             },
             "CXR scale_up40": {
                 'Tb': {
-                    'scenario': 3,
+                    'scenario': 6,
                 }
             },
             "Outreach services": {
