@@ -72,8 +72,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'year_policy_switch': 2010,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name_post_switch": "VerticalProgrammes",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 10,
+                        'tclose_overwrite': 0,
                      },
                     }),
 
@@ -84,10 +83,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'HealthSystem': {
                         'cons_availability': "default",
                         "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2010,
-                        'mode_appt_constraints_postSwitch': 2,
+                        'year_policy_switch': 2110,
                         'mode_appt_constraints': 2,
-                        "policy_name_post_switch": "VerticalProgrammes",
                         "policy_name": "VerticalProgrammes",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 10,
