@@ -2447,7 +2447,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-        self.TREATMENT_ID = 'Tb_Treatment_Palliative'
+        self.TREATMENT_ID = 'Tb_PalliativeCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 

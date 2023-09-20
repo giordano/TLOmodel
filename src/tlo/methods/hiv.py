@@ -2741,7 +2741,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = 'Hiv_Treatment_Palliative'
+        self.TREATMENT_ID = 'Hiv_PalliativeCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
