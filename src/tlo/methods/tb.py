@@ -1356,7 +1356,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
 
         # scenario 1 or 2 scale-up all HIV/TB program activities
-        if scenario > 0:
+        if scenario == 1:
             # HIV
             # reduce risk of HIV - applies to whole adult population
             self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * scaled_params.loc[
