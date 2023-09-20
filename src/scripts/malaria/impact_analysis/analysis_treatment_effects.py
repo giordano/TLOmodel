@@ -30,7 +30,7 @@ import os
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_filtered_treatment_ids, get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -73,95 +73,83 @@ class EffectOfProgrammes(BaseScenario):
         return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """ create a dict which modifies the health system settings for each scenario."""
-
-        # Generate list of TREATMENT_IDs
-        treatments = get_filtered_treatment_ids(depth=1)
-
-        # get service availability with all select services removed
-        services_to_remove = ['Hiv_*', 'Tb_*', 'Malaria_*']
-        service_availability = dict({"Everything": ["*"]})
-
-        # create service packages with one set of interventions removed
-        for service in services_to_remove:
-            service_availability.update(
-                {f"No {service}": [v for v in treatments if v != service]}
-            )
-
-        # create service package with all three sets of interventions removed
-        # service_availability.update(
-        #     {f"No_Hiv_TB_Malaria": [v for v in treatments if v not in services_to_remove]}
-        # )
-
-        # Assuming you have already loaded your Excel data into a DataFrame 'self.treatment_effects'
-
-        # Filter the DataFrame based on the conditions
-        f_df = self.treatment_effects[
-            (self.treatment_effects['module'] == 'hiv') & (self.treatment_effects['parameter'] == 'rr_ipt')]
-
-        # Check if any rows meet the conditions
-        if not filtered_df.empty:
-            # Access the value in the 'value' column (or whatever the name of the column with the value is)
-            value = filtered_df.iloc[0]['value']
-            print("The value for module=hiv and parameter=rr_ipt is:", value)
-        else:
-            print("No matching rows found.")
-        Make sure to replace'value'
-        with the actual name of the column that contains the value you want to retrieve from your DataFrame.
-        This code filters the DataFrame based on your conditions and retrieves the value from the first matching row, if any.
-
-
+        """ create a dict which modifies the treatment effects and
+        health system settings for each scenario """
 
         return {
-            "Default":
+            "Baseline":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
                                       'mode_appt_constraints': 1,
-                                      }
+                                      },
+                     'Tb': {
+                         'scenario': 0,
+                     },
                      }
                 ),
 
             "Remove_HIV_effects":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'Hiv': {'prob_viral_suppression': self.treatment_effects.loc[
-            (self.treatment_effects['module'] == 'hiv') & (self.treatment_effects['parameter'] == 'rr_ipt')],
-                                      'use_funded_or_actual_staffing': 'funded',
-                                      }
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      'mode_appt_constraints': 1,
+                                      },
+                     'Tb': {
+                         'scenario': 1,
+                     },
                      }
                 ),
 
             "Remove_TB_effects":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'Tb': {'Service_Availability': service_availability['No Tb_*'],
-                                      'use_funded_or_actual_staffing': 'funded',
-                                      }
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      'mode_appt_constraints': 1,
+                                      },
+                     'Tb': {
+                         'scenario': 2,
+                     },
                      }
                 ),
 
-            "Remove_malaria_services":
+            "Remove_malaria_effects":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'HealthSystem': {'Service_Availability': service_availability['No Malaria_*'],
-                                      'use_funded_or_actual_staffing': 'funded',
-                                      }
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      'mode_appt_constraints': 1,
+                                      },
+                     'Tb': {
+                         'scenario': 3,
+                     },
                      }
                 ),
 
-            # "Remove_HIV_TB_malaria_under_constraints":
-            #     mix_scenarios(
-            #         get_parameters_for_status_quo(),
-            #         {
-            #             'HealthSystem': {
-            #                 'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
-            #                 'use_funded_or_actual_staffing': 'funded',
-            #                 'mode_appt_constraints': 2,
-            #                 'policy_name': 'VerticalProgrammes',
-            #             }
-            #         }
-            #     ),
+            "Baseline_mode2":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      'mode_appt_constraints': 2,
+                                      'policy_name': 'VerticalProgrammes',
+                                      },
+                     'Tb': {
+                         'scenario': 0,
+                     },
+                     }
+                ),
+
+            "No_treatment_mode2":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'HealthSystem': {'use_funded_or_actual_staffing': 'funded',
+                                      'mode_appt_constraints': 2,
+                                      'policy_name': 'VerticalProgrammes',
+                                      },
+                     'Tb': {
+                         'scenario': 5,
+                     },
+                     }
+                ),
         }
 
 

@@ -374,6 +374,14 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
+        "scenario": Parameter(
+            Types.INT,
+            "integer value labelling the scenario to be run: default is 0"
+        ),
+        "scenario_start_date": Parameter(
+            Types.DATE,
+            "date from which different scenarios are run"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -840,6 +848,9 @@ class Hiv(Module):
         """
         df = sim.population.props
 
+        # Scenario change
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
+
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
             HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
@@ -1268,7 +1279,7 @@ class Hiv(Module):
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
         draw_number_of_months = self.rng.exponential(mean)
-        return pd.DateOffset(days=draw_number_of_months*30.5)
+        return pd.DateOffset(days=draw_number_of_months * 30.5)
 
     def do_when_hiv_diagnosed(self, person_id):
         """Things to do when a person has been tested and found (newly) be be HIV-positive:.
@@ -1509,6 +1520,122 @@ class Hiv(Module):
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
+
+class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once at param: scenario_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        df = self.sim.population.props
+        p = self.module.parameters
+        scenario = p["scenario"]
+        treatment_effects = p["treatment_effects"]
+
+        logger.debug(
+            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
+        )
+
+        # baseline scenario 0: no change to parameters/functions
+        if scenario == 0:
+            return
+
+        # scenario 1: remove HIV treatment effects
+        if (scenario == 1) or (scenario == 5):
+            # HIV
+
+            # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
+            df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
+
+            # viral suppression rates
+            # change all column values
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
+            treatment_effects.loc[
+                treatment_effects.parameter == "prob_viral_suppression", "no_effect"].values[0]
+
+            # relative risk HIV acquisition if VMMC
+            self.sim.modules["Hiv"].parameters["rr_circumcision"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_circumcision", "no_effect"].values[0]
+
+            # effects of PrEP
+            self.sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = \
+            treatment_effects.loc[
+                treatment_effects.parameter == "proportion_reduction_in_risk_of_hiv_aq_if_on_prep", "no_effect"].values[
+                0]
+
+        # scenario 2: remove TB treatment effects
+        if (scenario == 2) or (scenario == 5):
+            # TB
+
+            # RR BCG
+            self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_bcg", "no_effect"].values[0]
+
+            # RR IPT child
+            self.sim.modules["Tb"].parameters["rr_ipt_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child", "no_effect"].values[0]
+
+            # RR IPT adult
+            self.sim.modules["Tb"].parameters["rr_ipt_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult", "no_effect"].values[0]
+
+            # RR ART child
+            self.sim.modules["Tb"].parameters["rr_tb_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_child", "no_effect"].values[0]
+
+            # RR ART adult
+            self.sim.modules["Tb"].parameters["rr_tb_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_adult", "no_effect"].values[0]
+
+            # RR IPT ART child
+            self.sim.modules["Tb"].parameters["rr_ipt_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_child", "no_effect"].values[0]
+
+            # RR IPT ART adult
+            self.sim.modules["Tb"].parameters["rr_ipt_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_adult", "no_effect"].values[0]
+
+            # RR IPT child HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_child_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child_hiv", "no_effect"].values[0]
+
+            # RR IPT adult HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_adult_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
+
+        # scenario 3: remove malaria treatment effects
+        if (scenario == 3) or (scenario == 5):
+            # Malaria
+
+            # RR IPTP
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_iptp", "no_effect"].values[0]
+
+            # RR cotrimoxazole
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_cotrimoxazole"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_cotrimoxazole", "no_effect"].values[0]
+
+            # RR ART
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_art"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_art", "no_effect"].values[0]
+
+            # RR IPTP - severe
+            self.sim.modules["Malaria"].parameters["rr_severe_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_severe_malaria_iptp", "no_effect"].values[0]
+
+            # RR effect of treatment on mortality risk for severe cases
+            self.sim.modules["Malaria"].parameters["treatment_adjustment"] = treatment_effects.loc[
+                treatment_effects.parameter == "treatment_adjustment", "no_effect"].values[0]
+
+            # RR prob of treatment success
+            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_of_treatment_success", "no_effect"].values[0]
 
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1867,7 +1994,8 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                 beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
                 date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
                     priority=0,
                     topen=date_admission if (date_admission > self.sim.date) else self.sim.date,
                     tclose=date_of_aids_death
@@ -1886,7 +2014,8 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                 beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
                 date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
                     priority=0,
                     topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
                     tclose=date_of_aids_death
@@ -1989,7 +2118,8 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                 beddays = self.module.rng.randint(low=14, high=20)
                 date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"], beddays=beddays),
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
                     priority=0,
                     topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
                     tclose=date_of_aids_death
