@@ -76,7 +76,7 @@ class EffectOfProgrammes(BaseScenario):
                 'policy_name': ['naive', 'naive', 'naive', 'naive', 'VerticalProgrammes', 'VerticalProgrammes'][
                     draw_number],
             },
-            'Tb': {
+            'Hiv': {
                 'scenario': [0, 1, 2, 3, 0, 5][draw_number],
             },
         }
