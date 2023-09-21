@@ -13,13 +13,13 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/malaria/impact_analysis/analysis_treatment_effects.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/malaria/impact_analysis/analysis_scenarios.py
+tlo batch-submit src/scripts/malaria/impact_analysis/analysis_treatment_effects.py
 
 or locally using:
-tlo scenario-run src/scripts/malaria/impact_analysis/analysis_scenarios.py
+tlo scenario-run src/scripts/malaria/impact_analysis/analysis_treatment_effects.py
 
 or execute a single run:
-tlo scenario-run src/scripts/malaria/impact_analysis/analysis_scenarios.py --draw 1 0
+tlo scenario-run src/scripts/malaria/impact_analysis/analysis_treatment_effects.py --draw 1 0
 
 """
 
