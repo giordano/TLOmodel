@@ -10,7 +10,7 @@ The scenarios are:
 For scenarios 1-3, keep all default health system settings
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/malaria/impact_analysis/analysis_scenarios.py
+tlo scenario-run --draw-only src/scripts/malaria/impact_analysis/analysis_treatment_effects.py
 
 Run on the batch system using:
 tlo batch-submit src/scripts/malaria/impact_analysis/analysis_scenarios.py
@@ -47,7 +47,7 @@ class EffectOfProgrammes(BaseScenario):
         self.runs_per_draw = 5
 
         self.treatment_effects = pd.read_excel(
-            os.path.join(self.resources, "../../../../resources/ResourceFile_malaria.xlsx"),
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
             sheet_name="treatment_effects",
         )
 

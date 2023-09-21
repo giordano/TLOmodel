@@ -370,11 +370,6 @@ class Tb(Module):
             Types.REAL,
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         ),
-        # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "treatment_effects": Parameter(
-            Types.DATA_FRAME,
-            "list of parameters and values changed in scenario analysis",
-        ),
     }
 
     def read_parameters(self, data_folder):
@@ -404,8 +399,6 @@ class Tb(Module):
         p["tb_high_risk_distr"] = workbook["all_districts"]
 
         p["ipt_coverage"] = workbook["ipt_coverage"]
-
-        p["treatment_effects"] = workbook["treatment_effects"]
 
         self.district_list = (
             self.sim.modules["Demography"]
@@ -2090,15 +2083,15 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 # treatment for reinfection ds-tb: child
                 treatment_regimen = "tb_retx_child"
 
-        # -------- SHINE Trial shorter paediatric regimen -------- #
-        # shorter treatment for child with minimal tb
-        if (self.module.parameters["scenario"] == 5) \
-            & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
-            & (person["age_years"] <= 16) \
-            & ~(person["tb_smear"]) \
-            & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
-            treatment_regimen = "tb_tx_child_shorter"
+        # # -------- SHINE Trial shorter paediatric regimen -------- #
+        # # shorter treatment for child with minimal tb
+        # if (self.module.parameters["scenario"] == 5) \
+        #     & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
+        #     & (person["age_years"] <= 16) \
+        #     & ~(person["tb_smear"]) \
+        #     & ~person["tb_ever_treated"] \
+        #         & ~person["tb_diagnosed_mdr"]:
+        #     treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
 

@@ -382,6 +382,11 @@ class Hiv(Module):
             Types.DATE,
             "date from which different scenarios are run"
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "treatment_effects": Parameter(
+            Types.DATA_FRAME,
+            "list of parameters and values changed in scenario analysis",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -418,6 +423,9 @@ class Hiv(Module):
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
+
+        # treatment effects change for scenario analysis
+        p["treatment_effects"] = workbook["treatment_effects"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
