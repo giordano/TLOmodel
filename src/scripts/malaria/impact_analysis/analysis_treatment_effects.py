@@ -73,7 +73,7 @@ class EffectOfProgrammes(BaseScenario):
             'HealthSystem': {
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': [1, 1, 1, 1, 2, 2][draw_number],
-                'policy_name': ['naive', 'naive', 'naive', 'naive', 'VerticalProgrammes', 'VerticalProgrammes'][
+                'policy_name': ['Naive', 'Naive', 'Naive', 'Naive', 'VerticalProgrammes', 'VerticalProgrammes'][
                     draw_number],
             },
             'Hiv': {
