@@ -20,7 +20,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class BreastCancer(Module):
@@ -163,6 +163,10 @@ class BreastCancer(Module):
             Types.BOOL,
             "whether a breast_lump_discernible has been investigated, and cancer missed"
         ),
+        "inv_but_not_diag": Property(
+            Types.BOOL,
+            "inv_but_not_diag"
+        ),
         "brc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
@@ -212,6 +216,7 @@ class BreastCancer(Module):
         df.loc[df.is_alive, "brc_date_death"] = pd.NaT
         df.loc[df.is_alive, "brc_breast_lump_discernible_investigated"] = False
         df.loc[df.is_alive, "brc_new_stage_this_month"] = False
+        df.loc[df.is_alive, "inv_but_not_diag"] = False
 
         # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -294,6 +299,7 @@ class BreastCancer(Module):
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "brc_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosed, "sy_breast_lump_discernible"] = 0
 
         # -------------------- brc_date_treatment -----------
         # create short hand variable for the predicting the initial occurence of various breast
@@ -626,7 +632,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
             df.loc[selected_to_die, 'brc_date_death'] = self.sim.date
 
-    # ---------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
@@ -656,13 +662,16 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom breast_lump_discernible
-        assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
+#       assert 'sy_breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
+
+        if df.at[person_id, 'sy_breast_lump_discernible'] == 0:
+            return hs.get_blank_appt_footprint()
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.brc_breast_lump_discernible_investigated = True
+        df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this
@@ -675,6 +684,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if dx_result:
             # record date of diagnosis:
             df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'sy_breast_lump_discernible'] = 0
 
             # Check if is in stage4:
             in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
@@ -708,6 +718,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 #   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
 #   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
 
+#       else:
+#           df.inv_but_not_diag = True
 
 class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -955,6 +967,20 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
+        df = df.rename(columns={'sy_breast_lump_discernible': 'breast_lump'})
+        df = df.rename(columns={'brc_breast_lump_discernible_investigated': 'lump_inv'})
+
+        print(self.sim.date)
+        selected_columns = ['breast_lump', 'lump_inv',
+                            'brc_date_diagnosis']
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 25)]
+        print(selected_rows[selected_columns])
+
+        df = df.rename(columns={'breast_lump': 'sy_breast_lump_discernible'})
+        df = df.rename(columns={'lump_inv': 'brc_breast_lump_discernible_investigated'})
+
         logger.info(key='summary_stats',
                     description='summary statistics for breast cancer',
                     data=out)
+
+

@@ -24,7 +24,7 @@ from tlo.methods import Metadata
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS

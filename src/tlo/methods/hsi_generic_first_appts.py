@@ -252,7 +252,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if 'BreastCancer' in sim.modules:
             # If the symptoms include breast lump discernible:
-            if 'breast_lump_discernible' in symptoms:
+            if 'breast_lump_discernible' in symptoms and df.at[person_id, 'brc_breast_lump_discernible_investigated'] == False:
                 schedule_hsi(
                     HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                         person_id=person_id,
@@ -261,6 +261,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     priority=0,
                     topen=sim.date,
                     tclose=None)
+                print('breast_cancer_inv_scheduled:', person_id)
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,

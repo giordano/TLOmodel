@@ -11,7 +11,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class Contraception(Module):

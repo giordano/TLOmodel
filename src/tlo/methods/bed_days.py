@@ -195,7 +195,7 @@ class BedDays:
         for bed_type, tracker in self.bed_tracker.items():
             occupancy_info = tracker.loc[today].to_dict()
 
-            logger.info(
+            logger.critical(
                 key=f'bed_tracker_{bed_type}',
                 data=occupancy_info,
                 description=f'Use of bed_type {bed_type}, by day and facility'
@@ -506,13 +506,13 @@ class BedDaysSummaryCounter:
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
 
-        logger_summary.info(
+        logger_summary.critical(
             key="BedDays",
             description="Counts of the bed-days that have been used (by type).",
             data=self._bed_days_used,
         )
 
-        logger_summary.info(
+        logger_summary.critical(
             key="FractionOfBedDaysUsed",
             description="Fraction of the bed-days available in the last year that were used (by type).",
             data={

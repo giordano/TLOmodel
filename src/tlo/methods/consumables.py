@@ -147,7 +147,7 @@ class Consumables:
         if to_log:
             items_available = {k: v for k, v in item_codes.items() if available[k]}
             items_not_available = {k: v for k, v in item_codes.items() if not available[k]}
-            logger.info(key='Consumables',
+            logger.critical(key='Consumables',
                         data={
                             'TREATMENT_ID': (treatment_id if treatment_id is not None else ""),
                             'Item_Available': str(items_available),
@@ -193,7 +193,7 @@ class Consumables:
             warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
                                       f"{self._not_recognised_item_codes}"))
             for _treatment_id, _item_codes in self._not_recognised_item_codes:
-                logger.info(
+                logger.critical(
                     key="item_codes_not_recognised",
                     data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
                 )
@@ -293,7 +293,7 @@ class ConsumablesSummaryCounter:
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
 
-        logger_summary.info(
+        logger_summary.critical(
             key="Consumables",
             description="Counts of the items that were requested in this calendar year, which were available and"
                         "not available.",

@@ -39,13 +39,13 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 3, 1)
-popsize = 3000
+end_date = Date(2011, 1, 1)
+popsize = 50
 
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=3)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -71,8 +71,14 @@ def run_sim(service_availability):
     return logfile
 
 
+run_sim(service_availability=['*'])
+
+"""
+
 def get_summary_stats(logfile):
     output = parse_log_file(logfile)
+
+    print(output['tlo.methods.breast_cancer']['summary_stats'])
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
     counts_by_stage = output['tlo.methods.breast_cancer']['summary_stats']
@@ -138,8 +144,11 @@ results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 # %% Produce Summary Graphs:
 
+
+
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
+
 counts.plot(y=['total_stage1', 'total_stage2',
                'total_stage3',
                'total_stage4'
@@ -164,7 +173,7 @@ plt.xlabel('Time')
 plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
 plt.show()
 
-"""
+
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
     y=['YLD_BreastCancer_0', 'YLL_BreastCancer_BreastCancer'],
@@ -174,7 +183,7 @@ plt.ylabel('DALYS')
 plt.legend()
 plt.title("With No Health System")
 plt.show()
-"""
+
 
 # Examine Deaths (summed over whole simulation)
 deaths = results_no_healthsystem['breast_cancer_deaths']
@@ -236,7 +245,6 @@ prev_per_100k = 1e5 * counts.sum() / totpopsize
 # per 100,000 population
 (results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
 
-
-
 # ** 5-year survival following treatment
-# See separate file
+
+"""

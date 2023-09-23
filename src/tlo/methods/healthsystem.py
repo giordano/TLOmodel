@@ -28,10 +28,10 @@ from tlo.methods.consumables import (
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 logger_summary = logging.getLogger(f"{__name__}.summary")
-logger_summary.setLevel(logging.INFO)
+logger_summary.setLevel(logging.CRITICAL)
 
 # Declare the level which will be used to represent the merging of levels '1b' and '2'
 LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = '2'
@@ -887,7 +887,7 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
-            logger_summary.info(
+            logger_summary.critical(
                 key="hsi_event_details",
                 description="Map from integer keys to hsi event detail dictionaries",
                 data={
@@ -896,7 +896,7 @@ class HealthSystem(Module):
                     }
                 }
             )
-            logger_summary.info(
+            logger_summary.critical(
                 key="never_ran_hsi_event_details",
                 description="Map from integer keys to never ran hsi event detail dictionaries",
                 data={
@@ -1167,7 +1167,7 @@ class HealthSystem(Module):
         assert isinstance(service_availability, list)
 
         # Log the service_availability
-        logger.info(key="message",
+        logger.critical(key="message",
                     data=f"Running Health System With the Following Service Availability: "
                          f"{self.service_availability}"
                     )
@@ -1183,7 +1183,7 @@ class HealthSystem(Module):
             _cons_availability = self.arg_cons_availability
 
         # Log the service_availability
-        logger.info(key="message",
+        logger.critical(key="message",
                     data=f"Running Health System With the Following Consumables Availability: "
                          f"{_cons_availability}"
                     )
@@ -1205,7 +1205,7 @@ class HealthSystem(Module):
             _beds_availability = 'all'
 
         # Log the service_availability
-        logger.info(key="message",
+        logger.critical(key="message",
                     data=f"Running Health System With the Following Beds Availability: "
                          f"{_beds_availability}"
                     )
@@ -1867,7 +1867,7 @@ class HealthSystem(Module):
         ).replace([np.inf, -np.inf, np.nan], 0.0)
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
 
-        logger.info(key='Capacity',
+        logger.critical(key='Capacity',
                     data={
                         'Frac_Time_Used_Overall': fraction_time_used_overall,
                         'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
@@ -1924,7 +1924,7 @@ class HealthSystem(Module):
         self.consumables.override_availability(item_codes)
 
     def _write_hsi_event_counts_to_log_and_reset(self):
-        logger_summary.info(
+        logger_summary.critical(
             key="hsi_event_counts",
             description=(
                 f"Counts of the HSI events that have run in this "
@@ -1937,7 +1937,7 @@ class HealthSystem(Module):
         self._hsi_event_counts_log_period.clear()
 
     def _write_never_ran_hsi_event_counts_to_log_and_reset(self):
-        logger_summary.info(
+        logger_summary.critical(
             key="never_ran_hsi_event_counts",
             description=(
                 f"Counts of the HSI events that never ran in this "
@@ -2701,7 +2701,7 @@ class HealthSystemSummaryCounter:
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
 
-        logger_summary.info(
+        logger_summary.critical(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
                         "and counts of the 'Appt_Type's that have occurred in this calendar year,"
@@ -2717,7 +2717,7 @@ class HealthSystemSummaryCounter:
         )
 
         # Log summary of HSI_Events that never ran
-        logger_summary.info(
+        logger_summary.critical(
             key="Never_ran_HSI_Event",
             description="Counts of the HSI_Events that never ran in this calendar year by TREATMENT_ID, "
                         "and the respective 'Appt_Type's that have not occurred in this calendar year.",
@@ -2728,7 +2728,7 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        logger_summary.info(
+        logger_summary.critical(
             key="Capacity",
             description="The fraction of all the healthcare worker time that is used each day, averaged over this "
                         "calendar year.",
@@ -2787,7 +2787,7 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
         if self.module.priority_policy != "":
             self.module.load_priority_policy(self.module.priority_policy)
-        logger.info(key="message",
+        logger.critical(key="message",
                     data=f"Switched policy at sim date: "
                          f"{self.service_availability}"
                          f"Now using policy: "

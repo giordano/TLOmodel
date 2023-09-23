@@ -20,7 +20,7 @@ from tlo.methods.causes import (
 from tlo.methods.demography import age_at_date
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class HealthBurden(Module):
@@ -149,11 +149,11 @@ class HealthBurden(Module):
             all_gbd_causes=set(self.parameters['gbd_causes_of_disability'])
         )
 
-        logger.info(
+        logger.critical(
             key='disability_mapper_from_tlo_cause_to_common_label',
             data=mapper_from_tlo_causes
         )
-        logger.info(
+        logger.critical(
             key='disability_mapper_from_gbd_cause_to_common_label',
             data=mapper_from_gbd_causes
         )
@@ -225,11 +225,11 @@ class HealthBurden(Module):
             all_gbd_causes=all_gbd_causes_of_death_and_disability
         )
 
-        logger.info(
+        logger.critical(
             key='daly_mapper_from_tlo_cause_to_common_label',
             data=mapper_from_tlo_causes
         )
-        logger.info(
+        logger.critical(
             key='daly_mapper_from_gbd_cause_to_common_label',
             data=mapper_from_gbd_causes
         )
@@ -428,7 +428,7 @@ class HealthBurden(Module):
             df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
             df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
             for _, row in df.iterrows():
-                logger.info(
+                logger.critical(
                     key=key,
                     data=row.to_dict(),
                     description=description,
