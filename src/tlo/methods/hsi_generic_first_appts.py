@@ -327,12 +327,18 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 else:
                     print(mni[person_id])
                     logger.warning(key="message",
-                                   data=f"This person is in mni dictionary but doesn't have sought_care_for_comp"
+                                   data=f"This person is in mni but doesn't have sought_care_for_complication"
                                         f"{mni[person_id]}" 
+                                        f"person_id is {person_id}"
+                                        f"Events for this person_id are {sim.find_events_for_person(person_id)}"
+                                        f"Person info: {df.at[person_id]}" 
                                   )
             else:
                 logger.warning(key="message",
                                data=f"This person is in labour but not in mni dictionary"
+                                        f"person_id is {person_id}"
+                                        f"Events for this person_id are {sim.find_events_for_person(person_id)}"
+                                        f"Person info: {df.at[person_id]}"
                               )
         
 
