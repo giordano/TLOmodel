@@ -10,6 +10,7 @@ from pathlib import Path
 import lacroix
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -26,7 +27,7 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("effect_of_treatment_packages.py", outputspath)[-1]
@@ -45,9 +46,6 @@ params = extract_params(results_folder)
 
 # colour scheme
 berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
-baseline_colour = berry[5]  # '#001563'
-sc1_colour = berry[3]  # '#009A90'
-sc2_colour = berry[2]  # '#E40035'
 
 # -----------------------------------------------------------------------------------------
 # %% Epi outputs
@@ -69,22 +67,84 @@ hiv_inc = summarize(
     only_mean=False, collapse_columns=True
 )
 
-# TB incidence
-tb_inc = summarize(
-    extract_results(
+# ---------------------------------- PERSON-YEARS ---------------------------------- #
+# for each scenario, return a df with the person-years logged in each draw/run
+# to be used for calculating tb incidence or mortality rates
+
+
+def get_person_years(_df):
+    """ extract person-years for each draw/run
+    sums across men and women
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format="%Y")
+
+    return py
+
+
+py0 = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+
+# ---------------------------------- TB ---------------------------------- #
+# number new active tb cases
+def tb_inc(results_folder):
+    inc = extract_results(
         results_folder,
         module="tlo.methods.tb",
         key="tb_incidence",
         column="num_new_active_tb",
         index="date",
-        do_scaling=True
-    ),
-    only_mean=False, collapse_columns=True
-)
-# scale to get rate per 100,000
-tb_inc = tb_inc / 15_000_000 * 100_000
+        do_scaling=False
+    )
+
+    inc.columns = inc.columns.get_level_values(0)
+
+    # divide each run of tb incidence by py from that run
+    # tb logger starts at 2011-01-01, demog starts at 2010-01-01
+    # extract py log from 2011-2035
+    py = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="person_years",
+        custom_generate_series=get_person_years,
+        do_scaling=False
+    )
+    py.columns = py.columns.get_level_values(0)
+
+    inc_per_py = inc / py
+
+    # Get the unique column names
+    column_names = inc_per_py.columns.unique()
+
+    # Calculate the mean of each row for each column name
+    df_means = pd.DataFrame()
+    for column_name in column_names:
+        df_means[column_name] = inc_per_py[column_name].mean(axis=1)
+
+    return df_means
+
+
+tb_inc = tb_inc(results_folder)
+
+# ---------------------------------- MALARIA ---------------------------------- #
 
 # malaria incidence
+# value is per 1000py
 mal_inc = summarize(
     extract_results(
         results_folder,
@@ -113,8 +173,13 @@ fig.suptitle('')
 
 # select mean values for plotting
 mean_hiv_inc = hiv_inc.iloc[:, hiv_inc.columns.get_level_values(1) == 'mean']
-mean_tb_inc = tb_inc.iloc[:, tb_inc.columns.get_level_values(1) == 'mean']
+mean_tb_inc = tb_inc
 mean_mal_inc = mal_inc.iloc[:, mal_inc.columns.get_level_values(1) == 'mean']
+year = mean_hiv_inc.index.year
+
+linecolors = {'column1': berry[0], 'column2': berry[1],
+          'column3': berry[2], 'column4': berry[3],
+          'column5': berry[4], 'column6': berry[5]}
 
 
 fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
@@ -126,8 +191,6 @@ ax1.plot(mean_hiv_inc)
 ax1.set(title='HIV',
         ylabel='HIV Incidence, per capita')
 ax1.set_xticklabels([])
-ax1.legend(labels=['baseline', '-hiv', '-tb', '-malaria', '-all 3'],
-           loc='upper left')
 
 # TB incidence
 ax2.plot(mean_tb_inc)
@@ -138,8 +201,11 @@ ax2.set_xticklabels([])
 # Malaria incidence
 ax3.plot(mean_mal_inc)
 ax3.set(title='Malaria',
-        ylabel='Malaria Incidence, per 100,000')
+        ylabel='Malaria Incidence, per 1000')
 
 ax3.set_xticklabels([])
+
+plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
+           labels=['mode1', '-hiv', '-tb', '-malaria', 'mode2', 'mode2-all3'],)
 
 plt.show()
