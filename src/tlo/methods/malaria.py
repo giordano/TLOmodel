@@ -188,7 +188,7 @@ class Malaria(Module):
     }
 
     PROPERTIES = {
-        'ma_is_infected': Property(Types.BOOL, 'Current status of malaria'),
+        'ma_is_infected': Property(Types.BOOL, 'Current status of malaria, infected with malaria parasitaemia'),
         'ma_date_infected': Property(Types.DATE, 'Date of latest infection'),
         'ma_date_symptoms': Property(
             Types.DATE, 'Date of symptom start for clinical infection'
@@ -1355,13 +1355,12 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[infections_to_clear, 'ma_is_infected'] = False
         df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
-        # UNTREATED
-        # if not treated, self-cure occurs after 6 days of symptoms
+        # UNTREATED or TREATMENT FAILURE
+        # if not treated or treatment failed, self-cure occurs after 6 days of symptoms
         # but parasites remain in blood
         clinical_not_treated = df.index[df.is_alive &
                                         (df.ma_inf_type == 'clinical') &
-                                        (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6))) &
-                                        (df.ma_tx == 'none')]
+                                        (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6)))]
 
         self.sim.modules['SymptomManager'].clear_symptoms(
             person_id=clinical_not_treated, disease_module=self.module

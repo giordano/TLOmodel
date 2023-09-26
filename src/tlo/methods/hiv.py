@@ -1621,13 +1621,20 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # Malaria
 
             # set IRS to 0 for all districts
-            self.sim.modules["Malaria"].parameters['irs_district']['irs_rate'] = treatment_effects.loc[
+            # lookup table created in malaria read_parameters
+            # produces self.itn_irs called by malaria poll to draw incidence
+            # need to overwrite this
+            self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
                 treatment_effects.parameter == "irs_district", "no_effect"].values[0]
 
             # set ITN to 0 for all districts
             # itn_district
-            self.sim.modules["Malaria"].parameters['itn_district']['itn_rate'] = treatment_effects.loc[
+            self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
                 treatment_effects.parameter == "itn_district", "no_effect"].values[0]
+
+            # itn rates for 2019 onwards
+            self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
+                treatment_effects.parameter == "itn", "no_effect"].values[0]
 
             # RR IPTP
             self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[
