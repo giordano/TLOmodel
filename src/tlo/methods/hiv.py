@@ -949,7 +949,6 @@ class Hiv(Module):
                 hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self, beddays=beddays),
                 priority=0,
                 topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
-                tclose=date_aids_death
             )
 
         # 5) (Optionally) Schedule the event to check the configuration of all properties
@@ -1620,6 +1619,15 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # scenario 3: remove malaria treatment effects
         if (scenario == 3) or (scenario == 5):
             # Malaria
+
+            # set IRS to 0 for all districts
+            self.sim.modules["Malaria"].parameters['irs_district']['irs_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "irs_district", "no_effect"].values[0]
+
+            # set ITN to 0 for all districts
+            # itn_district
+            self.sim.modules["Malaria"].parameters['itn_district']['itn_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "itn_district", "no_effect"].values[0]
 
             # RR IPTP
             self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[

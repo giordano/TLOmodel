@@ -21,6 +21,7 @@ from tlo.methods import (  # deviance_measure,
     simplified_births,
     symptommanager,
     tb,
+malaria,
 )
 
 # Where will outputs go
@@ -35,9 +36,9 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 2000
+popsize = 200
 
-scenario = 0
+scenario = 3
 
 # set up the log config
 log_config = {
@@ -83,13 +84,14 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # set the scenario
 # sim.modules["Hiv"].parameters["beta"] = 0.129671
 # sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.5
-# sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Hiv"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
