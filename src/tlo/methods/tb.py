@@ -961,6 +961,11 @@ class Tb(Module):
 
         prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
+        # check scenario, if tb treatment should be switched off
+        scenario = self.sim.modules['Hiv'].parameters['scenario']
+        if (scenario == 2) or (scenario == 5):
+            prop_untreated = 1
+
         return prop_untreated
 
     def assign_active_tb(self, population, strain, incidence):

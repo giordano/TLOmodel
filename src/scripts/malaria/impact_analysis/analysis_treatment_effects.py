@@ -2,12 +2,14 @@
 This scenario file sets up the scenarios for simulating the effects of removing sets of services
 
 The scenarios are:
+*0 baseline mode 1
 *1 remove HIV-related services
 *2 remove TB-related services
 *3 remove malaria-related services
-*4 remove all three sets of services and impose constraints on appt times (mode 2)
+*4 baseline mode 2
+*4 remove all three sets of services: mode 2
 
-For scenarios 1-3, keep all default health system settings
+For scenarios 0-3, keep all default health system settings
 
 check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/malaria/impact_analysis/analysis_treatment_effects.py
