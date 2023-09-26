@@ -1,0 +1,51 @@
+{
+  "scenario_script_path": "src/scripts/malaria/impact_analysis/analysis_treatment_effects.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 209652396,
+      "parameters": {
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 2
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 398764591,
+      "parameters": {
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 3
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 924231285,
+      "parameters": {
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 2,
+          "policy_name": "VerticalProgrammes"
+        },
+        "Hiv": {
+          "scenario": 5
+        }
+      }
+    }
+  ],
+  "commit": "1aeaf661fd141efbb362e4d00138cde9b3fbf064",
+  "github": "https://github.com/UCL/TLOmodel/tree/1aeaf661fd141efbb362e4d00138cde9b3fbf064"
+}

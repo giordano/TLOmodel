@@ -440,7 +440,8 @@ class Malaria(Module):
         df.loc[alive_over_one, 'ma_age_edited'] = df.loc[alive_over_one, 'age_years'].astype(float)
 
         # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # eligible: uninfected or asym
+        alive_uninfected = alive & df.ma_inf_type.isin(['none', 'asym'])
         now_infected = _draw_incidence_for('monthly_prob_inf', alive_uninfected)
         df.loc[now_infected, 'ma_inf_type'] = 'asym'
 
