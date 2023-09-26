@@ -44,7 +44,7 @@ class EffectOfProgrammes(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 100_000
-        self.number_of_draws = 6
+        self.number_of_draws = 3  # todo reset
         self.runs_per_draw = 5
 
         self.treatment_effects = pd.read_excel(
@@ -74,12 +74,15 @@ class EffectOfProgrammes(BaseScenario):
         return {
             'HealthSystem': {
                 'use_funded_or_actual_staffing': 'funded',
-                'mode_appt_constraints': [1, 1, 1, 1, 2, 2][draw_number],
-                'policy_name': ['Naive', 'Naive', 'Naive', 'Naive', 'VerticalProgrammes', 'VerticalProgrammes'][
+                # 'mode_appt_constraints': [1, 1, 1, 1, 2, 2][draw_number],
+                'mode_appt_constraints': [1, 1, 2][draw_number],
+                # 'policy_name': ['Naive', 'Naive', 'Naive', 'Naive', 'VerticalProgrammes', 'VerticalProgrammes'][
+                'policy_name': ['Naive', 'Naive', 'VerticalProgrammes'][
                     draw_number],
             },
             'Hiv': {
-                'scenario': [0, 1, 2, 3, 0, 5][draw_number],
+                # 'scenario': [0, 1, 2, 3, 0, 5][draw_number],
+                'scenario': [2, 3, 5][draw_number],
             },
         }
 
