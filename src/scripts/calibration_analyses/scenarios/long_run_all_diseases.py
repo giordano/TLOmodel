@@ -24,7 +24,7 @@ class LongRun(BaseScenario):
         self.end_date = Date(2030, 1, 1)
         self.pop_size = 2_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
