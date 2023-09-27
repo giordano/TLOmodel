@@ -911,11 +911,12 @@ class HealthSystem(Module):
                 }
             )
         if self._equip_not_in_resource_file:
+            equip_not_in_resource_file_sorted = sorted(self._equip_not_in_resource_file)
             warnings.warn(UserWarning(f"Equipment item names logged by model but not included in the "
-                                      f"ResourceFile_Equipment:/n{self._equip_not_in_resource_file}"))
+                                      f"ResourceFile_Equipment:/n{equip_not_in_resource_file_sorted}"))
             logger.info(
                 key="_equip_not_in_resource_file",
-                data={"items": self._equip_not_in_resource_file}
+                data={"items": equip_not_in_resource_file_sorted}
             )
 
     def setup_priority_policy(self):
