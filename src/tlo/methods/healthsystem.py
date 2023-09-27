@@ -720,7 +720,7 @@ class HealthSystem(Module):
         self.healthsystemscheduler = None
 
         # Create pointer to the `HealthSystemSummaryCounter` helper class
-        self._summary_counter = HealthSystemSummaryCounter()
+        self._summary_counter = HealthSystemSummaryCounter(self)
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
@@ -797,6 +797,11 @@ class HealthSystem(Module):
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
+
+        # Load equipment
+        self.parameters['equipment'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Equipment.csv'
+        )
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -904,6 +909,13 @@ class HealthSystem(Module):
                         k: d._asdict() for d, k in self._never_ran_hsi_event_details.items()
                     }
                 }
+            )
+        if self._equip_not_in_resource_file:
+            warnings.warn(UserWarning(f"Equipment item names logged by model but not included in the "
+                                      f"ResourceFile_Equipment:/n{self._equip_not_in_resource_file}"))
+            logger.info(
+                key="_equip_not_in_resource_file",
+                data={"items": self._equip_not_in_resource_file}
             )
 
     def setup_priority_policy(self):
@@ -2646,8 +2658,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 class HealthSystemSummaryCounter:
     """Helper class to keep running counts of HSI and the state of the HealthSystem and logging summaries."""
 
-    def __init__(self):
+    def __init__(self, module):
+        self.module = module
         self._reset_internal_stores()
+        # Equipment items logged by model, but not being included in the ResourceFile_Equipment
+        self._equip_not_in_resource_file = set()
 
     def _reset_internal_stores(self) -> None:
         """Create empty versions of the data structures used to store a running records."""
@@ -2766,6 +2781,14 @@ class HealthSystemSummaryCounter:
                 "Equipment_By_Level": self._equip_by_level,
             },
         )
+
+        equip_by_level_copy = {_level: level_set.copy() for _level, level_set in self._equip_by_level.items()}
+
+        # Loop through the sets within _equip_by_level to find out if there is any equipment missing in the
+        # ResourceFile_Equipment
+        for level_set in equip_by_level_copy.values():
+            # Update equipment items logged by model, but not being included in the ResourceFile_Equipment
+            self._equip_not_in_resource_file.update(level_set - set(self.module.parameters['equipment']['Items']))
 
         self._reset_internal_stores()
 
