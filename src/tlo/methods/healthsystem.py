@@ -2782,10 +2782,9 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        equip_by_level_copy = {_level: level_set.copy() for _level, level_set in self._equip_by_level.items()}
-
         # Loop through the sets within _equip_by_level to find out if there is any equipment missing in the
         # ResourceFile_Equipment
+        equip_by_level_copy = {_level: level_set.copy() for _level, level_set in self._equip_by_level.items()}
         for level_set in equip_by_level_copy.values():
             # Update equipment items logged by model, but not being included in the ResourceFile_Equipment
             self._equip_not_in_resource_file.update(level_set - set(self.module.parameters['equipment']['Items']))
