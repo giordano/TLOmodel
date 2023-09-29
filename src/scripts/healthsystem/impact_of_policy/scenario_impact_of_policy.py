@@ -37,7 +37,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
+            'filename': 'effect_of_policy',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
