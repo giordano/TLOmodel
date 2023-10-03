@@ -71,7 +71,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Naive status quo cons long tclose":
+            "Naive long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -86,7 +86,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "RMNCH status quo cons long tclose":
+            "RMNCH long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -101,7 +101,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Clinically Vulnerable status quo cons long tclose":
+            "Clinically Vulnerable long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -115,7 +115,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "Vertical Programmes status quo cons long tclose":
+            "Vertical Programmes long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -129,7 +129,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
             
-            "CVD status quo cons long tclose":
+            "CVD long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -143,7 +143,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "EHP III status quo cons long tclose":
+            "EHP III long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -157,7 +157,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "LCOA EHP status quo cons long tclose":
+            "LCOA EHP long tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -171,7 +171,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "Naive status quo cons short tclose":
+            "Naive short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -186,7 +186,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "RMNCH status quo cons short tclose":
+            "RMNCH short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -201,7 +201,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Clinically Vulnerable status quo cons short tclose":
+            "Clinically Vulnerable short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -215,7 +215,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "Vertical Programmes status quo cons short tclose":
+            "Vertical Programmes short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -229,7 +229,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "CVD status quo cons short tclose":
+            "CVD short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -243,7 +243,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "EHP III status quo cons short tclose":
+            "EHP III short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -257,7 +257,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "LCOA EHP status quo cons short tclose":
+            "LCOA EHP short tclose":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
