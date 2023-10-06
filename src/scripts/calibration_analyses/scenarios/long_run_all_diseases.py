@@ -15,6 +15,7 @@ from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
+import pandas as pd
 
 class LongRun(BaseScenario):
     def __init__(self):
