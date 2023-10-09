@@ -2656,6 +2656,7 @@ class HealthSystemSummaryCounter:
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._equip_by_hsi_event_name = defaultdict(set)
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
@@ -2693,6 +2694,8 @@ class HealthSystemSummaryCounter:
 
         # Update used equipment by level
         self._equip_by_level[level].update(equipment)
+        # Update used equipment by hsi level name
+        self._equip_by_hsi_event_name[hsi_event_name].update(equipment)
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2760,10 +2763,20 @@ class HealthSystemSummaryCounter:
         for key in self._equip_by_level:
             self._equip_by_level[key] = sorted(self._equip_by_level[key])
         logger_summary.info(
-            key="Equipment",
+            key="Equipment By Facility Level",
             description="Sets of used equipment for each facility level in this calendar year.",
             data={
                 "Equipment_By_Level": sorted(self._equip_by_level),
+            },
+        )
+        # Sort equipment for all hsi events, and log them
+        for key in self._equip_by_hsi_event_name:
+            self._equip_by_hsi_event_name[key] = sorted(self._equip_by_hsi_event_name[key])
+        logger_summary.info(
+            key="Equipment by HSI event name",
+            description="Sets of used equipment for each HSI events in this calendar year.",
+            data={
+                "Equipment_By_HSI_Event_Name": self._equip_by_hsi_event_name,
             },
         )
 
