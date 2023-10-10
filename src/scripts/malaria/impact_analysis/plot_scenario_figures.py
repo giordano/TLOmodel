@@ -21,13 +21,13 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
     make_age_grp_lookup,
-make_age_grp_types,
+    make_age_grp_types,
 )
 
-outputspath = Path("./outputs")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages.py", outputspath)[-1]
+results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -44,10 +44,11 @@ params = extract_params(results_folder)
 # Create a list of strings summarizing the parameter values in the different draws
 param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
 
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
+
 
 # extract total deaths
 def extract_total_deaths(results_folder, do_scaling=True):
-
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
 
@@ -61,7 +62,6 @@ def extract_total_deaths(results_folder, do_scaling=True):
 
 
 def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_deaths_difference_by_run):
-
     list_of_scenarios = list(range(scenario_info['number_of_draws']))
     fig, ax = plt.subplots()
     number_of_draws = scenario_info['number_of_draws']
@@ -80,7 +80,7 @@ def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_de
         ],
         color="mediumaquamarine"
     )
-    ax.set_ylim(0, max(statistic_values["upper"])*1.1)
+    ax.set_ylim(0, max(statistic_values["upper"]) * 1.1)
     plt.title("Total deaths by scenario (scaled)")
 
     # add values above bars
@@ -99,10 +99,8 @@ def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_de
 # this computes the mean difference in deaths between each scenario and baseline
 # numbers of deaths are compared run-for-run
 def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
-
     out = [None] * scenario_info["number_of_draws"]
     for scenario in range(scenario_info["number_of_draws"]):
-
         deaths_difference_by_run = [
             total_deaths[scenario][run_number]["Total"] - total_deaths[0][run_number]["Total"]
             for run_number in range(scenario_info["runs_per_draw"])
@@ -114,32 +112,34 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
 
 
 def extract_deaths_by_age(results_folder):
-
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         _, age_group_lookup = make_age_grp_lookup()
         df["Age_Grp"] = df["age"].map(age_group_lookup).astype(make_age_grp_types())
         df = df.rename(columns={"sex": "Sex"})
         return df.groupby(["Age_Grp"])["person_id"].count()
 
-    return extract_results(
+    return summarize(extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_by_age_group,
         do_scaling=True
+    ), only_mean=False, collapse_columns=True
     )
 
 
-def plot_summarized_deaths_by_age(deaths_summarized_by_age, param_strings):
+# line plot of number deaths by age
+def plot_summarized_deaths_by_age(deaths_summarized_by_age):
     fig, ax = plt.subplots()
-    for i, param in enumerate(param_strings):
+
+    for i in range(scenario_info["number_of_draws"]):
         central_values = deaths_summarized_by_age[(i, "mean")].values
         lower_values = deaths_summarized_by_age[(i, "lower")].values
         upper_values = deaths_summarized_by_age[(i, "upper")].values
         ax.plot(
             deaths_summarized_by_age.index, central_values,
             color=f"C{i}",
-            label=param
+            label=i
         )
         ax.fill_between(
             deaths_summarized_by_age.index, lower_values, upper_values,
@@ -155,8 +155,68 @@ def plot_summarized_deaths_by_age(deaths_summarized_by_age, param_strings):
     return fig, ax
 
 
-# We first look at total deaths in the scenario runs
+# line plot of number deaths by age
+# todo for every run, aggregate numbers deaths, then summarise by age-groups
+def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
+    fig, ax = plt.subplots()
+
+    # combine some age-groups
+    deaths_summarized_by_age.loc['15-59'] = deaths_summarized_by_age.loc[['15-19', '20-24', '25-29',
+                                                                          '30-34', '35-39', '40-44',
+                                                                          '45-49', '50-54', '55-59']].sum()
+    deaths_summarized_by_age.loc['60+'] = deaths_summarized_by_age.loc[['60-64', '65-69', '70-74',
+                                                                        '75-79', '80-84', '85-89',
+                                                                        '90-94', '95-99', '100+']].sum()
+
+    # select only age-groups of interest
+    deaths_to_plot = deaths_summarized_by_age.loc[['0-4', '5-9', '10-14', '15-59', '60+']]
+    deaths_to_plot = deaths_to_plot.stack().reset_index()
+
+    central_values = deaths_to_plot.loc[deaths_to_plot.stat == 'mean']
+    central_values = central_values.drop('stat', axis=1)
+
+    if proportion:
+        # calculate deaths as a proportion of total
+        # get column sums
+        sum_deaths = central_values.sum(axis=0)
+        d = pd.DataFrame()
+        d['Age_Grp'] = central_values['Age_Grp']
+        d['0'] = central_values[0] / sum_deaths[0]
+        d['1'] = central_values[1] / sum_deaths[1]
+        d['2'] = central_values[2] / sum_deaths[2]
+        d['3'] = central_values[3] / sum_deaths[3]
+        d['4'] = central_values[4] / sum_deaths[4]
+        d['5'] = central_values[5] / sum_deaths[5]
+
+        # replace central_values for plotting
+        central_values = d
+
+    # x-axis will be the draw
+    #stacking variable will be values by age-group
+    # switch age-group to columns
+    tmp=central_values.T
+    # Rename the columns using the first row
+    tmp.columns = tmp.iloc[0]
+    # Delete the first row
+    tmp = tmp.drop(tmp.index[0])
+    # Reset the index
+    tmp = tmp.reset_index(drop=True)
+
+    fig, ax = plt.subplots()
+    tmp.plot(kind='bar', stacked=True)
+
+    ax.set(xlabel="Scenarios", ylabel="Total deaths")
+    ax.set_xticks(range(scenario_info["number_of_draws"]))
+    ax.set_xticklabels(range(scenario_info["number_of_draws"]), rotation=90)
+    ax.legend()
+    fig.tight_layout()
+
+    return fig, ax
+
+
+# total deaths in the scenario runs
 total_deaths = extract_total_deaths(results_folder, do_scaling=True)
+deaths_summarized_by_age = extract_deaths_by_age(results_folder)
 
 # Compute and print the difference between the deaths across the scenario draws
 mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(
@@ -169,10 +229,128 @@ print(f"Mean difference in total deaths = {format_mean_deaths_difference_by_run}
 fig_1, ax_1 = plot_summarized_total_deaths(summarize(total_deaths), scenario_info, format_mean_deaths_difference_by_run)
 plt.show()
 
+# Plot the total deaths across scenarios by age
+fig_1, ax_1 = plot_summarized_deaths_by_age(deaths_summarized_by_age)
+plt.show()
+
+
+def get_num_deaths_by_cause_label(_df):
+    """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
+    """
+    return _df \
+        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+        .groupby(_df['label']) \
+        .size()
+
+
+num_deaths_by_cause_label = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths_by_cause_label,
+        do_scaling=True
+    )
+)
+
+mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
+
+
+# plot AIDS deaths by yr
+def summarise_aids_deaths(results_folder):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+        ]
+
+    # group deaths by year
+    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # get mean for each draw
+    mean_aids_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+
+    return mean_aids_deaths
+
+
+def summarise_deaths_for_one_cause(results_folder, cause):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause specified
+    tmp = results_deaths.loc[
+        (results_deaths.cause == cause)
+    ]
+
+    # group deaths by year
+    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # get mean for each draw
+    mean_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+
+    return mean_deaths
+
+
+aids_deaths = summarise_aids_deaths(results_folder)
+tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
+malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
+
+plt.style.use('ggplot')
+plt.style.use('seaborn-bright')
+
+# plot aids deaths over time for each scenario
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
+                                    constrained_layout=True,
+                                    figsize=(8, 3))
+fig.suptitle('')
+
+ax1.plot(aids_deaths)
+ax1.set(title='AIDS deaths',
+        ylabel='Num AIDS deaths')
+ax1.tick_params(axis='x', rotation=70)
+ax1.xaxis.set_ticks(range(2010, 2020, 1))
+
+ax2.plot(tb_deaths)
+ax2.set(title='TB deaths',
+        ylabel='Num TB deaths')
+ax2.tick_params(axis='x', rotation=70)
+ax2.xaxis.set_ticks(range(2010, 2020, 1))
+
+ax3.plot(malaria_deaths)
+ax3.set(title='Malaria deaths',
+        ylabel='Num malaria deaths')
+ax3.tick_params(axis='x', rotation=70)
+ax3.xaxis.set_ticks(range(2010, 2020, 1))
+
+plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
+           labels=['mode1', '-hiv', '-tb', '-malaria', 'mode2', 'mode2-all3'], )
+
+plt.show()
+
 
 # %%:  ---------------------------------- DALYS ---------------------------------- #
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 1, 1))
-
 
 def num_dalys_by_cause(_df):
     """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""

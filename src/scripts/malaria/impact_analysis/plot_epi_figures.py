@@ -14,6 +14,7 @@ import matplotlib.colors as colors
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+import seaborn as sns
 
 from tlo.analysis.utils import (
     compare_number_of_deaths,
@@ -30,7 +31,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages.py", outputspath)[-1]
+results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -65,6 +66,42 @@ hiv_inc = summarize(
         do_scaling=False
     ),
     only_mean=False, collapse_columns=True
+)
+
+hiv_cases = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+        column="n_new_infections_adult_1549",
+        index="date",
+        do_scaling=False
+    ),
+    only_mean=True, collapse_columns=False
+)
+
+adult_pop = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+        column="pop_total",
+        index="date",
+        do_scaling=False
+    ),
+    only_mean=True, collapse_columns=False
+)
+
+adult_plhiv = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+        column="total_plhiv",
+        index="date",
+        do_scaling=False
+    ),
+    only_mean=True, collapse_columns=False
 )
 
 # ---------------------------------- PERSON-YEARS ---------------------------------- #
@@ -102,7 +139,7 @@ py0 = extract_results(
 
 # ---------------------------------- TB ---------------------------------- #
 # number new active tb cases
-def tb_inc(results_folder):
+def tb_inc_func(results_folder):
     inc = extract_results(
         results_folder,
         module="tlo.methods.tb",
@@ -139,7 +176,8 @@ def tb_inc(results_folder):
     return df_means
 
 
-tb_inc = tb_inc(results_folder)
+tb_inc = tb_inc_func(results_folder)
+
 
 # ---------------------------------- MALARIA ---------------------------------- #
 
@@ -158,7 +196,10 @@ mal_inc = summarize(
 )
 
 # ---------------------------------- PLOTS ---------------------------------- #
+# plt.style.use('default')  # to reset
+
 plt.style.use('ggplot')
+plt.style.use('seaborn-bright')
 
 font = {'family': 'sans-serif',
         'color': 'black',
@@ -166,22 +207,14 @@ font = {'family': 'sans-serif',
         'size': 11,
         }
 
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
-                                    constrained_layout=True,
-                                    figsize=(5, 8))
-fig.suptitle('')
-
 # select mean values for plotting
 mean_hiv_inc = hiv_inc.iloc[:, hiv_inc.columns.get_level_values(1) == 'mean']
-mean_tb_inc = tb_inc
+mean_tb_inc = tb_inc.tail(tb_inc.shape[0]-1)  # remove 2010 as nan
 mean_mal_inc = mal_inc.iloc[:, mal_inc.columns.get_level_values(1) == 'mean']
+
 year = mean_hiv_inc.index.year
 
-linecolors = {'column1': berry[0], 'column2': berry[1],
-          'column3': berry[2], 'column4': berry[3],
-          'column5': berry[4], 'column6': berry[5]}
-
-
+labels = year
 fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
                                     constrained_layout=True,
                                     figsize=(8, 3))
@@ -190,20 +223,22 @@ fig.suptitle('')
 ax1.plot(mean_hiv_inc)
 ax1.set(title='HIV',
         ylabel='HIV Incidence, per capita')
-ax1.set_xticklabels([])
+plt.xticks(ticks=mean_hiv_inc.index, labels=labels)
+ax1.tick_params(axis='x', rotation=70)
 
 # TB incidence
 ax2.plot(mean_tb_inc)
 ax2.set(title='TB',
         ylabel='TB Incidence, per capita')
-ax2.set_xticklabels([])
+plt.xticks(ticks=mean_tb_inc.index, labels=labels)
+ax2.tick_params(axis='x', rotation=70)
 
 # Malaria incidence
 ax3.plot(mean_mal_inc)
 ax3.set(title='Malaria',
         ylabel='Malaria Incidence, per 1000')
-
-ax3.set_xticklabels([])
+plt.xticks(ticks=mean_mal_inc.index, labels=labels)
+ax3.tick_params(axis='x', rotation=70)
 
 plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
            labels=['mode1', '-hiv', '-tb', '-malaria', 'mode2', 'mode2-all3'],)

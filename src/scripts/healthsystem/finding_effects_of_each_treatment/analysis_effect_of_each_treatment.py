@@ -1,4 +1,4 @@
-"""Produce plots to show the impact each set of treatments."""
+"""Produce plots to show the impact ]each set of treatments."""
 
 import argparse
 import glob
