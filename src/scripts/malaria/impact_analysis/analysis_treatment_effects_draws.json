@@ -13,39 +13,11 @@
           "policy_name": "Naive"
         },
         "Hiv": {
-          "scenario": 2
-        }
-      }
-    },
-    {
-      "draw_number": 1,
-      "draw_seed": 398764591,
-      "parameters": {
-        "HealthSystem": {
-          "use_funded_or_actual_staffing": "funded",
-          "mode_appt_constraints": 1,
-          "policy_name": "Naive"
-        },
-        "Hiv": {
-          "scenario": 3
-        }
-      }
-    },
-    {
-      "draw_number": 2,
-      "draw_seed": 924231285,
-      "parameters": {
-        "HealthSystem": {
-          "use_funded_or_actual_staffing": "funded",
-          "mode_appt_constraints": 2,
-          "policy_name": "VerticalProgrammes"
-        },
-        "Hiv": {
           "scenario": 5
         }
       }
     }
   ],
-  "commit": "2b3986342ec95e8b5d870ae8727d714190f9f189",
-  "github": "https://github.com/UCL/TLOmodel/tree/2b3986342ec95e8b5d870ae8727d714190f9f189"
+  "commit": "5f5780763331cb61b9621c0033607d71420417e2",
+  "github": "https://github.com/UCL/TLOmodel/tree/5f5780763331cb61b9621c0033607d71420417e2"
 }
