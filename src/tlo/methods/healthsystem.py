@@ -2657,6 +2657,7 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
         self._equip_by_hsi_event_name = defaultdict(set)
+        # TODO: make it just one dictionary with both level & hsi_event_name as key
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
