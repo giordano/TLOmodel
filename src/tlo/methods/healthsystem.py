@@ -2668,9 +2668,7 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._equip_by_hsi_event_name = defaultdict(set)
-        # TODO: make it just one dictionary with both level & hsi_event_name as key
+        self._equip = defaultdict(set)
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
@@ -2706,10 +2704,8 @@ class HealthSystemSummaryCounter:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
 
-        # Update used equipment by level
-        self._equip_by_level[level].update(equipment)
-        # Update used equipment by hsi level name
-        self._equip_by_hsi_event_name[hsi_event_name].update(equipment)
+        # Update used equipment by hsi event name & facility level
+        self._equip[hsi_event_name, level].update(equipment)
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2774,23 +2770,13 @@ class HealthSystemSummaryCounter:
         )
 
         # Sort equipment within levels, and log them
-        for key in self._equip_by_level:
-            self._equip_by_level[key] = sorted(self._equip_by_level[key])
+        for key in self._equip:
+            self._equip[key] = sorted(self._equip_by_level[key])
         logger_summary.info(
-            key="Equipment By Facility Level",
-            description="Sets of used equipment for each facility level in this calendar year.",
+            key="Equipment",
+            description="Sets of used equipment for each HSI event and facility level in this calendar year.",
             data={
-                "Equipment_By_Level": self._equip_by_level,
-            },
-        )
-        # Sort equipment for all hsi events, and log them
-        for key in self._equip_by_hsi_event_name:
-            self._equip_by_hsi_event_name[key] = sorted(self._equip_by_hsi_event_name[key])
-        logger_summary.info(
-            key="Equipment by HSI event name",
-            description="Sets of used equipment for each HSI events in this calendar year.",
-            data={
-                "Equipment_By_HSI_Event_Name": self._equip_by_hsi_event_name,
+                "Equipment_By_HSI_Event_and_Facility_Level": self._equip,
             },
         )
 
