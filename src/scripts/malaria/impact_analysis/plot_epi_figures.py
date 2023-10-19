@@ -241,6 +241,6 @@ plt.xticks(ticks=mean_mal_inc.index, labels=labels)
 ax3.tick_params(axis='x', rotation=70)
 
 plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
-           labels=['mode1', '-hiv', '-tb', '-malaria', 'mode2', 'mode2-all3'],)
+           labels=['baseline', '-hiv', '-tb', '-malaria', '-all3'],)
 
 plt.show()

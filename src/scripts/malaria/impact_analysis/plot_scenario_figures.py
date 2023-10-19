@@ -192,9 +192,9 @@ def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
         central_values = d
 
     # x-axis will be the draw
-    #stacking variable will be values by age-group
+    # stacking variable will be values by age-group
     # switch age-group to columns
-    tmp=central_values.T
+    tmp = central_values.T
     # Rename the columns using the first row
     tmp.columns = tmp.iloc[0]
     # Delete the first row
@@ -233,6 +233,9 @@ plt.show()
 fig_1, ax_1 = plot_summarized_deaths_by_age(deaths_summarized_by_age)
 plt.show()
 
+# barplot deaths by broad age-group
+fig_1, ax_1 = barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion=False)
+plt.show()
 
 def get_num_deaths_by_cause_label(_df):
     """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
@@ -345,7 +348,7 @@ ax3.tick_params(axis='x', rotation=70)
 ax3.xaxis.set_ticks(range(2010, 2020, 1))
 
 plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
-           labels=['mode1', '-hiv', '-tb', '-malaria', 'mode2', 'mode2-all3'], )
+           labels=['mode1', '-hiv', '-tb', '-malaria', '-all3'], )
 
 plt.show()
 
