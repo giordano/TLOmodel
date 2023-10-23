@@ -7,9 +7,8 @@
 import datetime
 from pathlib import Path
 
-import lacroix
-import matplotlib.lines as mlines
-import matplotlib.pyplot as plt
+# import lacroix
+from matplotlib import pyplot as plt
 import matplotlib.colors as colors
 import numpy as np
 import pandas as pd
@@ -28,7 +27,7 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
@@ -46,7 +45,7 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # colour scheme
-berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
+# berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
 
 # -----------------------------------------------------------------------------------------
 # %% Epi outputs
