@@ -52,7 +52,7 @@ params = extract_params(results_folder)
 # -----------------------------------------------------------------------------------------
 
 
-def summarize_median(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+def summarize_median(results: pd.DataFrame) -> pd.DataFrame:
     """ edit existing utility function to return:
     median and 95% quantiles
     """
@@ -71,22 +71,7 @@ def summarize_median(results: pd.DataFrame, only_mean: bool = False, collapse_co
     summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
     summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
 
-    if only_mean and (not collapse_columns):
-        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
-        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
-        om.columns = [c[0] for c in om.columns.to_flat_index()]
-        return om
-
-    elif collapse_columns and (len(summary.columns.levels[0]) == 1):
-        # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-        summary_droppedlevel = summary.droplevel('draw', axis=1)
-        if only_mean:
-            return summary_droppedlevel['mean']
-        else:
-            return summary_droppedlevel
-
-    else:
-        return summary
+    return summary
 
 
 # ---------------------------------- HIV ---------------------------------- #
@@ -100,8 +85,7 @@ hiv_inc = summarize_median(
         column="hiv_adult_inc_1549",
         index="date",
         do_scaling=False
-    ),
-    only_mean=False, collapse_columns=True
+    )
 )
 
 hiv_cases = summarize_median(
@@ -112,8 +96,7 @@ hiv_cases = summarize_median(
         column="n_new_infections_adult_1549",
         index="date",
         do_scaling=False
-    ),
-    only_mean=False, collapse_columns=False
+    )
 )
 
 adult_pop = summarize_median(
@@ -124,8 +107,7 @@ adult_pop = summarize_median(
         column="pop_total",
         index="date",
         do_scaling=False
-    ),
-    only_mean=False, collapse_columns=False
+    )
 )
 
 adult_plhiv = summarize_median(
@@ -136,8 +118,7 @@ adult_plhiv = summarize_median(
         column="total_plhiv",
         index="date",
         do_scaling=False
-    ),
-    only_mean=False, collapse_columns=False
+    )
 )
 
 # ---------------------------------- PERSON-YEARS ---------------------------------- #
@@ -200,16 +181,25 @@ def tb_inc_func(results_folder):
     py.columns = py.columns.get_level_values(0)
 
     inc_per_py = inc / py
-
-    # Get the unique column names
-    column_names = inc_per_py.columns.unique()
+    # remove first row (2010) as nan
+    inc_per_py = inc_per_py.iloc[1:]
 
     # Calculate the mean of each row for each column name
-    df_means = pd.DataFrame()
-    for column_name in column_names:
-        df_means[column_name] = inc_per_py[column_name].mean(axis=1)
+    summary = pd.DataFrame(
+        columns=pd.MultiIndex.from_product(
+            [
+                inc.columns.unique(level='draw'),
+                ["median", "lower", "upper"]
+            ],
+            names=['draw', 'stat']),
+        index=inc.index
+    )
 
-    return df_means
+    summary.loc[:, (slice(None), "median")] = inc_per_py.groupby(axis=1, by='draw').quantile(0.5).values
+    summary.loc[:, (slice(None), "lower")] = inc_per_py.groupby(axis=1, by='draw').quantile(0.025).values
+    summary.loc[:, (slice(None), "upper")] = inc_per_py.groupby(axis=1, by='draw').quantile(0.975).values
+
+    return summary
 
 
 tb_inc = tb_inc_func(results_folder)
@@ -219,7 +209,7 @@ tb_inc = tb_inc_func(results_folder)
 
 # malaria incidence
 # value is per 1000py
-mal_inc = summarize(
+mal_inc = summarize_median(
     extract_results(
         results_folder,
         module="tlo.methods.malaria",
@@ -227,45 +217,58 @@ mal_inc = summarize(
         column="inc_clin_counter",
         index="date",
         do_scaling=False
-    ),
-    only_mean=False, collapse_columns=True
+    )
 )
 
 # ---------------------------------- SMOOTH DATA ---------------------------------- #
 #  create smoothed lines
-num_interp = 12
+num_interp = 24
 
 
-def create_smoothed_lines(data_x, data_y):
-    # xnew = np.linspace(data_x.min(), data_x.max(), num_interp)
-    # bspline = interpolate.make_interp_spline(data_x, data_y, k=2, bc_type="not-a-knot")
-    # smoothed_data = bspline(xnew)
+def create_smoothed_lines(data_x, df_y):
+    """
+    pass a dataframe into function
+    this will smooth the data according to the lowess parameters defined
+    and return a df with smoothed data across the xvals array
+    """
+
     xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
-    smoothed_data = sm.nonparametric.lowess(endog=data_y, exog=data_x, frac=0.45, xvals=xvals, it=0)
+    smoothed_df = pd.DataFrame()
 
-    # retain original starting value (2022)
-    data_y = data_y.reset_index(drop=True)
-    smoothed_data[0] = data_y[0]
+    names = ['median', 'lower', 'upper']
+    repetitions = scenario_info['number_of_draws']
 
-    return smoothed_data
+    # Create the column names
+    column_names = [f'{name}_{i}' for i in range(repetitions) for name in names]
+
+    # Collapse the multi-index columns
+    collapsed_df = df_y.droplevel(0, axis=1)  # Drop the first level of the columns
+    collapsed_df.columns = [str(i) for i in range(len(collapsed_df.columns))]
+
+    # extract each column in turn to smooth
+    for column_name in collapsed_df.columns:
+
+        y = collapsed_df[column_name]
+        lowess = sm.nonparametric.lowess(endog=y, exog=data_x, frac=0.45, xvals=xvals, it=0)
+        smoothed_df[column_name] = lowess
+
+    smoothed_df.columns = column_names
+
+    return smoothed_df
 
 
-data_x = hiv_inc.index  # 2022 onwards
-xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
+data_x = hiv_inc.index.year  # 2011 onwards
 
-# select mean values for plotting
-mean_hiv_inc = hiv_inc.iloc[:, hiv_inc.columns.get_level_values(1) == 'mean']
-mean_tb_inc = tb_inc.tail(tb_inc.shape[0]-1)  # remove 2010 as nan
-mean_mal_inc = mal_inc.iloc[:, mal_inc.columns.get_level_values(1) == 'mean']
-
-
-s_hiv_inc0 = create_smoothed_lines(data_x, (mean_hiv_inc * 1000))
+# smooth outputs for plots
+smoothed_hiv_inc = create_smoothed_lines(data_x, hiv_inc)
+smoothed_tb_inc = create_smoothed_lines(data_x, tb_inc)
+smoothed_mal_inc = create_smoothed_lines(data_x, mal_inc)
 
 
 # ---------------------------------- PLOTS ---------------------------------- #
-# plt.style.use('default')  # to reset
+plt.style.use('default')  # to reset
 
-plt.style.use('ggplot')
+# plt.style.use('ggplot')
 plt.style.use('seaborn-bright')
 
 font = {'family': 'sans-serif',
