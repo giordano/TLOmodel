@@ -53,10 +53,47 @@ berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', 
 # -----------------------------------------------------------------------------------------
 
 
+def summarize_median(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+    """ edit existing utility function to return:
+    median and 95% quantiles
+    """
+
+    summary = pd.DataFrame(
+        columns=pd.MultiIndex.from_product(
+            [
+                results.columns.unique(level='draw'),
+                ["median", "lower", "upper"]
+            ],
+            names=['draw', 'stat']),
+        index=results.index
+    )
+
+    summary.loc[:, (slice(None), "median")] = results.groupby(axis=1, by='draw').quantile(0.5).values
+    summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
+    summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
+
+    if only_mean and (not collapse_columns):
+        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
+        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
+        om.columns = [c[0] for c in om.columns.to_flat_index()]
+        return om
+
+    elif collapse_columns and (len(summary.columns.levels[0]) == 1):
+        # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+        summary_droppedlevel = summary.droplevel('draw', axis=1)
+        if only_mean:
+            return summary_droppedlevel['mean']
+        else:
+            return summary_droppedlevel
+
+    else:
+        return summary
+
+
 # ---------------------------------- HIV ---------------------------------- #
 
 # HIV incidence
-hiv_inc = summarize(
+hiv_inc = summarize_median(
     extract_results(
         results_folder,
         module="tlo.methods.hiv",
@@ -68,7 +105,7 @@ hiv_inc = summarize(
     only_mean=False, collapse_columns=True
 )
 
-hiv_cases = summarize(
+hiv_cases = summarize_median(
     extract_results(
         results_folder,
         module="tlo.methods.hiv",
@@ -77,10 +114,10 @@ hiv_cases = summarize(
         index="date",
         do_scaling=False
     ),
-    only_mean=True, collapse_columns=False
+    only_mean=False, collapse_columns=False
 )
 
-adult_pop = summarize(
+adult_pop = summarize_median(
     extract_results(
         results_folder,
         module="tlo.methods.hiv",
@@ -89,10 +126,10 @@ adult_pop = summarize(
         index="date",
         do_scaling=False
     ),
-    only_mean=True, collapse_columns=False
+    only_mean=False, collapse_columns=False
 )
 
-adult_plhiv = summarize(
+adult_plhiv = summarize_median(
     extract_results(
         results_folder,
         module="tlo.methods.hiv",
@@ -101,7 +138,7 @@ adult_plhiv = summarize(
         index="date",
         do_scaling=False
     ),
-    only_mean=True, collapse_columns=False
+    only_mean=False, collapse_columns=False
 )
 
 # ---------------------------------- PERSON-YEARS ---------------------------------- #
@@ -138,7 +175,7 @@ py0 = extract_results(
 
 
 # ---------------------------------- TB ---------------------------------- #
-# number new active tb cases
+# number new active tb cases - convert to incidence rate
 def tb_inc_func(results_folder):
     inc = extract_results(
         results_folder,
@@ -153,7 +190,7 @@ def tb_inc_func(results_folder):
 
     # divide each run of tb incidence by py from that run
     # tb logger starts at 2011-01-01, demog starts at 2010-01-01
-    # extract py log from 2011-2035
+    # extract py log from 2011
     py = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -194,6 +231,37 @@ mal_inc = summarize(
     ),
     only_mean=False, collapse_columns=True
 )
+
+# ---------------------------------- SMOOTH DATA ---------------------------------- #
+#  create smoothed lines
+num_interp = 12
+
+
+def create_smoothed_lines(data_x, data_y):
+    # xnew = np.linspace(data_x.min(), data_x.max(), num_interp)
+    # bspline = interpolate.make_interp_spline(data_x, data_y, k=2, bc_type="not-a-knot")
+    # smoothed_data = bspline(xnew)
+    xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
+    smoothed_data = sm.nonparametric.lowess(endog=data_y, exog=data_x, frac=0.45, xvals=xvals, it=0)
+
+    # retain original starting value (2022)
+    data_y = data_y.reset_index(drop=True)
+    smoothed_data[0] = data_y[0]
+
+    return smoothed_data
+
+
+data_x = hiv_inc.index  # 2022 onwards
+xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
+
+# select mean values for plotting
+mean_hiv_inc = hiv_inc.iloc[:, hiv_inc.columns.get_level_values(1) == 'mean']
+mean_tb_inc = tb_inc.tail(tb_inc.shape[0]-1)  # remove 2010 as nan
+mean_mal_inc = mal_inc.iloc[:, mal_inc.columns.get_level_values(1) == 'mean']
+
+
+s_hiv_inc0 = create_smoothed_lines(data_x, (mean_hiv_inc * 1000))
+
 
 # ---------------------------------- PLOTS ---------------------------------- #
 # plt.style.use('default')  # to reset
