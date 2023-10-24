@@ -15,6 +15,8 @@ import pandas as pd
 import statsmodels.api as sm
 import seaborn as sns
 
+from tlo import Date
+
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -222,7 +224,9 @@ mal_inc = summarize_median(
 
 # ---------------------------------- SMOOTH DATA ---------------------------------- #
 #  create smoothed lines
-num_interp = 24
+data_x = hiv_inc.index.year  # 2011 onwards
+num_interp = 20
+xvals = np.linspace(start=data_x.min(), stop=data_x.max()+1, num=num_interp)
 
 
 def create_smoothed_lines(data_x, df_y):
@@ -232,22 +236,19 @@ def create_smoothed_lines(data_x, df_y):
     and return a df with smoothed data across the xvals array
     """
 
-    xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
     smoothed_df = pd.DataFrame()
 
     # extract each column in turn to smooth
     for column_name in df_y.columns:
 
         y = df_y[column_name]
-        lowess = sm.nonparametric.lowess(endog=y, exog=data_x, frac=0.45, xvals=xvals, it=0)
+        lowess = sm.nonparametric.lowess(endog=y, exog=data_x, xvals=xvals, frac=0.45, it=0)
         smoothed_df[column_name] = lowess
 
     smoothed_df.columns = smoothed_df.columns.to_flat_index()
 
     return smoothed_df
 
-
-data_x = hiv_inc.index.year  # 2011 onwards
 
 # smooth outputs for plots
 smoothed_hiv_inc = create_smoothed_lines(data_x, hiv_inc)
@@ -256,6 +257,7 @@ smoothed_mal_inc = create_smoothed_lines(data_x, mal_inc)
 
 
 # ---------------------------------- PLOTS ---------------------------------- #
+
 plt.style.use('default')  # to reset
 
 # plt.style.use('ggplot')
@@ -268,39 +270,106 @@ font = {'family': 'sans-serif',
         }
 
 # select mean values for plotting
-mean_hiv_inc = hiv_inc.iloc[:, hiv_inc.columns.get_level_values(1) == 'mean']
-mean_tb_inc = tb_inc.tail(tb_inc.shape[0]-1)  # remove 2010 as nan
-mean_mal_inc = mal_inc.iloc[:, mal_inc.columns.get_level_values(1) == 'mean']
 
-year = mean_hiv_inc.index.year
+labels = list(range(2010, 2021))
+label_loc = np.arange(0, 21, 2)
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
-labels = year
+# colors = sns.color_palette("deep", 5)
+
+
 fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
                                     constrained_layout=True,
                                     figsize=(8, 3))
 fig.suptitle('')
+for i, scenario in enumerate(smoothed_hiv_inc.filter(like='median')):
+    ax1.plot(xvals, smoothed_hiv_inc.filter(like='median')[scenario], label=scenario, color=colors[i])
 
-ax1.plot(mean_hiv_inc)
+ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(0, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(0, 'upper')]]).flatten(), color=colors[0],
+                 alpha=0.2)
+ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(1, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(1, 'upper')]]).flatten(), color=colors[1],
+                 alpha=0.2)
+ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(2, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(2, 'upper')]]).flatten(), color=colors[2],
+                 alpha=0.2)
+ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(3, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(3, 'upper')]]).flatten(), color=colors[3],
+                 alpha=0.2)
+ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(4, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(4, 'upper')]]).flatten(), color=colors[4],
+                 alpha=0.2)
+
 ax1.set(title='HIV',
         ylabel='HIV Incidence, per capita')
-plt.xticks(ticks=mean_hiv_inc.index, labels=labels)
+plt.xticks(ticks=label_loc, labels=labels)
 ax1.tick_params(axis='x', rotation=70)
 
 # TB incidence
-ax2.plot(mean_tb_inc)
-ax2.set(title='TB',
-        ylabel='TB Incidence, per capita')
-plt.xticks(ticks=mean_tb_inc.index, labels=labels)
-ax2.tick_params(axis='x', rotation=70)
-
-# Malaria incidence
-ax3.plot(mean_mal_inc)
-ax3.set(title='Malaria',
-        ylabel='Malaria Incidence, per 1000')
-plt.xticks(ticks=mean_mal_inc.index, labels=labels)
-ax3.tick_params(axis='x', rotation=70)
+# ax2.plot(mean_tb_inc)
+# ax2.set(title='TB',
+#         ylabel='TB Incidence, per capita')
+# plt.xticks(ticks=mean_tb_inc.index, labels=labels)
+# ax2.tick_params(axis='x', rotation=70)
+#
+# # Malaria incidence
+# ax3.plot(mean_mal_inc)
+# ax3.set(title='Malaria',
+#         ylabel='Malaria Incidence, per 1000')
+# plt.xticks(ticks=mean_mal_inc.index, labels=labels)
+# ax3.tick_params(axis='x', rotation=70)
 
 plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
            labels=['baseline', '-hiv', '-tb', '-malaria', '-all3'],)
 
+plt.show()
+
+
+# %%:  ---------------------------------- DALYS ---------------------------------- #
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2036, 1, 1))
+
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+def return_daly_summary(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+
+    return dalys
+
+# each year extract dalys for malaria
+
+malaria_daly = pd.DataFrame()
+
+for year in range(2010, 2020):
+
+    TARGET_PERIOD = (Date(year, 1, 1), Date(year, 12, 31))
+    dalys = return_daly_summary(results_folder)
+
+    # select draw=0 and label=malaria
+    selected_data = dalys.loc['Malaria', 0]
+    selected_df = selected_data.to_frame().T
+
+    # Append the DataFrame to the original DataFrame
+    malaria_daly = malaria_daly.append(selected_df)
+
+malaria_daly.index = range(2010, 2020)
+
+
+# plot malaria DALYs
+malaria_daly.plot()
+plt.title("Malaria DALYs by year")
 plt.show()
