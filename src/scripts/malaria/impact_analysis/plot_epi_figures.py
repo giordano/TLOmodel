@@ -235,24 +235,14 @@ def create_smoothed_lines(data_x, df_y):
     xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
     smoothed_df = pd.DataFrame()
 
-    names = ['median', 'lower', 'upper']
-    repetitions = scenario_info['number_of_draws']
-
-    # Create the column names
-    column_names = [f'{name}_{i}' for i in range(repetitions) for name in names]
-
-    # Collapse the multi-index columns
-    collapsed_df = df_y.droplevel(0, axis=1)  # Drop the first level of the columns
-    collapsed_df.columns = [str(i) for i in range(len(collapsed_df.columns))]
-
     # extract each column in turn to smooth
-    for column_name in collapsed_df.columns:
+    for column_name in df_y.columns:
 
-        y = collapsed_df[column_name]
+        y = df_y[column_name]
         lowess = sm.nonparametric.lowess(endog=y, exog=data_x, frac=0.45, xvals=xvals, it=0)
         smoothed_df[column_name] = lowess
 
-    smoothed_df.columns = column_names
+    smoothed_df.columns = smoothed_df.columns.to_flat_index()
 
     return smoothed_df
 
