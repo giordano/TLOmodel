@@ -222,6 +222,85 @@ mal_inc = summarize_median(
     )
 )
 
+
+# ---------------------------------- DEATHS ---------------------------------- #
+
+
+# plot AIDS deaths by yr
+def summarise_aids_deaths(results_folder):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+        ]
+
+    # group deaths by year
+    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # get median and UI
+    tmp2 = pd.concat({
+        'median': tmp.groupby(level=0, axis=1).median(0.5),
+        'lower': tmp.groupby(level=0, axis=1).quantile(0.025),
+        'upper': tmp.groupby(level=0, axis=1).quantile(0.975)
+    }, axis=1).swaplevel(axis=1)
+
+    return tmp2
+
+
+def summarise_deaths_for_one_cause(results_folder, cause):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause specified
+    tmp = results_deaths.loc[
+        (results_deaths.cause == cause)
+    ]
+
+    # group deaths by year
+    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # get mean for each draw
+    # get median and UI
+    tmp2 = pd.concat({
+        'median': tmp.groupby(level=0, axis=1).median(0.5),
+        'lower': tmp.groupby(level=0, axis=1).quantile(0.025),
+        'upper': tmp.groupby(level=0, axis=1).quantile(0.975)
+    }, axis=1).swaplevel(axis=1)
+
+    return tmp2
+
+
+aids_deaths = summarise_aids_deaths(results_folder)
+tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
+malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
+
+# remove first yr of deaths data (2010) to align with inc outputs
+aids_deaths = aids_deaths.iloc[1:]
+tb_deaths = tb_deaths.iloc[1:]
+malaria_deaths = malaria_deaths.iloc[1:]
+
 # ---------------------------------- SMOOTH DATA ---------------------------------- #
 #  create smoothed lines
 data_x = hiv_inc.index.year  # 2011 onwards
@@ -251,10 +330,14 @@ def create_smoothed_lines(data_x, df_y):
 
 
 # smooth outputs for plots
-smoothed_hiv_inc = create_smoothed_lines(data_x, hiv_inc)
-smoothed_tb_inc = create_smoothed_lines(data_x, tb_inc)
+smoothed_hiv_inc = create_smoothed_lines(data_x, hiv_inc) * 1000
+smoothed_tb_inc = create_smoothed_lines(data_x, tb_inc) * 1000
 smoothed_mal_inc = create_smoothed_lines(data_x, mal_inc)
 
+# scaled numbers of deaths per year
+smoothed_aids_deaths = create_smoothed_lines(data_x, aids_deaths)
+smoothed_tb_deaths = create_smoothed_lines(data_x, tb_deaths)
+smoothed_malaria_deaths = create_smoothed_lines(data_x, malaria_deaths)
 
 # ---------------------------------- PLOTS ---------------------------------- #
 
@@ -275,32 +358,23 @@ xlabels_for_ticks = [str(val) for val in xvals_for_ticks]
 # colors = sns.color_palette("deep", 5)
 gridcol = '#EDEDED'
 
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
+fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
                                     constrained_layout=True,
-                                    figsize=(10, 3))
+                                    figsize=(10, 8))
 fig.suptitle('')
+
 for i, scenario in enumerate(smoothed_hiv_inc.filter(like='median')):
     ax1.plot(xvals, smoothed_hiv_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(0, 'lower')]]).flatten(),
-                 np.array(smoothed_hiv_inc.loc[:, [(0, 'upper')]]).flatten(), color=colors[0],
+for i, scenario in enumerate(smoothed_hiv_inc.filter(like='lower')):
+    ax1.fill_between(xvals, np.array(smoothed_hiv_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
                  alpha=0.2, zorder=2)
-ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(1, 'lower')]]).flatten(),
-                 np.array(smoothed_hiv_inc.loc[:, [(1, 'upper')]]).flatten(), color=colors[1],
-                 alpha=0.2, zorder=2)
-ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(2, 'lower')]]).flatten(),
-                 np.array(smoothed_hiv_inc.loc[:, [(2, 'upper')]]).flatten(), color=colors[2],
-                 alpha=0.2, zorder=2)
-ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(3, 'lower')]]).flatten(),
-                 np.array(smoothed_hiv_inc.loc[:, [(3, 'upper')]]).flatten(), color=colors[3],
-                 alpha=0.2, zorder=2)
-ax1.fill_between(xvals,  np.array(smoothed_hiv_inc.loc[:, [(4, 'lower')]]).flatten(),
-                 np.array(smoothed_hiv_inc.loc[:, [(4, 'upper')]]).flatten(), color=colors[4],
-                 alpha=0.2, zorder=2)
+
 ax1.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax1.set(title='HIV',
-        ylabel='HIV Incidence, per capita')
+        ylabel='HIV Incidence, per 1000')
 ax1.set_xticks(xvals_for_ticks)
 ax1.set_xticklabels("")
 
@@ -311,24 +385,14 @@ for i, scenario in enumerate(smoothed_tb_inc.filter(like='median')):
     ax2.plot(xvals, smoothed_tb_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-ax2.fill_between(xvals,  np.array(smoothed_tb_inc.loc[:, [(0, 'lower')]]).flatten(),
-                 np.array(smoothed_tb_inc.loc[:, [(0, 'upper')]]).flatten(), color=colors[0],
+for i, scenario in enumerate(smoothed_tb_inc.filter(like='lower')):
+    ax2.fill_between(xvals, np.array(smoothed_tb_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_tb_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
                  alpha=0.2, zorder=2)
-ax2.fill_between(xvals,  np.array(smoothed_tb_inc.loc[:, [(1, 'lower')]]).flatten(),
-                 np.array(smoothed_tb_inc.loc[:, [(1, 'upper')]]).flatten(), color=colors[1],
-                 alpha=0.2, zorder=2)
-ax2.fill_between(xvals,  np.array(smoothed_tb_inc.loc[:, [(2, 'lower')]]).flatten(),
-                 np.array(smoothed_tb_inc.loc[:, [(2, 'upper')]]).flatten(), color=colors[2],
-                 alpha=0.2, zorder=2)
-ax2.fill_between(xvals,  np.array(smoothed_tb_inc.loc[:, [(3, 'lower')]]).flatten(),
-                 np.array(smoothed_tb_inc.loc[:, [(3, 'upper')]]).flatten(), color=colors[3],
-                 alpha=0.2, zorder=2)
-ax2.fill_between(xvals,  np.array(smoothed_tb_inc.loc[:, [(4, 'lower')]]).flatten(),
-                 np.array(smoothed_tb_inc.loc[:, [(4, 'upper')]]).flatten(), color=colors[4],
-                 alpha=0.2, zorder=2)
+
 ax2.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax2.set(title='TB',
-        ylabel='TB Incidence, per capita')
+        ylabel='TB Incidence, per 1000')
 ax2.set_xticks(xvals_for_ticks)
 ax2.set_xticklabels("")
 
@@ -337,21 +401,11 @@ for i, scenario in enumerate(smoothed_mal_inc.filter(like='median')):
     ax3.plot(xvals, smoothed_mal_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-ax3.fill_between(xvals,  np.array(smoothed_mal_inc.loc[:, [(0, 'lower')]]).flatten(),
-                 np.array(smoothed_mal_inc.loc[:, [(0, 'upper')]]).flatten(), color=colors[0],
+for i, scenario in enumerate(smoothed_mal_inc.filter(like='lower')):
+    ax3.fill_between(xvals, np.array(smoothed_mal_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_mal_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
                  alpha=0.2, zorder=2)
-ax3.fill_between(xvals,  np.array(smoothed_mal_inc.loc[:, [(1, 'lower')]]).flatten(),
-                 np.array(smoothed_mal_inc.loc[:, [(1, 'upper')]]).flatten(), color=colors[1],
-                 alpha=0.2, zorder=2)
-ax3.fill_between(xvals,  np.array(smoothed_mal_inc.loc[:, [(2, 'lower')]]).flatten(),
-                 np.array(smoothed_mal_inc.loc[:, [(2, 'upper')]]).flatten(), color=colors[2],
-                 alpha=0.2, zorder=2)
-ax3.fill_between(xvals,  np.array(smoothed_mal_inc.loc[:, [(3, 'lower')]]).flatten(),
-                 np.array(smoothed_mal_inc.loc[:, [(3, 'upper')]]).flatten(), color=colors[3],
-                 alpha=0.2, zorder=2)
-ax3.fill_between(xvals,  np.array(smoothed_mal_inc.loc[:, [(4, 'lower')]]).flatten(),
-                 np.array(smoothed_mal_inc.loc[:, [(4, 'upper')]]).flatten(), color=colors[4],
-                 alpha=0.2, zorder=2)
+
 ax3.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax3.set(title='Malaria',
         ylabel='Malaria Incidence, per 1000')
