@@ -304,9 +304,18 @@ malaria_deaths = malaria_deaths.iloc[1:]
 # ---------------------------------- SMOOTH DATA ---------------------------------- #
 #  create smoothed lines
 data_x = hiv_inc.index.year  # 2011 onwards
-num_interp = 20
-xvals = np.linspace(start=data_x.min(), stop=data_x.max()+1, num=num_interp)
+# num_interp = 17
+# xvals = np.linspace(start=data_x.min(), stop=data_x.max()+1, num=15)
+# print(xvals)
 
+start_year = 2011
+end_year = 2020
+increment = 0.25
+
+# Create the array
+xvals = np.arange(start_year, end_year + increment, increment)
+
+print(xvals)
 
 def create_smoothed_lines(data_x, df_y):
     """
@@ -321,7 +330,7 @@ def create_smoothed_lines(data_x, df_y):
     for column_name in df_y.columns:
 
         y = df_y[column_name]
-        lowess = sm.nonparametric.lowess(endog=y, exog=data_x, xvals=xvals, frac=0.45, it=0)
+        lowess = sm.nonparametric.lowess(endog=y, exog=data_x, xvals=xvals, frac=0.65, it=0)
         smoothed_df[column_name] = lowess
 
     smoothed_df.columns = smoothed_df.columns.to_flat_index()
@@ -352,15 +361,16 @@ font = {'family': 'sans-serif',
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
 # Set x-axis tick positions and labels at every second data point
-xvals_for_ticks = xvals[0::2]
-xlabels_for_ticks = [str(val) for val in xvals_for_ticks]
+xvals_for_ticks = xvals[0::4]
+xlabels_for_ticks = [int(val) for val in xvals_for_ticks]
 
 # colors = sns.color_palette("deep", 5)
 gridcol = '#EDEDED'
 
+
 fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
                                     constrained_layout=True,
-                                    figsize=(10, 8))
+                                    figsize=(12, 8))
 fig.suptitle('')
 
 for i, scenario in enumerate(smoothed_hiv_inc.filter(like='median')):
@@ -377,8 +387,7 @@ ax1.set(title='HIV',
         ylabel='HIV Incidence, per 1000')
 ax1.set_xticks(xvals_for_ticks)
 ax1.set_xticklabels("")
-
-ax1.tick_params(axis='x', rotation=70)
+ax1.set_ylim(0, 14)
 
 # TB incidence
 for i, scenario in enumerate(smoothed_tb_inc.filter(like='median')):
@@ -395,6 +404,7 @@ ax2.set(title='TB',
         ylabel='TB Incidence, per 1000')
 ax2.set_xticks(xvals_for_ticks)
 ax2.set_xticklabels("")
+ax2.set_ylim(0, 6)
 
 # Malaria incidence
 for i, scenario in enumerate(smoothed_mal_inc.filter(like='median')):
@@ -411,9 +421,65 @@ ax3.set(title='Malaria',
         ylabel='Malaria Incidence, per 1000')
 ax3.set_xticks(xvals_for_ticks)
 ax3.set_xticklabels("")
+ax3.set_ylim(0, 600)
 
 plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
            labels=['baseline', '-hiv', '-tb', '-malaria', '-all3'],)
+
+# AIDS deaths
+for i, scenario in enumerate(smoothed_aids_deaths.filter(like='median')):
+    ax4.plot(xvals, smoothed_aids_deaths.filter(like='median')[scenario], label=scenario,
+             color=colors[i], zorder=2)
+
+for i, scenario in enumerate(smoothed_aids_deaths.filter(like='lower')):
+    ax4.fill_between(xvals, np.array(smoothed_aids_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_aids_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
+
+ax4.grid(True, linestyle='-', color=gridcol, zorder=1)
+ax4.set(title='',
+        ylabel='Number AIDS deaths')
+ax4.set_xticks(xvals_for_ticks)
+ax4.set_xticklabels(xlabels_for_ticks)
+ax4.set_ylim(0, 80000)
+ax4.tick_params(axis='x', rotation=70)
+
+# TB deaths
+for i, scenario in enumerate(smoothed_tb_deaths.filter(like='median')):
+    ax5.plot(xvals, smoothed_tb_deaths.filter(like='median')[scenario], label=scenario,
+             color=colors[i], zorder=2)
+
+for i, scenario in enumerate(smoothed_tb_deaths.filter(like='lower')):
+    ax5.fill_between(xvals, np.array(smoothed_tb_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_tb_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
+
+ax5.grid(True, linestyle='-', color=gridcol, zorder=1)
+ax5.set(title='',
+        ylabel='Number TB deaths')
+ax5.set_xticks(xvals_for_ticks)
+ax5.set_xticklabels(xlabels_for_ticks)
+ax5.set_ylim(0, 12000)
+ax5.tick_params(axis='x', rotation=70)
+
+# Malaria deaths
+for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='median')):
+    ax6.plot(xvals, smoothed_malaria_deaths.filter(like='median')[scenario], label=scenario,
+             color=colors[i], zorder=2)
+
+for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='lower')):
+    ax6.fill_between(xvals, np.array(smoothed_malaria_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_malaria_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
+
+ax6.grid(True, linestyle='-', color=gridcol, zorder=1)
+ax6.set(title='',
+        ylabel='Number AIDS deaths')
+ax6.set_xticks(xvals_for_ticks)
+ax6.set_xticklabels(xlabels_for_ticks)
+ax6.set_ylim(0, 50000)
+ax6.tick_params(axis='x', rotation=70)
+
 
 plt.show()
 
