@@ -255,6 +255,7 @@ num_deaths_by_cause_label = summarize(
         do_scaling=True
     )
 )
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
 mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
 

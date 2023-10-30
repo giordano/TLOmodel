@@ -476,8 +476,9 @@ ax7.set_xticks(xvals_for_ticks)
 ax7.set_xticklabels(xlabels_for_ticks)
 ax7.set_ylim(0, 50000)
 ax7.tick_params(axis='x', rotation=70)
-ax7.legend(loc='upper right', labels=['baseline', '-hiv', '-tb', '-malaria', '-all3'],
-           bbox_to_anchor=(1.5, 1.0))
+ax7.legend(loc='upper right',
+           labels=['Status Quo', 'HIV services excl', 'TB service excluded', 'Malaria services excl', 'Full impact'],
+           bbox_to_anchor=(1.8, 1.0))
 
 # empty plot
 ax8.axis('off')
