@@ -67,7 +67,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
+                        'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name": "Naive",
                         'tclose_overwrite': 1,
@@ -76,19 +76,19 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Clinically Vulnerable long tclose":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
-                        'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "ClinicallyVulnerable",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 10,
-                     },
-                    }),
+      #      "Clinically Vulnerable long tclose":
+      #          mix_scenarios(
+      #              get_parameters_for_status_quo(),
+      #              {
+      #               'HealthSystem': {
+      #                  "use_funded_or_actual_staffing": "actual",
+      #                  'year_mode_switch': 2023,
+      #                  'mode_appt_constraints_postSwitch': 2,
+      #                  "policy_name": "ClinicallyVulnerable",
+      #                  'tclose_overwrite': 1,
+      #                  'tclose_days_offset_overwrite': 10,
+      #               },
+      #              }),
 
             "Vertical Programmes long tclose":
                 mix_scenarios(
@@ -96,7 +96,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
+                        'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name": "VerticalProgrammes",
                         'tclose_overwrite': 1,
@@ -110,7 +110,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
+                        'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name": "Naive",
                         'tclose_overwrite': 1,
@@ -119,19 +119,19 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Clinically Vulnerable short tclose":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
-                        'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "ClinicallyVulnerable",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
-                     },
-                    }),
+      #      "Clinically Vulnerable short tclose":
+      #          mix_scenarios(
+      #              get_parameters_for_status_quo(),
+      #              {
+      #               'HealthSystem': {
+      #                  "use_funded_or_actual_staffing": "actual",
+      #                  'year_mode_switch': 2023,
+      #                  'mode_appt_constraints_postSwitch': 2,
+      #                  "policy_name": "ClinicallyVulnerable",
+      #                  'tclose_overwrite': 1,
+      #                  'tclose_days_offset_overwrite': 1,
+      #               },
+      #              }),
 
             "Vertical Programmes short tclose":
                 mix_scenarios(
@@ -139,7 +139,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         "use_funded_or_actual_staffing": "actual",
-                        'year_mode_switch': 2011,
+                        'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
                         "policy_name": "VerticalProgrammes",
                         'tclose_overwrite': 1,
