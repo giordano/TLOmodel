@@ -225,6 +225,21 @@ mal_inc = summarize_median(
 
 # ---------------------------------- DEATHS ---------------------------------- #
 
+# get full outputs of numbers of deaths
+
+results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        )
+)
+results_deaths.to_csv(outputspath / "full_deaths.csv")
+
+
+
 
 # plot AIDS deaths by yr
 def summarise_aids_deaths(results_folder):

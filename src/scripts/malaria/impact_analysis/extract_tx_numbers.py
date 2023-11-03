@@ -325,6 +325,13 @@ prog_appts = treatment_id0.filter(like='Hiv').columns | treatment_id0.filter(lik
     like='Tb').columns
 prog_df = treatment_id0[prog_appts]
 
+# add in column totals
+prog_df.loc['Total'] = prog_df.sum()
+
+# total numbers of OPD appts
+
+
+
 
 # horizontal barplot
 
@@ -338,14 +345,14 @@ colours = ['c' if col.startswith('Hiv') else 'm' if col.startswith('Malaria') el
 
 plt.figure(figsize=(10, 7))
 plt.subplots_adjust(left=0.25, right=0.9, top=0.9, bottom=0.1)
-plt.barh(stripped_mean_column_names, prog_df[mean_columns].iloc[0] * scaling_factor.values[0][0], color=colours)
+plt.barh(stripped_mean_column_names, prog_df[mean_columns].iloc[10] * scaling_factor.values[0][0], color=colours)
 plt.xscale('log')
 
 # Add labels and title
 plt.xlabel('Values')
 plt.ylabel('')
 plt.yticks(fontsize=10)
-plt.title('Number of appts delivered in baseline')
+plt.title('')
 
 plt.savefig(outputspath / "baseline_appt_numbers.png")
 
