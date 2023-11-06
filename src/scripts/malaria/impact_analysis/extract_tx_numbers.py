@@ -25,7 +25,9 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
@@ -274,6 +276,8 @@ sum4['mean'] = sum4.mean(axis=1) * scaling_factor.values[0][0]
 
 data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean']], axis=1)
 data_output.to_csv(outputspath / ('treatment_numbers2' + '.csv'))
+
+sum0.to_csv(outputspath / ('baseline_appt_numbers' + '.csv'))
 
 # extract numbers of appts grouped by treatment_id stub
 # median is taken across runs for grouped numbers of appts
