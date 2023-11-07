@@ -9,6 +9,8 @@ import psutil  # this package must be installed manually - not part of the tlomo
 # This script must be run in the output directory
 output_directory = "."
 
+number_of_commits_to_show = 50
+
 
 def do_task_directory(task_dir):
     link = f"{task_dir}"
@@ -83,7 +85,7 @@ def run():
     next_time = (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime('%Y-%b-%d %H:%M')
     print(f"Generated {generated_time} (next {next_time})")
     # loop over all commits that have been run (all begin with 202*
-    for commit in sorted(glob.glob(f'{output_directory}/202[0-9]*'), reverse=True):
+    for commit in sorted(glob.glob(f'{output_directory}/202[0-9]*'), reverse=True)[:number_of_commits_to_show]:
         do_commit_directory(commit)
     print("</body></html>")
 
