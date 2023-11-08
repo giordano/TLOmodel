@@ -2899,7 +2899,8 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.beddays = beddays
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.beddays})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 17})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
