@@ -70,6 +70,11 @@ class EffectOfProgrammes(BaseScenario):
         service_availability.update(
             {f"No_Hiv_TB_Malaria": [v for v in treatments if v not in services_to_remove]}
         )
+        # add in HIV/TB EOL care plus malaria_complicated treatment
+        # run in scenario 5 so malaria treatment has no effect on mortality
+        service_availability['No_Hiv_TB_Malaria'].append('Hiv_PalliativeCare')
+        service_availability['No_Hiv_TB_Malaria'].append('Tb_PalliativeCare')
+        service_availability['No_Hiv_TB_Malaria'].append('Malaria_Treatment_Complicated')
 
         return {
             'HealthSystem': {
@@ -78,7 +83,7 @@ class EffectOfProgrammes(BaseScenario):
                 'mode_appt_constraints': 1,
             },
             'Hiv': {
-                'scenario': 0,  # default treatment effects
+                'scenario': 5,  # remove treatment effects
             },
         }
 
