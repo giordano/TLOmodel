@@ -36,8 +36,7 @@ class EffectOfProgrammes(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 100_000
-        self._scenarios = self._get_scenarios()
-        self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = 1
         self.runs_per_draw = 5
 
     def log_configuration(self):
@@ -60,11 +59,6 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
-
-    def _get_scenarios(self) -> Dict[str, Dict]:
-        """ create a dict which modifies the health system settings for each scenario."""
-
         # Generate list of TREATMENT_IDs
         treatments = get_filtered_treatment_ids(depth=1)
 
@@ -78,18 +72,14 @@ class EffectOfProgrammes(BaseScenario):
         )
 
         return {
-
-            "Remove_HIV_TB_malaria":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                        'HealthSystem': {
-                            'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
-                            'use_funded_or_actual_staffing': 'funded',
-                            'mode_appt_constraints': 1,
-                        }
-                    }
-                ),
+            'HealthSystem': {
+                'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
+                'use_funded_or_actual_staffing': 'funded',
+                'mode_appt_constraints': 1,
+            },
+            'Hiv': {
+                'scenario': 0,  # default treatment effects
+            },
         }
 
 
