@@ -1337,11 +1337,11 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * prop_untreated_ds
+                              p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -2151,7 +2151,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
@@ -2326,7 +2326,8 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.beddays = beddays
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.beddays})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 7.5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
