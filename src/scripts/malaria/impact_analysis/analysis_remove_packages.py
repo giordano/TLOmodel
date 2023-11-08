@@ -34,10 +34,12 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 100_000
+        self.end_date = Date(2015, 1, 1)
+        self.pop_size = 1000  # todo
+        self._scenarios = self._get_scenarios()
+        self.number_of_draws = len(self._scenarios)
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1  # todo
 
     def log_configuration(self):
         return {
@@ -59,6 +61,11 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
+        return list(self._scenarios.values())[draw_number]
+
+        # create a dict which modifies the health system settings for each scenario
+    def _get_scenarios(self) -> Dict[str, Dict]:
+
         # Generate list of TREATMENT_IDs
         treatments = get_filtered_treatment_ids(depth=1)
 
@@ -83,7 +90,7 @@ class EffectOfProgrammes(BaseScenario):
                 'mode_appt_constraints': 1,
             },
             'Hiv': {
-                'scenario': 5,  # remove treatment effects
+                'scenario': 5,  # remove treatment effects for malaria EOL care
             },
         }
 
