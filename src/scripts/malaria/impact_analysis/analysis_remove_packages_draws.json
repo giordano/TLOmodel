@@ -1,0 +1,45 @@
+{
+  "scenario_script_path": "src/scripts/malaria/impact_analysis/analysis_remove_packages.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 209652396,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "Alri_*",
+            "AntenatalCare_*",
+            "BladderCancer_*",
+            "BreastCancer_*",
+            "CardioMetabolicDisorders_*",
+            "Contraception_*",
+            "Copd_*",
+            "DeliveryCare_*",
+            "Depression_*",
+            "Diarrhoea_*",
+            "Epi_*",
+            "Epilepsy_*",
+            "FirstAttendance_*",
+            "Measles_*",
+            "OesophagealCancer_*",
+            "OtherAdultCancer_*",
+            "PostnatalCare_*",
+            "ProstateCancer_*",
+            "Rti_*",
+            "Schisto_*",
+            "Undernutrition_*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1
+        },
+        "Hiv": {
+          "scenario": 0
+        }
+      }
+    }
+  ],
+  "commit": "5088741814cb89e125e35bb036d6c500370e7eab",
+  "github": "https://github.com/UCL/TLOmodel/tree/5088741814cb89e125e35bb036d6c500370e7eab"
+}
