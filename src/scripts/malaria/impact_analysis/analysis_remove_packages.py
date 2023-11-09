@@ -61,11 +61,11 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
+        return list(self._scenarios.values())  # this needs to be indexed by draw if draw>1
 
         # create a dict which modifies the health system settings for each scenario
-    def _get_scenarios(self) -> Dict[str, Dict]:
 
+    def _get_scenarios(self) -> Dict[str, Dict]:
         # Generate list of TREATMENT_IDs
         treatments = get_filtered_treatment_ids(depth=1)
 
@@ -75,23 +75,30 @@ class EffectOfProgrammes(BaseScenario):
 
         # create service package with all three sets of interventions removed
         service_availability.update(
-            {f"No_Hiv_TB_Malaria": [v for v in treatments if v not in services_to_remove]}
+            {f"No_HTM": [v for v in treatments if v not in services_to_remove]}
         )
         # add in HIV/TB EOL care plus malaria_complicated treatment
         # run in scenario 5 so malaria treatment has no effect on mortality
-        service_availability['No_Hiv_TB_Malaria'].append('Hiv_PalliativeCare')
-        service_availability['No_Hiv_TB_Malaria'].append('Tb_PalliativeCare')
-        service_availability['No_Hiv_TB_Malaria'].append('Malaria_Treatment_Complicated')
+        service_availability['No_HTM'].append('Hiv_PalliativeCare')
+        service_availability['No_HTM'].append('Tb_PalliativeCare')
+        service_availability['No_HTM'].append('Malaria_Treatment_Complicated')
 
         return {
-            'HealthSystem': {
-                'Service_Availability': service_availability['No_Hiv_TB_Malaria'],
-                'use_funded_or_actual_staffing': 'funded',
-                'mode_appt_constraints': 1,
-            },
-            'Hiv': {
-                'scenario': 5,  # remove treatment effects for malaria EOL care
-            },
+
+            "Remove_HTM":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                        'HealthSystem': {
+                            'Service_Availability': service_availability['No_HTM'],
+                            'use_funded_or_actual_staffing': 'funded',
+                            'mode_appt_constraints': 1,
+                        },
+                        'Hiv': {
+                            'scenario': 5,  # remove treatment effects for malaria EOL care
+                        },
+                    }
+                ),
         }
 
 
