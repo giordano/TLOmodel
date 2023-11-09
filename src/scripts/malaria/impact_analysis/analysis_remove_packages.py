@@ -34,10 +34,10 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2013, 1, 1)
-        self.pop_size = 1000  # todo
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 1  # todo
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
